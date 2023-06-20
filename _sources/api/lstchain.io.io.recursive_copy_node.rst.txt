@@ -1,0 +1,6 @@
+recursive_copy_node
+===================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: recursive_copy_node

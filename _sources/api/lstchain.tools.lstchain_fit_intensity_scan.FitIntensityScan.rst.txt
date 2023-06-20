@@ -1,0 +1,57 @@
+FitIntensityScan
+================
+
+.. currentmodule:: lstchain.tools.lstchain_fit_intensity_scan
+
+.. autoclass:: FitIntensityScan
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~FitIntensityScan.aliases
+      ~FitIntensityScan.description
+      ~FitIntensityScan.fit_initialization
+      ~FitIntensityScan.fractional_variance_error
+      ~FitIntensityScan.gain_channels
+      ~FitIntensityScan.input_dir
+      ~FitIntensityScan.input_prefix
+      ~FitIntensityScan.name
+      ~FitIntensityScan.output_path
+      ~FitIntensityScan.plot_path
+      ~FitIntensityScan.run_list
+      ~FitIntensityScan.signal_range
+      ~FitIntensityScan.squared_excess_noise_factor
+      ~FitIntensityScan.sub_run
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~FitIntensityScan.finish
+      ~FitIntensityScan.setup
+      ~FitIntensityScan.start
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: aliases
+   .. autoattribute:: description
+   .. autoattribute:: fit_initialization
+   .. autoattribute:: fractional_variance_error
+   .. autoattribute:: gain_channels
+   .. autoattribute:: input_dir
+   .. autoattribute:: input_prefix
+   .. autoattribute:: name
+   .. autoattribute:: output_path
+   .. autoattribute:: plot_path
+   .. autoattribute:: run_list
+   .. autoattribute:: signal_range
+   .. autoattribute:: squared_excess_noise_factor
+   .. autoattribute:: sub_run
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: finish
+   .. automethod:: setup
+   .. automethod:: start

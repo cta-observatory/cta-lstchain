@@ -1,0 +1,6 @@
+check_metadata
+==============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: check_metadata

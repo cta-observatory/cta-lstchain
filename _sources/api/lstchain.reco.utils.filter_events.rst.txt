@@ -1,0 +1,6 @@
+filter_events
+=============
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: filter_events

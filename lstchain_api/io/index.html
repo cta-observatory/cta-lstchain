@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Input/Output (io) &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../../_static/custom.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="get_cleaning_parameters" href="../../api/lstchain.io.config.get_cleaning_parameters.html" />
+    <link rel="prev" title="plot_muon_event" href="../../api/lstchain.image.muon.plot_muon.plot_muon_event.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Input/Output (<cite>io</cite>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-api">Reference/API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.io.config">lstchain.io.config Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.io.data_management">lstchain.io.data_management Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.io.event_selection">lstchain.io.event_selection Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.io.io">lstchain.io.io Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.io.lstcontainers">lstchain.io.lstcontainers Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Docs</a></li>
+      <li class="breadcrumb-item active">Input/Output (<cite>io</cite>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lstchain_api/io/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="input-output-io">
+<span id="io"></span><h1>Input/Output (<cite>io</cite>)<a class="headerlink" href="#input-output-io" title="Permalink to this headline">¶</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p><cite>lstchain.io</cite> contains functions and containers to read and write LST data. Also important for the data reading is the <cite>ctapipe_io_lst</cite> library, that contains the event source to read LST data.</p>
+</section>
+<section id="reference-api">
+<h2>Reference/API<a class="headerlink" href="#reference-api" title="Permalink to this headline">¶</a></h2>
+<section id="module-lstchain.io.config">
+<span id="lstchain-io-config-module"></span><h3>lstchain.io.config Module<a class="headerlink" href="#module-lstchain.io.config" title="Permalink to this headline">¶</a></h3>
+<section id="functions">
+<h4>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.config.get_cleaning_parameters.html#lstchain.io.config.get_cleaning_parameters" title="lstchain.io.config.get_cleaning_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cleaning_parameters</span></code></a>(config, ...)</p></td>
+<td><p>Return cleaning parameters from configuration dict.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.config.get_standard_config.html#lstchain.io.config.get_standard_config" title="lstchain.io.config.get_standard_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_standard_config</span></code></a>()</p></td>
+<td><p>Load the standard config from the file 'data/lstchain_standard_config.json'</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.config.get_srcdep_config.html#lstchain.io.config.get_srcdep_config" title="lstchain.io.config.get_srcdep_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_srcdep_config</span></code></a>()</p></td>
+<td><p>Load the config for source-dependent analysis from the file 'data/lstchain_src_dep_config.json'</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.config.read_configuration_file.html#lstchain.io.config.read_configuration_file" title="lstchain.io.config.read_configuration_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_configuration_file</span></code></a>(config_filename)</p></td>
+<td><p>Read a configuration filename for the lstchain.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.config.replace_config.html#lstchain.io.config.replace_config" title="lstchain.io.config.replace_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">replace_config</span></code></a>(base_config, new_config)</p></td>
+<td><p>Return a copy of the base_config with new configuration from new_config</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.io.data_management">
+<span id="lstchain-io-data-management-module"></span><h3>lstchain.io.data_management Module<a class="headerlink" href="#module-lstchain.io.data_management" title="Permalink to this headline">¶</a></h3>
+<section id="id1">
+<h4>Functions<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.data_management.check_and_make_dir.html#lstchain.io.data_management.check_and_make_dir" title="lstchain.io.data_management.check_and_make_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_and_make_dir</span></code></a>(dir)</p></td>
+<td><p>Check if a directory exists or contains data before to makedir.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.data_management.check_data_path.html#lstchain.io.data_management.check_data_path" title="lstchain.io.data_management.check_data_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_data_path</span></code></a>(data_path)</p></td>
+<td><p>Check if the path to some data exists.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.data_management.check_job_logs.html#lstchain.io.data_management.check_job_logs" title="lstchain.io.data_management.check_job_logs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_job_logs</span></code></a>(job_logs_dir)</p></td>
+<td><p>Check all the job logs named <cite>*.e</cite> for Errors Query the user to continue or not in case of errors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.data_management.get_input_filelist.html#lstchain.io.data_management.get_input_filelist" title="lstchain.io.data_management.get_input_filelist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_input_filelist</span></code></a>(data_path)</p></td>
+<td><p>Return list of files in <cite>data_path</cite></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.data_management.query_continue.html#lstchain.io.data_management.query_continue" title="lstchain.io.data_management.query_continue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">query_continue</span></code></a>(question[, default])</p></td>
+<td><p>Ask a question and if the answer is no, exit the program.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.data_management.query_yes_no.html#lstchain.io.data_management.query_yes_no" title="lstchain.io.data_management.query_yes_no"><code class="xref py py-obj docutils literal notranslate"><span class="pre">query_yes_no</span></code></a>(question[, default])</p></td>
+<td><p>Ask a yes/no question via raw_input() and return their answer.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.io.event_selection">
+<span id="lstchain-io-event-selection-module"></span><h3>lstchain.io.event_selection Module<a class="headerlink" href="#module-lstchain.io.event_selection" title="Permalink to this headline">¶</a></h3>
+<section id="classes">
+<h4>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.event_selection.EventSelector.html#lstchain.io.event_selection.EventSelector" title="lstchain.io.event_selection.EventSelector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EventSelector</span></code></a>(**kwargs)</p></td>
+<td><p>Filter values used for event filters and list of finite parameters are taken as inputs and filter_events() is used on a table of events called in with the Component.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.event_selection.DL3Cuts.html#lstchain.io.event_selection.DL3Cuts" title="lstchain.io.event_selection.DL3Cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DL3Cuts</span></code></a>(**kwargs)</p></td>
+<td><p>Selection cuts for DL2 to DL3 conversion</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.event_selection.DataBinning.html#lstchain.io.event_selection.DataBinning" title="lstchain.io.event_selection.DataBinning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataBinning</span></code></a>(**kwargs)</p></td>
+<td><p>Collects information on generating energy and angular bins for generating IRFs as per pyIRF requirements.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.io.io">
+<span id="lstchain-io-io-module"></span><h3>lstchain.io.io Module<a class="headerlink" href="#module-lstchain.io.io" title="Permalink to this headline">¶</a></h3>
+<section id="id2">
+<h4>Functions<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.add_column_table.html#lstchain.io.io.add_column_table" title="lstchain.io.io.add_column_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_column_table</span></code></a>(table, ColClass, col_label, ...)</p></td>
+<td><p>Add a column to an pytable Table</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.add_config_metadata.html#lstchain.io.io.add_config_metadata" title="lstchain.io.io.add_config_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_config_metadata</span></code></a>(container, configuration)</p></td>
+<td><p>Add configuration parameters to a container in container.meta.config</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.add_global_metadata.html#lstchain.io.io.add_global_metadata" title="lstchain.io.io.add_global_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_global_metadata</span></code></a>(container, metadata)</p></td>
+<td><p>Add global metadata to a container in container.meta</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.add_source_filenames.html#lstchain.io.io.add_source_filenames" title="lstchain.io.io.add_source_filenames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_source_filenames</span></code></a>(h5file, file_list)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.auto_merge_h5files.html#lstchain.io.io.auto_merge_h5files" title="lstchain.io.io.auto_merge_h5files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">auto_merge_h5files</span></code></a>(file_list[, ...])</p></td>
+<td><p>Automatic merge of HDF5 files.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.check_mcheader.html#lstchain.io.io.check_mcheader" title="lstchain.io.io.check_mcheader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_mcheader</span></code></a>(mcheader1, mcheader2)</p></td>
+<td><p>Check that the information in two mcheaders are physically consistent.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.check_metadata.html#lstchain.io.io.check_metadata" title="lstchain.io.io.check_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_metadata</span></code></a>(metadata1, metadata2)</p></td>
+<td><p>Check that to MetaData class are compatible with each other</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.check_mc_type.html#lstchain.io.io.check_mc_type" title="lstchain.io.io.check_mc_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_mc_type</span></code></a>(filename)</p></td>
+<td><p>Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting Parameters ---------- filename:path (DL1/DL2 hdf file) Returns ------- string</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.check_thrown_events_histogram.html#lstchain.io.io.check_thrown_events_histogram" title="lstchain.io.io.check_thrown_events_histogram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_thrown_events_histogram</span></code></a>(...)</p></td>
+<td><p>Check that two ThrownEventsHistogram class are compatible with each other</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.copy_h5_nodes.html#lstchain.io.io.copy_h5_nodes" title="lstchain.io.io.copy_h5_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy_h5_nodes</span></code></a>(from_file, to_file[, nodes])</p></td>
+<td><p>Copy dataset (Table and Array) nodes from <code class="docutils literal notranslate"><span class="pre">from_file</span></code> to <code class="docutils literal notranslate"><span class="pre">to_file</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.extract_simulation_nsb.html#lstchain.io.io.extract_simulation_nsb" title="lstchain.io.io.extract_simulation_nsb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_simulation_nsb</span></code></a>(filename)</p></td>
+<td><p>Get current run NSB from configuration in simtel file :param str filename: Input file name :return array of <cite>float</cite> by tel_id: NSB rate</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.extract_observation_time.html#lstchain.io.io.extract_observation_time" title="lstchain.io.io.extract_observation_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_observation_time</span></code></a>(t_df)</p></td>
+<td><p>Calculate observation time</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.get_dataset_keys.html#lstchain.io.io.get_dataset_keys" title="lstchain.io.io.get_dataset_keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_dataset_keys</span></code></a>(h5file)</p></td>
+<td><p>Return a list of all dataset keys in a HDF5 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.get_mc_fov_offset.html#lstchain.io.io.get_mc_fov_offset" title="lstchain.io.io.get_mc_fov_offset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mc_fov_offset</span></code></a>(filename)</p></td>
+<td><p>Calculate the mean field of view offset (the &quot;wobble-distance&quot;) from the simulation info.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.get_srcdep_assumed_positions.html#lstchain.io.io.get_srcdep_assumed_positions" title="lstchain.io.io.get_srcdep_assumed_positions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_srcdep_assumed_positions</span></code></a>(filename)</p></td>
+<td><p>get assumed positions of source-dependent multi index columns</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.get_srcdep_params.html#lstchain.io.io.get_srcdep_params" title="lstchain.io.io.get_srcdep_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_srcdep_params</span></code></a>(filename[, wobble_angles])</p></td>
+<td><p>get srcdep parameter data frame</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.get_stacked_table.html#lstchain.io.io.get_stacked_table" title="lstchain.io.io.get_stacked_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_stacked_table</span></code></a>(filenames_list, node)</p></td>
+<td><p>Stack tables at node from each file in files</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.global_metadata.html#lstchain.io.io.global_metadata" title="lstchain.io.io.global_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">global_metadata</span></code></a>()</p></td>
+<td><p>Get global metadata container</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.merge_dl2_runs.html#lstchain.io.io.merge_dl2_runs" title="lstchain.io.io.merge_dl2_runs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_dl2_runs</span></code></a>(data_tag, runs[, ...])</p></td>
+<td><p>Merge the run sequence in a single dataset and extract correct observation time based on first and last event timestamp in each file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.merging_check.html#lstchain.io.io.merging_check" title="lstchain.io.io.merging_check"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merging_check</span></code></a>(file_list)</p></td>
+<td><p>Check that a list of hdf5 files are compatible for merging regarding:</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.parse_cfg_bytestring.html#lstchain.io.io.parse_cfg_bytestring" title="lstchain.io.io.parse_cfg_bytestring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_cfg_bytestring</span></code></a>(bytestring)</p></td>
+<td><p>Parse configuration as read by eventio :param bytes bytestring: A <code class="docutils literal notranslate"><span class="pre">Bytes</span></code> object with configuration data for one parameter :return: Tuple in form <code class="docutils literal notranslate"><span class="pre">('parameter_name',</span> <span class="pre">'value')</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_data_dl2_to_QTable.html#lstchain.io.io.read_data_dl2_to_QTable" title="lstchain.io.io.read_data_dl2_to_QTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_data_dl2_to_QTable</span></code></a>(filename[, srcdep_pos])</p></td>
+<td><p>Read data DL2 files from lstchain and return QTable format, along with a dict of target parameters for IRF interpolation</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_dl2_params.html#lstchain.io.io.read_dl2_params" title="lstchain.io.io.read_dl2_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_dl2_params</span></code></a>(t_filename[, columns_to_read])</p></td>
+<td><p>Read specified parameters from a file with DL2 data</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_mc_dl2_to_QTable.html#lstchain.io.io.read_mc_dl2_to_QTable" title="lstchain.io.io.read_mc_dl2_to_QTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_mc_dl2_to_QTable</span></code></a>(filename)</p></td>
+<td><p>Read MC DL2 files from lstchain and convert into pyirf internal format - astropy.table.QTable.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_metadata.html#lstchain.io.io.read_metadata" title="lstchain.io.io.read_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_metadata</span></code></a>(filename)</p></td>
+<td><p>Read metadata from a HDF5 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simtel_energy_histogram.html#lstchain.io.io.read_simtel_energy_histogram" title="lstchain.io.io.read_simtel_energy_histogram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simtel_energy_histogram</span></code></a>(filename)</p></td>
+<td><p>Read the simtel energy histogram from a HDF5 file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simu_info_hdf5.html#lstchain.io.io.read_simu_info_hdf5" title="lstchain.io.io.read_simu_info_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simu_info_hdf5</span></code></a>(filename)</p></td>
+<td><p>Read simu info from an hdf5 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simu_info_merged_hdf5.html#lstchain.io.io.read_simu_info_merged_hdf5" title="lstchain.io.io.read_simu_info_merged_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simu_info_merged_hdf5</span></code></a>(filename)</p></td>
+<td><p>Read simu info from a merged hdf5 file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.recursive_copy_node.html#lstchain.io.io.recursive_copy_node" title="lstchain.io.io.recursive_copy_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">recursive_copy_node</span></code></a>(src_file, dir_file, path)</p></td>
+<td><p>Copy a node recursively from a src file to a dir file without copying the tables/arrays in the node</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.remove_duplicated_events.html#lstchain.io.io.remove_duplicated_events" title="lstchain.io.io.remove_duplicated_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_duplicated_events</span></code></a>(data)</p></td>
+<td><p>Remove duplicated events after gammaness/alpha cut when generating DL3 files.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.stack_tables_h5files.html#lstchain.io.io.stack_tables_h5files" title="lstchain.io.io.stack_tables_h5files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stack_tables_h5files</span></code></a>(filenames_list[, ...])</p></td>
+<td><p>In theory similar to auto_merge_h5files but slower.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_calibration_data.html#lstchain.io.io.write_calibration_data" title="lstchain.io.io.write_calibration_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_calibration_data</span></code></a>(writer, mon_index, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_dataframe.html#lstchain.io.io.write_dataframe" title="lstchain.io.io.write_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_dataframe</span></code></a>(dataframe, outfile, table_path)</p></td>
+<td><p>Write a pandas dataframe to a HDF5 file using pytables formatting.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_dl2_dataframe.html#lstchain.io.io.write_dl2_dataframe" title="lstchain.io.io.write_dl2_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_dl2_dataframe</span></code></a>(dataframe, outfile[, ...])</p></td>
+<td><p>Write DL2 dataframe to a HDF5 file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_mcheader.html#lstchain.io.io.write_mcheader" title="lstchain.io.io.write_mcheader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_mcheader</span></code></a>(mcheader, output_filename[, ...])</p></td>
+<td><p>Write the mcheader from an event container to a HDF5 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_metadata.html#lstchain.io.io.write_metadata" title="lstchain.io.io.write_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_metadata</span></code></a>(metadata, output_filename)</p></td>
+<td><p>Write metadata to a HDF5 file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_simtel_energy_histogram.html#lstchain.io.io.write_simtel_energy_histogram" title="lstchain.io.io.write_simtel_energy_histogram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_simtel_energy_histogram</span></code></a>(source, ...[, ...])</p></td>
+<td><p>Write the energy histogram from a simtel source to a HDF5 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_subarray_tables.html#lstchain.io.io.write_subarray_tables" title="lstchain.io.io.write_subarray_tables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_subarray_tables</span></code></a>(writer, event[, metadata])</p></td>
+<td><p>Write subarray tables info to a HDF5 file</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.io.lstcontainers">
+<span id="lstchain-io-lstcontainers-module"></span><h3>lstchain.io.lstcontainers Module<a class="headerlink" href="#module-lstchain.io.lstcontainers" title="Permalink to this headline">¶</a></h3>
+<p>Functions to handle custom containers for the mono reconstruction of LST1</p>
+<section id="id3">
+<h4>Classes<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.DL1MonitoringEventIndexContainer.html#lstchain.io.lstcontainers.DL1MonitoringEventIndexContainer" title="lstchain.io.lstcontainers.DL1MonitoringEventIndexContainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DL1MonitoringEventIndexContainer</span></code></a>([prefix])</p></td>
+<td><p>Container with the calibration coefficients</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.DL1ParametersContainer.html#lstchain.io.lstcontainers.DL1ParametersContainer" title="lstchain.io.lstcontainers.DL1ParametersContainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DL1ParametersContainer</span></code></a>([prefix])</p></td>
+<td><p>TODO: maybe fields could be inherited from ctapipe containers definition</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.html#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DL1LikelihoodParametersContainer</span></code></a>([prefix])</p></td>
+<td><p>Parameters obtained with the likelihood reconstruction method</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.DispContainer.html#lstchain.io.lstcontainers.DispContainer" title="lstchain.io.lstcontainers.DispContainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DispContainer</span></code></a>([prefix])</p></td>
+<td><p>Disp vector container</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.ExtraImageInfo.html#lstchain.io.lstcontainers.ExtraImageInfo" title="lstchain.io.lstcontainers.ExtraImageInfo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExtraImageInfo</span></code></a>([prefix])</p></td>
+<td><p>attach the tel_id</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.ExtraMCInfo.html#lstchain.io.lstcontainers.ExtraMCInfo" title="lstchain.io.lstcontainers.ExtraMCInfo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExtraMCInfo</span></code></a>([prefix])</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.ExtraMCInfo.html#lstchain.io.lstcontainers.ExtraMCInfo" title="lstchain.io.lstcontainers.ExtraMCInfo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExtraMCInfo</span></code></a>([prefix])</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.LSTEventType.html#lstchain.io.lstcontainers.LSTEventType" title="lstchain.io.lstcontainers.LSTEventType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LSTEventType</span></code></a>()</p></td>
+<td><p>Class to recognize event type from trigger bits bit 0: Mono bit 1: stereo bit 2: Calibration bit 3: Single Phe bit 4: Softrig(from the UCTS) bit 5: Pedestal bit 6: slow control bit 7: busy</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.MetaData.html#lstchain.io.lstcontainers.MetaData" title="lstchain.io.lstcontainers.MetaData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MetaData</span></code></a>([prefix])</p></td>
+<td><p>Some metadata</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.lstcontainers.ThrownEventsHistogram.html#lstchain.io.lstcontainers.ThrownEventsHistogram" title="lstchain.io.lstcontainers.ThrownEventsHistogram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ThrownEventsHistogram</span></code></a>([prefix])</p></td>
+<td><p>2D histogram from SimTel files</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../api/lstchain.image.muon.plot_muon.plot_muon_event.html" class="btn btn-neutral float-left" title="plot_muon_event" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api/lstchain.io.config.get_cleaning_parameters.html" class="btn btn-neutral float-right" title="get_cleaning_parameters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

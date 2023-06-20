@@ -1,0 +1,6 @@
+add_source_filenames
+====================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: add_source_filenames

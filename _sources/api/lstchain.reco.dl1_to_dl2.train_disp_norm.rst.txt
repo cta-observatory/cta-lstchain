@@ -1,0 +1,6 @@
+train_disp_norm
+===============
+
+.. currentmodule:: lstchain.reco.dl1_to_dl2
+
+.. autofunction:: train_disp_norm

@@ -1,0 +1,6 @@
+stack_tables_h5files
+====================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: stack_tables_h5files

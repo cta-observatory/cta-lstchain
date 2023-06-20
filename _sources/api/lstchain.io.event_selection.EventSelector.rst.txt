@@ -1,0 +1,29 @@
+EventSelector
+=============
+
+.. currentmodule:: lstchain.io.event_selection
+
+.. autoclass:: EventSelector
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~EventSelector.filters
+      ~EventSelector.finite_params
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~EventSelector.filter_cut
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: filters
+   .. autoattribute:: finite_params
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: filter_cut

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reconstruction (reco) &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../../_static/custom.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="disp" href="../../api/lstchain.reco.disp.disp.html" />
+    <link rel="prev" title="sensitivity_gamma_efficiency_real_protons" href="../../api/lstchain.mc.sensitivity.sensitivity_gamma_efficiency_real_protons.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Reconstruction (<cite>reco</cite>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-api">Reference/API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.reco.disp">lstchain.reco.disp Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.reco.dl1_to_dl2">lstchain.reco.dl1_to_dl2 Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.reco.r0_to_dl1">lstchain.reco.r0_to_dl1 Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.reco.utils">lstchain.reco.utils Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.reco.volume_reducer">lstchain.reco.volume_reducer Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Docs</a></li>
+      <li class="breadcrumb-item active">Reconstruction (<cite>reco</cite>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lstchain_api/reco/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="reconstruction-reco">
+<span id="reco"></span><h1>Reconstruction (<cite>reco</cite>)<a class="headerlink" href="#reconstruction-reco" title="Permalink to this headline">¶</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Module containing functions and classes to reconstruct data. This includes:
+* r0 to dl1 functions, including charge integration and application of the calibration, data volume reduction and other utils
+* dl1 to dl2 functions, including disp calculation and random forest training and application</p>
+</section>
+<section id="reference-api">
+<h2>Reference/API<a class="headerlink" href="#reference-api" title="Permalink to this headline">¶</a></h2>
+<section id="module-lstchain.reco.disp">
+<span id="lstchain-reco-disp-module"></span><h3>lstchain.reco.disp Module<a class="headerlink" href="#module-lstchain.reco.disp" title="Permalink to this headline">¶</a></h3>
+<section id="functions">
+<h4>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.disp.disp.html#lstchain.reco.disp.disp" title="lstchain.reco.disp.disp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp</span></code></a>(cog_x, cog_y, src_x, src_y, hillas_psi)</p></td>
+<td><p>Compute the disp parameters</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.disp.disp_parameters.html#lstchain.reco.disp.disp_parameters" title="lstchain.reco.disp.disp_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_parameters</span></code></a>(cog_x, cog_y, hillas_psi, ...)</p></td>
+<td><p>Compute disp parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.disp.disp_parameters_event.html#lstchain.reco.disp.disp_parameters_event" title="lstchain.reco.disp.disp_parameters_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_parameters_event</span></code></a>(hillas_parameters, ...)</p></td>
+<td><p>Compute the disp_norm parameters from Hillas parameters in the event position in the camera frame Return a <cite>DispContainer</cite></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.disp.disp_to_pos.html#lstchain.reco.disp.disp_to_pos" title="lstchain.reco.disp.disp_to_pos"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_to_pos</span></code></a>(disp_dx, disp_dy, cog_x, cog_y)</p></td>
+<td><p>Calculates source position in camera coordinates(x,y) from the reconstructed disp.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.disp.disp_vector.html#lstchain.reco.disp.disp_vector" title="lstchain.reco.disp.disp_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_vector</span></code></a>(disp_norm, disp_angle, disp_sign)</p></td>
+<td><p>Compute <cite>disp_norm.dx</cite> and <cite>disp_norm.dy</cite> vector from <cite>disp_norm.norm</cite>, <cite>disp_norm.angle</cite> and <cite>disp_norm.sign</cite></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.disp.miss.html#lstchain.reco.disp.miss" title="lstchain.reco.disp.miss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">miss</span></code></a>(disp_dx, disp_dy, hillas_psi)</p></td>
+<td><p>Compute miss</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.reco.dl1_to_dl2">
+<span id="lstchain-reco-dl1-to-dl2-module"></span><h3>lstchain.reco.dl1_to_dl2 Module<a class="headerlink" href="#module-lstchain.reco.dl1_to_dl2" title="Permalink to this headline">¶</a></h3>
+<p>Module with functions for Energy and disp_norm reconstruction and G/H
+separation. There are functions for raining random forest and for
+applying them to data. The RF can be saved into a file for later use.</p>
+<p>Usage:</p>
+<p>“import dl1_to_dl2”</p>
+<section id="id1">
+<h4>Functions<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.apply_models.html#lstchain.reco.dl1_to_dl2.apply_models" title="lstchain.reco.dl1_to_dl2.apply_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_models</span></code></a>(dl1, classifier, reg_energy[, ...])</p></td>
+<td><p>Apply previously trained Random Forests to a set of data depending on a set of features.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.build_models.html#lstchain.reco.dl1_to_dl2.build_models" title="lstchain.reco.dl1_to_dl2.build_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_models</span></code></a>(filegammas, fileprotons[, ...])</p></td>
+<td><p>Uses MC data to train Random Forests for Energy and DISP reconstruction and G/H separation and returns the trained RFs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.get_expected_source_pos.html#lstchain.reco.dl1_to_dl2.get_expected_source_pos" title="lstchain.reco.dl1_to_dl2.get_expected_source_pos"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_expected_source_pos</span></code></a>(data, data_type, config)</p></td>
+<td><p>Get expected source position for source-dependent analysis .</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.get_source_dependent_parameters.html#lstchain.reco.dl1_to_dl2.get_source_dependent_parameters" title="lstchain.reco.dl1_to_dl2.get_source_dependent_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_source_dependent_parameters</span></code></a>(data, config)</p></td>
+<td><p>Get parameters dict for source-dependent analysis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.train_disp_norm.html#lstchain.reco.dl1_to_dl2.train_disp_norm" title="lstchain.reco.dl1_to_dl2.train_disp_norm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_disp_norm</span></code></a>(train[, custom_config, ...])</p></td>
+<td><p>Train a model for the regression of the disp_norm norm</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.train_disp_sign.html#lstchain.reco.dl1_to_dl2.train_disp_sign" title="lstchain.reco.dl1_to_dl2.train_disp_sign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_disp_sign</span></code></a>(train[, custom_config, ...])</p></td>
+<td><p>Train a model for the classification of the disp_norm sign</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.train_disp_vector.html#lstchain.reco.dl1_to_dl2.train_disp_vector" title="lstchain.reco.dl1_to_dl2.train_disp_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_disp_vector</span></code></a>(train[, custom_config, ...])</p></td>
+<td><p>Train a model (Random Forest Regressor) for the regression of the disp_norm vector coordinates dx,dy.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.train_energy.html#lstchain.reco.dl1_to_dl2.train_energy" title="lstchain.reco.dl1_to_dl2.train_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_energy</span></code></a>(train[, custom_config])</p></td>
+<td><p>Train a Random Forest Regressor for the regression of the energy TODO: introduce the possibility to use another model</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.train_reco.html#lstchain.reco.dl1_to_dl2.train_reco" title="lstchain.reco.dl1_to_dl2.train_reco"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_reco</span></code></a>(train[, custom_config])</p></td>
+<td><p>Trains two Random Forest regressors for Energy and disp_norm reconstruction respectively.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.train_sep.html#lstchain.reco.dl1_to_dl2.train_sep" title="lstchain.reco.dl1_to_dl2.train_sep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_sep</span></code></a>(train[, custom_config])</p></td>
+<td><p>Trains a Random Forest classifier for Gamma/Hadron separation.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.reco.r0_to_dl1">
+<span id="lstchain-reco-r0-to-dl1-module"></span><h3>lstchain.reco.r0_to_dl1 Module<a class="headerlink" href="#module-lstchain.reco.r0_to_dl1" title="Permalink to this headline">¶</a></h3>
+<p>This is a module for extracting data from simtelarray and observed
+files and calculate image parameters of the events: Hillas parameters,
+timing parameters. They can be stored in HDF5 file. The option of saving the
+full camera image is also available.</p>
+<section id="id2">
+<h4>Functions<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.r0_to_dl1.add_disp_to_parameters_table.html#lstchain.reco.r0_to_dl1.add_disp_to_parameters_table" title="lstchain.reco.r0_to_dl1.add_disp_to_parameters_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_disp_to_parameters_table</span></code></a>(dl1_file, ...)</p></td>
+<td><p>Reconstruct the disp parameters and source position from a DL1 parameters table and write the result in the file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.r0_to_dl1.get_dl1.html#lstchain.reco.r0_to_dl1.get_dl1" title="lstchain.reco.r0_to_dl1.get_dl1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_dl1</span></code></a>(calibrated_event, subarray, telescope_id)</p></td>
+<td><p>Return a DL1ParametersContainer of extracted features from a calibrated event.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.r0_to_dl1.apply_lh_fit.html#lstchain.reco.r0_to_dl1.apply_lh_fit" title="lstchain.reco.r0_to_dl1.apply_lh_fit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_lh_fit</span></code></a>(event, telescope_id, ...)</p></td>
+<td><p>Prepare and performs the extraction of DL1 parameters using a likelihood based reconstruction method.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.r0_to_dl1.r0_to_dl1.html#lstchain.reco.r0_to_dl1.r0_to_dl1" title="lstchain.reco.r0_to_dl1.r0_to_dl1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">r0_to_dl1</span></code></a>([input_filename, output_filename, ...])</p></td>
+<td><p>Chain r0 to dl1 Save the extracted dl1 parameters in output_filename</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.reco.utils">
+<span id="lstchain-reco-utils-module"></span><h3>lstchain.reco.utils Module<a class="headerlink" href="#module-lstchain.reco.utils" title="Permalink to this headline">¶</a></h3>
+<p>Module with auxiliar functions:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Transform AltAz coordinates into Camera coordinates (This should be
+implemented already in ctapipe but I haven’t managed to find how to do it).</p></li>
+<li><p>Calculate source position from disp_norm distance.</p></li>
+<li><p>Calculate disp distance from source position.</p></li>
+</ul>
+</div></blockquote>
+<section id="id3">
+<h4>Functions<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.add_delta_t_key.html#lstchain.reco.utils.add_delta_t_key" title="lstchain.reco.utils.add_delta_t_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_delta_t_key</span></code></a>(events)</p></td>
+<td><p>Adds the time difference with the previous event to a real data dataframe.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.alt_to_theta.html#lstchain.reco.utils.alt_to_theta" title="lstchain.reco.utils.alt_to_theta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">alt_to_theta</span></code></a>(alt)</p></td>
+<td><p>Transforms altitude (angle from the horizon upwards) to theta (angle from z-axis) for simtel array coordinate systems.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.apply_src_r_cut.html#lstchain.reco.utils.apply_src_r_cut" title="lstchain.reco.utils.apply_src_r_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_src_r_cut</span></code></a>(events, src_r_min, src_r_max)</p></td>
+<td><p>apply src_r cut to filter out large off-axis MC events</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.az_to_phi.html#lstchain.reco.utils.az_to_phi" title="lstchain.reco.utils.az_to_phi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">az_to_phi</span></code></a>(az)</p></td>
+<td><p>Transforms azimuth (angle from north towards east) to phi (angle from x-axis towards y-axis) for simtel array coordinate systems.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.camera_to_altaz.html#lstchain.reco.utils.camera_to_altaz" title="lstchain.reco.utils.camera_to_altaz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">camera_to_altaz</span></code></a>(pos_x, pos_y, focal, ...[, ...])</p></td>
+<td><p>Compute camera to Horizontal frame (Altitude-Azimuth system).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.cartesian_to_polar.html#lstchain.reco.utils.cartesian_to_polar" title="lstchain.reco.utils.cartesian_to_polar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cartesian_to_polar</span></code></a>(x, y)</p></td>
+<td><p>Cartesian to polar transformation As a convention, angle is always included in [-pi/2:pi/2].</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.clip_alt.html#lstchain.reco.utils.clip_alt" title="lstchain.reco.utils.clip_alt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clip_alt</span></code></a>(alt)</p></td>
+<td><p>Make sure altitude is not larger than 90 deg (it happens in some MC files for zenith=0), to keep astropy happy</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.compute_alpha.html#lstchain.reco.utils.compute_alpha" title="lstchain.reco.utils.compute_alpha"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_alpha</span></code></a>(data)</p></td>
+<td><p>Computes the angle between the shower major axis and polar angle of the shower centroid</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.compute_theta2.html#lstchain.reco.utils.compute_theta2" title="lstchain.reco.utils.compute_theta2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_theta2</span></code></a>(data, source_position[, ...])</p></td>
+<td><p>Computes a square of theta (angle from z-axis) from camera frame coordinates</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.expand_tel_list.html#lstchain.reco.utils.expand_tel_list" title="lstchain.reco.utils.expand_tel_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_tel_list</span></code></a>(tel_list, max_tels)</p></td>
+<td><p>transform for the telescope list (to turn it into a telescope pattern) un-pack var-length list of tel_ids into fixed-width bit pattern by tel_index</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.extract_source_position.html#lstchain.reco.utils.extract_source_position" title="lstchain.reco.utils.extract_source_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_source_position</span></code></a>(data, ...[, ...])</p></td>
+<td><p>Extract source position from data</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.filter_events.html#lstchain.reco.utils.filter_events" title="lstchain.reco.utils.filter_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_events</span></code></a>(events[, filters, finite_params])</p></td>
+<td><p>Apply data filtering to a pandas dataframe or astropy Table.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_effective_time.html#lstchain.reco.utils.get_effective_time" title="lstchain.reco.utils.get_effective_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_effective_time</span></code></a>(events)</p></td>
+<td><p>Calculate the effective observation time of a set of real data events from a sky observation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_event_pos_in_camera.html#lstchain.reco.utils.get_event_pos_in_camera" title="lstchain.reco.utils.get_event_pos_in_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_event_pos_in_camera</span></code></a>(event, tel)</p></td>
+<td><p>Return the position of the source in the camera frame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_geomagnetic_delta.html#lstchain.reco.utils.get_geomagnetic_delta" title="lstchain.reco.utils.get_geomagnetic_delta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_geomagnetic_delta</span></code></a>(zen, az[, geomag_dec, ...])</p></td>
+<td><p>From a given geomagnetic declination and inclination angle along with telescope zenith and azimuth pointing to get the angle between the geomagnetic field and the shower axis, for a single telescope.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.impute_pointing.html#lstchain.reco.utils.impute_pointing" title="lstchain.reco.utils.impute_pointing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">impute_pointing</span></code></a>(dl1_data[, missing_values])</p></td>
+<td><p>Impute missing pointing values using <cite>linear_imputer</cite> and replace them inplace</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.linear_imputer.html#lstchain.reco.utils.linear_imputer" title="lstchain.reco.utils.linear_imputer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linear_imputer</span></code></a>(y[, missing_values, copy])</p></td>
+<td><p>Replace missing values in y with values from a linear interpolation on their position in the array.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.polar_to_cartesian.html#lstchain.reco.utils.polar_to_cartesian" title="lstchain.reco.utils.polar_to_cartesian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">polar_to_cartesian</span></code></a>(norm, angle, sign)</p></td>
+<td><p>Polar to cartesian transformation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.predict_source_position_in_camera.html#lstchain.reco.utils.predict_source_position_in_camera" title="lstchain.reco.utils.predict_source_position_in_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_source_position_in_camera</span></code></a>(cog_x, ...)</p></td>
+<td><p>Compute the source position in the camera frame</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.radec_to_camera.html#lstchain.reco.utils.radec_to_camera" title="lstchain.reco.utils.radec_to_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">radec_to_camera</span></code></a>(sky_coordinate, obstime, ...)</p></td>
+<td><p>Coordinate transform from sky coordinate to camera coordinates (x, y) in distance</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.reco_source_position_sky.html#lstchain.reco.utils.reco_source_position_sky" title="lstchain.reco.utils.reco_source_position_sky"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reco_source_position_sky</span></code></a>(cog_x, cog_y, ...)</p></td>
+<td><p>Compute the reconstructed source position in the sky</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.rotate.html#lstchain.reco.utils.rotate" title="lstchain.reco.utils.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate</span></code></a>(flat_object[, degree, origin])</p></td>
+<td><p>Rotate 2D object around given axle</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.sky_to_camera.html#lstchain.reco.utils.sky_to_camera" title="lstchain.reco.utils.sky_to_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sky_to_camera</span></code></a>(alt, az, focal, pointing_alt, ...)</p></td>
+<td><p>Coordinate transform from aky position (alt, az) (in angles) to camera coordinates (x, y) in distance.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.source_dx_dy.html#lstchain.reco.utils.source_dx_dy" title="lstchain.reco.utils.source_dx_dy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_dx_dy</span></code></a>(source_pos_x, source_pos_y, ...)</p></td>
+<td><p>Compute the coordinates of the vector (dx, dy) from the center of gravity to the source position</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.source_side.html#lstchain.reco.utils.source_side" title="lstchain.reco.utils.source_side"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_side</span></code></a>(source_pos_x, cog_x)</p></td>
+<td><p>Compute on what side of the center of gravity the source is in the camera.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.reco.volume_reducer">
+<span id="lstchain-reco-volume-reducer-module"></span><h3>lstchain.reco.volume_reducer Module<a class="headerlink" href="#module-lstchain.reco.volume_reducer" title="Permalink to this headline">¶</a></h3>
+<p><strong>TEMPORARY</strong> module with functions to perform a volume reduction to LST data:</p>
+<p>This is a temporary implementation of the ‘tailcut and dilation’ volume reduction method.
+The volume reduction produces reduced waveforms and write them in the DL0 container.</p>
+<p>To date, the <strong>DL0 container is overwritten</strong> if the volume reduction is applied.</p>
+<section id="usage">
+<h4>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h4>
+<p>In the configuration file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;volume_reducer&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;zero_suppression_tailcut_dilation&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="c1"># add here the desired tailcut parameters. See function&#39;s help for default parameters.</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h4>Functions<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.volume_reducer.apply_volume_reduction.html#lstchain.reco.volume_reducer.apply_volume_reduction" title="lstchain.reco.volume_reducer.apply_volume_reduction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_volume_reduction</span></code></a>(event, subarray, config)</p></td>
+<td><p>Checks the volume reduction algorithm defined in the config file, and if not None, it applies to a <strong>calibrated</strong> event the volume reduction method.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.volume_reducer.get_volume_reduction_method.html#lstchain.reco.volume_reducer.get_volume_reduction_method" title="lstchain.reco.volume_reducer.get_volume_reduction_method"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_volume_reduction_method</span></code></a>(config_file)</p></td>
+<td><p>Checks in the configuration file if a volume reduction method has been set.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.volume_reducer.zero_suppression_tailcut_dilation.html#lstchain.reco.volume_reducer.zero_suppression_tailcut_dilation" title="lstchain.reco.volume_reducer.zero_suppression_tailcut_dilation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">zero_suppression_tailcut_dilation</span></code></a>(geom, image)</p></td>
+<td><p>Zero suppression and tailcut cleaning with dilation.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../api/lstchain.mc.sensitivity.sensitivity_gamma_efficiency_real_protons.html" class="btn btn-neutral float-left" title="sensitivity_gamma_efficiency_real_protons" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api/lstchain.reco.disp.disp.html" class="btn btn-neutral float-right" title="disp" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

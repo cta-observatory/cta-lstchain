@@ -1,0 +1,6 @@
+rate
+====
+
+.. currentmodule:: lstchain.mc.mc
+
+.. autofunction:: rate

@@ -1,0 +1,6 @@
+compare_irfs
+============
+
+.. currentmodule:: lstchain.high_level.interpolate
+
+.. autofunction:: compare_irfs

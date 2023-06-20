@@ -1,0 +1,71 @@
+DL1LikelihoodParametersContainer
+================================
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: DL1LikelihoodParametersContainer
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DL1LikelihoodParametersContainer.lhfit_TS
+      ~DL1LikelihoodParametersContainer.lhfit_area
+      ~DL1LikelihoodParametersContainer.lhfit_call_status
+      ~DL1LikelihoodParametersContainer.lhfit_intensity
+      ~DL1LikelihoodParametersContainer.lhfit_intensity_uncertainty
+      ~DL1LikelihoodParametersContainer.lhfit_length
+      ~DL1LikelihoodParametersContainer.lhfit_length_asymmetry
+      ~DL1LikelihoodParametersContainer.lhfit_length_asymmetry_uncertainty
+      ~DL1LikelihoodParametersContainer.lhfit_length_uncertainty
+      ~DL1LikelihoodParametersContainer.lhfit_log_intensity
+      ~DL1LikelihoodParametersContainer.lhfit_phi
+      ~DL1LikelihoodParametersContainer.lhfit_psi
+      ~DL1LikelihoodParametersContainer.lhfit_psi_uncertainty
+      ~DL1LikelihoodParametersContainer.lhfit_r
+      ~DL1LikelihoodParametersContainer.lhfit_ref_time
+      ~DL1LikelihoodParametersContainer.lhfit_ref_time_uncertainty
+      ~DL1LikelihoodParametersContainer.lhfit_t_68
+      ~DL1LikelihoodParametersContainer.lhfit_time_gradient
+      ~DL1LikelihoodParametersContainer.lhfit_time_gradient_uncertainty
+      ~DL1LikelihoodParametersContainer.lhfit_width
+      ~DL1LikelihoodParametersContainer.lhfit_wl
+      ~DL1LikelihoodParametersContainer.lhfit_wl_uncertainty
+      ~DL1LikelihoodParametersContainer.lhfit_x
+      ~DL1LikelihoodParametersContainer.lhfit_x_uncertainty
+      ~DL1LikelihoodParametersContainer.lhfit_y
+      ~DL1LikelihoodParametersContainer.lhfit_y_uncertainty
+      ~DL1LikelihoodParametersContainer.meta
+      ~DL1LikelihoodParametersContainer.prefix
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: lhfit_TS
+   .. autoattribute:: lhfit_area
+   .. autoattribute:: lhfit_call_status
+   .. autoattribute:: lhfit_intensity
+   .. autoattribute:: lhfit_intensity_uncertainty
+   .. autoattribute:: lhfit_length
+   .. autoattribute:: lhfit_length_asymmetry
+   .. autoattribute:: lhfit_length_asymmetry_uncertainty
+   .. autoattribute:: lhfit_length_uncertainty
+   .. autoattribute:: lhfit_log_intensity
+   .. autoattribute:: lhfit_phi
+   .. autoattribute:: lhfit_psi
+   .. autoattribute:: lhfit_psi_uncertainty
+   .. autoattribute:: lhfit_r
+   .. autoattribute:: lhfit_ref_time
+   .. autoattribute:: lhfit_ref_time_uncertainty
+   .. autoattribute:: lhfit_t_68
+   .. autoattribute:: lhfit_time_gradient
+   .. autoattribute:: lhfit_time_gradient_uncertainty
+   .. autoattribute:: lhfit_width
+   .. autoattribute:: lhfit_wl
+   .. autoattribute:: lhfit_wl_uncertainty
+   .. autoattribute:: lhfit_x
+   .. autoattribute:: lhfit_x_uncertainty
+   .. autoattribute:: lhfit_y
+   .. autoattribute:: lhfit_y_uncertainty
+   .. autoattribute:: meta
+   .. autoattribute:: prefix

@@ -1,0 +1,6 @@
+remove_duplicated_events
+========================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: remove_duplicated_events

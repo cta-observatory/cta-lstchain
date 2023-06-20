@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IRFFITSWriter &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FitIntensityScan" href="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.html" />
+    <link rel="prev" title="FITSIndexWriter" href="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/tools/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/tools/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_calibration_file">lstchain.tools.lstchain_create_calibration_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_file">lstchain.tools.lstchain_create_dl3_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_index_files">lstchain.tools.lstchain_create_dl3_index_files Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_irf_files">lstchain.tools.lstchain_create_irf_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_fit_intensity_scan">lstchain.tools.lstchain_fit_intensity_scan Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+      <li class="breadcrumb-item active">IRFFITSWriter</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="irffitswriter">
+<h1>IRFFITSWriter<a class="headerlink" href="#irffitswriter" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.tools.lstchain_create_irf_files.</span></span><span class="sig-name descname"><span class="pre">IRFFITSWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Any" title="(in Python v3.6)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.tool.Tool.html#ctapipe.core.tool.Tool" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ctapipe.core.tool.Tool</span></code></a></p>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.aliases" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.aliases"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aliases</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.classes" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.classes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">classes</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.description" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">description</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_alpha" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_alpha"><code class="xref py py-obj docutils literal notranslate"><span class="pre">energy_dependent_alpha</span></code></a></p></td>
+<td><p>True for applying energy-dependent alpha cuts</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_gh" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_gh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">energy_dependent_gh</span></code></a></p></td>
+<td><p>True for applying energy-dependent gammaness cuts</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_theta" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_theta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">energy_dependent_theta</span></code></a></p></td>
+<td><p>True for applying energy-dependent theta cuts</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.example" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.example"><code class="xref py py-obj docutils literal notranslate"><span class="pre">example</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.flags" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.flags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flags</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_electron_dl2" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_electron_dl2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_electron_dl2</span></code></a></p></td>
+<td><p>Input MC electron DL2 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_gamma_dl2" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_gamma_dl2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_gamma_dl2</span></code></a></p></td>
+<td><p>Input MC gamma DL2 file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_proton_dl2" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_proton_dl2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_proton_dl2</span></code></a></p></td>
+<td><p>Input MC proton DL2 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.irf_obs_time" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.irf_obs_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">irf_obs_time</span></code></a></p></td>
+<td><p>Observation time for IRF in hours</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.name" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.output_irf_file" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.output_irf_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_irf_file</span></code></a></p></td>
+<td><p>IRF output file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.overwrite" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.overwrite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overwrite</span></code></a></p></td>
+<td><p>If True, overwrites existing output file without asking</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.point_like" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.point_like"><code class="xref py py-obj docutils literal notranslate"><span class="pre">point_like</span></code></a></p></td>
+<td><p>True for point_like IRF, False for Full Enclosure</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.source_dep" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.source_dep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_dep</span></code></a></p></td>
+<td><p>True for source-dependent analysis</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.finish" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.finish"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finish</span></code></a>()</p></td>
+<td><p>Finish up.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.setup" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>()</p></td>
+<td><p>Set up the tool.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.start" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.start"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start</span></code></a>()</p></td>
+<td><p>Main function of the tool.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{('g',</span> <span class="pre">'input-gamma-dl2'):</span> <span class="pre">'IRFFITSWriter.input_gamma_dl2',</span> <span class="pre">('p',</span> <span class="pre">'input-proton-dl2'):</span> <span class="pre">'IRFFITSWriter.input_proton_dl2',</span> <span class="pre">('e',</span> <span class="pre">'input-electron-dl2'):</span> <span class="pre">'IRFFITSWriter.input_electron_dl2',</span> <span class="pre">('o',</span> <span class="pre">'output-irf-file'):</span> <span class="pre">'IRFFITSWriter.output_irf_file',</span> <span class="pre">'irf-obs-time':</span> <span class="pre">'IRFFITSWriter.irf_obs_time',</span> <span class="pre">'global-gh-cut':</span> <span class="pre">'DL3Cuts.global_gh_cut',</span> <span class="pre">'gh-efficiency':</span> <span class="pre">'DL3Cuts.gh_efficiency',</span> <span class="pre">'theta-containment':</span> <span class="pre">'DL3Cuts.theta_containment',</span> <span class="pre">'global-theta-cut':</span> <span class="pre">'DL3Cuts.global_theta_cut',</span> <span class="pre">'alpha-containment':</span> <span class="pre">'DL3Cuts.alpha_containment',</span> <span class="pre">'global-alpha-cut':</span> <span class="pre">'DL3Cuts.global_alpha_cut',</span> <span class="pre">'allowed-tels':</span> <span class="pre">'DL3Cuts.allowed_tels',</span> <span class="pre">'overwrite':</span> <span class="pre">'IRFFITSWriter.overwrite'}</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.aliases" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.classes">
+<span class="sig-name descname"><span class="pre">classes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[&lt;class</span> <span class="pre">'lstchain.io.event_selection.EventSelector'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.io.event_selection.DL3Cuts'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.io.event_selection.DataBinning'&gt;]</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.classes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/trait_types.html#traitlets.Unicode" title="(in traitlets v5.9)"><span class="pre">traitlets.traitlets.Unicode</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\nCreate</span> <span class="pre">FITS</span> <span class="pre">file</span> <span class="pre">for</span> <span class="pre">IRFs</span> <span class="pre">from</span> <span class="pre">given</span> <span class="pre">MC</span> <span class="pre">DL2</span> <span class="pre">files</span> <span class="pre">and</span> <span class="pre">selection</span> <span class="pre">cuts\ntaken</span> <span class="pre">either</span> <span class="pre">from</span> <span class="pre">command-line</span> <span class="pre">arguments</span> <span class="pre">or</span> <span class="pre">a</span> <span class="pre">config</span> <span class="pre">file.\n\nMC</span> <span class="pre">gamma</span> <span class="pre">files</span> <span class="pre">can</span> <span class="pre">be</span> <span class="pre">point_like</span> <span class="pre">or</span> <span class="pre">diffuse.\nIRFs</span> <span class="pre">can</span> <span class="pre">be</span> <span class="pre">point_like</span> <span class="pre">or</span> <span class="pre">Full</span> <span class="pre">Enclosure.\nBackground</span> <span class="pre">HDU</span> <span class="pre">maybe</span> <span class="pre">added</span> <span class="pre">if</span> <span class="pre">proton</span> <span class="pre">and</span> <span class="pre">electron</span> <span class="pre">MC</span> <span class="pre">are</span> <span class="pre">provided.\n\nChange</span> <span class="pre">the</span> <span class="pre">selection</span> <span class="pre">parameters</span> <span class="pre">as</span> <span class="pre">need</span> <span class="pre">be</span> <span class="pre">using</span> <span class="pre">the</span> <span class="pre">aliases.\nThe</span> <span class="pre">default</span> <span class="pre">values</span> <span class="pre">are</span> <span class="pre">written</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">EventSelector,</span> <span class="pre">DL3Cuts</span> <span class="pre">and\nDataBinning</span> <span class="pre">Component</span> <span class="pre">and</span> <span class="pre">also</span> <span class="pre">given</span> <span class="pre">in</span> <span class="pre">some</span> <span class="pre">example</span> <span class="pre">configs</span> <span class="pre">in</span> <span class="pre">docs/examples/\n\nBy</span> <span class="pre">default,</span> <span class="pre">the</span> <span class="pre">Tool</span> <span class="pre">uses</span> <span class="pre">global</span> <span class="pre">cuts</span> <span class="pre">for</span> <span class="pre">gammaness</span> <span class="pre">and</span> <span class="pre">theta.\n\nFor</span> <span class="pre">using</span> <span class="pre">energy-dependent</span> <span class="pre">gammaness</span> <span class="pre">cuts,</span> <span class="pre">use</span> <span class="pre">the</span> <span class="pre">argument</span> <span class="pre">gh_efficiency\nfor</span> <span class="pre">passing</span> <span class="pre">the</span> <span class="pre">gamma</span> <span class="pre">efficiency</span> <span class="pre">value</span> <span class="pre">to</span> <span class="pre">calculate</span> <span class="pre">the</span> <span class="pre">gammaness</span> <span class="pre">cuts</span> <span class="pre">for\neach</span> <span class="pre">reco</span> <span class="pre">energy</span> <span class="pre">bin</span> <span class="pre">and</span> <span class="pre">the</span> <span class="pre">flag</span> <span class="pre">energy-dependent-gh.\nSimilarly,</span> <span class="pre">for</span> <span class="pre">energy-dependent</span> <span class="pre">theta</span> <span class="pre">cuts,</span> <span class="pre">use</span> <span class="pre">the</span> <span class="pre">argument\ntheta_containment</span> <span class="pre">and</span> <span class="pre">the</span> <span class="pre">flag</span> <span class="pre">energy-dependent-theta.\n\nThe</span> <span class="pre">energy-dependent</span> <span class="pre">cuts</span> <span class="pre">are</span> <span class="pre">stored</span> <span class="pre">as</span> <span class="pre">HDUs</span> <span class="pre">-</span> <span class="pre">GH_CUTS</span> <span class="pre">and</span> <span class="pre">RAD_MAX,\nand</span> <span class="pre">saved</span> <span class="pre">with</span> <span class="pre">other</span> <span class="pre">IRFs.\n\nTo</span> <span class="pre">use</span> <span class="pre">a</span> <span class="pre">separate</span> <span class="pre">config</span> <span class="pre">file</span> <span class="pre">for</span> <span class="pre">providing</span> <span class="pre">the</span> <span class="pre">selection</span> <span class="pre">parameters,\ncopy</span> <span class="pre">and</span> <span class="pre">append</span> <span class="pre">the</span> <span class="pre">relevant</span> <span class="pre">example</span> <span class="pre">config</span> <span class="pre">files,</span> <span class="pre">into</span> <span class="pre">a</span> <span class="pre">custom</span> <span class="pre">config</span> <span class="pre">file.\n\nFor</span> <span class="pre">source-dependent</span> <span class="pre">analysis,</span> <span class="pre">alpha</span> <span class="pre">cut</span> <span class="pre">can</span> <span class="pre">be</span> <span class="pre">used</span> <span class="pre">instead</span> <span class="pre">of</span> <span class="pre">theta</span> <span class="pre">cut.\nIf</span> <span class="pre">you</span> <span class="pre">want</span> <span class="pre">to</span> <span class="pre">generate</span> <span class="pre">source-dependent</span> <span class="pre">IRFs,</span> <span class="pre">source-dep</span> <span class="pre">flag</span> <span class="pre">should</span> <span class="pre">be</span> <span class="pre">activated.\nThe</span> <span class="pre">global</span> <span class="pre">alpha</span> <span class="pre">cut</span> <span class="pre">used</span> <span class="pre">to</span> <span class="pre">generate</span> <span class="pre">IRFs</span> <span class="pre">is</span> <span class="pre">stored</span> <span class="pre">as</span> <span class="pre">AL_CUT</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">HDU</span> <span class="pre">header.\n\n'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_alpha">
+<span class="sig-name descname"><span class="pre">energy_dependent_alpha</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>True for applying energy-dependent alpha cuts</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_gh">
+<span class="sig-name descname"><span class="pre">energy_dependent_gh</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_gh" title="Permalink to this definition">¶</a></dt>
+<dd><p>True for applying energy-dependent gammaness cuts</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_theta">
+<span class="sig-name descname"><span class="pre">energy_dependent_theta</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.energy_dependent_theta" title="Permalink to this definition">¶</a></dt>
+<dd><p>True for applying energy-dependent theta cuts</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.example">
+<span class="sig-name descname"><span class="pre">example</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">To</span> <span class="pre">generate</span> <span class="pre">IRFs</span> <span class="pre">from</span> <span class="pre">MC</span> <span class="pre">gamma</span> <span class="pre">only,</span> <span class="pre">using</span> <span class="pre">default</span> <span class="pre">cuts/binning:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_irf_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-g</span> <span class="pre">/path/to/DL2_MC_gamma_file.h5\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">/path/to/irf.fits.gz\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--point-like</span> <span class="pre">(Only</span> <span class="pre">for</span> <span class="pre">point_like</span> <span class="pre">IRFs)\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--overwrite\n\n</span>&#160;&#160;&#160; <span class="pre">Or</span> <span class="pre">to</span> <span class="pre">generate</span> <span class="pre">all</span> <span class="pre">4</span> <span class="pre">IRFs,</span> <span class="pre">using</span> <span class="pre">default</span> <span class="pre">cuts/binning:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_irf_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-g</span> <span class="pre">/path/to/DL2_MC_gamma_file.h5\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-p</span> <span class="pre">/path/to/DL2_MC_proton_file.h5\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-e</span> <span class="pre">/path/to/DL2_MC_electron_file.h5\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">/path/to/irf.fits.gz\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--point-like</span> <span class="pre">(Only</span> <span class="pre">for</span> <span class="pre">point_like</span> <span class="pre">IRFs)\n\n</span>&#160;&#160;&#160; <span class="pre">Or</span> <span class="pre">use</span> <span class="pre">a</span> <span class="pre">config</span> <span class="pre">file</span> <span class="pre">for</span> <span class="pre">cuts</span> <span class="pre">and</span> <span class="pre">binning</span> <span class="pre">information:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_irf_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-g</span> <span class="pre">/path/to/DL2_MC_gamma_file.h5\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">/path/to/irf.fits.gz\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--point-like</span> <span class="pre">(Only</span> <span class="pre">for</span> <span class="pre">point_like</span> <span class="pre">IRFs)\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--config</span> <span class="pre">/path/to/config.json\n\n</span>&#160;&#160;&#160; <span class="pre">Or</span> <span class="pre">pass</span> <span class="pre">the</span> <span class="pre">selection</span> <span class="pre">cuts</span> <span class="pre">from</span> <span class="pre">command-line:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_irf_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-g</span> <span class="pre">/path/to/DL2_MC_gamma_file.h5\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">/path/to/irf.fits.gz\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--point-like</span> <span class="pre">(Only</span> <span class="pre">for</span> <span class="pre">point_like</span> <span class="pre">IRFs)\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--global-gh-cut</span> <span class="pre">0.9\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--global-theta-cut</span> <span class="pre">0.2\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--irf-obs-time</span> <span class="pre">50\n\n</span>&#160;&#160;&#160; <span class="pre">Or</span> <span class="pre">use</span> <span class="pre">energy-dependent</span> <span class="pre">cuts</span> <span class="pre">based</span> <span class="pre">on</span> <span class="pre">a</span> <span class="pre">gamma</span> <span class="pre">efficiency:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_irf_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-g</span> <span class="pre">/path/to/DL2_MC_gamma_file.h5\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">/path/to/irf.fits.gz\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--point-like</span> <span class="pre">(Only</span> <span class="pre">for</span> <span class="pre">point_like</span> <span class="pre">IRFs)\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--energy-dependent-gh\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--energy-dependent-theta\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--gh-efficiency</span> <span class="pre">0.95\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--theta-containment</span> <span class="pre">0.68\n\n</span>&#160;&#160;&#160; <span class="pre">Or</span> <span class="pre">generate</span> <span class="pre">source-dependent</span> <span class="pre">IRFs\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_irf_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-g</span> <span class="pre">/path/to/DL2_MC_gamma_file.h5\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">/path/to/irf.fits.gz\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--point-like\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--global-gh-cut</span> <span class="pre">0.9\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--global-alpha-cut</span> <span class="pre">10\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--source-dep\n\n</span>&#160;&#160;&#160; <span class="pre">'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.example" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.flags">
+<span class="sig-name descname"><span class="pre">flags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/config-api.html#traitlets.config.Config" title="(in traitlets v5.9)"><span class="pre">traitlets.config.loader.Config</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'energy-dependent-alpha':</span> <span class="pre">({'IRFFITSWriter':</span> <span class="pre">{'energy_dependent_alpha':</span> <span class="pre">True}},</span> <span class="pre">'Uses</span> <span class="pre">energy-dependent</span> <span class="pre">cuts</span> <span class="pre">for</span> <span class="pre">alpha'),</span> <span class="pre">'energy-dependent-gh':</span> <span class="pre">({'IRFFITSWriter':</span> <span class="pre">{'energy_dependent_gh':</span> <span class="pre">True}},</span> <span class="pre">'Uses</span> <span class="pre">energy-dependent</span> <span class="pre">cuts</span> <span class="pre">for</span> <span class="pre">gammaness'),</span> <span class="pre">'energy-dependent-theta':</span> <span class="pre">({'IRFFITSWriter':</span> <span class="pre">{'energy_dependent_theta':</span> <span class="pre">True}},</span> <span class="pre">'Uses</span> <span class="pre">energy-dependent</span> <span class="pre">cuts</span> <span class="pre">for</span> <span class="pre">theta'),</span> <span class="pre">'overwrite':</span> <span class="pre">({'IRFFITSWriter':</span> <span class="pre">{'overwrite':</span> <span class="pre">True}},</span> <span class="pre">'overwrites</span> <span class="pre">output</span> <span class="pre">file'),</span> <span class="pre">'point-like':</span> <span class="pre">({'IRFFITSWriter':</span> <span class="pre">{'point_like':</span> <span class="pre">True}},</span> <span class="pre">'Point</span> <span class="pre">like</span> <span class="pre">IRFs</span> <span class="pre">will</span> <span class="pre">be</span> <span class="pre">produced,</span> <span class="pre">otherwise</span> <span class="pre">Full</span> <span class="pre">Enclosure'),</span> <span class="pre">'source-dep':</span> <span class="pre">({'IRFFITSWriter':</span> <span class="pre">{'source_dep':</span> <span class="pre">True}},</span> <span class="pre">'Source-dependent</span> <span class="pre">analysis</span> <span class="pre">will</span> <span class="pre">be</span> <span class="pre">performed')}</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_electron_dl2">
+<span class="sig-name descname"><span class="pre">input_electron_dl2</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_electron_dl2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Input MC electron DL2 file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_gamma_dl2">
+<span class="sig-name descname"><span class="pre">input_gamma_dl2</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_gamma_dl2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Input MC gamma DL2 file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_proton_dl2">
+<span class="sig-name descname"><span class="pre">input_proton_dl2</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.input_proton_dl2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Input MC proton DL2 file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.irf_obs_time">
+<span class="sig-name descname"><span class="pre">irf_obs_time</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.irf_obs_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observation time for IRF in hours</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/trait_types.html#traitlets.Unicode" title="(in traitlets v5.9)"><span class="pre">traitlets.traitlets.Unicode</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'IRFFITSWriter'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.output_irf_file">
+<span class="sig-name descname"><span class="pre">output_irf_file</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.output_irf_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>IRF output file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.overwrite">
+<span class="sig-name descname"><span class="pre">overwrite</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.overwrite" title="Permalink to this definition">¶</a></dt>
+<dd><p>If True, overwrites existing output file without asking</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.point_like">
+<span class="sig-name descname"><span class="pre">point_like</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.point_like" title="Permalink to this definition">¶</a></dt>
+<dd><p>True for point_like IRF, False for Full Enclosure</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.source_dep">
+<span class="sig-name descname"><span class="pre">source_dep</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.source_dep" title="Permalink to this definition">¶</a></dt>
+<dd><p>True for source-dependent analysis</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.finish">
+<span class="sig-name descname"><span class="pre">finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.finish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finish up.</p>
+<p>This is called automatically after <cite>Tool.start</cite> when <cite>Tool.run</cite> is called.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up the tool.</p>
+<p>This method runs after the configuration and command line options
+have been parsed.</p>
+<p>Here the tool should construct all <code class="docutils literal notranslate"><span class="pre">Components</span></code>, open files, etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function of the tool.</p>
+<p>This is automatically called after <cite>Tool.initialize</cite> when <cite>Tool.run</cite> is called.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.html" class="btn btn-neutral float-left" title="FITSIndexWriter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.html" class="btn btn-neutral float-right" title="FitIntensityScan" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

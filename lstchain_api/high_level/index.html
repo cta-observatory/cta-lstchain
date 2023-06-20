@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>High Level Analysis (high_level) &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../../_static/custom.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="add_icrs_position_params" href="../../api/lstchain.high_level.hdu_table.add_icrs_position_params.html" />
+    <link rel="prev" title="write_error_page" href="../../api/lstchain.datachecks.dl1_checker.write_error_page.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">High Level Analysis (<cite>high_level</cite>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.high_level.hdu_table">lstchain.high_level.hdu_table Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.high_level.interpolate">lstchain.high_level.interpolate Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.high_level.significance_calculation">lstchain.high_level.significance_calculation Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Docs</a></li>
+      <li class="breadcrumb-item active">High Level Analysis (<cite>high_level</cite>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lstchain_api/high_level/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="high-level-analysis-high-level">
+<span id="high-level"></span><h1>High Level Analysis (<cite>high_level</cite>)<a class="headerlink" href="#high-level-analysis-high-level" title="Permalink to this headline">¶</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Library containing the functions and classes to perform LST high level analysis.</p>
+<section id="module-lstchain.high_level.hdu_table">
+<span id="lstchain-high-level-hdu-table-module"></span><h3>lstchain.high_level.hdu_table Module<a class="headerlink" href="#module-lstchain.high_level.hdu_table" title="Permalink to this headline">¶</a></h3>
+<p>Module containing functions to create DL3 event lists and DL3 index files,
+following recommendations from GADF v0.3</p>
+<p>For reference to the documentation of GADF v0.3 follow various sections in,
+<a class="reference external" href="https://gamma-astro-data-formats.readthedocs.io/en/latest/">https://gamma-astro-data-formats.readthedocs.io/en/latest/</a></p>
+<section id="functions">
+<h4>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.add_icrs_position_params.html#lstchain.high_level.hdu_table.add_icrs_position_params" title="lstchain.high_level.hdu_table.add_icrs_position_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_icrs_position_params</span></code></a>(data, source_pos, ...)</p></td>
+<td><p>Updating data with ICRS position values of reconstructed positions in RA, DEC coordinates and add a column, theta, on separation from the true source position.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.create_event_list.html#lstchain.high_level.hdu_table.create_event_list" title="lstchain.high_level.hdu_table.create_event_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_event_list</span></code></a>(data, run_number, ...)</p></td>
+<td><p>Create the BinTableHDUs for storing DL3 event data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.create_hdu_index_hdu.html#lstchain.high_level.hdu_table.create_hdu_index_hdu" title="lstchain.high_level.hdu_table.create_hdu_index_hdu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_hdu_index_hdu</span></code></a>(file_list, hdu_index_file)</p></td>
+<td><p>Create the hdu index table and write it to the given file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.create_obs_index_hdu.html#lstchain.high_level.hdu_table.create_obs_index_hdu" title="lstchain.high_level.hdu_table.create_obs_index_hdu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_obs_index_hdu</span></code></a>(file_list, ...)</p></td>
+<td><p>Create the obs index table and write it to the given file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.fill_reco_altaz_w_expected_pos.html#lstchain.high_level.hdu_table.fill_reco_altaz_w_expected_pos" title="lstchain.high_level.hdu_table.fill_reco_altaz_w_expected_pos"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_reco_altaz_w_expected_pos</span></code></a>(data)</p></td>
+<td><p>Fill the reconstructed alt, az positions with the expected source positions, for source-dependent analysis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.get_timing_params.html#lstchain.high_level.hdu_table.get_timing_params" title="lstchain.high_level.hdu_table.get_timing_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_timing_params</span></code></a>(data[, epoch])</p></td>
+<td><p>Retrieve some timing parameters for the DL3 event list as a dict and also have a common time_utc object for use in other functions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.get_pointing_params.html#lstchain.high_level.hdu_table.get_pointing_params" title="lstchain.high_level.hdu_table.get_pointing_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_pointing_params</span></code></a>(data, source_pos, time_utc)</p></td>
+<td><p>Convert the telescope pointing position for the first event from AltAz into ICRS frame of reference.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.get_timing_params.html#lstchain.high_level.hdu_table.get_timing_params" title="lstchain.high_level.hdu_table.get_timing_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_timing_params</span></code></a>(data[, epoch])</p></td>
+<td><p>Retrieve some timing parameters for the DL3 event list as a dict and also have a common time_utc object for use in other functions.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.high_level.interpolate">
+<span id="lstchain-high-level-interpolate-module"></span><h3>lstchain.high_level.interpolate Module<a class="headerlink" href="#module-lstchain.high_level.interpolate" title="Permalink to this headline">¶</a></h3>
+<section id="id1">
+<h4>Functions<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.check_in_delaunay_triangle.html#lstchain.high_level.interpolate.check_in_delaunay_triangle" title="lstchain.high_level.interpolate.check_in_delaunay_triangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_in_delaunay_triangle</span></code></a>(irfs, data_params)</p></td>
+<td><p>From a given list of IRFs as grid points used for interpolation, retrieve the Delaunay triangulation list of IRFs, where the simplex includes the target points in data_params.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.compare_irfs.html#lstchain.high_level.interpolate.compare_irfs" title="lstchain.high_level.interpolate.compare_irfs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_irfs</span></code></a>(irfs)</p></td>
+<td><p>Compare the given list of IRFs with data binning and relevant metadata values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.get_nearest_az_node.html#lstchain.high_level.interpolate.get_nearest_az_node" title="lstchain.high_level.interpolate.get_nearest_az_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_nearest_az_node</span></code></a>(irf_params_sel, index, ...)</p></td>
+<td><p>Check to see if a given IRF node overlaps with another node, in the interpolation parameter space, and to select based on the azimuth angle, the nearest node to the target.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interp_params.html#lstchain.high_level.interpolate.interp_params" title="lstchain.high_level.interpolate.interp_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_params</span></code></a>(params_list, data)</p></td>
+<td><p>From a given list of angular parameters, to be used for interpolation, take values from a given data dict.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interpolate_al_cuts.html#lstchain.high_level.interpolate.interpolate_al_cuts" title="lstchain.high_level.interpolate.interpolate_al_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_al_cuts</span></code></a>(al_cuts, grid_points, ...)</p></td>
+<td><p>Interpolates a grid of AL_CUTS tables to a target-point.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interpolate_gh_cuts.html#lstchain.high_level.interpolate.interpolate_gh_cuts" title="lstchain.high_level.interpolate.interpolate_gh_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_gh_cuts</span></code></a>(gh_cuts, grid_points, ...)</p></td>
+<td><p>Interpolates a grid of GH_CUTS tables to a target-point.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interpolate_irf.html#lstchain.high_level.interpolate.interpolate_irf" title="lstchain.high_level.interpolate.interpolate_irf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_irf</span></code></a>(irfs, data_pars[, interp_method])</p></td>
+<td><p>Using pyirf functions with a list of IRFs and parameters to compare with data, to interpolate over in a selected interpolation parameter space.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.load_irf_grid.html#lstchain.high_level.interpolate.load_irf_grid" title="lstchain.high_level.interpolate.load_irf_grid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_irf_grid</span></code></a>(irfs, extname, interp_col[, ...])</p></td>
+<td><p>From a given list of IRFs, load the list of IRF data values that can be interpolated.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.high_level.significance_calculation">
+<span id="lstchain-high-level-significance-calculation-module"></span><h3>lstchain.high_level.significance_calculation Module<a class="headerlink" href="#module-lstchain.high_level.significance_calculation" title="Permalink to this headline">¶</a></h3>
+<p>Collection of core analysis methods</p>
+<section id="id2">
+<h4>Functions<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.significance_calculation.analyze_on_off.html#lstchain.high_level.significance_calculation.analyze_on_off" title="lstchain.high_level.significance_calculation.analyze_on_off"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyze_on_off</span></code></a>(config)</p></td>
+<td><p>Extracts the theta2 plot of a dataset taken with ON/OFF observations</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.significance_calculation.analyze_wobble.html#lstchain.high_level.significance_calculation.analyze_wobble" title="lstchain.high_level.significance_calculation.analyze_wobble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyze_wobble</span></code></a>(config)</p></td>
+<td><p>Extracts the theta2 plot of a dataset taken with wobble observations</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.significance_calculation.setup_logging.html#lstchain.high_level.significance_calculation.setup_logging" title="lstchain.high_level.significance_calculation.setup_logging"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup_logging</span></code></a>([verbosity])</p></td>
+<td><p>Setup logger console and file descriptors</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../api/lstchain.datachecks.dl1_checker.write_error_page.html" class="btn btn-neutral float-left" title="write_error_page" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api/lstchain.high_level.hdu_table.add_icrs_position_params.html" class="btn btn-neutral float-right" title="add_icrs_position_params" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

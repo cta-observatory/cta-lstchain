@@ -1,0 +1,6 @@
+tune_nsb_on_waveform
+====================
+
+.. currentmodule:: lstchain.image.modifier
+
+.. autofunction:: tune_nsb_on_waveform

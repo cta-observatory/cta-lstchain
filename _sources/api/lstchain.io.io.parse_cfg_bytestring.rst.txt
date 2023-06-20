@@ -1,0 +1,6 @@
+parse_cfg_bytestring
+====================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: parse_cfg_bytestring

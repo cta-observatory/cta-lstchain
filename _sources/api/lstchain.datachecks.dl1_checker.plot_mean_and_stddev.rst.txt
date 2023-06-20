@@ -1,0 +1,6 @@
+plot_mean_and_stddev
+====================
+
+.. currentmodule:: lstchain.datachecks.dl1_checker
+
+.. autofunction:: plot_mean_and_stddev

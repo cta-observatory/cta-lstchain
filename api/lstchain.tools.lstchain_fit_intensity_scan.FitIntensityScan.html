@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitIntensityScan &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Visualization (visualization)" href="../lstchain_api/visualization/index.html" />
+    <link rel="prev" title="IRFFITSWriter" href="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/tools/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/tools/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_calibration_file">lstchain.tools.lstchain_create_calibration_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_file">lstchain.tools.lstchain_create_dl3_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_index_files">lstchain.tools.lstchain_create_dl3_index_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_irf_files">lstchain.tools.lstchain_create_irf_files Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_fit_intensity_scan">lstchain.tools.lstchain_fit_intensity_scan Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+      <li class="breadcrumb-item active">FitIntensityScan</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fitintensityscan">
+<h1>FitIntensityScan<a class="headerlink" href="#fitintensityscan" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.tools.lstchain_fit_intensity_scan.</span></span><span class="sig-name descname"><span class="pre">FitIntensityScan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Any" title="(in Python v3.6)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.tool.Tool.html#ctapipe.core.tool.Tool" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ctapipe.core.tool.Tool</span></code></a></p>
+<p>Tool that generates a HDF5 file with the results of the fit
+of the signal of an intensity scan (filter scan in the case of LST), this is useful to estimate the
+quadratic noise term to include in the standard F-factor formula</p>
+<p>To be run with
+lstchain_fit_intensity_scan –config config.json</p>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.aliases" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.aliases"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aliases</span></code></a></p></td>
+<td><p>An instance of a Python dict.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.description" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">description</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.fit_initialization" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.fit_initialization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit_initialization</span></code></a></p></td>
+<td><p>Fit parameters initalization [gain (ADC/pe), B term] for HG and LG</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.fractional_variance_error" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.fractional_variance_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fractional_variance_error</span></code></a></p></td>
+<td><p>Constant fractional error assumed for the y fit coordinate (variance)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.gain_channels" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.gain_channels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gain_channels</span></code></a></p></td>
+<td><p>Gain channel to process (HG=0, LG=1)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.input_dir" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.input_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_dir</span></code></a></p></td>
+<td><p>directory with the input files</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.input_prefix" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.input_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_prefix</span></code></a></p></td>
+<td><p>Prefix to select calibration files to fit</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.name" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.output_path" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.output_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_path</span></code></a></p></td>
+<td><p>Path the output hdf5 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.plot_path" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.plot_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_path</span></code></a></p></td>
+<td><p>Path to pdf file with check plots</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.run_list" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.run_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_list</span></code></a></p></td>
+<td><p>List of runs</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.signal_range" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.signal_range"><code class="xref py py-obj docutils literal notranslate"><span class="pre">signal_range</span></code></a></p></td>
+<td><p>Signal range to include in the fit for [HG,LG] (camera median in [ADC])</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.squared_excess_noise_factor" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.squared_excess_noise_factor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">squared_excess_noise_factor</span></code></a></p></td>
+<td><p>Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.sub_run" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.sub_run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sub_run</span></code></a></p></td>
+<td><p>Sub run number to process</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.finish" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.finish"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finish</span></code></a>()</p></td>
+<td><p>write fit results in h5 file and the check-plots in pdf file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.setup" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>()</p></td>
+<td><p>Set up the tool.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.start" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.start"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start</span></code></a>()</p></td>
+<td><p>loop to fit each pixel</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.aliases" title="Permalink to this definition">¶</a></dt>
+<dd><p>An instance of a Python dict.</p>
+<p>One or more traits can be passed to the constructor
+to validate the keys and/or values of the dict.
+If you need more detailed validation,
+you may use a custom validator method.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 5.0: </span>Added key_trait for validating dict keys.</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 5.0: </span>Deprecated ambiguous <code class="docutils literal notranslate"><span class="pre">trait</span></code>, <code class="docutils literal notranslate"><span class="pre">traits</span></code> args in favor of <code class="docutils literal notranslate"><span class="pre">value_trait</span></code>, <code class="docutils literal notranslate"><span class="pre">per_key_traits</span></code>.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/trait_types.html#traitlets.Unicode" title="(in traitlets v5.9)"><span class="pre">traitlets.traitlets.Unicode</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Tool</span> <span class="pre">to</span> <span class="pre">fit</span> <span class="pre">an</span> <span class="pre">intensity</span> <span class="pre">scan'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.fit_initialization">
+<span class="sig-name descname"><span class="pre">fit_initialization</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.fit_initialization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit parameters initalization [gain (ADC/pe), B term] for HG and LG</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.fractional_variance_error">
+<span class="sig-name descname"><span class="pre">fractional_variance_error</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.fractional_variance_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constant fractional error assumed for the y fit coordinate (variance)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.gain_channels">
+<span class="sig-name descname"><span class="pre">gain_channels</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.gain_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gain channel to process (HG=0, LG=1)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.input_dir">
+<span class="sig-name descname"><span class="pre">input_dir</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.input_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>directory with the input files</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.input_prefix">
+<span class="sig-name descname"><span class="pre">input_prefix</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.input_prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prefix to select calibration files to fit</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/trait_types.html#traitlets.Unicode" title="(in traitlets v5.9)"><span class="pre">traitlets.traitlets.Unicode</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FitFilterScan'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.output_path">
+<span class="sig-name descname"><span class="pre">output_path</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.output_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path the output hdf5 file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.plot_path">
+<span class="sig-name descname"><span class="pre">plot_path</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.plot_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to pdf file with check plots</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.run_list">
+<span class="sig-name descname"><span class="pre">run_list</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.run_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of runs</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.signal_range">
+<span class="sig-name descname"><span class="pre">signal_range</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.signal_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signal range to include in the fit for [HG,LG] (camera median in [ADC])</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.squared_excess_noise_factor">
+<span class="sig-name descname"><span class="pre">squared_excess_noise_factor</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.squared_excess_noise_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.sub_run">
+<span class="sig-name descname"><span class="pre">sub_run</span></span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.sub_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sub run number to process</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.finish">
+<span class="sig-name descname"><span class="pre">finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.finish" title="Permalink to this definition">¶</a></dt>
+<dd><p>write fit results in h5 file and the check-plots in pdf file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up the tool.</p>
+<p>This method runs after the configuration and command line options
+have been parsed.</p>
+<p>Here the tool should construct all <code class="docutils literal notranslate"><span class="pre">Components</span></code>, open files, etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>loop to fit each pixel</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.html" class="btn btn-neutral float-left" title="IRFFITSWriter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../lstchain_api/visualization/index.html" class="btn btn-neutral float-right" title="Visualization (visualization)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

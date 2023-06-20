@@ -1,0 +1,6 @@
+get_nearest_az_node
+===================
+
+.. currentmodule:: lstchain.high_level.interpolate
+
+.. autofunction:: get_nearest_az_node

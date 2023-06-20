@@ -1,0 +1,47 @@
+FITSIndexWriter
+===============
+
+.. currentmodule:: lstchain.tools.lstchain_create_dl3_index_files
+
+.. autoclass:: FITSIndexWriter
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~FITSIndexWriter.aliases
+      ~FITSIndexWriter.description
+      ~FITSIndexWriter.example
+      ~FITSIndexWriter.file_pattern
+      ~FITSIndexWriter.flags
+      ~FITSIndexWriter.input_dl3_dir
+      ~FITSIndexWriter.name
+      ~FITSIndexWriter.output_index_path
+      ~FITSIndexWriter.overwrite
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~FITSIndexWriter.finish
+      ~FITSIndexWriter.setup
+      ~FITSIndexWriter.start
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: aliases
+   .. autoattribute:: description
+   .. autoattribute:: example
+   .. autoattribute:: file_pattern
+   .. autoattribute:: flags
+   .. autoattribute:: input_dl3_dir
+   .. autoattribute:: name
+   .. autoattribute:: output_index_path
+   .. autoattribute:: overwrite
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: finish
+   .. automethod:: setup
+   .. automethod:: start

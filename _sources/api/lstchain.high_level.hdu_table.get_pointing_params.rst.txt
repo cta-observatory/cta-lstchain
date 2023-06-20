@@ -1,0 +1,6 @@
+get_pointing_params
+===================
+
+.. currentmodule:: lstchain.high_level.hdu_table
+
+.. autofunction:: get_pointing_params

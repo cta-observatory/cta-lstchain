@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FITSIndexWriter &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="IRFFITSWriter" href="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.html" />
+    <link rel="prev" title="DataReductionFITSWriter" href="lstchain.tools.lstchain_create_dl3_file.DataReductionFITSWriter.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/tools/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/tools/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_calibration_file">lstchain.tools.lstchain_create_calibration_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_file">lstchain.tools.lstchain_create_dl3_file Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_index_files">lstchain.tools.lstchain_create_dl3_index_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_irf_files">lstchain.tools.lstchain_create_irf_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_fit_intensity_scan">lstchain.tools.lstchain_fit_intensity_scan Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+      <li class="breadcrumb-item active">FITSIndexWriter</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fitsindexwriter">
+<h1>FITSIndexWriter<a class="headerlink" href="#fitsindexwriter" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.tools.lstchain_create_dl3_index_files.</span></span><span class="sig-name descname"><span class="pre">FITSIndexWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Any" title="(in Python v3.6)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.tool.Tool.html#ctapipe.core.tool.Tool" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ctapipe.core.tool.Tool</span></code></a></p>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.aliases" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.aliases"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aliases</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.description" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">description</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.example" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.example"><code class="xref py py-obj docutils literal notranslate"><span class="pre">example</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.file_pattern" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.file_pattern"><code class="xref py py-obj docutils literal notranslate"><span class="pre">file_pattern</span></code></a></p></td>
+<td><p>File pattern to search in the given Path</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.flags" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.flags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flags</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.input_dl3_dir" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.input_dl3_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_dl3_dir</span></code></a></p></td>
+<td><p>Input path of DL3 files</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.name" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.output_index_path" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.output_index_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_index_path</span></code></a></p></td>
+<td><p>Output path for the Index files</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.overwrite" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.overwrite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overwrite</span></code></a></p></td>
+<td><p>If True, overwrites existing output file without asking</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.finish" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.finish"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finish</span></code></a>()</p></td>
+<td><p>Finish up.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.setup" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>()</p></td>
+<td><p>Set up the tool.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.start" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.start"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start</span></code></a>()</p></td>
+<td><p>Main function of the tool.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{('d',</span> <span class="pre">'input-dl3-dir'):</span> <span class="pre">'FITSIndexWriter.input_dl3_dir',</span> <span class="pre">('o',</span> <span class="pre">'output-index-path'):</span> <span class="pre">'FITSIndexWriter.output_index_path',</span> <span class="pre">('p',</span> <span class="pre">'file-pattern'):</span> <span class="pre">'FITSIndexWriter.file_pattern'}</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.aliases" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/trait_types.html#traitlets.Unicode" title="(in traitlets v5.9)"><span class="pre">traitlets.traitlets.Unicode</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\nCreate</span> <span class="pre">HDU</span> <span class="pre">index</span> <span class="pre">files</span> <span class="pre">for</span> <span class="pre">HDU</span> <span class="pre">tables</span> <span class="pre">and</span> <span class="pre">Obs</span> <span class="pre">tables,\nfrom</span> <span class="pre">a</span> <span class="pre">given</span> <span class="pre">path</span> <span class="pre">of</span> <span class="pre">DL3</span> <span class="pre">files</span> <span class="pre">and</span> <span class="pre">a</span> <span class="pre">glob</span> <span class="pre">pattern</span> <span class="pre">to</span> <span class="pre">select</span> <span class="pre">DL3</span> <span class="pre">files\nThe</span> <span class="pre">index</span> <span class="pre">filenames</span> <span class="pre">are</span> <span class="pre">the</span> <span class="pre">standard</span> <span class="pre">as</span> <span class="pre">per\nhttp://gamma-astro-data-formats.readthedocs.io/en/latest/\n\nThe</span> <span class="pre">Index</span> <span class="pre">files</span> <span class="pre">can</span> <span class="pre">be</span> <span class="pre">stored</span> <span class="pre">in</span> <span class="pre">a</span> <span class="pre">different</span> <span class="pre">path,</span> <span class="pre">but</span> <span class="pre">by</span> <span class="pre">default\nthey</span> <span class="pre">are</span> <span class="pre">stored</span> <span class="pre">at</span> <span class="pre">the</span> <span class="pre">same</span> <span class="pre">place</span> <span class="pre">as</span> <span class="pre">the</span> <span class="pre">DL3</span> <span class="pre">files.\n'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.example">
+<span class="sig-name descname"><span class="pre">example</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">To</span> <span class="pre">create</span> <span class="pre">DL3</span> <span class="pre">index</span> <span class="pre">files</span> <span class="pre">with</span> <span class="pre">default</span> <span class="pre">values:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_dl3_index_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-d</span> <span class="pre">/path/to/DL3/files/\n\n</span>&#160;&#160;&#160; <span class="pre">Or</span> <span class="pre">specify</span> <span class="pre">some</span> <span class="pre">more</span> <span class="pre">configurations:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_dl3_index_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-d</span> <span class="pre">/path/to/DL3/files/\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">/path/to/DL3/index/files\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-p</span> <span class="pre">&quot;dl3*[run_1-run_n]*.fits&quot;\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--overwrite\n\n</span>&#160;&#160;&#160; <span class="pre">Or</span> <span class="pre">if</span> <span class="pre">the</span> <span class="pre">DL3</span> <span class="pre">files</span> <span class="pre">are</span> <span class="pre">stored</span> <span class="pre">in</span> <span class="pre">sub-directories:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_dl3_index_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-d</span> <span class="pre">/path/to/DL3/files/\n</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">/path/to/DL3/index/files\n</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-p</span> <span class="pre">&quot;/sub-directory*/dl3*[run_1-run_n]*.fits&quot;\n</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--overwrite\n\n</span>&#160;&#160;&#160; <span class="pre">Or</span> <span class="pre">if</span> <span class="pre">the</span> <span class="pre">DL3</span> <span class="pre">files</span> <span class="pre">are</span> <span class="pre">stored</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">current</span> <span class="pre">directory:\n</span>&#160;&#160;&#160; <span class="pre">&gt;</span> <span class="pre">lstchain_create_dl3_index_files\n</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-d</span> <span class="pre">./\n</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-o</span> <span class="pre">./\n</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-p</span> <span class="pre">&quot;dl3*[run_1-run_n]*.fits&quot;\n</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">--overwrite\n</span>&#160;&#160;&#160; <span class="pre">'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.example" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.file_pattern">
+<span class="sig-name descname"><span class="pre">file_pattern</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.file_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>File pattern to search in the given Path</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.flags">
+<span class="sig-name descname"><span class="pre">flags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/config-api.html#traitlets.config.Config" title="(in traitlets v5.9)"><span class="pre">traitlets.config.loader.Config</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'overwrite':</span> <span class="pre">({'FITSIndexWriter':</span> <span class="pre">{'overwrite':</span> <span class="pre">True}},</span> <span class="pre">'overwrite</span> <span class="pre">output</span> <span class="pre">files</span> <span class="pre">if</span> <span class="pre">True')}</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.input_dl3_dir">
+<span class="sig-name descname"><span class="pre">input_dl3_dir</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.input_dl3_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Input path of DL3 files</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/trait_types.html#traitlets.Unicode" title="(in traitlets v5.9)"><span class="pre">traitlets.traitlets.Unicode</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FITSIndexWriter'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.output_index_path">
+<span class="sig-name descname"><span class="pre">output_index_path</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.output_index_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Output path for the Index files</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.overwrite">
+<span class="sig-name descname"><span class="pre">overwrite</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.overwrite" title="Permalink to this definition">¶</a></dt>
+<dd><p>If True, overwrites existing output file without asking</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.finish">
+<span class="sig-name descname"><span class="pre">finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.finish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finish up.</p>
+<p>This is called automatically after <cite>Tool.start</cite> when <cite>Tool.run</cite> is called.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up the tool.</p>
+<p>This method runs after the configuration and command line options
+have been parsed.</p>
+<p>Here the tool should construct all <code class="docutils literal notranslate"><span class="pre">Components</span></code>, open files, etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function of the tool.</p>
+<p>This is automatically called after <cite>Tool.initialize</cite> when <cite>Tool.run</cite> is called.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lstchain.tools.lstchain_create_dl3_file.DataReductionFITSWriter.html" class="btn btn-neutral float-left" title="DataReductionFITSWriter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.html" class="btn btn-neutral float-right" title="IRFFITSWriter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

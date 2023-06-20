@@ -1,0 +1,6 @@
+load_image_extractor_from_config
+================================
+
+.. currentmodule:: lstchain.calib
+
+.. autofunction:: load_image_extractor_from_config

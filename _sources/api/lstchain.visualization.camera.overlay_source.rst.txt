@@ -1,0 +1,6 @@
+overlay_source
+==============
+
+.. currentmodule:: lstchain.visualization.camera
+
+.. autofunction:: overlay_source

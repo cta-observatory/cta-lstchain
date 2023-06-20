@@ -1,0 +1,6 @@
+check_dl1
+=========
+
+.. currentmodule:: lstchain.datachecks.dl1_checker
+
+.. autofunction:: check_dl1

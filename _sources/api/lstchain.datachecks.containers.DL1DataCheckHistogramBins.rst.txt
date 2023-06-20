@@ -1,0 +1,49 @@
+DL1DataCheckHistogramBins
+=========================
+
+.. currentmodule:: lstchain.datachecks.containers
+
+.. autoclass:: DL1DataCheckHistogramBins
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DL1DataCheckHistogramBins.hist_delta_t
+      ~DL1DataCheckHistogramBins.hist_dist0
+      ~DL1DataCheckHistogramBins.hist_dist0_intensity_gt_200
+      ~DL1DataCheckHistogramBins.hist_intensity
+      ~DL1DataCheckHistogramBins.hist_intercept
+      ~DL1DataCheckHistogramBins.hist_length
+      ~DL1DataCheckHistogramBins.hist_nislands
+      ~DL1DataCheckHistogramBins.hist_npixels
+      ~DL1DataCheckHistogramBins.hist_pixelchargespectrum
+      ~DL1DataCheckHistogramBins.hist_psi
+      ~DL1DataCheckHistogramBins.hist_psi_intensity_gt_200
+      ~DL1DataCheckHistogramBins.hist_skewness
+      ~DL1DataCheckHistogramBins.hist_tgrad_vs_length
+      ~DL1DataCheckHistogramBins.hist_tgrad_vs_length_intensity_gt_200
+      ~DL1DataCheckHistogramBins.hist_width
+      ~DL1DataCheckHistogramBins.meta
+      ~DL1DataCheckHistogramBins.prefix
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: hist_delta_t
+   .. autoattribute:: hist_dist0
+   .. autoattribute:: hist_dist0_intensity_gt_200
+   .. autoattribute:: hist_intensity
+   .. autoattribute:: hist_intercept
+   .. autoattribute:: hist_length
+   .. autoattribute:: hist_nislands
+   .. autoattribute:: hist_npixels
+   .. autoattribute:: hist_pixelchargespectrum
+   .. autoattribute:: hist_psi
+   .. autoattribute:: hist_psi_intensity_gt_200
+   .. autoattribute:: hist_skewness
+   .. autoattribute:: hist_tgrad_vs_length
+   .. autoattribute:: hist_tgrad_vs_length_intensity_gt_200
+   .. autoattribute:: hist_width
+   .. autoattribute:: meta
+   .. autoattribute:: prefix

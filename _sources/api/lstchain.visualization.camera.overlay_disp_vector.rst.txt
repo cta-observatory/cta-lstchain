@@ -1,0 +1,6 @@
+overlay_disp_vector
+===================
+
+.. currentmodule:: lstchain.visualization.camera
+
+.. autofunction:: overlay_disp_vector

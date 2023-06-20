@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CalibrationHDF5Writer &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DataReductionFITSWriter" href="lstchain.tools.lstchain_create_dl3_file.DataReductionFITSWriter.html" />
+    <link rel="prev" title="Command line Tools (tools)" href="../lstchain_api/tools/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/tools/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/tools/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_calibration_file">lstchain.tools.lstchain_create_calibration_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_file">lstchain.tools.lstchain_create_dl3_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_index_files">lstchain.tools.lstchain_create_dl3_index_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_irf_files">lstchain.tools.lstchain_create_irf_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_fit_intensity_scan">lstchain.tools.lstchain_fit_intensity_scan Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+      <li class="breadcrumb-item active">CalibrationHDF5Writer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="calibrationhdf5writer">
+<h1>CalibrationHDF5Writer<a class="headerlink" href="#calibrationhdf5writer" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.tools.lstchain_create_calibration_file.</span></span><span class="sig-name descname"><span class="pre">CalibrationHDF5Writer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Any" title="(in Python v3.6)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.tool.Tool.html#ctapipe.core.tool.Tool" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ctapipe.core.tool.Tool</span></code></a></p>
+<p>Tool that generates a HDF5 file with camera calibration coefficients.
+This is just an example on how the monitoring containers can be filled using
+the calibration Components in calib/camera.
+This example is based on an input file with pedestal and flat-field events</p>
+<p>For getting help run:
+python calc_camera_calibration.py –help</p>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.aliases" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.aliases"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aliases</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.calibration_product" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.calibration_product"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calibration_product</span></code></a></p></td>
+<td><p>CalibrationCalculator to use.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.classes" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.classes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">classes</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.description" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">description</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.events_to_skip" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.events_to_skip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">events_to_skip</span></code></a></p></td>
+<td><p>Number of first events to skip due to bad DRS4 pedestal correction</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.flags" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.flags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flags</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.mc_max_pedestal_adc" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.mc_max_pedestal_adc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_max_pedestal_adc</span></code></a></p></td>
+<td><p>Maximum high-gain camera median charge per pixel (ADC) for pedestal MC events</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.mc_min_flatfield_adc" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.mc_min_flatfield_adc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_min_flatfield_adc</span></code></a></p></td>
+<td><p>Minimum high-gain camera median charge per pixel (ADC) for flatfield MC events</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.name" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.one_event" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.one_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">one_event</span></code></a></p></td>
+<td><p>Stop after first calibration event</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.output_file" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.output_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_file</span></code></a></p></td>
+<td><p>Name of the output file</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.finish" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.finish"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finish</span></code></a>()</p></td>
+<td><p>Finish up.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.setup" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>()</p></td>
+<td><p>Set up the tool.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.start" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.start"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start</span></code></a>()</p></td>
+<td><p>Calibration coefficient calculator</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{('i',</span> <span class="pre">'input_file'):</span> <span class="pre">'EventSource.input_url',</span> <span class="pre">('m',</span> <span class="pre">'max_events'):</span> <span class="pre">'EventSource.max_events',</span> <span class="pre">('o',</span> <span class="pre">'output_file'):</span> <span class="pre">'CalibrationHDF5Writer.output_file',</span> <span class="pre">('p',</span> <span class="pre">'pedestal_file'):</span> <span class="pre">'LSTEventSource.LSTR0Corrections.drs4_pedestal_path',</span> <span class="pre">('s',</span> <span class="pre">'systematics_file'):</span> <span class="pre">'LSTCalibrationCalculator.systematic_correction_path',</span> <span class="pre">('r',</span> <span class="pre">'run_summary_file'):</span> <span class="pre">'LSTEventSource.EventTimeCalculator.run_summary_path',</span> <span class="pre">('t',</span> <span class="pre">'time_calibration_file'):</span> <span class="pre">'LSTEventSource.LSTR0Corrections.drs4_time_calibration_path',</span> <span class="pre">'events_to_skip':</span> <span class="pre">'CalibrationHDF5Writer.events_to_skip'}</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.aliases" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.calibration_product">
+<span class="sig-name descname"><span class="pre">calibration_product</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.calibration_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>CalibrationCalculator to use.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.classes">
+<span class="sig-name descname"><span class="pre">classes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[&lt;class</span> <span class="pre">'ctapipe.io.eventsource.EventSource'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.calibration_calculator.CalibrationCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.calibration_calculator.CalibrationCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.calibration_calculator.LSTCalibrationCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.flatfield.FlasherFlatFieldCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'lstchain.calib.camera.pedestals.PedestalIntegrator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.io.eventsource.EventSource'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.io.hdf5eventsource.HDF5EventSource'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe.io.simteleventsource.SimTelEventSource'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe_io_lst.LSTEventSource'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe_io_lst.pointing.PointingSource'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe_io_lst.event_time.EventTimeCalculator'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ctapipe_io_lst.calibration.LSTR0Corrections'&gt;]</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.classes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/trait_types.html#traitlets.Unicode" title="(in traitlets v5.9)"><span class="pre">traitlets.traitlets.Unicode</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Generate</span> <span class="pre">a</span> <span class="pre">HDF5</span> <span class="pre">file</span> <span class="pre">with</span> <span class="pre">camera</span> <span class="pre">calibration</span> <span class="pre">coefficients'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.events_to_skip">
+<span class="sig-name descname"><span class="pre">events_to_skip</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.events_to_skip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of first events to skip due to bad DRS4 pedestal correction</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.flags">
+<span class="sig-name descname"><span class="pre">flags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/config-api.html#traitlets.config.Config" title="(in traitlets v5.9)"><span class="pre">traitlets.config.loader.Config</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'flatfield-heuristic':</span> <span class="pre">({'LSTEventSource':</span> <span class="pre">{'use_flatfield_heuristic':</span> <span class="pre">True}},</span> <span class="pre">'Use</span> <span class="pre">flatfield</span> <span class="pre">heuristic'),</span> <span class="pre">'no-flatfield-heuristic':</span> <span class="pre">({'LSTEventSource':</span> <span class="pre">{'use_flatfield_heuristic':</span> <span class="pre">False}},</span> <span class="pre">'Do</span> <span class="pre">not</span> <span class="pre">use</span> <span class="pre">flatfield</span> <span class="pre">heuristic')}</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.mc_max_pedestal_adc">
+<span class="sig-name descname"><span class="pre">mc_max_pedestal_adc</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.mc_max_pedestal_adc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum high-gain camera median charge per pixel (ADC) for pedestal MC events</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.mc_min_flatfield_adc">
+<span class="sig-name descname"><span class="pre">mc_min_flatfield_adc</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.mc_min_flatfield_adc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum high-gain camera median charge per pixel (ADC) for flatfield MC events</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://traitlets.readthedocs.io/en/stable/trait_types.html#traitlets.Unicode" title="(in traitlets v5.9)"><span class="pre">traitlets.traitlets.Unicode</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CalibrationHDF5Writer'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.one_event">
+<span class="sig-name descname"><span class="pre">one_event</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.one_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop after first calibration event</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.output_file">
+<span class="sig-name descname"><span class="pre">output_file</span></span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.output_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the output file</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.finish">
+<span class="sig-name descname"><span class="pre">finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.finish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finish up.</p>
+<p>This is called automatically after <cite>Tool.start</cite> when <cite>Tool.run</cite> is called.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up the tool.</p>
+<p>This method runs after the configuration and command line options
+have been parsed.</p>
+<p>Here the tool should construct all <code class="docutils literal notranslate"><span class="pre">Components</span></code>, open files, etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calibration coefficient calculator</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../lstchain_api/tools/index.html" class="btn btn-neutral float-left" title="Command line Tools (tools)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.tools.lstchain_create_dl3_file.DataReductionFITSWriter.html" class="btn btn-neutral float-right" title="DataReductionFITSWriter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

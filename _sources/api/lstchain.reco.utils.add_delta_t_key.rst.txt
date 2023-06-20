@@ -1,0 +1,6 @@
+add_delta_t_key
+===============
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: add_delta_t_key

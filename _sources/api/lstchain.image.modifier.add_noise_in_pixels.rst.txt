@@ -1,0 +1,6 @@
+add_noise_in_pixels
+===================
+
+.. currentmodule:: lstchain.image.modifier
+
+.. autofunction:: add_noise_in_pixels

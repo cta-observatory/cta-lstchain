@@ -1,0 +1,6 @@
+process_mc
+==========
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: process_mc

@@ -1,0 +1,6 @@
+get_standard_config
+===================
+
+.. currentmodule:: lstchain.io.config
+
+.. autofunction:: get_standard_config

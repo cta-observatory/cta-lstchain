@@ -1,0 +1,6 @@
+global_metadata
+===============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: global_metadata

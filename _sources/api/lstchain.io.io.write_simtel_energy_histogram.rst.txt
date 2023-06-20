@@ -1,0 +1,6 @@
+write_simtel_energy_histogram
+=============================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: write_simtel_energy_histogram

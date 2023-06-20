@@ -1,0 +1,6 @@
+plot_datacheck
+==============
+
+.. currentmodule:: lstchain.datachecks.dl1_checker
+
+.. autofunction:: plot_datacheck

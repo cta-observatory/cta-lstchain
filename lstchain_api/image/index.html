@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image (image) &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../../_static/custom.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="apply_dynamic_cleaning" href="../../api/lstchain.image.cleaning.apply_dynamic_cleaning.html" />
+    <link rel="prev" title="setup_logging" href="../../api/lstchain.high_level.significance_calculation.setup_logging.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Image (<cite>image</cite>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#muon-analysis">Muon analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-api">Reference/API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.image">lstchain.image Package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.image.cleaning">lstchain.image.cleaning Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.image.modifier">lstchain.image.modifier Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.image.muon.muon_analysis">lstchain.image.muon.muon_analysis Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.image.muon.plot_muon">lstchain.image.muon.plot_muon Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Docs</a></li>
+      <li class="breadcrumb-item active">Image (<cite>image</cite>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lstchain_api/image/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="image-image">
+<span id="image"></span><h1>Image (<cite>image</cite>)<a class="headerlink" href="#image-image" title="Permalink to this headline">¶</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Module containing image processing customly implemented in lstchain. This includes:</p>
+<ul class="simple">
+<li><p>Dynamic image cleaning.</p></li>
+<li><p>Noise adder at DL1 level to mimic real NSB conditions.</p></li>
+<li><p>Muon fit and analysis.</p></li>
+</ul>
+</section>
+<section id="muon-analysis">
+<h2>Muon analysis<a class="headerlink" href="#muon-analysis" title="Permalink to this headline">¶</a></h2>
+<p>IACTs use camera calibration systems to estimate the conversion between the measured signal
+and the total number of received photons. This method, does not take into account effects
+of the optical system and the efficiency of the mirror of the telescope is not considered. To carry
+out an absolute calibration of light throughput, it is essential to analyze a signal of known nature,
+as for example the peculiar ring-shaped images produced by cosmic ray muons.</p>
+<p>To perform this analysis:</p>
+<p>1. We fit ellipses to the bright images in the camera and extract the fitted parameters such as the image <code class="docutils literal notranslate"><span class="pre">intensity</span></code>
+or the ring <code class="docutils literal notranslate"><span class="pre">width</span></code></p>
+<ol class="arabic simple" start="2">
+<li><p>We compare the fit results with those obtained using MC simulations and different optical efficiencies.</p></li>
+<li><p>The overall optical efficiency of the telescope corresponds to the fitted value that is closer to</p></li>
+</ol>
+<p>Muon analysis is automatically performed by LSTOSA when running <cite>lstchain.scripts.lstchain_data_r0_to_dl1</cite>.
+You can find the table with the outputs in muons_LST-1.Runxxxxx.yyyy.fits, where xxxxx is the run number and
+yyyy the subrun number analyzed.</p>
+<p>If you want to perform a custom muon analysis, you can run the script <cite>lstchain.scripts.lstchain_dl1_muon_analysis</cite>,
+that performs the analysis of DL1 files and writes out a table with the results for the fitted muons. In order to
+reduce the differences between the analysis of Real data and MC, muon analysis uses a different signal extractor
+(<cite>GlobalPeakWindowSum</cite>) than real data (<cite>LocalPeakWindowSum</cite>), that can be specified in the <cite>image_extractor_for_muons</cite>
+keyword from the standard input card located in <cite>lstchain.data.lstchain_standard_config.json</cite></p>
+<p>Muon analysis can also be performed to check the Point Spread Function of the telescope, although small changes in
+the point spread function may not be spotted using it.</p>
+</section>
+<section id="reference-api">
+<h2>Reference/API<a class="headerlink" href="#reference-api" title="Permalink to this headline">¶</a></h2>
+<section id="module-lstchain.image">
+<span id="lstchain-image-package"></span><h3>lstchain.image Package<a class="headerlink" href="#module-lstchain.image" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="module-lstchain.image.cleaning">
+<span id="lstchain-image-cleaning-module"></span><h3>lstchain.image.cleaning Module<a class="headerlink" href="#module-lstchain.image.cleaning" title="Permalink to this headline">¶</a></h3>
+<section id="functions">
+<h4>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.cleaning.apply_dynamic_cleaning.html#lstchain.image.cleaning.apply_dynamic_cleaning" title="lstchain.image.cleaning.apply_dynamic_cleaning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_dynamic_cleaning</span></code></a>(image, signal_pixels, ...)</p></td>
+<td><p>Application of the dynamic cleaning</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.image.modifier">
+<span id="lstchain-image-modifier-module"></span><h3>lstchain.image.modifier Module<a class="headerlink" href="#module-lstchain.image.modifier" title="Permalink to this headline">¶</a></h3>
+<section id="id1">
+<h4>Functions<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.modifier.add_noise_in_pixels.html#lstchain.image.modifier.add_noise_in_pixels" title="lstchain.image.modifier.add_noise_in_pixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_noise_in_pixels</span></code></a>(rng, image, ...)</p></td>
+<td><p>Addition of Poissonian noise to the pixels</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.image.modifier.calculate_required_additional_nsb.html#lstchain.image.modifier.calculate_required_additional_nsb" title="lstchain.image.modifier.calculate_required_additional_nsb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_required_additional_nsb</span></code></a>(...[, config])</p></td>
+<td><p>Calculates the additional NSB needed in the MC waveforms to match a real data DL1 file Parameters ---------- simtel_filename: a simtel file containing showers, from the production (same NSB and telescope settings) as the one on which the correction will be applied.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.modifier.calculate_noise_parameters.html#lstchain.image.modifier.calculate_noise_parameters" title="lstchain.image.modifier.calculate_noise_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_noise_parameters</span></code></a>(simtel_filename, ...)</p></td>
+<td><p>Calculates the parameters needed to increase the noise in an MC DL1 file to match the noise in a real data DL1 file, using add_noise_in_pixels The returned parameters are those needed by the function add_noise_in_pixels (see description in its documentation above).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.image.modifier.random_psf_smearer.html#lstchain.image.modifier.random_psf_smearer" title="lstchain.image.modifier.random_psf_smearer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_psf_smearer</span></code></a>(image, fraction, indices, ...)</p></td>
+<td><p>Random PSF smearer</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.modifier.set_numba_seed.html#lstchain.image.modifier.set_numba_seed" title="lstchain.image.modifier.set_numba_seed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_numba_seed</span></code></a>(seed)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.image.modifier.tune_nsb_on_waveform.html#lstchain.image.modifier.tune_nsb_on_waveform" title="lstchain.image.modifier.tune_nsb_on_waveform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tune_nsb_on_waveform</span></code></a>(waveform, ...)</p></td>
+<td><p>Inject single photon pulses in existing R1 waveforms to increase NSB.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.image.muon.muon_analysis">
+<span id="lstchain-image-muon-muon-analysis-module"></span><h3>lstchain.image.muon.muon_analysis Module<a class="headerlink" href="#module-lstchain.image.muon.muon_analysis" title="Permalink to this headline">¶</a></h3>
+<section id="id2">
+<h4>Functions<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.analyze_muon_event.html#lstchain.image.muon.muon_analysis.analyze_muon_event" title="lstchain.image.muon.muon_analysis.analyze_muon_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyze_muon_event</span></code></a>(subarray, tel_id, ...)</p></td>
+<td><p>Analyze an event to fit a muon ring</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.create_muon_table.html#lstchain.image.muon.muon_analysis.create_muon_table" title="lstchain.image.muon.muon_analysis.create_muon_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_muon_table</span></code></a>()</p></td>
+<td><p>Create the empty dictionary to include the parameters of the fitted muon</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.fill_muon_event.html#lstchain.image.muon.muon_analysis.fill_muon_event" title="lstchain.image.muon.muon_analysis.fill_muon_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_muon_event</span></code></a>(mc_energy, ...[, ...])</p></td>
+<td><p>Fill the dictionary with the parameters of a muon event</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.fit_muon.html#lstchain.image.muon.muon_analysis.fit_muon" title="lstchain.image.muon.muon_analysis.fit_muon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit_muon</span></code></a>(x, y, image, geom, tailcuts)</p></td>
+<td><p>Fit the muon ring</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.muon_filter.html#lstchain.image.muon.muon_analysis.muon_filter" title="lstchain.image.muon.muon_analysis.muon_filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">muon_filter</span></code></a>(image[, thr_low, thr_up])</p></td>
+<td><p>Tag muon with a double threshold on the image photoelectron size Default values apply no tagging</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.pixel_coords_to_telescope.html#lstchain.image.muon.muon_analysis.pixel_coords_to_telescope" title="lstchain.image.muon.muon_analysis.pixel_coords_to_telescope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pixel_coords_to_telescope</span></code></a>(geom, ...)</p></td>
+<td><p>Get the x, y coordinates of the pixels in the telescope frame</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.radial_light_distribution.html#lstchain.image.muon.muon_analysis.radial_light_distribution" title="lstchain.image.muon.muon_analysis.radial_light_distribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">radial_light_distribution</span></code></a>(center_x, ...)</p></td>
+<td><p>Calculate the radial distribution of the muon ring</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.tag_pix_thr.html#lstchain.image.muon.muon_analysis.tag_pix_thr" title="lstchain.image.muon.muon_analysis.tag_pix_thr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_pix_thr</span></code></a>(image[, thr_low, thr_up, pe_thr])</p></td>
+<td><p>Tag event with a double threshold on the number of pixels above 10 photoelectrons.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.muon_analysis.update_parameters.html#lstchain.image.muon.muon_analysis.update_parameters" title="lstchain.image.muon.muon_analysis.update_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_parameters</span></code></a>(config, n_pixels)</p></td>
+<td><p>Create the parameters used to select good muon rings and perform the muon analysis.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.image.muon.plot_muon">
+<span id="lstchain-image-muon-plot-muon-module"></span><h3>lstchain.image.muon.plot_muon Module<a class="headerlink" href="#module-lstchain.image.muon.plot_muon" title="Permalink to this headline">¶</a></h3>
+<section id="id3">
+<h4>Functions<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.image.muon.plot_muon.plot_muon_event.html#lstchain.image.muon.plot_muon.plot_muon_event" title="lstchain.image.muon.plot_muon.plot_muon_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_muon_event</span></code></a>(ax, geom, image, centroid, ...)</p></td>
+<td><p>Function to plot single muon events</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../api/lstchain.high_level.significance_calculation.setup_logging.html" class="btn btn-neutral float-left" title="setup_logging" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api/lstchain.image.cleaning.apply_dynamic_cleaning.html" class="btn btn-neutral float-right" title="apply_dynamic_cleaning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

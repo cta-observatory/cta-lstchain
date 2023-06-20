@@ -1,0 +1,6 @@
+plot_Crab_SED
+=============
+
+.. currentmodule:: lstchain.mc.plot_utils
+
+.. autofunction:: plot_Crab_SED

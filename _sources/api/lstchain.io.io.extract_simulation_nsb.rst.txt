@@ -1,0 +1,6 @@
+extract_simulation_nsb
+======================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: extract_simulation_nsb

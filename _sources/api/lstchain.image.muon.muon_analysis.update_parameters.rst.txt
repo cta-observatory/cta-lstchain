@@ -1,0 +1,6 @@
+update_parameters
+=================
+
+.. currentmodule:: lstchain.image.muon.muon_analysis
+
+.. autofunction:: update_parameters

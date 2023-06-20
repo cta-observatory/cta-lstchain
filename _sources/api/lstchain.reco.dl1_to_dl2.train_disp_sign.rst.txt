@@ -1,0 +1,6 @@
+train_disp_sign
+===============
+
+.. currentmodule:: lstchain.reco.dl1_to_dl2
+
+.. autofunction:: train_disp_sign

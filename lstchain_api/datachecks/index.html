@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datachecks (datachecks) &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../../_static/custom.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="count_trig_types" href="../../api/lstchain.datachecks.containers.count_trig_types.html" />
+    <link rel="prev" title="load_calibrator_from_config" href="../../api/lstchain.calib.camera.load_calibrator_from_config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Datachecks (<cite>datachecks</cite>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-api">Reference/API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.datachecks.containers">lstchain.datachecks.containers Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.datachecks.dl1_checker">lstchain.datachecks.dl1_checker Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Docs</a></li>
+      <li class="breadcrumb-item active">Datachecks (<cite>datachecks</cite>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lstchain_api/datachecks/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="datachecks-datachecks">
+<span id="datachecks"></span><h1>Datachecks (<cite>datachecks</cite>)<a class="headerlink" href="#datachecks-datachecks" title="Permalink to this headline">¶</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Module containing functions producing the LST datachecks. Currently reaching DL1 level.</p>
+</section>
+<section id="reference-api">
+<h2>Reference/API<a class="headerlink" href="#reference-api" title="Permalink to this headline">¶</a></h2>
+<section id="module-lstchain.datachecks.containers">
+<span id="lstchain-datachecks-containers-module"></span><h3>lstchain.datachecks.containers Module<a class="headerlink" href="#module-lstchain.datachecks.containers" title="Permalink to this headline">¶</a></h3>
+<p>Containers for data check</p>
+<section id="functions">
+<h4>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.containers.count_trig_types.html#lstchain.datachecks.containers.count_trig_types" title="lstchain.datachecks.containers.count_trig_types"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count_trig_types</span></code></a>(array)</p></td>
+<td><p>Counts the trigger of each type inside array</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h4>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.containers.DL1DataCheckContainer.html#lstchain.datachecks.containers.DL1DataCheckContainer" title="lstchain.datachecks.containers.DL1DataCheckContainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DL1DataCheckContainer</span></code></a>([prefix])</p></td>
+<td><p>Container to store the subrun-wise outcome of the DL1 data check</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.containers.DL1DataCheckHistogramBins.html#lstchain.datachecks.containers.DL1DataCheckHistogramBins" title="lstchain.datachecks.containers.DL1DataCheckHistogramBins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DL1DataCheckHistogramBins</span></code></a>([prefix])</p></td>
+<td><p>Histogram bins for the DL1 Datacheck</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.datachecks.dl1_checker">
+<span id="lstchain-datachecks-dl1-checker-module"></span><h3>lstchain.datachecks.dl1_checker Module<a class="headerlink" href="#module-lstchain.datachecks.dl1_checker" title="Permalink to this headline">¶</a></h3>
+<p>Functions to check the contents of LST DL1 files and associated muon ring files</p>
+<section id="id1">
+<h4>Functions<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.dl1_checker.check_dl1.html#lstchain.datachecks.dl1_checker.check_dl1" title="lstchain.datachecks.dl1_checker.check_dl1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_dl1</span></code></a>(filenames, output_path[, ...])</p></td>
+<td><p>Check DL1 files</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.dl1_checker.merge_dl1datacheck_files.html#lstchain.datachecks.dl1_checker.merge_dl1datacheck_files" title="lstchain.datachecks.dl1_checker.merge_dl1datacheck_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_dl1datacheck_files</span></code></a>(file_list)</p></td>
+<td><p>Merge DL1 Datacheck files</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.dl1_checker.plot_datacheck.html#lstchain.datachecks.dl1_checker.plot_datacheck" title="lstchain.datachecks.dl1_checker.plot_datacheck"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_datacheck</span></code></a>(datacheck_filename[, ...])</p></td>
+<td><p>Plot datacheck</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.dl1_checker.plot_mean_and_stddev.html#lstchain.datachecks.dl1_checker.plot_mean_and_stddev" title="lstchain.datachecks.dl1_checker.plot_mean_and_stddev"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_mean_and_stddev</span></code></a>(table, camgeom, ...[, ...])</p></td>
+<td><p>The subrun-wise mean and std dev values are used to calculate the run-wise (i.e.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.dl1_checker.plot_trigger_types.html#lstchain.datachecks.dl1_checker.plot_trigger_types" title="lstchain.datachecks.dl1_checker.plot_trigger_types"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trigger_types</span></code></a>(dchecktables, ...)</p></td>
+<td><p>Plot trigger types</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.dl1_checker.process_dl1_file.html#lstchain.datachecks.dl1_checker.process_dl1_file" title="lstchain.datachecks.dl1_checker.process_dl1_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_dl1_file</span></code></a>(filename, bins[, tel_id])</p></td>
+<td><p>Process DL1 file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.datachecks.dl1_checker.write_error_page.html#lstchain.datachecks.dl1_checker.write_error_page" title="lstchain.datachecks.dl1_checker.write_error_page"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_error_page</span></code></a>(tablename, pagesize)</p></td>
+<td><p>Write error page</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../api/lstchain.calib.camera.load_calibrator_from_config.html" class="btn btn-neutral float-left" title="load_calibrator_from_config" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api/lstchain.datachecks.containers.count_trig_types.html" class="btn btn-neutral float-right" title="count_trig_types" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

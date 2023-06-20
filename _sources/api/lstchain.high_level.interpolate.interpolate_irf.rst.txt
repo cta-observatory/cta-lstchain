@@ -1,0 +1,6 @@
+interpolate_irf
+===============
+
+.. currentmodule:: lstchain.high_level.interpolate
+
+.. autofunction:: interpolate_irf

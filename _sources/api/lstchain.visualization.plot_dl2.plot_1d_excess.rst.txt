@@ -1,0 +1,6 @@
+plot_1d_excess
+==============
+
+.. currentmodule:: lstchain.visualization.plot_dl2
+
+.. autofunction:: plot_1d_excess

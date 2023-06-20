@@ -1,0 +1,31 @@
+DispContainer
+=============
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: DispContainer
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DispContainer.angle
+      ~DispContainer.dx
+      ~DispContainer.dy
+      ~DispContainer.meta
+      ~DispContainer.miss
+      ~DispContainer.norm
+      ~DispContainer.prefix
+      ~DispContainer.sign
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: angle
+   .. autoattribute:: dx
+   .. autoattribute:: dy
+   .. autoattribute:: meta
+   .. autoattribute:: miss
+   .. autoattribute:: norm
+   .. autoattribute:: prefix
+   .. autoattribute:: sign

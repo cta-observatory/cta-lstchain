@@ -1,0 +1,6 @@
+impute_pointing
+===============
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: impute_pointing

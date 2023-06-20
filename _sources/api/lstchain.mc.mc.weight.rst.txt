@@ -1,0 +1,6 @@
+weight
+======
+
+.. currentmodule:: lstchain.mc.mc
+
+.. autofunction:: weight

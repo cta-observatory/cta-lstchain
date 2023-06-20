@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code snippets &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="_static/custom.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Docs" href="lstchain_api/index.html" />
+    <link rel="prev" title="How to Contribute" href="contribute.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">How to Contribute</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Code snippets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#print-lstchain-version-used-to-produce-a-file">Print lstchain version used to produce a file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#print-configuration-parameters-used-by-the-script-tool">Print configuration parameters used by the script/tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#print-calibration-and-auxiliary-files-used-by-the-script-tool">Print calibration and auxiliary files used by the script/tool</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lstchain_api/index.html">API Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Code snippets</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/snippets.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="code-snippets">
+<h1>Code snippets<a class="headerlink" href="#code-snippets" title="Permalink to this headline">¶</a></h1>
+<p>Some code snippets that can be useful.</p>
+<section id="print-lstchain-version-used-to-produce-a-file">
+<h2>Print lstchain version used to produce a file<a class="headerlink" href="#print-lstchain-version-used-to-produce-a-file" title="Permalink to this headline">¶</a></h2>
+<p>The lstchain version is stored in the file metadata. You can print it with the following command:</p>
+<p>In python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
+<span class="n">file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">[</span><span class="s1">&#39;LSTCHAIN_VERSION&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>In bash:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>h5dump<span class="w"> </span>-a<span class="w"> </span>/LSTCHAIN_VERSION<span class="w"> </span>dl1_file.h5
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>ctapipe and ctapipe_io_lst versions are also stored in the metadata.
+You can print them with the same commands, replacing LSTCHAIN_VERSION by CTAPIPE_VERSION or CTAPIPE_IO_LST_VERSION.</p>
+</div>
+</section>
+<section id="print-configuration-parameters-used-by-the-script-tool">
+<h2>Print configuration parameters used by the script/tool<a class="headerlink" href="#print-configuration-parameters-used-by-the-script-tool" title="Permalink to this headline">¶</a></h2>
+<p>The configuration file used by a given script/tool is stored in the metadata of the output file. Note that the
+configuration file can contain more parameters than the ones used in a given analysis stage as the same configuration
+file can be used for several stages.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
+<span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dl1</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">telescope</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">LST_LSTCam</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="c1"># Or for a given parameter section e.g.:</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;tailcut_clean_with_pedestal_threshold&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="print-calibration-and-auxiliary-files-used-by-the-script-tool">
+<h2>Print calibration and auxiliary files used by the script/tool<a class="headerlink" href="#print-calibration-and-auxiliary-files-used-by-the-script-tool" title="Permalink to this headline">¶</a></h2>
+<p>For observed data, the calibration and auxiliary files used to produce DL1 data are stored
+in the metadata of the DL1 files. You can print them with the following command:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
+<span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dl1</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">telescope</span><span class="o">.</span><span class="n">monitoring</span><span class="o">.</span><span class="n">calibration</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">])</span>
+<span class="c1"># Drive log with pointing information</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;source_config&#39;</span><span class="p">][</span><span class="s1">&#39;LSTEventSource&#39;</span><span class="p">][</span><span class="s1">&#39;PointingSource&#39;</span><span class="p">])</span>
+<span class="c1"># Run summary file with reference timestamps and counters for timestamp calculation</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;source_config&#39;</span><span class="p">][</span><span class="s1">&#39;LSTEventSource&#39;</span><span class="p">][</span><span class="s1">&#39;EventTimeCalculator&#39;</span><span class="p">])</span>
+<span class="c1"># Calibration files (DRS4 baseline corrections, calibration coefficients, time calibration, etc)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;source_config&#39;</span><span class="p">][</span><span class="s1">&#39;LSTEventSource&#39;</span><span class="p">][</span><span class="s1">&#39;LSTR0Corrections&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;LSTCalibrationCalculator&#39;</span><span class="p">][</span><span class="s1">&#39;systematic_correction_path&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>All these metadata information can be accessed interactively using ViTables.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="contribute.html" class="btn btn-neutral float-left" title="How to Contribute" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain_api/index.html" class="btn btn-neutral float-right" title="API Docs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

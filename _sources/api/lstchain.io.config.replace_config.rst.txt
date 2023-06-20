@@ -1,0 +1,6 @@
+replace_config
+==============
+
+.. currentmodule:: lstchain.io.config
+
+.. autofunction:: replace_config

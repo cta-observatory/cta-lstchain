@@ -1,0 +1,6 @@
+query_yes_no
+============
+
+.. currentmodule:: lstchain.io.data_management
+
+.. autofunction:: query_yes_no

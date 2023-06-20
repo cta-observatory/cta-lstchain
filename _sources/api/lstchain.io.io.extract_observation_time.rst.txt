@@ -1,0 +1,6 @@
+extract_observation_time
+========================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: extract_observation_time

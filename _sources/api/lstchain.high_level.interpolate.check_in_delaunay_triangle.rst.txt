@@ -1,0 +1,6 @@
+check_in_delaunay_triangle
+==========================
+
+.. currentmodule:: lstchain.high_level.interpolate
+
+.. autofunction:: check_in_delaunay_triangle

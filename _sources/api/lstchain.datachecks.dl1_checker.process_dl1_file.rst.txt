@@ -1,0 +1,6 @@
+process_dl1_file
+================
+
+.. currentmodule:: lstchain.datachecks.dl1_checker
+
+.. autofunction:: process_dl1_file

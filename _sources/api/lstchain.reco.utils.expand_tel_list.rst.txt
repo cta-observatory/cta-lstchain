@@ -1,0 +1,6 @@
+expand_tel_list
+===============
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: expand_tel_list

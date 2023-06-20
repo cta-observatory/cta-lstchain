@@ -1,0 +1,6 @@
+muon_filter
+===========
+
+.. currentmodule:: lstchain.image.muon.muon_analysis
+
+.. autofunction:: muon_filter

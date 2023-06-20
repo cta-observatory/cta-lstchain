@@ -1,0 +1,6 @@
+get_event_pos_in_camera
+=======================
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: get_event_pos_in_camera

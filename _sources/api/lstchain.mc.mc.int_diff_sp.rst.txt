@@ -1,0 +1,6 @@
+int_diff_sp
+===========
+
+.. currentmodule:: lstchain.mc.mc
+
+.. autofunction:: int_diff_sp

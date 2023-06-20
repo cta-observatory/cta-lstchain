@@ -1,0 +1,6 @@
+read_simu_info_merged_hdf5
+==========================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: read_simu_info_merged_hdf5

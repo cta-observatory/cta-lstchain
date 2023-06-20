@@ -1,0 +1,6 @@
+miss
+====
+
+.. currentmodule:: lstchain.reco.disp
+
+.. autofunction:: miss

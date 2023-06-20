@@ -1,0 +1,6 @@
+plot_muon_event
+===============
+
+.. currentmodule:: lstchain.image.muon.plot_muon
+
+.. autofunction:: plot_muon_event

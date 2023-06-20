@@ -1,0 +1,6 @@
+linear_imputer
+==============
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: linear_imputer

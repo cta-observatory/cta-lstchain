@@ -1,0 +1,6 @@
+load_calibrator_from_config
+===========================
+
+.. currentmodule:: lstchain.calib.camera
+
+.. autofunction:: load_calibrator_from_config

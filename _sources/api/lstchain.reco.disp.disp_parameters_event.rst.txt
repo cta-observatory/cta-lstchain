@@ -1,0 +1,6 @@
+disp_parameters_event
+=====================
+
+.. currentmodule:: lstchain.reco.disp
+
+.. autofunction:: disp_parameters_event

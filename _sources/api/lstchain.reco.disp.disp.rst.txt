@@ -1,0 +1,6 @@
+disp
+====
+
+.. currentmodule:: lstchain.reco.disp
+
+.. autofunction:: disp

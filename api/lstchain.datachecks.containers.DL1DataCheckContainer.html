@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DL1DataCheckContainer &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DL1DataCheckHistogramBins" href="lstchain.datachecks.containers.DL1DataCheckHistogramBins.html" />
+    <link rel="prev" title="count_trig_types" href="lstchain.datachecks.containers.count_trig_types.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/datachecks/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/datachecks/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/datachecks/index.html#module-lstchain.datachecks.containers">lstchain.datachecks.containers Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/datachecks/index.html#module-lstchain.datachecks.dl1_checker">lstchain.datachecks.dl1_checker Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+      <li class="breadcrumb-item active">DL1DataCheckContainer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.datachecks.containers.DL1DataCheckContainer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dl1datacheckcontainer">
+<h1>DL1DataCheckContainer<a class="headerlink" href="#dl1datacheckcontainer" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.datachecks.containers.</span></span><span class="sig-name descname"><span class="pre">DL1DataCheckContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.container.Container.html#ctapipe.core.container.Container" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ctapipe.core.container.Container</span></code></a></p>
+<p>Container to store the subrun-wise outcome of the DL1 data check</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>subrun_index</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Subrun index</p>
+</dd>
+<dt><strong>elapsed_time</strong><span class="classifier">Field(default=-1.0 s, unit=s)</span></dt><dd><p>Subrun time duration (from Dragon)</p>
+</dd>
+<dt><strong>num_events</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Total number of events</p>
+</dd>
+<dt><strong>num_cleaned_events</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Number of events surviving cleaning</p>
+</dd>
+<dt><strong>trigger_type</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Number of events per trigger type</p>
+</dd>
+<dt><strong>ucts_trigger_type</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Number of events per ucts trigger type</p>
+</dd>
+<dt><strong>num_ucts_jumps</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Number of observed (and corrected) UCTS jumps</p>
+</dd>
+<dt><strong>mean_alt_tel</strong><span class="classifier">Field(default=nan rad, unit=rad)</span></dt><dd><p>Mean telescope altitude</p>
+</dd>
+<dt><strong>mean_az_tel</strong><span class="classifier">Field(default=nan rad, unit=rad)</span></dt><dd><p>Mean telescope azimuth</p>
+</dd>
+<dt><strong>tel_ra</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd><p>Telescope pointing RA</p>
+</dd>
+<dt><strong>tel_dec</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd><p>Telescope pointing declination</p>
+</dd>
+<dt><strong>sampled_event_ids</strong><span class="classifier">Field(default=None)</span></dt><dd><p>sampled event ids</p>
+</dd>
+<dt><strong>ucts_time</strong><span class="classifier">Field(default=None, unit=s)</span></dt><dd><p>ucts time</p>
+</dd>
+<dt><strong>tib_time</strong><span class="classifier">Field(default=None, unit=s)</span></dt><dd><p>tib_time</p>
+</dd>
+<dt><strong>dragon_time</strong><span class="classifier">Field(default=None, unit=s)</span></dt><dd><p>dragon_time</p>
+</dd>
+<dt><strong>hist_delta_t</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of time difference between consecutive events</p>
+</dd>
+<dt><strong>hist_npixels</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of number of pixels in image</p>
+</dd>
+<dt><strong>hist_nislands</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of number of islands in image</p>
+</dd>
+<dt><strong>hist_intensity</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of image intensity</p>
+</dd>
+<dt><strong>hist_dist0</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of cog-camera center distance</p>
+</dd>
+<dt><strong>hist_dist0_intensity_gt_200</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of cog-camera center distance</p>
+</dd>
+<dt><strong>hist_width</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram image width vs. intensity</p>
+</dd>
+<dt><strong>hist_length</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram image length vs. intensity</p>
+</dd>
+<dt><strong>hist_skewness</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of image skewness</p>
+</dd>
+<dt><strong>hist_pixelchargespectrum</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of pixel charges</p>
+</dd>
+<dt><strong>hist_psi</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of image axis orientation</p>
+</dd>
+<dt><strong>hist_intercept</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of fitted pulse time for charge c.o.g.</p>
+</dd>
+<dt><strong>hist_tgrad_vs_length</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of time gradient vs. length</p>
+</dd>
+<dt><strong>hist_tgrad_vs_length_intensity_gt_200</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Histogram of time gradient vs. length, intensity&gt;200pe</p>
+</dd>
+<dt><strong>cog_within_pixel</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Number of image cogs within pixel</p>
+</dd>
+<dt><strong>cog_within_pixel_intensity_gt_200</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Number of image within pixel, intensity&gt;200pe</p>
+</dd>
+<dt><strong>num_nearby_stars</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Number of nearby bright stars</p>
+</dd>
+<dt><strong>charge_mean</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Mean of pixel charge</p>
+</dd>
+<dt><strong>charge_stddev</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Standard deviation of pixel charge</p>
+</dd>
+<dt><strong>time_mean</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Mean of pulse time</p>
+</dd>
+<dt><strong>time_stddev</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Standard deviaton of pulse time</p>
+</dd>
+<dt><strong>time_mean_above_030_pe</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Mean of pulse time, &gt;30 p.e. pulses</p>
+</dd>
+<dt><strong>time_stddev_above_030_pe</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Standard deviaton of pulse time, &gt;30 p.e. pulses</p>
+</dd>
+<dt><strong>relative_time_mean</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Mean of pulse time relative to average of rest of pixels</p>
+</dd>
+<dt><strong>relative_time_stddev</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Standard deviaton of pulse time relative to average of rest of pixels</p>
+</dd>
+<dt><strong>num_pulses_above_0010_pe</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Number of &gt;10 p.e. pulses</p>
+</dd>
+<dt><strong>num_pulses_above_0030_pe</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Number of &gt;30 p.e. pulses</p>
+</dd>
+<dt><strong>num_pulses_above_0100_pe</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Number of &gt;100 p.e. pulses</p>
+</dd>
+<dt><strong>num_pulses_above_0300_pe</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Number of &gt;300 p.e. pulses</p>
+</dd>
+<dt><strong>num_pulses_above_1000_pe</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Number of &gt;1000 p.e. pulses</p>
+</dd>
+<dt><strong>meta</strong><span class="classifier">dict</span></dt><dd><p>dict of attached metadata</p>
+</dd>
+<dt><strong>prefix</strong><span class="classifier">str</span></dt><dd><p>Prefix attached to column names when saved to a table or file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.charge_mean" title="lstchain.datachecks.containers.DL1DataCheckContainer.charge_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">charge_mean</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.charge_stddev" title="lstchain.datachecks.containers.DL1DataCheckContainer.charge_stddev"><code class="xref py py-obj docutils literal notranslate"><span class="pre">charge_stddev</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.cog_within_pixel" title="lstchain.datachecks.containers.DL1DataCheckContainer.cog_within_pixel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cog_within_pixel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.cog_within_pixel_intensity_gt_200" title="lstchain.datachecks.containers.DL1DataCheckContainer.cog_within_pixel_intensity_gt_200"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cog_within_pixel_intensity_gt_200</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.dragon_time" title="lstchain.datachecks.containers.DL1DataCheckContainer.dragon_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dragon_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.elapsed_time" title="lstchain.datachecks.containers.DL1DataCheckContainer.elapsed_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elapsed_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_delta_t" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_delta_t"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_delta_t</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_dist0" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_dist0"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_dist0</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_dist0_intensity_gt_200" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_dist0_intensity_gt_200"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_dist0_intensity_gt_200</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_intensity" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_intensity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_intensity</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_intercept" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_intercept"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_intercept</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_length" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_length</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_nislands" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_nislands"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_nislands</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_npixels" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_npixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_npixels</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_pixelchargespectrum" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_pixelchargespectrum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_pixelchargespectrum</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_psi" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_psi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_psi</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_skewness" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_skewness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_skewness</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_tgrad_vs_length" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_tgrad_vs_length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_tgrad_vs_length</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_tgrad_vs_length_intensity_gt_200" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_tgrad_vs_length_intensity_gt_200"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_tgrad_vs_length_intensity_gt_200</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_width" title="lstchain.datachecks.containers.DL1DataCheckContainer.hist_width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_width</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.mean_alt_tel" title="lstchain.datachecks.containers.DL1DataCheckContainer.mean_alt_tel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mean_alt_tel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.mean_az_tel" title="lstchain.datachecks.containers.DL1DataCheckContainer.mean_az_tel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mean_az_tel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.meta" title="lstchain.datachecks.containers.DL1DataCheckContainer.meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">meta</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_cleaned_events" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_cleaned_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_cleaned_events</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_events" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_events</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_nearby_stars" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_nearby_stars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_nearby_stars</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0010_pe" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0010_pe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_pulses_above_0010_pe</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0030_pe" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0030_pe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_pulses_above_0030_pe</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0100_pe" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0100_pe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_pulses_above_0100_pe</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0300_pe" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0300_pe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_pulses_above_0300_pe</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_1000_pe" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_1000_pe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_pulses_above_1000_pe</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_ucts_jumps" title="lstchain.datachecks.containers.DL1DataCheckContainer.num_ucts_jumps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_ucts_jumps</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.prefix" title="lstchain.datachecks.containers.DL1DataCheckContainer.prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.relative_time_mean" title="lstchain.datachecks.containers.DL1DataCheckContainer.relative_time_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">relative_time_mean</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.relative_time_stddev" title="lstchain.datachecks.containers.DL1DataCheckContainer.relative_time_stddev"><code class="xref py py-obj docutils literal notranslate"><span class="pre">relative_time_stddev</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.sampled_event_ids" title="lstchain.datachecks.containers.DL1DataCheckContainer.sampled_event_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sampled_event_ids</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.subrun_index" title="lstchain.datachecks.containers.DL1DataCheckContainer.subrun_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subrun_index</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.tel_dec" title="lstchain.datachecks.containers.DL1DataCheckContainer.tel_dec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tel_dec</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.tel_ra" title="lstchain.datachecks.containers.DL1DataCheckContainer.tel_ra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tel_ra</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.tib_time" title="lstchain.datachecks.containers.DL1DataCheckContainer.tib_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tib_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.time_mean" title="lstchain.datachecks.containers.DL1DataCheckContainer.time_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_mean</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.time_mean_above_030_pe" title="lstchain.datachecks.containers.DL1DataCheckContainer.time_mean_above_030_pe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_mean_above_030_pe</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.time_stddev" title="lstchain.datachecks.containers.DL1DataCheckContainer.time_stddev"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_stddev</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.time_stddev_above_030_pe" title="lstchain.datachecks.containers.DL1DataCheckContainer.time_stddev_above_030_pe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_stddev_above_030_pe</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.trigger_type" title="lstchain.datachecks.containers.DL1DataCheckContainer.trigger_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trigger_type</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.ucts_time" title="lstchain.datachecks.containers.DL1DataCheckContainer.ucts_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ucts_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckContainer.ucts_trigger_type" title="lstchain.datachecks.containers.DL1DataCheckContainer.ucts_trigger_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ucts_trigger_type</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.charge_mean">
+<span class="sig-name descname"><span class="pre">charge_mean</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.charge_mean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.charge_stddev">
+<span class="sig-name descname"><span class="pre">charge_stddev</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.charge_stddev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.cog_within_pixel">
+<span class="sig-name descname"><span class="pre">cog_within_pixel</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.cog_within_pixel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.cog_within_pixel_intensity_gt_200">
+<span class="sig-name descname"><span class="pre">cog_within_pixel_intensity_gt_200</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.cog_within_pixel_intensity_gt_200" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.dragon_time">
+<span class="sig-name descname"><span class="pre">dragon_time</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.dragon_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.elapsed_time">
+<span class="sig-name descname"><span class="pre">elapsed_time</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.elapsed_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_delta_t">
+<span class="sig-name descname"><span class="pre">hist_delta_t</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_delta_t" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_dist0">
+<span class="sig-name descname"><span class="pre">hist_dist0</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_dist0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_dist0_intensity_gt_200">
+<span class="sig-name descname"><span class="pre">hist_dist0_intensity_gt_200</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_dist0_intensity_gt_200" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_intensity">
+<span class="sig-name descname"><span class="pre">hist_intensity</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_intensity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_intercept">
+<span class="sig-name descname"><span class="pre">hist_intercept</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_intercept" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_length">
+<span class="sig-name descname"><span class="pre">hist_length</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_length" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_nislands">
+<span class="sig-name descname"><span class="pre">hist_nislands</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_nislands" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_npixels">
+<span class="sig-name descname"><span class="pre">hist_npixels</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_npixels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_pixelchargespectrum">
+<span class="sig-name descname"><span class="pre">hist_pixelchargespectrum</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_pixelchargespectrum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_psi">
+<span class="sig-name descname"><span class="pre">hist_psi</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_psi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_skewness">
+<span class="sig-name descname"><span class="pre">hist_skewness</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_skewness" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_tgrad_vs_length">
+<span class="sig-name descname"><span class="pre">hist_tgrad_vs_length</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_tgrad_vs_length" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_tgrad_vs_length_intensity_gt_200">
+<span class="sig-name descname"><span class="pre">hist_tgrad_vs_length_intensity_gt_200</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_tgrad_vs_length_intensity_gt_200" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.hist_width">
+<span class="sig-name descname"><span class="pre">hist_width</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.hist_width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.mean_alt_tel">
+<span class="sig-name descname"><span class="pre">mean_alt_tel</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.mean_alt_tel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.mean_az_tel">
+<span class="sig-name descname"><span class="pre">mean_az_tel</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.mean_az_tel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_cleaned_events">
+<span class="sig-name descname"><span class="pre">num_cleaned_events</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_cleaned_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_events">
+<span class="sig-name descname"><span class="pre">num_events</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_nearby_stars">
+<span class="sig-name descname"><span class="pre">num_nearby_stars</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_nearby_stars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0010_pe">
+<span class="sig-name descname"><span class="pre">num_pulses_above_0010_pe</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0010_pe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0030_pe">
+<span class="sig-name descname"><span class="pre">num_pulses_above_0030_pe</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0030_pe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0100_pe">
+<span class="sig-name descname"><span class="pre">num_pulses_above_0100_pe</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0100_pe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0300_pe">
+<span class="sig-name descname"><span class="pre">num_pulses_above_0300_pe</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_0300_pe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_1000_pe">
+<span class="sig-name descname"><span class="pre">num_pulses_above_1000_pe</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_pulses_above_1000_pe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.num_ucts_jumps">
+<span class="sig-name descname"><span class="pre">num_ucts_jumps</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.num_ucts_jumps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.prefix">
+<span class="sig-name descname"><span class="pre">prefix</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.prefix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.relative_time_mean">
+<span class="sig-name descname"><span class="pre">relative_time_mean</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.relative_time_mean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.relative_time_stddev">
+<span class="sig-name descname"><span class="pre">relative_time_stddev</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.relative_time_stddev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.sampled_event_ids">
+<span class="sig-name descname"><span class="pre">sampled_event_ids</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.sampled_event_ids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.subrun_index">
+<span class="sig-name descname"><span class="pre">subrun_index</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.subrun_index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.tel_dec">
+<span class="sig-name descname"><span class="pre">tel_dec</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.tel_dec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.tel_ra">
+<span class="sig-name descname"><span class="pre">tel_ra</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.tel_ra" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.tib_time">
+<span class="sig-name descname"><span class="pre">tib_time</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.tib_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.time_mean">
+<span class="sig-name descname"><span class="pre">time_mean</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.time_mean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.time_mean_above_030_pe">
+<span class="sig-name descname"><span class="pre">time_mean_above_030_pe</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.time_mean_above_030_pe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.time_stddev">
+<span class="sig-name descname"><span class="pre">time_stddev</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.time_stddev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.time_stddev_above_030_pe">
+<span class="sig-name descname"><span class="pre">time_stddev_above_030_pe</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.time_stddev_above_030_pe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.trigger_type">
+<span class="sig-name descname"><span class="pre">trigger_type</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.trigger_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.ucts_time">
+<span class="sig-name descname"><span class="pre">ucts_time</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.ucts_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.ucts_trigger_type">
+<span class="sig-name descname"><span class="pre">ucts_trigger_type</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.ucts_trigger_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lstchain.datachecks.containers.count_trig_types.html" class="btn btn-neutral float-left" title="count_trig_types" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.datachecks.containers.DL1DataCheckHistogramBins.html" class="btn btn-neutral float-right" title="DL1DataCheckHistogramBins" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

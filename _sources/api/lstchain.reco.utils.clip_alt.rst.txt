@@ -1,0 +1,6 @@
+clip_alt
+========
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: clip_alt

@@ -1,0 +1,6 @@
+load_irf_grid
+=============
+
+.. currentmodule:: lstchain.high_level.interpolate
+
+.. autofunction:: load_irf_grid

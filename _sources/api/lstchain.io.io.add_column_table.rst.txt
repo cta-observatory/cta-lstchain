@@ -1,0 +1,6 @@
+add_column_table
+================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: add_column_table

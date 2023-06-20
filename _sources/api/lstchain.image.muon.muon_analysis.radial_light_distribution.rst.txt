@@ -1,0 +1,6 @@
+radial_light_distribution
+=========================
+
+.. currentmodule:: lstchain.image.muon.muon_analysis
+
+.. autofunction:: radial_light_distribution

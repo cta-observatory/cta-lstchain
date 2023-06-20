@@ -1,0 +1,6 @@
+sensitivity_minimization_plot
+=============================
+
+.. currentmodule:: lstchain.mc.plot_utils
+
+.. autofunction:: sensitivity_minimization_plot

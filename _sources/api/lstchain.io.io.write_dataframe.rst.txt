@@ -1,0 +1,6 @@
+write_dataframe
+===============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: write_dataframe

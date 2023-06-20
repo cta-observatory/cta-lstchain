@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command line Tools (tools) &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../../_static/custom.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="CalibrationHDF5Writer" href="../../api/lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.html" />
+    <link rel="prev" title="Command line Scripts (scripts)" href="../scripts/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Command line Tools (<cite>tools</cite>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-api">Reference/API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.tools.lstchain_create_calibration_file">lstchain.tools.lstchain_create_calibration_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.tools.lstchain_create_dl3_file">lstchain.tools.lstchain_create_dl3_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.tools.lstchain_create_dl3_index_files">lstchain.tools.lstchain_create_dl3_index_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.tools.lstchain_create_irf_files">lstchain.tools.lstchain_create_irf_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.tools.lstchain_fit_intensity_scan">lstchain.tools.lstchain_fit_intensity_scan Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Docs</a></li>
+      <li class="breadcrumb-item active">Command line Tools (<cite>tools</cite>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lstchain_api/tools/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="command-line-tools-tools">
+<span id="tools"></span><h1>Command line Tools (<cite>tools</cite>)<a class="headerlink" href="#command-line-tools-tools" title="Permalink to this headline">¶</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Tools to perform LST calibration and data analysis.</p>
+</section>
+<section id="reference-api">
+<h2>Reference/API<a class="headerlink" href="#reference-api" title="Permalink to this headline">¶</a></h2>
+<section id="module-lstchain.tools.lstchain_create_calibration_file">
+<span id="lstchain-tools-lstchain-create-calibration-file-module"></span><h3>lstchain.tools.lstchain_create_calibration_file Module<a class="headerlink" href="#module-lstchain.tools.lstchain_create_calibration_file" title="Permalink to this headline">¶</a></h3>
+<p>Extract flat field coefficients from flasher data files.</p>
+<section id="classes">
+<h4>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.html#lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer" title="lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalibrationHDF5Writer</span></code></a>(**kwargs)</p></td>
+<td><p>Tool that generates a HDF5 file with camera calibration coefficients.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.tools.lstchain_create_dl3_file">
+<span id="lstchain-tools-lstchain-create-dl3-file-module"></span><h3>lstchain.tools.lstchain_create_dl3_file Module<a class="headerlink" href="#module-lstchain.tools.lstchain_create_dl3_file" title="Permalink to this headline">¶</a></h3>
+<p>Create DL3 FITS file from given data DL2 file,
+selection cuts and IRF FITS files.</p>
+<p>Change the selection parameters as need be using the aliases.
+The default values are written in the EventSelector and DL3Cuts Component
+and also given in some example configs in docs/examples/</p>
+<p>For using IRF interpolation methods, to get IRF with sky pointing the same or
+closer (in the interpolation parameter space) to that of the data provided,
+one has to provide,</p>
+<ul class="simple">
+<li><p>the path to the IRFs,</p></li>
+<li><p>glob search pattern for selecting the IRFs to be used, and</p></li>
+<li><p>a final interpolated IRF file name.</p></li>
+</ul>
+<p>If instead of using IRF interpolation, one needs to add only the nearest IRF
+node to the given data, in the interpolation space, then one needs to pass the
+use-nearest-irf-node flag.</p>
+<p>For the cuts on gammaness, the Tool looks at the IRF provided or the final
+interpolated/selected IRF, to either use global cuts, based on the header
+value of the global gammaness cut, GH_CUT, present in each HDU, or
+energy-dependent cuts, based on the GH_CUTS HDU.</p>
+<p>To use a separate config file for providing the selection parameters,
+copy and append the relevant example config files, into a custom config file.</p>
+<p>For source-dependent analysis, a source-dep flag should be passed.
+Similarly to the cuts on gammaness, the global alpha cut values are provided
+from AL_CUT stored in the HDU header. The alpha cut is already applied on this
+step, and all survived events with each assumed source position (on and off)
+are saved after the gammaness and alpha cut.
+To adapt to the high-level analysis used by gammapy, assumed source position
+(on and off) is set as a reco source position just as a trick to obtain
+survived events easily.</p>
+<section id="id1">
+<h4>Classes<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.tools.lstchain_create_dl3_file.DataReductionFITSWriter.html#lstchain.tools.lstchain_create_dl3_file.DataReductionFITSWriter" title="lstchain.tools.lstchain_create_dl3_file.DataReductionFITSWriter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataReductionFITSWriter</span></code></a>(**kwargs)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.tools.lstchain_create_dl3_index_files">
+<span id="lstchain-tools-lstchain-create-dl3-index-files-module"></span><h3>lstchain.tools.lstchain_create_dl3_index_files Module<a class="headerlink" href="#module-lstchain.tools.lstchain_create_dl3_index_files" title="Permalink to this headline">¶</a></h3>
+<p>Create HDU index files for HDU tables and Obs tables,
+from a given path of DL3 files and a glob pattern to select DL3 files
+The index filenames are the standard as per
+<a class="reference external" href="http://gamma-astro-data-formats.readthedocs.io/en/latest/">http://gamma-astro-data-formats.readthedocs.io/en/latest/</a></p>
+<p>The Index files can be stored in a different path, but by default
+they are stored at the same place as the DL3 files.</p>
+<section id="id2">
+<h4>Classes<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter.html#lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter" title="lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FITSIndexWriter</span></code></a>(**kwargs)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.tools.lstchain_create_irf_files">
+<span id="lstchain-tools-lstchain-create-irf-files-module"></span><h3>lstchain.tools.lstchain_create_irf_files Module<a class="headerlink" href="#module-lstchain.tools.lstchain_create_irf_files" title="Permalink to this headline">¶</a></h3>
+<p>Create FITS file for IRFs from given MC DL2 files and selection cuts
+taken either from command-line arguments or a config file.</p>
+<p>MC gamma files can be point_like or diffuse.
+IRFs can be point_like or Full Enclosure.
+Background HDU maybe added if proton and electron MC are provided.</p>
+<p>Change the selection parameters as need be using the aliases.
+The default values are written in the EventSelector, DL3Cuts and
+DataBinning Component and also given in some example configs in docs/examples/</p>
+<p>By default, the Tool uses global cuts for gammaness and theta.</p>
+<p>For using energy-dependent gammaness cuts, use the argument gh_efficiency
+for passing the gamma efficiency value to calculate the gammaness cuts for
+each reco energy bin and the flag energy-dependent-gh.
+Similarly, for energy-dependent theta cuts, use the argument
+theta_containment and the flag energy-dependent-theta.</p>
+<p>The energy-dependent cuts are stored as HDUs - GH_CUTS and RAD_MAX,
+and saved with other IRFs.</p>
+<p>To use a separate config file for providing the selection parameters,
+copy and append the relevant example config files, into a custom config file.</p>
+<p>For source-dependent analysis, alpha cut can be used instead of theta cut.
+If you want to generate source-dependent IRFs, source-dep flag should be activated.
+The global alpha cut used to generate IRFs is stored as AL_CUT in the HDU header.</p>
+<section id="id3">
+<h4>Classes<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.tools.lstchain_create_irf_files.IRFFITSWriter.html#lstchain.tools.lstchain_create_irf_files.IRFFITSWriter" title="lstchain.tools.lstchain_create_irf_files.IRFFITSWriter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IRFFITSWriter</span></code></a>(**kwargs)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.tools.lstchain_fit_intensity_scan">
+<span id="lstchain-tools-lstchain-fit-intensity-scan-module"></span><h3>lstchain.tools.lstchain_fit_intensity_scan Module<a class="headerlink" href="#module-lstchain.tools.lstchain_fit_intensity_scan" title="Permalink to this headline">¶</a></h3>
+<section id="id4">
+<h4>Classes<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.html#lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan" title="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FitIntensityScan</span></code></a>(**kwargs)</p></td>
+<td><p>Tool that generates a HDF5 file with the results of the fit of the signal of an intensity scan (filter scan in the case of LST), this is useful to estimate the quadratic noise term to include in the standard F-factor formula</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../scripts/index.html" class="btn btn-neutral float-left" title="Command line Scripts (scripts)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api/lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer.html" class="btn btn-neutral float-right" title="CalibrationHDF5Writer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

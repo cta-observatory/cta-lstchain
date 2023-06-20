@@ -1,0 +1,6 @@
+merge_dl1datacheck_files
+========================
+
+.. currentmodule:: lstchain.datachecks.dl1_checker
+
+.. autofunction:: merge_dl1datacheck_files

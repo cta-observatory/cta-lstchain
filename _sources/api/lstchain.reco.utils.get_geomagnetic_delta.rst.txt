@@ -1,0 +1,6 @@
+get_geomagnetic_delta
+=====================
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: get_geomagnetic_delta

@@ -1,0 +1,6 @@
+plot_positions_survived_events
+==============================
+
+.. currentmodule:: lstchain.mc.plot_utils
+
+.. autofunction:: plot_positions_survived_events

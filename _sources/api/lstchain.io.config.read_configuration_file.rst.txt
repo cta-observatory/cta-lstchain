@@ -1,0 +1,6 @@
+read_configuration_file
+=======================
+
+.. currentmodule:: lstchain.io.config
+
+.. autofunction:: read_configuration_file

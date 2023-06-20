@@ -1,0 +1,51 @@
+CalibrationHDF5Writer
+=====================
+
+.. currentmodule:: lstchain.tools.lstchain_create_calibration_file
+
+.. autoclass:: CalibrationHDF5Writer
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~CalibrationHDF5Writer.aliases
+      ~CalibrationHDF5Writer.calibration_product
+      ~CalibrationHDF5Writer.classes
+      ~CalibrationHDF5Writer.description
+      ~CalibrationHDF5Writer.events_to_skip
+      ~CalibrationHDF5Writer.flags
+      ~CalibrationHDF5Writer.mc_max_pedestal_adc
+      ~CalibrationHDF5Writer.mc_min_flatfield_adc
+      ~CalibrationHDF5Writer.name
+      ~CalibrationHDF5Writer.one_event
+      ~CalibrationHDF5Writer.output_file
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~CalibrationHDF5Writer.finish
+      ~CalibrationHDF5Writer.setup
+      ~CalibrationHDF5Writer.start
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: aliases
+   .. autoattribute:: calibration_product
+   .. autoattribute:: classes
+   .. autoattribute:: description
+   .. autoattribute:: events_to_skip
+   .. autoattribute:: flags
+   .. autoattribute:: mc_max_pedestal_adc
+   .. autoattribute:: mc_min_flatfield_adc
+   .. autoattribute:: name
+   .. autoattribute:: one_event
+   .. autoattribute:: output_file
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: finish
+   .. automethod:: setup
+   .. automethod:: start

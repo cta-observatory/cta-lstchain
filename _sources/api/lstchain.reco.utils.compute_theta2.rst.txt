@@ -1,0 +1,6 @@
+compute_theta2
+==============
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: compute_theta2

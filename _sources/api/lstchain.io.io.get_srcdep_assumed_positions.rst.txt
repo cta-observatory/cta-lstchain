@@ -1,0 +1,6 @@
+get_srcdep_assumed_positions
+============================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: get_srcdep_assumed_positions

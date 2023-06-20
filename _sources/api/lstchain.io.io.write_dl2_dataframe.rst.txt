@@ -1,0 +1,6 @@
+write_dl2_dataframe
+===================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: write_dl2_dataframe

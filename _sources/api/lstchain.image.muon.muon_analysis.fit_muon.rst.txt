@@ -1,0 +1,6 @@
+fit_muon
+========
+
+.. currentmodule:: lstchain.image.muon.muon_analysis
+
+.. autofunction:: fit_muon

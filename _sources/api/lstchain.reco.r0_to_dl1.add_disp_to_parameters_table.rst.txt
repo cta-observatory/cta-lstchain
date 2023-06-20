@@ -1,0 +1,6 @@
+add_disp_to_parameters_table
+============================
+
+.. currentmodule:: lstchain.reco.r0_to_dl1
+
+.. autofunction:: add_disp_to_parameters_table

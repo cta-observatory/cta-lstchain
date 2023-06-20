@@ -1,0 +1,6 @@
+tag_pix_thr
+===========
+
+.. currentmodule:: lstchain.image.muon.muon_analysis
+
+.. autofunction:: tag_pix_thr

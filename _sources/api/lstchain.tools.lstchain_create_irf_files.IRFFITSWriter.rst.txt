@@ -1,0 +1,63 @@
+IRFFITSWriter
+=============
+
+.. currentmodule:: lstchain.tools.lstchain_create_irf_files
+
+.. autoclass:: IRFFITSWriter
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~IRFFITSWriter.aliases
+      ~IRFFITSWriter.classes
+      ~IRFFITSWriter.description
+      ~IRFFITSWriter.energy_dependent_alpha
+      ~IRFFITSWriter.energy_dependent_gh
+      ~IRFFITSWriter.energy_dependent_theta
+      ~IRFFITSWriter.example
+      ~IRFFITSWriter.flags
+      ~IRFFITSWriter.input_electron_dl2
+      ~IRFFITSWriter.input_gamma_dl2
+      ~IRFFITSWriter.input_proton_dl2
+      ~IRFFITSWriter.irf_obs_time
+      ~IRFFITSWriter.name
+      ~IRFFITSWriter.output_irf_file
+      ~IRFFITSWriter.overwrite
+      ~IRFFITSWriter.point_like
+      ~IRFFITSWriter.source_dep
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~IRFFITSWriter.finish
+      ~IRFFITSWriter.setup
+      ~IRFFITSWriter.start
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: aliases
+   .. autoattribute:: classes
+   .. autoattribute:: description
+   .. autoattribute:: energy_dependent_alpha
+   .. autoattribute:: energy_dependent_gh
+   .. autoattribute:: energy_dependent_theta
+   .. autoattribute:: example
+   .. autoattribute:: flags
+   .. autoattribute:: input_electron_dl2
+   .. autoattribute:: input_gamma_dl2
+   .. autoattribute:: input_proton_dl2
+   .. autoattribute:: irf_obs_time
+   .. autoattribute:: name
+   .. autoattribute:: output_irf_file
+   .. autoattribute:: overwrite
+   .. autoattribute:: point_like
+   .. autoattribute:: source_dep
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: finish
+   .. automethod:: setup
+   .. automethod:: start

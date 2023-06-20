@@ -1,0 +1,6 @@
+diff_events_after_cut
+=====================
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: diff_events_after_cut

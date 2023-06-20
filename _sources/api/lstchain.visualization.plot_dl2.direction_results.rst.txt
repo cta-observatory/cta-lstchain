@@ -1,0 +1,6 @@
+direction_results
+=================
+
+.. currentmodule:: lstchain.visualization.plot_dl2
+
+.. autofunction:: direction_results

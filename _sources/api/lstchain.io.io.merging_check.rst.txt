@@ -1,0 +1,6 @@
+merging_check
+=============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: merging_check

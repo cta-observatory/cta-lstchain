@@ -1,0 +1,6 @@
+load_calibrator_from_config
+===========================
+
+.. currentmodule:: lstchain.calib
+
+.. autofunction:: load_calibrator_from_config

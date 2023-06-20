@@ -1,0 +1,6 @@
+train_energy
+============
+
+.. currentmodule:: lstchain.reco.dl1_to_dl2
+
+.. autofunction:: train_energy

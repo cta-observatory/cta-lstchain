@@ -1,0 +1,6 @@
+write_metadata
+==============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: write_metadata

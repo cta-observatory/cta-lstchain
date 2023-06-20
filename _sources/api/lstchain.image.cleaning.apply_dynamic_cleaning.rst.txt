@@ -1,0 +1,6 @@
+apply_dynamic_cleaning
+======================
+
+.. currentmodule:: lstchain.image.cleaning
+
+.. autofunction:: apply_dynamic_cleaning

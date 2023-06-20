@@ -1,0 +1,31 @@
+ThrownEventsHistogram
+=====================
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: ThrownEventsHistogram
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~ThrownEventsHistogram.bins_core_dist
+      ~ThrownEventsHistogram.bins_energy
+      ~ThrownEventsHistogram.hist_id
+      ~ThrownEventsHistogram.histogram
+      ~ThrownEventsHistogram.meta
+      ~ThrownEventsHistogram.num_entries
+      ~ThrownEventsHistogram.obs_id
+      ~ThrownEventsHistogram.prefix
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: bins_core_dist
+   .. autoattribute:: bins_energy
+   .. autoattribute:: hist_id
+   .. autoattribute:: histogram
+   .. autoattribute:: meta
+   .. autoattribute:: num_entries
+   .. autoattribute:: obs_id
+   .. autoattribute:: prefix

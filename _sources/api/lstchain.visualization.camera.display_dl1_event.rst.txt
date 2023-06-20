@@ -1,0 +1,6 @@
+display_dl1_event
+=================
+
+.. currentmodule:: lstchain.visualization.camera
+
+.. autofunction:: display_dl1_event

@@ -1,0 +1,6 @@
+overlay_hillas_major_axis
+=========================
+
+.. currentmodule:: lstchain.visualization.camera
+
+.. autofunction:: overlay_hillas_major_axis

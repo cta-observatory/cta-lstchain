@@ -1,0 +1,6 @@
+get_source_dependent_parameters
+===============================
+
+.. currentmodule:: lstchain.reco.dl1_to_dl2
+
+.. autofunction:: get_source_dependent_parameters

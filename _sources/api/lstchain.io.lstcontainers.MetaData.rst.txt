@@ -1,0 +1,27 @@
+MetaData
+========
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: MetaData
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~MetaData.CONTACT
+      ~MetaData.CTAPIPE_IO_LST_VERSION
+      ~MetaData.CTAPIPE_VERSION
+      ~MetaData.LSTCHAIN_VERSION
+      ~MetaData.meta
+      ~MetaData.prefix
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: CONTACT
+   .. autoattribute:: CTAPIPE_IO_LST_VERSION
+   .. autoattribute:: CTAPIPE_VERSION
+   .. autoattribute:: LSTCHAIN_VERSION
+   .. autoattribute:: meta
+   .. autoattribute:: prefix

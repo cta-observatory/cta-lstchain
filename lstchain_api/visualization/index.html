@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualization (visualization) &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../../_static/custom.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="_generate_bokeh_multi_polygon_arrays" href="../../api/lstchain.visualization.bokeh._generate_bokeh_multi_polygon_arrays.html" />
+    <link rel="prev" title="FitIntensityScan" href="../../api/lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Visualization (<cite>visualization</cite>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-api">Reference/API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.visualization.bokeh">lstchain.visualization.bokeh Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.visualization.camera">lstchain.visualization.camera Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.visualization.plot_calib">lstchain.visualization.plot_calib Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.visualization.plot_dl2">lstchain.visualization.plot_dl2 Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.visualization.plot_drs4">lstchain.visualization.plot_drs4 Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Docs</a></li>
+      <li class="breadcrumb-item active">Visualization (<cite>visualization</cite>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lstchain_api/visualization/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="visualization-visualization">
+<span id="visualization"></span><h1>Visualization (<cite>visualization</cite>)<a class="headerlink" href="#visualization-visualization" title="Permalink to this headline">¶</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Visualization modules.</p>
+</section>
+<section id="reference-api">
+<h2>Reference/API<a class="headerlink" href="#reference-api" title="Permalink to this headline">¶</a></h2>
+<section id="module-lstchain.visualization.bokeh">
+<span id="lstchain-visualization-bokeh-module"></span><h3>lstchain.visualization.bokeh Module<a class="headerlink" href="#module-lstchain.visualization.bokeh" title="Permalink to this headline">¶</a></h3>
+<section id="functions">
+<h4>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.bokeh._generate_bokeh_multi_polygon_arrays.html#lstchain.visualization.bokeh._generate_bokeh_multi_polygon_arrays" title="lstchain.visualization.bokeh._generate_bokeh_multi_polygon_arrays"><code class="xref py py-obj docutils literal notranslate"><span class="pre">_generate_bokeh_multi_polygon_arrays</span></code></a>(geom[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.bokeh._generate_polygon_vertices.html#lstchain.visualization.bokeh._generate_polygon_vertices" title="lstchain.visualization.bokeh._generate_polygon_vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">_generate_polygon_vertices</span></code></a>([order, x, y, ...])</p></td>
+<td><p>returns the vertices of a regular polygon of order <cite>order</cite>, centered at <cite>(x,y)</cite>, with size <cite>size</cite> and rotation angle <cite>theta0</cite> in deg.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.bokeh.get_pixel_location.html#lstchain.visualization.bokeh.get_pixel_location" title="lstchain.visualization.bokeh.get_pixel_location"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_pixel_location</span></code></a>(pix_id)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.bokeh.plot_mean_and_stddev_bokeh.html#lstchain.visualization.bokeh.plot_mean_and_stddev_bokeh" title="lstchain.visualization.bokeh.plot_mean_and_stddev_bokeh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_mean_and_stddev_bokeh</span></code></a>(table, camgeom, ...)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.bokeh.show_camera.html#lstchain.visualization.bokeh.show_camera" title="lstchain.visualization.bokeh.show_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show_camera</span></code></a>(content, camgeom, pad_width, label)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h4>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.bokeh.CameraDisplay.html#lstchain.visualization.bokeh.CameraDisplay" title="lstchain.visualization.bokeh.CameraDisplay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CameraDisplay</span></code></a>(geom[, zlow, zhigh, label, ...])</p></td>
+<td><p>New version of a Bokeh camera display, by K.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.visualization.camera">
+<span id="lstchain-visualization-camera-module"></span><h3>lstchain.visualization.camera Module<a class="headerlink" href="#module-lstchain.visualization.camera" title="Permalink to this headline">¶</a></h3>
+<section id="id1">
+<h4>Functions<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.camera.display_dl1_event.html#lstchain.visualization.camera.display_dl1_event" title="lstchain.visualization.camera.display_dl1_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">display_dl1_event</span></code></a>(event, camera_geometry[, ...])</p></td>
+<td><p>Display a DL1 event (image and pulse time map) side by side</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.camera.overlay_disp_vector.html#lstchain.visualization.camera.overlay_disp_vector" title="lstchain.visualization.camera.overlay_disp_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overlay_disp_vector</span></code></a>(display, disp, hillas, ...)</p></td>
+<td><p>Overlay disp vector on a CameraDisplay</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.camera.overlay_hillas_major_axis.html#lstchain.visualization.camera.overlay_hillas_major_axis" title="lstchain.visualization.camera.overlay_hillas_major_axis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overlay_hillas_major_axis</span></code></a>(display, hillas, ...)</p></td>
+<td><p>Overlay hillas ellipse major axis on a CameraDisplay.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.camera.overlay_source.html#lstchain.visualization.camera.overlay_source" title="lstchain.visualization.camera.overlay_source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overlay_source</span></code></a>(display, source_pos_x, ...)</p></td>
+<td><p>Display the source (event) position in the camera</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.visualization.plot_calib">
+<span id="lstchain-visualization-plot-calib-module"></span><h3>lstchain.visualization.plot_calib Module<a class="headerlink" href="#module-lstchain.visualization.plot_calib" title="Permalink to this headline">¶</a></h3>
+<section id="id2">
+<h4>Functions<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_calib.plot_calibration_results.html#lstchain.visualization.plot_calib.plot_calibration_results" title="lstchain.visualization.plot_calib.plot_calibration_results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_calibration_results</span></code></a>(ped_data, ff_data, ...)</p></td>
+<td><p>plot camera calibration quantities</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.visualization.plot_dl2">
+<span id="lstchain-visualization-plot-dl2-module"></span><h3>lstchain.visualization.plot_dl2 Module<a class="headerlink" href="#module-lstchain.visualization.plot_dl2" title="Permalink to this headline">¶</a></h3>
+<p>Module for plotting results from reconstruction.</p>
+<p>Usage:
+“import plot_dl2”</p>
+<section id="id3">
+<h4>Functions<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.direction_results.html#lstchain.visualization.plot_dl2.direction_results" title="lstchain.visualization.plot_dl2.direction_results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">direction_results</span></code></a>(dl2_data[, ...])</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.energy_results.html#lstchain.visualization.plot_dl2.energy_results" title="lstchain.visualization.plot_dl2.energy_results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">energy_results</span></code></a>(dl2_data[, points_outfile, ...])</p></td>
+<td><p>Plot energy resolution, energy bias and energy migration matrix in the same figure</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_1d_excess.html#lstchain.visualization.plot_dl2.plot_1d_excess" title="lstchain.visualization.plot_dl2.plot_1d_excess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_1d_excess</span></code></a>(named_datasets, ...[, ax, ...])</p></td>
+<td><p>Plot one-dimensional distribution of signal and backgound events Color maps: <a class="reference external" href="https://matplotlib.org/gallery/color/colormap_reference.html">https://matplotlib.org/gallery/color/colormap_reference.html</a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_disp.html#lstchain.visualization.plot_dl2.plot_disp" title="lstchain.visualization.plot_dl2.plot_disp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_disp</span></code></a>(data[, true_hadroness])</p></td>
+<td><p>Plot the performance of reconstructed position</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_disp_vector.html#lstchain.visualization.plot_dl2.plot_disp_vector" title="lstchain.visualization.plot_dl2.plot_disp_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_disp_vector</span></code></a>(data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_energy_resolution.html#lstchain.visualization.plot_dl2.plot_energy_resolution" title="lstchain.visualization.plot_dl2.plot_energy_resolution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_energy_resolution</span></code></a>(dl2_data[, ax, ...])</p></td>
+<td><p>Plot the energy resolution from a pandas dataframe of DL2 data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_features.html#lstchain.visualization.plot_dl2.plot_features" title="lstchain.visualization.plot_dl2.plot_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_features</span></code></a>(data[, true_hadroness])</p></td>
+<td><p>Plot the distribution of different features that characterize events, such as hillas parameters or MC data.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_importances.html#lstchain.visualization.plot_dl2.plot_importances" title="lstchain.visualization.plot_dl2.plot_importances"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_importances</span></code></a>(model, features_names[, ax])</p></td>
+<td><p>plot features importances</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_pos.html#lstchain.visualization.plot_dl2.plot_pos" title="lstchain.visualization.plot_dl2.plot_pos"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_pos</span></code></a>(data[, true_hadroness])</p></td>
+<td><p>Plot the performance of reconstructed position Parameters: data: pandas DataFrame true_hadroness: boolean True: True gammas and proton events are plotted (they are separated using true hadroness).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_roc_gamma.html#lstchain.visualization.plot_dl2.plot_roc_gamma" title="lstchain.visualization.plot_dl2.plot_roc_gamma"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_roc_gamma</span></code></a>(dl2_data[, energy_bins, ax])</p></td>
+<td><p>Plot a ROC curve of the gammaness classification from a pandas dataframe.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_dl2.plot_wobble.html#lstchain.visualization.plot_dl2.plot_wobble" title="lstchain.visualization.plot_dl2.plot_wobble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_wobble</span></code></a>(source_position, n_points[, ax])</p></td>
+<td><p>Plot 2D map of ON/OFF positions w.r.t.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.visualization.plot_drs4">
+<span id="lstchain-visualization-plot-drs4-module"></span><h3>lstchain.visualization.plot_drs4 Module<a class="headerlink" href="#module-lstchain.visualization.plot_drs4" title="Permalink to this headline">¶</a></h3>
+<section id="id4">
+<h4>Functions<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.visualization.plot_drs4.plot_pedestals.html#lstchain.visualization.plot_drs4.plot_pedestals" title="lstchain.visualization.plot_drs4.plot_pedestals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_pedestals</span></code></a>(data_file, pedestal_file[, ...])</p></td>
+<td><p>plot pedestal quantities quantities</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../api/lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.html" class="btn btn-neutral float-left" title="FitIntensityScan" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api/lstchain.visualization.bokeh._generate_bokeh_multi_polygon_arrays.html" class="btn btn-neutral float-right" title="_generate_bokeh_multi_polygon_arrays" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+ring_containment
+================
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: ring_containment

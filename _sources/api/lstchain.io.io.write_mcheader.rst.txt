@@ -1,0 +1,6 @@
+write_mcheader
+==============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: write_mcheader

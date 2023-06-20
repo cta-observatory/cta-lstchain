@@ -1,0 +1,6 @@
+count_trig_types
+================
+
+.. currentmodule:: lstchain.datachecks.containers
+
+.. autofunction:: count_trig_types

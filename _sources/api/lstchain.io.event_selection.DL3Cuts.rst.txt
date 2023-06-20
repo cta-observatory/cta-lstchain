@@ -1,0 +1,77 @@
+DL3Cuts
+=======
+
+.. currentmodule:: lstchain.io.event_selection
+
+.. autoclass:: DL3Cuts
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DL3Cuts.allowed_tels
+      ~DL3Cuts.alpha_containment
+      ~DL3Cuts.fill_alpha_cut
+      ~DL3Cuts.fill_theta_cut
+      ~DL3Cuts.gh_efficiency
+      ~DL3Cuts.global_alpha_cut
+      ~DL3Cuts.global_gh_cut
+      ~DL3Cuts.global_theta_cut
+      ~DL3Cuts.max_alpha_cut
+      ~DL3Cuts.max_gh_cut
+      ~DL3Cuts.max_theta_cut
+      ~DL3Cuts.min_alpha_cut
+      ~DL3Cuts.min_event_p_en_bin
+      ~DL3Cuts.min_gh_cut
+      ~DL3Cuts.min_theta_cut
+      ~DL3Cuts.theta_containment
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~DL3Cuts.allowed_tels_filter
+      ~DL3Cuts.apply_energy_dependent_alpha_cuts
+      ~DL3Cuts.apply_energy_dependent_gh_cuts
+      ~DL3Cuts.apply_energy_dependent_theta_cuts
+      ~DL3Cuts.apply_global_alpha_cut
+      ~DL3Cuts.apply_global_gh_cut
+      ~DL3Cuts.apply_global_theta_cut
+      ~DL3Cuts.energy_dependent_alpha_cuts
+      ~DL3Cuts.energy_dependent_gh_cuts
+      ~DL3Cuts.energy_dependent_theta_cuts
+      ~DL3Cuts.update_fill_cuts
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: allowed_tels
+   .. autoattribute:: alpha_containment
+   .. autoattribute:: fill_alpha_cut
+   .. autoattribute:: fill_theta_cut
+   .. autoattribute:: gh_efficiency
+   .. autoattribute:: global_alpha_cut
+   .. autoattribute:: global_gh_cut
+   .. autoattribute:: global_theta_cut
+   .. autoattribute:: max_alpha_cut
+   .. autoattribute:: max_gh_cut
+   .. autoattribute:: max_theta_cut
+   .. autoattribute:: min_alpha_cut
+   .. autoattribute:: min_event_p_en_bin
+   .. autoattribute:: min_gh_cut
+   .. autoattribute:: min_theta_cut
+   .. autoattribute:: theta_containment
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: allowed_tels_filter
+   .. automethod:: apply_energy_dependent_alpha_cuts
+   .. automethod:: apply_energy_dependent_gh_cuts
+   .. automethod:: apply_energy_dependent_theta_cuts
+   .. automethod:: apply_global_alpha_cut
+   .. automethod:: apply_global_gh_cut
+   .. automethod:: apply_global_theta_cut
+   .. automethod:: energy_dependent_alpha_cuts
+   .. automethod:: energy_dependent_gh_cuts
+   .. automethod:: energy_dependent_theta_cuts
+   .. automethod:: update_fill_cuts

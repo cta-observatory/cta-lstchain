@@ -1,0 +1,109 @@
+DL1DataCheckContainer
+=====================
+
+.. currentmodule:: lstchain.datachecks.containers
+
+.. autoclass:: DL1DataCheckContainer
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DL1DataCheckContainer.charge_mean
+      ~DL1DataCheckContainer.charge_stddev
+      ~DL1DataCheckContainer.cog_within_pixel
+      ~DL1DataCheckContainer.cog_within_pixel_intensity_gt_200
+      ~DL1DataCheckContainer.dragon_time
+      ~DL1DataCheckContainer.elapsed_time
+      ~DL1DataCheckContainer.hist_delta_t
+      ~DL1DataCheckContainer.hist_dist0
+      ~DL1DataCheckContainer.hist_dist0_intensity_gt_200
+      ~DL1DataCheckContainer.hist_intensity
+      ~DL1DataCheckContainer.hist_intercept
+      ~DL1DataCheckContainer.hist_length
+      ~DL1DataCheckContainer.hist_nislands
+      ~DL1DataCheckContainer.hist_npixels
+      ~DL1DataCheckContainer.hist_pixelchargespectrum
+      ~DL1DataCheckContainer.hist_psi
+      ~DL1DataCheckContainer.hist_skewness
+      ~DL1DataCheckContainer.hist_tgrad_vs_length
+      ~DL1DataCheckContainer.hist_tgrad_vs_length_intensity_gt_200
+      ~DL1DataCheckContainer.hist_width
+      ~DL1DataCheckContainer.mean_alt_tel
+      ~DL1DataCheckContainer.mean_az_tel
+      ~DL1DataCheckContainer.meta
+      ~DL1DataCheckContainer.num_cleaned_events
+      ~DL1DataCheckContainer.num_events
+      ~DL1DataCheckContainer.num_nearby_stars
+      ~DL1DataCheckContainer.num_pulses_above_0010_pe
+      ~DL1DataCheckContainer.num_pulses_above_0030_pe
+      ~DL1DataCheckContainer.num_pulses_above_0100_pe
+      ~DL1DataCheckContainer.num_pulses_above_0300_pe
+      ~DL1DataCheckContainer.num_pulses_above_1000_pe
+      ~DL1DataCheckContainer.num_ucts_jumps
+      ~DL1DataCheckContainer.prefix
+      ~DL1DataCheckContainer.relative_time_mean
+      ~DL1DataCheckContainer.relative_time_stddev
+      ~DL1DataCheckContainer.sampled_event_ids
+      ~DL1DataCheckContainer.subrun_index
+      ~DL1DataCheckContainer.tel_dec
+      ~DL1DataCheckContainer.tel_ra
+      ~DL1DataCheckContainer.tib_time
+      ~DL1DataCheckContainer.time_mean
+      ~DL1DataCheckContainer.time_mean_above_030_pe
+      ~DL1DataCheckContainer.time_stddev
+      ~DL1DataCheckContainer.time_stddev_above_030_pe
+      ~DL1DataCheckContainer.trigger_type
+      ~DL1DataCheckContainer.ucts_time
+      ~DL1DataCheckContainer.ucts_trigger_type
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: charge_mean
+   .. autoattribute:: charge_stddev
+   .. autoattribute:: cog_within_pixel
+   .. autoattribute:: cog_within_pixel_intensity_gt_200
+   .. autoattribute:: dragon_time
+   .. autoattribute:: elapsed_time
+   .. autoattribute:: hist_delta_t
+   .. autoattribute:: hist_dist0
+   .. autoattribute:: hist_dist0_intensity_gt_200
+   .. autoattribute:: hist_intensity
+   .. autoattribute:: hist_intercept
+   .. autoattribute:: hist_length
+   .. autoattribute:: hist_nislands
+   .. autoattribute:: hist_npixels
+   .. autoattribute:: hist_pixelchargespectrum
+   .. autoattribute:: hist_psi
+   .. autoattribute:: hist_skewness
+   .. autoattribute:: hist_tgrad_vs_length
+   .. autoattribute:: hist_tgrad_vs_length_intensity_gt_200
+   .. autoattribute:: hist_width
+   .. autoattribute:: mean_alt_tel
+   .. autoattribute:: mean_az_tel
+   .. autoattribute:: meta
+   .. autoattribute:: num_cleaned_events
+   .. autoattribute:: num_events
+   .. autoattribute:: num_nearby_stars
+   .. autoattribute:: num_pulses_above_0010_pe
+   .. autoattribute:: num_pulses_above_0030_pe
+   .. autoattribute:: num_pulses_above_0100_pe
+   .. autoattribute:: num_pulses_above_0300_pe
+   .. autoattribute:: num_pulses_above_1000_pe
+   .. autoattribute:: num_ucts_jumps
+   .. autoattribute:: prefix
+   .. autoattribute:: relative_time_mean
+   .. autoattribute:: relative_time_stddev
+   .. autoattribute:: sampled_event_ids
+   .. autoattribute:: subrun_index
+   .. autoattribute:: tel_dec
+   .. autoattribute:: tel_ra
+   .. autoattribute:: tib_time
+   .. autoattribute:: time_mean
+   .. autoattribute:: time_mean_above_030_pe
+   .. autoattribute:: time_stddev
+   .. autoattribute:: time_stddev_above_030_pe
+   .. autoattribute:: trigger_type
+   .. autoattribute:: ucts_time
+   .. autoattribute:: ucts_trigger_type

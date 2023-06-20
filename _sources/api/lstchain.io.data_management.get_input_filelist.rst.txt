@@ -1,0 +1,6 @@
+get_input_filelist
+==================
+
+.. currentmodule:: lstchain.io.data_management
+
+.. autofunction:: get_input_filelist

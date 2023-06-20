@@ -1,0 +1,6 @@
+get_pixel_location
+==================
+
+.. currentmodule:: lstchain.visualization.bokeh
+
+.. autofunction:: get_pixel_location

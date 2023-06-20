@@ -1,0 +1,6 @@
+read_metadata
+=============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: read_metadata

@@ -1,0 +1,6 @@
+get_srcdep_params
+=================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: get_srcdep_params

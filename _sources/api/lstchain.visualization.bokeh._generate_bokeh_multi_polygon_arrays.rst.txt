@@ -1,0 +1,6 @@
+_generate_bokeh_multi_polygon_arrays
+====================================
+
+.. currentmodule:: lstchain.visualization.bokeh
+
+.. autofunction:: _generate_bokeh_multi_polygon_arrays

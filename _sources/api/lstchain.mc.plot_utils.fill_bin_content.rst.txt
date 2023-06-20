@@ -1,0 +1,6 @@
+fill_bin_content
+================
+
+.. currentmodule:: lstchain.mc.plot_utils
+
+.. autofunction:: fill_bin_content

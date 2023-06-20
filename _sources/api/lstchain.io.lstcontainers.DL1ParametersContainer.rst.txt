@@ -1,0 +1,147 @@
+DL1ParametersContainer
+======================
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: DL1ParametersContainer
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DL1ParametersContainer.alt_tel
+      ~DL1ParametersContainer.az_tel
+      ~DL1ParametersContainer.calibration_id
+      ~DL1ParametersContainer.concentration_cog
+      ~DL1ParametersContainer.concentration_core
+      ~DL1ParametersContainer.concentration_pixel
+      ~DL1ParametersContainer.disp_angle
+      ~DL1ParametersContainer.disp_dx
+      ~DL1ParametersContainer.disp_dy
+      ~DL1ParametersContainer.disp_miss
+      ~DL1ParametersContainer.disp_norm
+      ~DL1ParametersContainer.disp_sign
+      ~DL1ParametersContainer.dragon_time
+      ~DL1ParametersContainer.event_id
+      ~DL1ParametersContainer.event_type
+      ~DL1ParametersContainer.hadroness
+      ~DL1ParametersContainer.intensity
+      ~DL1ParametersContainer.intercept
+      ~DL1ParametersContainer.kurtosis
+      ~DL1ParametersContainer.leakage_intensity_width_1
+      ~DL1ParametersContainer.leakage_intensity_width_2
+      ~DL1ParametersContainer.leakage_pixels_width_1
+      ~DL1ParametersContainer.leakage_pixels_width_2
+      ~DL1ParametersContainer.length
+      ~DL1ParametersContainer.length_uncertainty
+      ~DL1ParametersContainer.log_intensity
+      ~DL1ParametersContainer.log_mc_energy
+      ~DL1ParametersContainer.mc_alt
+      ~DL1ParametersContainer.mc_alt_tel
+      ~DL1ParametersContainer.mc_az
+      ~DL1ParametersContainer.mc_az_tel
+      ~DL1ParametersContainer.mc_core_distance
+      ~DL1ParametersContainer.mc_core_x
+      ~DL1ParametersContainer.mc_core_y
+      ~DL1ParametersContainer.mc_energy
+      ~DL1ParametersContainer.mc_h_first_int
+      ~DL1ParametersContainer.mc_type
+      ~DL1ParametersContainer.mc_x_max
+      ~DL1ParametersContainer.meta
+      ~DL1ParametersContainer.n_islands
+      ~DL1ParametersContainer.n_pixels
+      ~DL1ParametersContainer.obs_id
+      ~DL1ParametersContainer.phi
+      ~DL1ParametersContainer.prefix
+      ~DL1ParametersContainer.psi
+      ~DL1ParametersContainer.r
+      ~DL1ParametersContainer.sin_az_tel
+      ~DL1ParametersContainer.skewness
+      ~DL1ParametersContainer.src_x
+      ~DL1ParametersContainer.src_y
+      ~DL1ParametersContainer.tel_id
+      ~DL1ParametersContainer.tel_pos_x
+      ~DL1ParametersContainer.tel_pos_y
+      ~DL1ParametersContainer.tel_pos_z
+      ~DL1ParametersContainer.tib_time
+      ~DL1ParametersContainer.time_gradient
+      ~DL1ParametersContainer.trigger_time
+      ~DL1ParametersContainer.trigger_type
+      ~DL1ParametersContainer.ucts_jump
+      ~DL1ParametersContainer.ucts_time
+      ~DL1ParametersContainer.ucts_trigger_type
+      ~DL1ParametersContainer.width
+      ~DL1ParametersContainer.width_uncertainty
+      ~DL1ParametersContainer.wl
+      ~DL1ParametersContainer.x
+      ~DL1ParametersContainer.y
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: alt_tel
+   .. autoattribute:: az_tel
+   .. autoattribute:: calibration_id
+   .. autoattribute:: concentration_cog
+   .. autoattribute:: concentration_core
+   .. autoattribute:: concentration_pixel
+   .. autoattribute:: disp_angle
+   .. autoattribute:: disp_dx
+   .. autoattribute:: disp_dy
+   .. autoattribute:: disp_miss
+   .. autoattribute:: disp_norm
+   .. autoattribute:: disp_sign
+   .. autoattribute:: dragon_time
+   .. autoattribute:: event_id
+   .. autoattribute:: event_type
+   .. autoattribute:: hadroness
+   .. autoattribute:: intensity
+   .. autoattribute:: intercept
+   .. autoattribute:: kurtosis
+   .. autoattribute:: leakage_intensity_width_1
+   .. autoattribute:: leakage_intensity_width_2
+   .. autoattribute:: leakage_pixels_width_1
+   .. autoattribute:: leakage_pixels_width_2
+   .. autoattribute:: length
+   .. autoattribute:: length_uncertainty
+   .. autoattribute:: log_intensity
+   .. autoattribute:: log_mc_energy
+   .. autoattribute:: mc_alt
+   .. autoattribute:: mc_alt_tel
+   .. autoattribute:: mc_az
+   .. autoattribute:: mc_az_tel
+   .. autoattribute:: mc_core_distance
+   .. autoattribute:: mc_core_x
+   .. autoattribute:: mc_core_y
+   .. autoattribute:: mc_energy
+   .. autoattribute:: mc_h_first_int
+   .. autoattribute:: mc_type
+   .. autoattribute:: mc_x_max
+   .. autoattribute:: meta
+   .. autoattribute:: n_islands
+   .. autoattribute:: n_pixels
+   .. autoattribute:: obs_id
+   .. autoattribute:: phi
+   .. autoattribute:: prefix
+   .. autoattribute:: psi
+   .. autoattribute:: r
+   .. autoattribute:: sin_az_tel
+   .. autoattribute:: skewness
+   .. autoattribute:: src_x
+   .. autoattribute:: src_y
+   .. autoattribute:: tel_id
+   .. autoattribute:: tel_pos_x
+   .. autoattribute:: tel_pos_y
+   .. autoattribute:: tel_pos_z
+   .. autoattribute:: tib_time
+   .. autoattribute:: time_gradient
+   .. autoattribute:: trigger_time
+   .. autoattribute:: trigger_type
+   .. autoattribute:: ucts_jump
+   .. autoattribute:: ucts_time
+   .. autoattribute:: ucts_trigger_type
+   .. autoattribute:: width
+   .. autoattribute:: width_uncertainty
+   .. autoattribute:: wl
+   .. autoattribute:: x
+   .. autoattribute:: y

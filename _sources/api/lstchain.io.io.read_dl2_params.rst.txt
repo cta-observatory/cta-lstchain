@@ -1,0 +1,6 @@
+read_dl2_params
+===============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: read_dl2_params

@@ -1,0 +1,6 @@
+get_timing_params
+=================
+
+.. currentmodule:: lstchain.high_level.hdu_table
+
+.. autofunction:: get_timing_params

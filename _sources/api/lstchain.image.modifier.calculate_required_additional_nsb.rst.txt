@@ -1,0 +1,6 @@
+calculate_required_additional_nsb
+=================================
+
+.. currentmodule:: lstchain.image.modifier
+
+.. autofunction:: calculate_required_additional_nsb

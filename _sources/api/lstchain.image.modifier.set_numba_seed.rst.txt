@@ -1,0 +1,6 @@
+set_numba_seed
+==============
+
+.. currentmodule:: lstchain.image.modifier
+
+.. autofunction:: set_numba_seed

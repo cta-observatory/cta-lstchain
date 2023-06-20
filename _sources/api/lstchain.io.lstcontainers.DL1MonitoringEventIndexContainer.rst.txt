@@ -1,0 +1,27 @@
+DL1MonitoringEventIndexContainer
+================================
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: DL1MonitoringEventIndexContainer
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DL1MonitoringEventIndexContainer.calibration_id
+      ~DL1MonitoringEventIndexContainer.flatfield_id
+      ~DL1MonitoringEventIndexContainer.meta
+      ~DL1MonitoringEventIndexContainer.pedestal_id
+      ~DL1MonitoringEventIndexContainer.prefix
+      ~DL1MonitoringEventIndexContainer.tel_id
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: calibration_id
+   .. autoattribute:: flatfield_id
+   .. autoattribute:: meta
+   .. autoattribute:: pedestal_id
+   .. autoattribute:: prefix
+   .. autoattribute:: tel_id

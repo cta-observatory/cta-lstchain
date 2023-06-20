@@ -1,0 +1,6 @@
+plot_sensitivity
+================
+
+.. currentmodule:: lstchain.mc.plot_utils
+
+.. autofunction:: plot_sensitivity

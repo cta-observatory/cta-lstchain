@@ -1,0 +1,6 @@
+check_data_path
+===============
+
+.. currentmodule:: lstchain.io.data_management
+
+.. autofunction:: check_data_path

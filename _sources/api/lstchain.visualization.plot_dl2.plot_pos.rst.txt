@@ -1,0 +1,6 @@
+plot_pos
+========
+
+.. currentmodule:: lstchain.visualization.plot_dl2
+
+.. autofunction:: plot_pos

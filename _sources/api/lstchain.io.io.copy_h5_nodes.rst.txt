@@ -1,0 +1,6 @@
+copy_h5_nodes
+=============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: copy_h5_nodes

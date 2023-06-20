@@ -1,0 +1,6 @@
+show_camera
+===========
+
+.. currentmodule:: lstchain.visualization.bokeh
+
+.. autofunction:: show_camera

@@ -1,0 +1,21 @@
+ExtraMCInfo
+===========
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: ExtraMCInfo
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~ExtraMCInfo.meta
+      ~ExtraMCInfo.obs_id
+      ~ExtraMCInfo.prefix
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: meta
+   .. autoattribute:: obs_id
+   .. autoattribute:: prefix

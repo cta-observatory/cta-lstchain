@@ -1,0 +1,6 @@
+create_event_list
+=================
+
+.. currentmodule:: lstchain.high_level.hdu_table
+
+.. autofunction:: create_event_list

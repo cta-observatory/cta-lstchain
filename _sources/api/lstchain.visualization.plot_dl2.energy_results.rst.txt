@@ -1,0 +1,6 @@
+energy_results
+==============
+
+.. currentmodule:: lstchain.visualization.plot_dl2
+
+.. autofunction:: energy_results

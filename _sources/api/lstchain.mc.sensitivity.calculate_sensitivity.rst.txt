@@ -1,0 +1,6 @@
+calculate_sensitivity
+=====================
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: calculate_sensitivity

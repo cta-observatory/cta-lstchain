@@ -1,0 +1,6 @@
+sensitivity_gamma_efficiency_real_data
+======================================
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: sensitivity_gamma_efficiency_real_data

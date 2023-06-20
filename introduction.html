@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="_static/custom.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="LST-1 data analysis workflow" href="lst_analysis_workflow.html" />
+    <link rel="prev" title="Repository for LST analysis software (cta-lstchain)" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#analysis-steps">Analysis steps</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#r1-to-dl1">R1 to DL1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mc-data">MC data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#real-data">Real data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dl1-to-dl1a-and-dl1b">DL1 to DL1a and DL1b</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-file">Configuration file</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dl1-to-dl2">DL1 to DL2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Configuration file</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dl2-to-dl3">DL2 to DL3</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#irf-creation">IRF creation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#event-list-creation">Event list creation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#post-dl3-analysis">Post DL3 analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lstchain_api/index.html">API Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/introduction.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction">
+<span id="id1"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">lstchain</span></code> is the analysis library for the observed and simulated LST-1 data.</p>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">lstchain</span></code> heavily depends on <code class="docutils literal notranslate"><span class="pre">ctapipe</span></code></p>
+</section>
+</section>
+<section id="data-levels">
+<h1>Data levels<a class="headerlink" href="#data-levels" title="Permalink to this headline">¶</a></h1>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 80%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Level</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>File Format</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>R0</p></td>
+<td><p>Uncalibrated RAW waveforms from the camera</p></td>
+<td><p>ZFITS</p></td>
+</tr>
+<tr class="row-odd"><td><p>R1</p></td>
+<td><p>Calibrated waveforms from the camera</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>DL1a</p></td>
+<td><p>Integrated charge and peak position of the waveform</p></td>
+<td><p>HDF5</p></td>
+</tr>
+<tr class="row-odd"><td><p>DL1b</p></td>
+<td><p>Image parameters (width, length, intensity, etc.)</p></td>
+<td><p>HDF5</p></td>
+</tr>
+<tr class="row-even"><td><p>DL2</p></td>
+<td><p>Event parameters (energy, direction, time, etc.)</p></td>
+<td><p>HDF5</p></td>
+</tr>
+<tr class="row-odd"><td><p>DL3</p></td>
+<td><p>Lists of reconstructed events after event selection
+with corresponding IRFs (AEFF, EDISP, PSF, etc.)</p></td>
+<td><p>FITS</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="analysis-steps">
+<h1>Analysis steps<a class="headerlink" href="#analysis-steps" title="Permalink to this headline">¶</a></h1>
+<p>These individuals steps can be run one by one but are also integrated
+in more complete workflows presented in <a class="reference internal" href="lst_analysis_workflow.html"><span class="doc">LST-1 data analysis workflow</span></a>.</p>
+<section id="r1-to-dl1">
+<h2>R1 to DL1<a class="headerlink" href="#r1-to-dl1" title="Permalink to this headline">¶</a></h2>
+<section id="mc-data">
+<h3>MC data<a class="headerlink" href="#mc-data" title="Permalink to this headline">¶</a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_mc_r0_to_dl1</span></code>.</p>
+<p>For more information, try <code class="docutils literal notranslate"><span class="pre">--help</span></code> or see the <a class="reference internal" href="lstchain_api/index.html"><span class="doc">API Docs</span></a>.</p>
+</section>
+<section id="real-data">
+<h3>Real data<a class="headerlink" href="#real-data" title="Permalink to this headline">¶</a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_data_r0_to_dl1</span></code>.</p>
+<p>For more information, try <code class="docutils literal notranslate"><span class="pre">--help</span></code> or see the <a class="reference internal" href="lstchain_api/index.html"><span class="doc">API Docs</span></a>.</p>
+</section>
+<section id="dl1-to-dl1a-and-dl1b">
+<h3>DL1 to DL1a and DL1b<a class="headerlink" href="#dl1-to-dl1a-and-dl1b" title="Permalink to this headline">¶</a></h3>
+<p>If you already have a DL1 file containing images and parameters (DL1a and DL1b), you can recalculate the parameters
+using a different cleaning by using <code class="docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_dl1ab</span></code>.</p>
+<p>For more information, try <code class="docutils literal notranslate"><span class="pre">--help</span></code> or see the <a class="reference internal" href="lstchain_api/index.html"><span class="doc">API Docs</span></a>.</p>
+</section>
+<section id="configuration-file">
+<h3>Configuration file<a class="headerlink" href="#configuration-file" title="Permalink to this headline">¶</a></h3>
+<p>Here is an example configuration file for this step.</p>
+<div class="toggle docutils container">
+<div class="code json highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;source_config&quot;</span> <span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;EventSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;allowed_tels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;max_events&quot;</span><span class="p">:</span> <span class="n">null</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;LSTEventSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;default_trigger_type&quot;</span><span class="p">:</span> <span class="s2">&quot;ucts&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;allowed_tels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;min_flatfield_adc&quot;</span><span class="p">:</span> <span class="mi">3000</span><span class="p">,</span>
+      <span class="s2">&quot;min_flatfield_pixel_fraction&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+      <span class="s2">&quot;calibrate_flatfields_and_pedestals&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+      <span class="s2">&quot;EventTimeCalculator&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;dragon_reference_counter&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+        <span class="s2">&quot;dragon_reference_time&quot;</span><span class="p">:</span> <span class="n">null</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;PointingSource&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;drive_report_path&quot;</span><span class="p">:</span> <span class="n">null</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;LSTR0Corrections&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;calib_scale_high_gain&quot;</span><span class="p">:</span><span class="mf">1.088</span><span class="p">,</span>
+        <span class="s2">&quot;calib_scale_low_gain&quot;</span><span class="p">:</span><span class="mf">1.004</span><span class="p">,</span>
+        <span class="s2">&quot;drs4_pedestal_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+        <span class="s2">&quot;calibration_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+        <span class="s2">&quot;drs4_time_calibration_path&quot;</span><span class="p">:</span> <span class="n">null</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;events_filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;intensity&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;n_training_events&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;gamma_regressors&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;gamma_tmp_regressors&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+    <span class="s2">&quot;gamma_classifier&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="s2">&quot;proton_classifier&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;tailcut&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;picture_thresh&quot;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span>
+    <span class="s2">&quot;boundary_thresh&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;keep_isolated_pixels&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;min_number_picture_neighbors&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;use_only_main_island&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;delta_time&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;tailcuts_clean_with_pedestal_threshold&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;picture_thresh&quot;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span>
+    <span class="s2">&quot;boundary_thresh&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;sigma&quot;</span><span class="p">:</span><span class="mf">2.5</span><span class="p">,</span>
+    <span class="s2">&quot;keep_isolated_pixels&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;min_number_picture_neighbors&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;use_only_main_island&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;delta_time&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;dynamic_cleaning&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;apply&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="mi">267</span><span class="p">,</span>
+    <span class="s2">&quot;fraction_cleaning_intensity&quot;</span><span class="p">:</span> <span class="mf">0.03</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;random_forest_energy_regressor_args&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+    <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;squared_error&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_leaf_nodes&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;oob_score&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;random_forest_disp_regressor_args&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+    <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;squared_error&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_leaf_nodes&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;oob_score&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;random_forest_disp_classifier_args&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;gini&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_leaf_nodes&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;oob_score&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;class_weight&quot;</span><span class="p">:</span> <span class="n">null</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;random_forest_particle_classifier_args&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;gini&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_leaf_nodes&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;oob_score&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;class_weight&quot;</span><span class="p">:</span> <span class="n">null</span>
+  <span class="p">},</span>
+
+
+  <span class="s2">&quot;energy_regression_features&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;log_intensity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skewness&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kurtosis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;time_gradient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sin_az_tel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alt_tel&quot;</span>
+  <span class="p">],</span>
+
+  <span class="s2">&quot;disp_method&quot;</span><span class="p">:</span> <span class="s2">&quot;disp_norm_sign&quot;</span><span class="p">,</span>
+
+  <span class="s2">&quot;disp_regression_features&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;log_intensity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skewness&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kurtosis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;time_gradient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sin_az_tel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alt_tel&quot;</span>
+  <span class="p">],</span>
+
+  <span class="s2">&quot;disp_classification_features&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;log_intensity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skewness&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kurtosis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;time_gradient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sin_az_tel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alt_tel&quot;</span>
+  <span class="p">],</span>
+
+  <span class="s2">&quot;particle_classification_features&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;log_intensity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;signed_skewness&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kurtosis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;signed_time_gradient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;log_reco_energy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reco_disp_norm&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reco_disp_sign&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sin_az_tel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alt_tel&quot;</span>
+  <span class="p">],</span>
+
+  <span class="s2">&quot;allowed_tels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+  <span class="s2">&quot;write_pe_image&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+  <span class="s2">&quot;mc_image_scaling_factor&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="s2">&quot;image_extractor&quot;</span><span class="p">:</span> <span class="s2">&quot;LocalPeakWindowSum&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;image_extractor_for_muons&quot;</span><span class="p">:</span> <span class="s2">&quot;GlobalPeakWindowSum&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;CameraCalibrator&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;apply_waveform_time_shift&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;time_sampling_correction_path&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;LocalPeakWindowSum&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;window_shift&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;window_width&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="s2">&quot;apply_integration_correction&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;GlobalPeakWindowSum&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;window_shift&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;window_width&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="s2">&quot;apply_integration_correction&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;timestamps_pointing&quot;</span><span class="p">:</span><span class="s2">&quot;ucts&quot;</span><span class="p">,</span>
+
+  <span class="s2">&quot;train_gamma_src_r_deg&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+
+  <span class="s2">&quot;source_dependent&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+  <span class="s2">&quot;mc_nominal_source_x_deg&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>
+  <span class="s2">&quot;mc_nominal_source_y_deg&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+
+  <span class="s2">&quot;volume_reducer&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;calibration_product&quot;</span><span class="p">:</span> <span class="s2">&quot;LSTCalibrationCalculator&quot;</span><span class="p">,</span>
+
+  <span class="s2">&quot;LSTCalibrationCalculator&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;systematic_correction_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;npe_median_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">],</span>
+    <span class="s2">&quot;squared_excess_noise_factor&quot;</span><span class="p">:</span> <span class="mf">1.222</span><span class="p">,</span>
+    <span class="s2">&quot;flatfield_product&quot;</span><span class="p">:</span> <span class="s2">&quot;FlasherFlatFieldCalculator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pedestal_product&quot;</span><span class="p">:</span> <span class="s2">&quot;PedestalIntegrator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PedestalIntegrator&quot;</span><span class="p">:{</span>
+      <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+      <span class="s2">&quot;sample_duration&quot;</span><span class="p">:</span><span class="mi">100000</span><span class="p">,</span>
+      <span class="s2">&quot;tel_id&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+      <span class="s2">&quot;time_sampling_correction_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+      <span class="s2">&quot;charge_median_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span>
+      <span class="s2">&quot;charge_std_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span>
+      <span class="s2">&quot;charge_product&quot;</span><span class="p">:</span><span class="s2">&quot;FixedWindowSum&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;FixedWindowSum&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;window_shift&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="s2">&quot;window_width&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>
+        <span class="s2">&quot;peak_index&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+        <span class="s2">&quot;apply_integration_correction&quot;</span><span class="p">:</span> <span class="n">false</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;FlasherFlatFieldCalculator&quot;</span><span class="p">:{</span>
+      <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+      <span class="s2">&quot;sample_duration&quot;</span><span class="p">:</span><span class="mi">100000</span><span class="p">,</span>
+      <span class="s2">&quot;tel_id&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+      <span class="s2">&quot;time_sampling_correction_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+      <span class="s2">&quot;charge_product&quot;</span><span class="p">:</span><span class="s2">&quot;LocalPeakWindowSum&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;charge_median_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.9</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+      <span class="s2">&quot;charge_std_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span>
+      <span class="s2">&quot;time_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">38</span><span class="p">],</span>
+      <span class="s2">&quot;LocalPeakWindowSum&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;window_shift&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="s2">&quot;window_width&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>
+        <span class="s2">&quot;apply_integration_correction&quot;</span><span class="p">:</span> <span class="n">false</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;waveform_nsb_tuning&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;nsb_tuning&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;nsb_tuning_ratio&quot;</span><span class="p">:</span> <span class="mf">0.52</span><span class="p">,</span>
+    <span class="s2">&quot;spe_location&quot;</span><span class="p">:</span> <span class="s2">&quot;lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat&quot;</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;write_interleaved_events&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;DataWriter&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;overwrite&quot;</span><span class="p">:</span>  <span class="n">true</span><span class="p">,</span>
+      <span class="s2">&quot;write_images&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+      <span class="s2">&quot;write_parameters&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+      <span class="s2">&quot;write_waveforms&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+      <span class="s2">&quot;transform_waveform&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+      <span class="s2">&quot;waveform_dtype&quot;</span><span class="p">:</span> <span class="s2">&quot;uint16&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;waveform_offset&quot;</span><span class="p">:</span> <span class="mi">400</span><span class="p">,</span>
+      <span class="s2">&quot;waveform_scale&quot;</span><span class="p">:</span> <span class="mi">80</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="dl1-to-dl2">
+<h2>DL1 to DL2<a class="headerlink" href="#dl1-to-dl2" title="Permalink to this headline">¶</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_dl1_to_dl2</span></code> for real data and MC.</p>
+<p>For more information, try <code class="docutils literal notranslate"><span class="pre">--help</span></code> or see the <a class="reference internal" href="lstchain_api/index.html"><span class="doc">API Docs</span></a>.</p>
+<section id="id2">
+<h3>Configuration file<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>Here is an example configuration file for this step.</p>
+<div class="toggle docutils container">
+<div class="code json highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;source_config&quot;</span> <span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;EventSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;allowed_tels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;max_events&quot;</span><span class="p">:</span> <span class="n">null</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;LSTEventSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;default_trigger_type&quot;</span><span class="p">:</span> <span class="s2">&quot;ucts&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;allowed_tels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;min_flatfield_adc&quot;</span><span class="p">:</span> <span class="mi">3000</span><span class="p">,</span>
+      <span class="s2">&quot;min_flatfield_pixel_fraction&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+      <span class="s2">&quot;calibrate_flatfields_and_pedestals&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+      <span class="s2">&quot;EventTimeCalculator&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;dragon_reference_counter&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+        <span class="s2">&quot;dragon_reference_time&quot;</span><span class="p">:</span> <span class="n">null</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;PointingSource&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;drive_report_path&quot;</span><span class="p">:</span> <span class="n">null</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;LSTR0Corrections&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;calib_scale_high_gain&quot;</span><span class="p">:</span><span class="mf">1.088</span><span class="p">,</span>
+        <span class="s2">&quot;calib_scale_low_gain&quot;</span><span class="p">:</span><span class="mf">1.004</span><span class="p">,</span>
+        <span class="s2">&quot;drs4_pedestal_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+        <span class="s2">&quot;calibration_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+        <span class="s2">&quot;drs4_time_calibration_path&quot;</span><span class="p">:</span> <span class="n">null</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;events_filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;intensity&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;n_training_events&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;gamma_regressors&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;gamma_tmp_regressors&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+    <span class="s2">&quot;gamma_classifier&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="s2">&quot;proton_classifier&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;tailcut&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;picture_thresh&quot;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span>
+    <span class="s2">&quot;boundary_thresh&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;keep_isolated_pixels&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;min_number_picture_neighbors&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;use_only_main_island&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;delta_time&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;tailcuts_clean_with_pedestal_threshold&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;picture_thresh&quot;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span>
+    <span class="s2">&quot;boundary_thresh&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;sigma&quot;</span><span class="p">:</span><span class="mf">2.5</span><span class="p">,</span>
+    <span class="s2">&quot;keep_isolated_pixels&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;min_number_picture_neighbors&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;use_only_main_island&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;delta_time&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;dynamic_cleaning&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;apply&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="mi">267</span><span class="p">,</span>
+    <span class="s2">&quot;fraction_cleaning_intensity&quot;</span><span class="p">:</span> <span class="mf">0.03</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;random_forest_energy_regressor_args&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+    <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;squared_error&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_leaf_nodes&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;oob_score&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;random_forest_disp_regressor_args&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+    <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;squared_error&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_leaf_nodes&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;oob_score&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;random_forest_disp_classifier_args&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;gini&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_leaf_nodes&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;oob_score&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;class_weight&quot;</span><span class="p">:</span> <span class="n">null</span>
+  <span class="p">},</span>
+
+  <span class="s2">&quot;random_forest_particle_classifier_args&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;gini&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_leaf_nodes&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+    <span class="s2">&quot;oob_score&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;class_weight&quot;</span><span class="p">:</span> <span class="n">null</span>
+  <span class="p">},</span>
+
+
+  <span class="s2">&quot;energy_regression_features&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;log_intensity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skewness&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kurtosis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;time_gradient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sin_az_tel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alt_tel&quot;</span>
+  <span class="p">],</span>
+
+  <span class="s2">&quot;disp_method&quot;</span><span class="p">:</span> <span class="s2">&quot;disp_norm_sign&quot;</span><span class="p">,</span>
+
+  <span class="s2">&quot;disp_regression_features&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;log_intensity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skewness&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kurtosis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;time_gradient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sin_az_tel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alt_tel&quot;</span>
+  <span class="p">],</span>
+
+  <span class="s2">&quot;disp_classification_features&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;log_intensity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skewness&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kurtosis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;time_gradient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sin_az_tel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alt_tel&quot;</span>
+  <span class="p">],</span>
+
+  <span class="s2">&quot;particle_classification_features&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;log_intensity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;length&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;signed_skewness&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kurtosis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;signed_time_gradient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;log_reco_energy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reco_disp_norm&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reco_disp_sign&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sin_az_tel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alt_tel&quot;</span>
+  <span class="p">],</span>
+
+  <span class="s2">&quot;allowed_tels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+  <span class="s2">&quot;write_pe_image&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+  <span class="s2">&quot;mc_image_scaling_factor&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="s2">&quot;image_extractor&quot;</span><span class="p">:</span> <span class="s2">&quot;LocalPeakWindowSum&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;image_extractor_for_muons&quot;</span><span class="p">:</span> <span class="s2">&quot;GlobalPeakWindowSum&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;CameraCalibrator&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;apply_waveform_time_shift&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;time_sampling_correction_path&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;LocalPeakWindowSum&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;window_shift&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;window_width&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="s2">&quot;apply_integration_correction&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;GlobalPeakWindowSum&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;window_shift&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;window_width&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="s2">&quot;apply_integration_correction&quot;</span><span class="p">:</span> <span class="n">false</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;timestamps_pointing&quot;</span><span class="p">:</span><span class="s2">&quot;ucts&quot;</span><span class="p">,</span>
+
+  <span class="s2">&quot;train_gamma_src_r_deg&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+
+  <span class="s2">&quot;source_dependent&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+  <span class="s2">&quot;mc_nominal_source_x_deg&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>
+  <span class="s2">&quot;mc_nominal_source_y_deg&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+
+  <span class="s2">&quot;volume_reducer&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;calibration_product&quot;</span><span class="p">:</span> <span class="s2">&quot;LSTCalibrationCalculator&quot;</span><span class="p">,</span>
+
+  <span class="s2">&quot;LSTCalibrationCalculator&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;systematic_correction_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+    <span class="s2">&quot;npe_median_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">],</span>
+    <span class="s2">&quot;squared_excess_noise_factor&quot;</span><span class="p">:</span> <span class="mf">1.222</span><span class="p">,</span>
+    <span class="s2">&quot;flatfield_product&quot;</span><span class="p">:</span> <span class="s2">&quot;FlasherFlatFieldCalculator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pedestal_product&quot;</span><span class="p">:</span> <span class="s2">&quot;PedestalIntegrator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PedestalIntegrator&quot;</span><span class="p">:{</span>
+      <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+      <span class="s2">&quot;sample_duration&quot;</span><span class="p">:</span><span class="mi">100000</span><span class="p">,</span>
+      <span class="s2">&quot;tel_id&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+      <span class="s2">&quot;time_sampling_correction_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+      <span class="s2">&quot;charge_median_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span>
+      <span class="s2">&quot;charge_std_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span>
+      <span class="s2">&quot;charge_product&quot;</span><span class="p">:</span><span class="s2">&quot;FixedWindowSum&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;FixedWindowSum&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;window_shift&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="s2">&quot;window_width&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>
+        <span class="s2">&quot;peak_index&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+        <span class="s2">&quot;apply_integration_correction&quot;</span><span class="p">:</span> <span class="n">false</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;FlasherFlatFieldCalculator&quot;</span><span class="p">:{</span>
+      <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+      <span class="s2">&quot;sample_duration&quot;</span><span class="p">:</span><span class="mi">100000</span><span class="p">,</span>
+      <span class="s2">&quot;tel_id&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+      <span class="s2">&quot;time_sampling_correction_path&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+      <span class="s2">&quot;charge_product&quot;</span><span class="p">:</span><span class="s2">&quot;LocalPeakWindowSum&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;charge_median_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.9</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+      <span class="s2">&quot;charge_std_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span>
+      <span class="s2">&quot;time_cut_outliers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">38</span><span class="p">],</span>
+      <span class="s2">&quot;LocalPeakWindowSum&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;window_shift&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="s2">&quot;window_width&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>
+        <span class="s2">&quot;apply_integration_correction&quot;</span><span class="p">:</span> <span class="n">false</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;waveform_nsb_tuning&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;nsb_tuning&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+    <span class="s2">&quot;nsb_tuning_ratio&quot;</span><span class="p">:</span> <span class="mf">0.52</span><span class="p">,</span>
+    <span class="s2">&quot;spe_location&quot;</span><span class="p">:</span> <span class="s2">&quot;lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat&quot;</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;write_interleaved_events&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;DataWriter&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;overwrite&quot;</span><span class="p">:</span>  <span class="n">true</span><span class="p">,</span>
+      <span class="s2">&quot;write_images&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+      <span class="s2">&quot;write_parameters&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>
+      <span class="s2">&quot;write_waveforms&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+      <span class="s2">&quot;transform_waveform&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+      <span class="s2">&quot;waveform_dtype&quot;</span><span class="p">:</span> <span class="s2">&quot;uint16&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;waveform_offset&quot;</span><span class="p">:</span> <span class="mi">400</span><span class="p">,</span>
+      <span class="s2">&quot;waveform_scale&quot;</span><span class="p">:</span> <span class="mi">80</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="dl2-to-dl3">
+<h2>DL2 to DL3<a class="headerlink" href="#dl2-to-dl3" title="Permalink to this headline">¶</a></h2>
+<p>For a quick look into the data and perform <span class="math notranslate nohighlight">\({\theta}^2/{\alpha}\)</span> plots, you can use:
+<code class="docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_post_dl2</span></code></p>
+<section id="irf-creation">
+<h3>IRF creation<a class="headerlink" href="#irf-creation" title="Permalink to this headline">¶</a></h3>
+<p>To write IRF files, you should use <code class="docutils literal notranslate"><span class="pre">lstchain.tools.lstchain_create_irf_files</span></code>.</p>
+<p>For more information, try <code class="docutils literal notranslate"><span class="pre">--help</span></code> or see the <a class="reference internal" href="lstchain_api/index.html"><span class="doc">API Docs</span></a>.</p>
+<p>Here is an example configuration file for the IRF creation step.</p>
+<div class="toggle docutils container">
+<div class="code json highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;EventSelector&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;intensity&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+      <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+      <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+      <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;DL3Cuts&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;min_event_p_en_bin&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s2">&quot;global_gh_cut&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+    <span class="s2">&quot;gh_efficiency&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
+    <span class="s2">&quot;min_gh_cut&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="s2">&quot;max_gh_cut&quot;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="s2">&quot;global_alpha_cut&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;global_theta_cut&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="s2">&quot;theta_containment&quot;</span><span class="p">:</span> <span class="mf">0.68</span><span class="p">,</span>
+    <span class="s2">&quot;alpha_containment&quot;</span><span class="p">:</span> <span class="mf">0.68</span><span class="p">,</span>
+    <span class="s2">&quot;min_theta_cut&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="s2">&quot;max_theta_cut&quot;</span><span class="p">:</span> <span class="mf">0.32</span><span class="p">,</span>
+    <span class="s2">&quot;fill_theta_cut&quot;</span><span class="p">:</span> <span class="mf">0.32</span><span class="p">,</span>
+    <span class="s2">&quot;min_alpha_cut&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;max_alpha_cut&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="s2">&quot;fill_alpha_cut&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="s2">&quot;allowed_tels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;DataBinning&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;true_energy_min&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span>
+    <span class="s2">&quot;true_energy_max&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="s2">&quot;true_energy_n_bins&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+    <span class="s2">&quot;reco_energy_min&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span>
+    <span class="s2">&quot;reco_energy_max&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="s2">&quot;reco_energy_n_bins&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+    <span class="s2">&quot;energy_migration_min&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="s2">&quot;energy_migration_max&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="s2">&quot;energy_migration_n_bins&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;fov_offset_min&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="s2">&quot;fov_offset_max&quot;</span><span class="p">:</span> <span class="mf">1.1</span><span class="p">,</span>
+    <span class="s2">&quot;fov_offset_n_edges&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+    <span class="s2">&quot;bkg_fov_offset_min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;bkg_fov_offset_max&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;bkg_fov_offset_n_edges&quot;</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span>
+    <span class="s2">&quot;source_offset_min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;source_offset_max&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;source_offset_n_edges&quot;</span><span class="p">:</span> <span class="mi">101</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="event-list-creation">
+<h3>Event list creation<a class="headerlink" href="#event-list-creation" title="Permalink to this headline">¶</a></h3>
+<p>To write DL3 files, you should use:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">lstchain.tools.lstchain_create_dl3_file</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lstchain.tools.lstchain_create_dl3_index_files</span></code></p></li>
+</ul>
+<p>For more information, try <code class="docutils literal notranslate"><span class="pre">--help</span></code> or see the <a class="reference internal" href="lstchain_api/index.html"><span class="doc">API Docs</span></a>.</p>
+<p>Here is an example configuration file for the IRF creation step.</p>
+<div class="toggle docutils container">
+<div class="code json highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;EventSelector&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;intensity&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+      <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+      <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Infinity</span><span class="p">],</span>
+      <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;leakage_intensity_width_2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+      <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;DL3Cuts&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;min_event_p_en_bin&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s2">&quot;global_gh_cut&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+    <span class="s2">&quot;gh_efficiency&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
+    <span class="s2">&quot;min_gh_cut&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="s2">&quot;max_gh_cut&quot;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="s2">&quot;global_alpha_cut&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;global_theta_cut&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="s2">&quot;theta_containment&quot;</span><span class="p">:</span> <span class="mf">0.68</span><span class="p">,</span>
+    <span class="s2">&quot;alpha_containment&quot;</span><span class="p">:</span> <span class="mf">0.68</span><span class="p">,</span>
+    <span class="s2">&quot;min_theta_cut&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="s2">&quot;max_theta_cut&quot;</span><span class="p">:</span> <span class="mf">0.32</span><span class="p">,</span>
+    <span class="s2">&quot;fill_theta_cut&quot;</span><span class="p">:</span> <span class="mf">0.32</span><span class="p">,</span>
+    <span class="s2">&quot;min_alpha_cut&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;max_alpha_cut&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="s2">&quot;fill_alpha_cut&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="s2">&quot;allowed_tels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="post-dl3-analysis">
+<h2>Post DL3 analysis<a class="headerlink" href="#post-dl3-analysis" title="Permalink to this headline">¶</a></h2>
+<p>You may analyze the resulting files using <code class="docutils literal notranslate"><span class="pre">gammapy</span></code>, see its doc: <a class="reference external" href="https://docs.gammapy.org/">https://docs.gammapy.org/</a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Repository for LST analysis software (cta-lstchain)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lst_analysis_workflow.html" class="btn btn-neutral float-right" title="LST-1 data analysis workflow" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

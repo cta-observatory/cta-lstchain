@@ -1,0 +1,33 @@
+LSTEventType
+============
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: LSTEventType
+   :show-inheritance:
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~LSTEventType.is_busy
+      ~LSTEventType.is_calibration
+      ~LSTEventType.is_mono
+      ~LSTEventType.is_pedestal
+      ~LSTEventType.is_single_pe
+      ~LSTEventType.is_slow_control
+      ~LSTEventType.is_soft_trig
+      ~LSTEventType.is_stereo
+      ~LSTEventType.is_unknown
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: is_busy
+   .. automethod:: is_calibration
+   .. automethod:: is_mono
+   .. automethod:: is_pedestal
+   .. automethod:: is_single_pe
+   .. automethod:: is_slow_control
+   .. automethod:: is_soft_trig
+   .. automethod:: is_stereo
+   .. automethod:: is_unknown

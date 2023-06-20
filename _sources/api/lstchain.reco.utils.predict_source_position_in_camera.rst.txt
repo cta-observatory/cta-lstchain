@@ -1,0 +1,6 @@
+predict_source_position_in_camera
+=================================
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: predict_source_position_in_camera

@@ -1,0 +1,6 @@
+check_job_logs
+==============
+
+.. currentmodule:: lstchain.io.data_management
+
+.. autofunction:: check_job_logs

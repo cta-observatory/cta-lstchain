@@ -1,0 +1,6 @@
+check_mc_type
+=============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: check_mc_type

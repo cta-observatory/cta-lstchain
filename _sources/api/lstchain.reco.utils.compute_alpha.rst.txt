@@ -1,0 +1,6 @@
+compute_alpha
+=============
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: compute_alpha

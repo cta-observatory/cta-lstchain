@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DL1ParametersContainer &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DL1LikelihoodParametersContainer" href="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.html" />
+    <link rel="prev" title="DL1MonitoringEventIndexContainer" href="lstchain.io.lstcontainers.DL1MonitoringEventIndexContainer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/io/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/io/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.config">lstchain.io.config Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.data_management">lstchain.io.data_management Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.event_selection">lstchain.io.event_selection Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.io">lstchain.io.io Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.lstcontainers">lstchain.io.lstcontainers Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+      <li class="breadcrumb-item active">DL1ParametersContainer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.io.lstcontainers.DL1ParametersContainer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dl1parameterscontainer">
+<h1>DL1ParametersContainer<a class="headerlink" href="#dl1parameterscontainer" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.io.lstcontainers.</span></span><span class="sig-name descname"><span class="pre">DL1ParametersContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.container.Container.html#ctapipe.core.container.Container" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ctapipe.core.container.Container</span></code></a></p>
+<dl class="simple">
+<dt>TODO: maybe fields could be inherited from ctapipe containers definition</dt><dd><p>For now I have not found an elegant way to do so</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>intensity</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Total intensity (size)</p>
+</dd>
+<dt><strong>log_intensity</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>log of total intensity (size)</p>
+</dd>
+<dt><strong>x</strong><span class="classifier">Field(default=nan m, unit=m)</span></dt><dd><p>Centroid x coordinate</p>
+</dd>
+<dt><strong>y</strong><span class="classifier">Field(default=nan m, unit=m)</span></dt><dd><p>Centroid y coordinate</p>
+</dd>
+<dt><strong>r</strong><span class="classifier">Field(default=nan m, unit=m)</span></dt><dd><p>Radial coordinate of centroid</p>
+</dd>
+<dt><strong>phi</strong><span class="classifier">Field(default=nan, unit=rad)</span></dt><dd><p>Polar coordinate of centroid</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd><p>RMS spread along the major-axis</p>
+</dd>
+<dt><strong>length_uncertainty</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd><p>Uncertainty of length</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd><p>RMS spread along the minor-axis</p>
+</dd>
+<dt><strong>width_uncertainty</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd><p>Uncertainty of width</p>
+</dd>
+<dt><strong>psi</strong><span class="classifier">Field(default=nan, unit=rad)</span></dt><dd><p>Rotation angle of ellipse</p>
+</dd>
+<dt><strong>skewness</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Measure of the asymmetry</p>
+</dd>
+<dt><strong>kurtosis</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Measure of the tailedness</p>
+</dd>
+<dt><strong>disp_norm</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>disp_norm [m]</p>
+</dd>
+<dt><strong>disp_dx</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>disp_dx [m]</p>
+</dd>
+<dt><strong>disp_dy</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>disp_dy [m]</p>
+</dd>
+<dt><strong>disp_angle</strong><span class="classifier">Field(default=None, unit=rad)</span></dt><dd><p>disp_angle [rad]</p>
+</dd>
+<dt><strong>disp_sign</strong><span class="classifier">Field(default=None)</span></dt><dd><p>disp_sign</p>
+</dd>
+<dt><strong>disp_miss</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>disp_miss [m]</p>
+</dd>
+<dt><strong>src_x</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>Source x coordinate in camera frame</p>
+</dd>
+<dt><strong>src_y</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>Source y coordinate in camera frame</p>
+</dd>
+<dt><strong>time_gradient</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Time gradient in the camera</p>
+</dd>
+<dt><strong>intercept</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Intercept</p>
+</dd>
+<dt><strong>leakage_intensity_width_1</strong><span class="classifier">Field(default=nan, dtype=float32)</span></dt><dd><p>Fraction of intensity in outermost pixels</p>
+</dd>
+<dt><strong>leakage_intensity_width_2</strong><span class="classifier">Field(default=nan, dtype=float32)</span></dt><dd><p>Fraction of intensity in two outermost rings of pixels</p>
+</dd>
+<dt><strong>leakage_pixels_width_1</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Fraction of signal pixels that are border pixels</p>
+</dd>
+<dt><strong>leakage_pixels_width_2</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Fraction of signal pixels that are in the two outermost rings of pixels</p>
+</dd>
+<dt><strong>n_pixels</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Number of pixels after cleaning</p>
+</dd>
+<dt><strong>concentration_cog</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Fraction of intensity in three pixels closest to the cog</p>
+</dd>
+<dt><strong>concentration_core</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Fraction of intensity inside hillas ellipse</p>
+</dd>
+<dt><strong>concentration_pixel</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Fraction of intensity in brightest pixel</p>
+</dd>
+<dt><strong>n_islands</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Number of Islands</p>
+</dd>
+<dt><strong>alt_tel</strong><span class="classifier">Field(default=None, unit=rad)</span></dt><dd><p>Telescope altitude pointing</p>
+</dd>
+<dt><strong>az_tel</strong><span class="classifier">Field(default=None, unit=rad)</span></dt><dd><p>Telescope azimuth pointing</p>
+</dd>
+<dt><strong>sin_az_tel</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Sin of telescope azimuth pointing, used for RF</p>
+</dd>
+<dt><strong>obs_id</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Observation ID</p>
+</dd>
+<dt><strong>event_id</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Event ID</p>
+</dd>
+<dt><strong>calibration_id</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>ID of the employed calibration event</p>
+</dd>
+<dt><strong>dragon_time</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Dragon time event trigger</p>
+</dd>
+<dt><strong>ucts_time</strong><span class="classifier">Field(default=None)</span></dt><dd><p>UCTS time event trigger</p>
+</dd>
+<dt><strong>tib_time</strong><span class="classifier">Field(default=None)</span></dt><dd><p>TIB time event trigger</p>
+</dd>
+<dt><strong>ucts_jump</strong><span class="classifier">Field(default=False)</span></dt><dd><p>UCTS info jumped (corrected)</p>
+</dd>
+<dt><strong>mc_energy</strong><span class="classifier">Field(default=None, unit=TeV)</span></dt><dd><p>Simulated Energy</p>
+</dd>
+<dt><strong>log_mc_energy</strong><span class="classifier">Field(default=None)</span></dt><dd><p>log of simulated energy/TeV</p>
+</dd>
+<dt><strong>mc_alt</strong><span class="classifier">Field(default=None, unit=rad)</span></dt><dd><p>Simulated altitude</p>
+</dd>
+<dt><strong>mc_az</strong><span class="classifier">Field(default=None, unit=rad)</span></dt><dd><p>Simulated azimuth</p>
+</dd>
+<dt><strong>mc_core_x</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>Simulated impact point x position</p>
+</dd>
+<dt><strong>mc_core_y</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>Simulated impact point y position</p>
+</dd>
+<dt><strong>mc_h_first_int</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>Simulated first interaction height</p>
+</dd>
+<dt><strong>mc_type</strong><span class="classifier">Field(default=-9999)</span></dt><dd><p>MC shower primary ID 0 (gamma), 1(e-),2(mu-), 100*A+Z for nucleons and nuclei,negative for antimatter.</p>
+</dd>
+<dt><strong>mc_az_tel</strong><span class="classifier">Field(default=None, unit=rad)</span></dt><dd><p>Telescope MC azimuth pointing</p>
+</dd>
+<dt><strong>mc_alt_tel</strong><span class="classifier">Field(default=None, unit=rad)</span></dt><dd><p>Telescope MC altitude pointing</p>
+</dd>
+<dt><strong>mc_x_max</strong><span class="classifier">Field(default=None, unit=g / cm2)</span></dt><dd><p>MC Xmax value</p>
+</dd>
+<dt><strong>mc_core_distance</strong><span class="classifier">Field(default=None, unit=m)</span></dt><dd><p>Distance from the impact point to the telescope</p>
+</dd>
+<dt><strong>hadroness</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Hadroness</p>
+</dd>
+<dt><strong>wl</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>width/length</p>
+</dd>
+<dt><strong>tel_id</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Telescope Id</p>
+</dd>
+<dt><strong>tel_pos_x</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Telescope x position in the ground</p>
+</dd>
+<dt><strong>tel_pos_y</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Telescope y position in the ground</p>
+</dd>
+<dt><strong>tel_pos_z</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Telescope z position in the ground</p>
+</dd>
+<dt><strong>trigger_type</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Trigger type</p>
+</dd>
+<dt><strong>ucts_trigger_type</strong><span class="classifier">Field(default=None)</span></dt><dd><p>UCTS trigger type</p>
+</dd>
+<dt><strong>trigger_time</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Trigger time</p>
+</dd>
+<dt><strong>event_type</strong><span class="classifier">Field(default=None)</span></dt><dd><p>Event type</p>
+</dd>
+<dt><strong>meta</strong><span class="classifier">dict</span></dt><dd><p>dict of attached metadata</p>
+</dd>
+<dt><strong>prefix</strong><span class="classifier">str</span></dt><dd><p>Prefix attached to column names when saved to a table or file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.alt_tel" title="lstchain.io.lstcontainers.DL1ParametersContainer.alt_tel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">alt_tel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.az_tel" title="lstchain.io.lstcontainers.DL1ParametersContainer.az_tel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">az_tel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.calibration_id" title="lstchain.io.lstcontainers.DL1ParametersContainer.calibration_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calibration_id</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.concentration_cog" title="lstchain.io.lstcontainers.DL1ParametersContainer.concentration_cog"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concentration_cog</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.concentration_core" title="lstchain.io.lstcontainers.DL1ParametersContainer.concentration_core"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concentration_core</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.concentration_pixel" title="lstchain.io.lstcontainers.DL1ParametersContainer.concentration_pixel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concentration_pixel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_angle" title="lstchain.io.lstcontainers.DL1ParametersContainer.disp_angle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_angle</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_dx" title="lstchain.io.lstcontainers.DL1ParametersContainer.disp_dx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_dx</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_dy" title="lstchain.io.lstcontainers.DL1ParametersContainer.disp_dy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_dy</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_miss" title="lstchain.io.lstcontainers.DL1ParametersContainer.disp_miss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_miss</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_norm" title="lstchain.io.lstcontainers.DL1ParametersContainer.disp_norm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_norm</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_sign" title="lstchain.io.lstcontainers.DL1ParametersContainer.disp_sign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disp_sign</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.dragon_time" title="lstchain.io.lstcontainers.DL1ParametersContainer.dragon_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dragon_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.event_id" title="lstchain.io.lstcontainers.DL1ParametersContainer.event_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">event_id</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.event_type" title="lstchain.io.lstcontainers.DL1ParametersContainer.event_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">event_type</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.hadroness" title="lstchain.io.lstcontainers.DL1ParametersContainer.hadroness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hadroness</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.intensity" title="lstchain.io.lstcontainers.DL1ParametersContainer.intensity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intensity</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.intercept" title="lstchain.io.lstcontainers.DL1ParametersContainer.intercept"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intercept</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.kurtosis" title="lstchain.io.lstcontainers.DL1ParametersContainer.kurtosis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kurtosis</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.leakage_intensity_width_1" title="lstchain.io.lstcontainers.DL1ParametersContainer.leakage_intensity_width_1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">leakage_intensity_width_1</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.leakage_intensity_width_2" title="lstchain.io.lstcontainers.DL1ParametersContainer.leakage_intensity_width_2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">leakage_intensity_width_2</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.leakage_pixels_width_1" title="lstchain.io.lstcontainers.DL1ParametersContainer.leakage_pixels_width_1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">leakage_pixels_width_1</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.leakage_pixels_width_2" title="lstchain.io.lstcontainers.DL1ParametersContainer.leakage_pixels_width_2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">leakage_pixels_width_2</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.length" title="lstchain.io.lstcontainers.DL1ParametersContainer.length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">length</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.length_uncertainty" title="lstchain.io.lstcontainers.DL1ParametersContainer.length_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">length_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.log_intensity" title="lstchain.io.lstcontainers.DL1ParametersContainer.log_intensity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_intensity</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.log_mc_energy" title="lstchain.io.lstcontainers.DL1ParametersContainer.log_mc_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_mc_energy</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_alt" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_alt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_alt</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_alt_tel" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_alt_tel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_alt_tel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_az" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_az"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_az</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_az_tel" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_az_tel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_az_tel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_distance" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_core_distance</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_x" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_core_x</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_y" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_core_y</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_energy" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_energy</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_h_first_int" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_h_first_int"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_h_first_int</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_type" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_type</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_x_max" title="lstchain.io.lstcontainers.DL1ParametersContainer.mc_x_max"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mc_x_max</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.meta" title="lstchain.io.lstcontainers.DL1ParametersContainer.meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">meta</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.n_islands" title="lstchain.io.lstcontainers.DL1ParametersContainer.n_islands"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_islands</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.n_pixels" title="lstchain.io.lstcontainers.DL1ParametersContainer.n_pixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_pixels</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.obs_id" title="lstchain.io.lstcontainers.DL1ParametersContainer.obs_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obs_id</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.phi" title="lstchain.io.lstcontainers.DL1ParametersContainer.phi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">phi</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.prefix" title="lstchain.io.lstcontainers.DL1ParametersContainer.prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.psi" title="lstchain.io.lstcontainers.DL1ParametersContainer.psi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">psi</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.r" title="lstchain.io.lstcontainers.DL1ParametersContainer.r"><code class="xref py py-obj docutils literal notranslate"><span class="pre">r</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.sin_az_tel" title="lstchain.io.lstcontainers.DL1ParametersContainer.sin_az_tel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sin_az_tel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.skewness" title="lstchain.io.lstcontainers.DL1ParametersContainer.skewness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">skewness</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.src_x" title="lstchain.io.lstcontainers.DL1ParametersContainer.src_x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">src_x</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.src_y" title="lstchain.io.lstcontainers.DL1ParametersContainer.src_y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">src_y</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tel_id" title="lstchain.io.lstcontainers.DL1ParametersContainer.tel_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tel_id</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_x" title="lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tel_pos_x</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_y" title="lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tel_pos_y</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_z" title="lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tel_pos_z</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tib_time" title="lstchain.io.lstcontainers.DL1ParametersContainer.tib_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tib_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.time_gradient" title="lstchain.io.lstcontainers.DL1ParametersContainer.time_gradient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_gradient</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.trigger_time" title="lstchain.io.lstcontainers.DL1ParametersContainer.trigger_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trigger_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.trigger_type" title="lstchain.io.lstcontainers.DL1ParametersContainer.trigger_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trigger_type</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.ucts_jump" title="lstchain.io.lstcontainers.DL1ParametersContainer.ucts_jump"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ucts_jump</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.ucts_time" title="lstchain.io.lstcontainers.DL1ParametersContainer.ucts_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ucts_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.ucts_trigger_type" title="lstchain.io.lstcontainers.DL1ParametersContainer.ucts_trigger_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ucts_trigger_type</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.width" title="lstchain.io.lstcontainers.DL1ParametersContainer.width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">width</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.width_uncertainty" title="lstchain.io.lstcontainers.DL1ParametersContainer.width_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">width_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.wl" title="lstchain.io.lstcontainers.DL1ParametersContainer.wl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wl</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.x" title="lstchain.io.lstcontainers.DL1ParametersContainer.x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">x</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1ParametersContainer.y" title="lstchain.io.lstcontainers.DL1ParametersContainer.y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.alt_tel">
+<span class="sig-name descname"><span class="pre">alt_tel</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.alt_tel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.az_tel">
+<span class="sig-name descname"><span class="pre">az_tel</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.az_tel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.calibration_id">
+<span class="sig-name descname"><span class="pre">calibration_id</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.calibration_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.concentration_cog">
+<span class="sig-name descname"><span class="pre">concentration_cog</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.concentration_cog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.concentration_core">
+<span class="sig-name descname"><span class="pre">concentration_core</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.concentration_core" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.concentration_pixel">
+<span class="sig-name descname"><span class="pre">concentration_pixel</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.concentration_pixel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.disp_angle">
+<span class="sig-name descname"><span class="pre">disp_angle</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_angle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.disp_dx">
+<span class="sig-name descname"><span class="pre">disp_dx</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_dx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.disp_dy">
+<span class="sig-name descname"><span class="pre">disp_dy</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_dy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.disp_miss">
+<span class="sig-name descname"><span class="pre">disp_miss</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_miss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.disp_norm">
+<span class="sig-name descname"><span class="pre">disp_norm</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_norm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.disp_sign">
+<span class="sig-name descname"><span class="pre">disp_sign</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.disp_sign" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.dragon_time">
+<span class="sig-name descname"><span class="pre">dragon_time</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.dragon_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.event_id">
+<span class="sig-name descname"><span class="pre">event_id</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.event_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.event_type">
+<span class="sig-name descname"><span class="pre">event_type</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.event_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.hadroness">
+<span class="sig-name descname"><span class="pre">hadroness</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.hadroness" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.intensity">
+<span class="sig-name descname"><span class="pre">intensity</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.intensity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.intercept">
+<span class="sig-name descname"><span class="pre">intercept</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.intercept" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.kurtosis">
+<span class="sig-name descname"><span class="pre">kurtosis</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.kurtosis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.leakage_intensity_width_1">
+<span class="sig-name descname"><span class="pre">leakage_intensity_width_1</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.leakage_intensity_width_1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.leakage_intensity_width_2">
+<span class="sig-name descname"><span class="pre">leakage_intensity_width_2</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.leakage_intensity_width_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.leakage_pixels_width_1">
+<span class="sig-name descname"><span class="pre">leakage_pixels_width_1</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.leakage_pixels_width_1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.leakage_pixels_width_2">
+<span class="sig-name descname"><span class="pre">leakage_pixels_width_2</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.leakage_pixels_width_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.length">
+<span class="sig-name descname"><span class="pre">length</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.length" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.length_uncertainty">
+<span class="sig-name descname"><span class="pre">length_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.length_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.log_intensity">
+<span class="sig-name descname"><span class="pre">log_intensity</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.log_intensity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.log_mc_energy">
+<span class="sig-name descname"><span class="pre">log_mc_energy</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.log_mc_energy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_alt">
+<span class="sig-name descname"><span class="pre">mc_alt</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_alt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_alt_tel">
+<span class="sig-name descname"><span class="pre">mc_alt_tel</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_alt_tel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_az">
+<span class="sig-name descname"><span class="pre">mc_az</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_az" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_az_tel">
+<span class="sig-name descname"><span class="pre">mc_az_tel</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_az_tel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_distance">
+<span class="sig-name descname"><span class="pre">mc_core_distance</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_distance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_x">
+<span class="sig-name descname"><span class="pre">mc_core_x</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_y">
+<span class="sig-name descname"><span class="pre">mc_core_y</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_core_y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_energy">
+<span class="sig-name descname"><span class="pre">mc_energy</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_energy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_h_first_int">
+<span class="sig-name descname"><span class="pre">mc_h_first_int</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_h_first_int" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_type">
+<span class="sig-name descname"><span class="pre">mc_type</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.mc_x_max">
+<span class="sig-name descname"><span class="pre">mc_x_max</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.mc_x_max" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.n_islands">
+<span class="sig-name descname"><span class="pre">n_islands</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.n_islands" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.n_pixels">
+<span class="sig-name descname"><span class="pre">n_pixels</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.n_pixels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.obs_id">
+<span class="sig-name descname"><span class="pre">obs_id</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.obs_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.phi">
+<span class="sig-name descname"><span class="pre">phi</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.phi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.prefix">
+<span class="sig-name descname"><span class="pre">prefix</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.prefix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.psi">
+<span class="sig-name descname"><span class="pre">psi</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.psi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.r">
+<span class="sig-name descname"><span class="pre">r</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.r" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.sin_az_tel">
+<span class="sig-name descname"><span class="pre">sin_az_tel</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.sin_az_tel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.skewness">
+<span class="sig-name descname"><span class="pre">skewness</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.skewness" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.src_x">
+<span class="sig-name descname"><span class="pre">src_x</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.src_x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.src_y">
+<span class="sig-name descname"><span class="pre">src_y</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.src_y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.tel_id">
+<span class="sig-name descname"><span class="pre">tel_id</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tel_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_x">
+<span class="sig-name descname"><span class="pre">tel_pos_x</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_y">
+<span class="sig-name descname"><span class="pre">tel_pos_y</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_z">
+<span class="sig-name descname"><span class="pre">tel_pos_z</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tel_pos_z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.tib_time">
+<span class="sig-name descname"><span class="pre">tib_time</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.tib_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.time_gradient">
+<span class="sig-name descname"><span class="pre">time_gradient</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.time_gradient" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.trigger_time">
+<span class="sig-name descname"><span class="pre">trigger_time</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.trigger_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.trigger_type">
+<span class="sig-name descname"><span class="pre">trigger_type</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.trigger_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.ucts_jump">
+<span class="sig-name descname"><span class="pre">ucts_jump</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.ucts_jump" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.ucts_time">
+<span class="sig-name descname"><span class="pre">ucts_time</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.ucts_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.ucts_trigger_type">
+<span class="sig-name descname"><span class="pre">ucts_trigger_type</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.ucts_trigger_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.width">
+<span class="sig-name descname"><span class="pre">width</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.width_uncertainty">
+<span class="sig-name descname"><span class="pre">width_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.width_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.wl">
+<span class="sig-name descname"><span class="pre">wl</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.wl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.x">
+<span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1ParametersContainer.y">
+<span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1ParametersContainer.y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lstchain.io.lstcontainers.DL1MonitoringEventIndexContainer.html" class="btn btn-neutral float-left" title="DL1MonitoringEventIndexContainer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.html" class="btn btn-neutral float-right" title="DL1LikelihoodParametersContainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

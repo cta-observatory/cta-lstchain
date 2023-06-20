@@ -1,0 +1,6 @@
+format_axes_ebin
+================
+
+.. currentmodule:: lstchain.mc.plot_utils
+
+.. autofunction:: format_axes_ebin

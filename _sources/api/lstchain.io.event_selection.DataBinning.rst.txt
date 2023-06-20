@@ -1,0 +1,71 @@
+DataBinning
+===========
+
+.. currentmodule:: lstchain.io.event_selection
+
+.. autoclass:: DataBinning
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DataBinning.bkg_fov_offset_max
+      ~DataBinning.bkg_fov_offset_min
+      ~DataBinning.bkg_fov_offset_n_edges
+      ~DataBinning.energy_migration_max
+      ~DataBinning.energy_migration_min
+      ~DataBinning.energy_migration_n_bins
+      ~DataBinning.fov_offset_max
+      ~DataBinning.fov_offset_min
+      ~DataBinning.fov_offset_n_edges
+      ~DataBinning.reco_energy_max
+      ~DataBinning.reco_energy_min
+      ~DataBinning.reco_energy_n_bins
+      ~DataBinning.source_offset_max
+      ~DataBinning.source_offset_min
+      ~DataBinning.source_offset_n_edges
+      ~DataBinning.true_energy_max
+      ~DataBinning.true_energy_min
+      ~DataBinning.true_energy_n_bins
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~DataBinning.bkg_fov_offset_bins
+      ~DataBinning.energy_migration_bins
+      ~DataBinning.fov_offset_bins
+      ~DataBinning.reco_energy_bins
+      ~DataBinning.source_offset_bins
+      ~DataBinning.true_energy_bins
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: bkg_fov_offset_max
+   .. autoattribute:: bkg_fov_offset_min
+   .. autoattribute:: bkg_fov_offset_n_edges
+   .. autoattribute:: energy_migration_max
+   .. autoattribute:: energy_migration_min
+   .. autoattribute:: energy_migration_n_bins
+   .. autoattribute:: fov_offset_max
+   .. autoattribute:: fov_offset_min
+   .. autoattribute:: fov_offset_n_edges
+   .. autoattribute:: reco_energy_max
+   .. autoattribute:: reco_energy_min
+   .. autoattribute:: reco_energy_n_bins
+   .. autoattribute:: source_offset_max
+   .. autoattribute:: source_offset_min
+   .. autoattribute:: source_offset_n_edges
+   .. autoattribute:: true_energy_max
+   .. autoattribute:: true_energy_min
+   .. autoattribute:: true_energy_n_bins
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: bkg_fov_offset_bins
+   .. automethod:: energy_migration_bins
+   .. automethod:: fov_offset_bins
+   .. automethod:: reco_energy_bins
+   .. automethod:: source_offset_bins
+   .. automethod:: true_energy_bins

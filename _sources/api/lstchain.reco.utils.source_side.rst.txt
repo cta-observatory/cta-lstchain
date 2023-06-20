@@ -1,0 +1,6 @@
+source_side
+===========
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: source_side

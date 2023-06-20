@@ -1,0 +1,6 @@
+plot_calibration_results
+========================
+
+.. currentmodule:: lstchain.visualization.plot_calib
+
+.. autofunction:: plot_calibration_results

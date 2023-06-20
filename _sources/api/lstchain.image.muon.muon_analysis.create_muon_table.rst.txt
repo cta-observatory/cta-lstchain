@@ -1,0 +1,6 @@
+create_muon_table
+=================
+
+.. currentmodule:: lstchain.image.muon.muon_analysis
+
+.. autofunction:: create_muon_table

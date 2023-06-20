@@ -1,0 +1,6 @@
+check_and_make_dir
+==================
+
+.. currentmodule:: lstchain.io.data_management
+
+.. autofunction:: check_and_make_dir

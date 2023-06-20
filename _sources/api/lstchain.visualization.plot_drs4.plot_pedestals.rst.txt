@@ -1,0 +1,6 @@
+plot_pedestals
+==============
+
+.. currentmodule:: lstchain.visualization.plot_drs4
+
+.. autofunction:: plot_pedestals

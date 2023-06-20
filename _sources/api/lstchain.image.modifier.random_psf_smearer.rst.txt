@@ -1,0 +1,6 @@
+random_psf_smearer
+==================
+
+.. currentmodule:: lstchain.image.modifier
+
+.. autofunction:: random_psf_smearer

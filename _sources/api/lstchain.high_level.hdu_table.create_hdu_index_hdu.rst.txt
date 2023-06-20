@@ -1,0 +1,6 @@
+create_hdu_index_hdu
+====================
+
+.. currentmodule:: lstchain.high_level.hdu_table
+
+.. autofunction:: create_hdu_index_hdu

@@ -1,0 +1,6 @@
+read_sim_par
+============
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: read_sim_par

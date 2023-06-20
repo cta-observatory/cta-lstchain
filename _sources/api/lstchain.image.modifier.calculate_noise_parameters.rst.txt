@@ -1,0 +1,6 @@
+calculate_noise_parameters
+==========================
+
+.. currentmodule:: lstchain.image.modifier
+
+.. autofunction:: calculate_noise_parameters

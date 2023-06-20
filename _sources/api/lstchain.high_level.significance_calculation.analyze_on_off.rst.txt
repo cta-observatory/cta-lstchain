@@ -1,0 +1,6 @@
+analyze_on_off
+==============
+
+.. currentmodule:: lstchain.high_level.significance_calculation
+
+.. autofunction:: analyze_on_off

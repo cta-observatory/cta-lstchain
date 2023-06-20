@@ -1,0 +1,6 @@
+read_mc_dl2_to_QTable
+=====================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: read_mc_dl2_to_QTable

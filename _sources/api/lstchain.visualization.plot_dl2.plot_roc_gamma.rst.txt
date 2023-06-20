@@ -1,0 +1,6 @@
+plot_roc_gamma
+==============
+
+.. currentmodule:: lstchain.visualization.plot_dl2
+
+.. autofunction:: plot_roc_gamma

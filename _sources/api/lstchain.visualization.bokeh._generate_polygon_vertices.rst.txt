@@ -1,0 +1,6 @@
+_generate_polygon_vertices
+==========================
+
+.. currentmodule:: lstchain.visualization.bokeh
+
+.. autofunction:: _generate_polygon_vertices

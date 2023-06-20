@@ -1,0 +1,6 @@
+get_volume_reduction_method
+===========================
+
+.. currentmodule:: lstchain.reco.volume_reducer
+
+.. autofunction:: get_volume_reduction_method

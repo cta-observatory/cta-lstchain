@@ -1,0 +1,6 @@
+merge_dl2_runs
+==============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: merge_dl2_runs

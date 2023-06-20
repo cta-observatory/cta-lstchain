@@ -1,0 +1,6 @@
+disp_vector
+===========
+
+.. currentmodule:: lstchain.reco.disp
+
+.. autofunction:: disp_vector

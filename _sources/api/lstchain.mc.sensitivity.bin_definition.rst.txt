@@ -1,0 +1,6 @@
+bin_definition
+==============
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: bin_definition

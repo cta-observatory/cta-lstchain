@@ -1,0 +1,6 @@
+plot_mean_and_stddev_bokeh
+==========================
+
+.. currentmodule:: lstchain.visualization.bokeh
+
+.. autofunction:: plot_mean_and_stddev_bokeh

@@ -1,0 +1,33 @@
+CameraDisplay
+=============
+
+.. currentmodule:: lstchain.visualization.bokeh
+
+.. autoclass:: CameraDisplay
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~CameraDisplay.geom
+      ~CameraDisplay.image
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~CameraDisplay.rescale
+      ~CameraDisplay.set_geom_and_image
+      ~CameraDisplay.update
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: geom
+   .. autoattribute:: image
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: rescale
+   .. automethod:: set_geom_and_image
+   .. automethod:: update

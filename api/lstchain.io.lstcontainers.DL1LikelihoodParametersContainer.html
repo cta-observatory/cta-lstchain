@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DL1LikelihoodParametersContainer &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DispContainer" href="lstchain.io.lstcontainers.DispContainer.html" />
+    <link rel="prev" title="DL1ParametersContainer" href="lstchain.io.lstcontainers.DL1ParametersContainer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/io/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/io/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.config">lstchain.io.config Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.data_management">lstchain.io.data_management Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.event_selection">lstchain.io.event_selection Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.io">lstchain.io.io Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.lstcontainers">lstchain.io.lstcontainers Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+      <li class="breadcrumb-item active">DL1LikelihoodParametersContainer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dl1likelihoodparameterscontainer">
+<h1>DL1LikelihoodParametersContainer<a class="headerlink" href="#dl1likelihoodparameterscontainer" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.io.lstcontainers.</span></span><span class="sig-name descname"><span class="pre">DL1LikelihoodParametersContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.container.Container.html#ctapipe.core.container.Container" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ctapipe.core.container.Container</span></code></a></p>
+<p>Parameters obtained with the likelihood reconstruction method</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>lhfit_call_status</strong><span class="classifier">Field(default=-1)</span></dt><dd><p>Status of the processing of the event by the LH fit method. -10: inactive, 0: event with no pixels, -1: error 1: success</p>
+</dd>
+<dt><strong>lhfit_intensity</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Fitted intensity</p>
+</dd>
+<dt><strong>lhfit_log_intensity</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>log of fitted intensity</p>
+</dd>
+<dt><strong>lhfit_intensity_uncertainty</strong><span class="classifier">Field(default=nan)</span></dt><dd></dd>
+<dt><strong>lhfit_x</strong><span class="classifier">Field(default=nan m, unit=m)</span></dt><dd><p>Centroid x coordinate</p>
+</dd>
+<dt><strong>lhfit_x_uncertainty</strong><span class="classifier">Field(default=nan m, unit=m)</span></dt><dd></dd>
+<dt><strong>lhfit_y</strong><span class="classifier">Field(default=nan m, unit=m)</span></dt><dd><p>Centroid y coordinate</p>
+</dd>
+<dt><strong>lhfit_y_uncertainty</strong><span class="classifier">Field(default=nan m, unit=m)</span></dt><dd></dd>
+<dt><strong>lhfit_r</strong><span class="classifier">Field(default=nan m, unit=m)</span></dt><dd><p>Radial coordinate of centroid</p>
+</dd>
+<dt><strong>lhfit_phi</strong><span class="classifier">Field(default=nan, unit=rad)</span></dt><dd><p>Polar coordinate of centroid</p>
+</dd>
+<dt><strong>lhfit_length</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd><p>Average model spread along the major-axis</p>
+</dd>
+<dt><strong>lhfit_length_uncertainty</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd></dd>
+<dt><strong>lhfit_width</strong><span class="classifier">Field(default=nan deg, unit=deg)</span></dt><dd><p>Model spread along the minor-axis</p>
+</dd>
+<dt><strong>lhfit_psi</strong><span class="classifier">Field(default=nan, unit=rad)</span></dt><dd><p>Rotation angle of the model</p>
+</dd>
+<dt><strong>lhfit_psi_uncertainty</strong><span class="classifier">Field(default=nan, unit=rad)</span></dt><dd></dd>
+<dt><strong>lhfit_time_gradient</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Time gradient in the camera</p>
+</dd>
+<dt><strong>lhfit_time_gradient_uncertainty</strong><span class="classifier">Field(default=nan)</span></dt><dd></dd>
+<dt><strong>lhfit_ref_time</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Time of the 0 of the pulse template at the peak signal position</p>
+</dd>
+<dt><strong>lhfit_ref_time_uncertainty</strong><span class="classifier">Field(default=nan)</span></dt><dd></dd>
+<dt><strong>lhfit_length_asymmetry</strong><span class="classifier">Field(default=nan, type=float)</span></dt><dd><p>Major-axis asymmetry factor</p>
+</dd>
+<dt><strong>lhfit_length_asymmetry_uncertainty</strong><span class="classifier">Field(default=nan, type=float)</span></dt><dd></dd>
+<dt><strong>lhfit_TS</strong><span class="classifier">Field(default=nan)</span></dt><dd></dd>
+<dt><strong>lhfit_wl</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Fitted width/length</p>
+</dd>
+<dt><strong>lhfit_wl_uncertainty</strong><span class="classifier">Field(default=nan)</span></dt><dd></dd>
+<dt><strong>lhfit_t_68</strong><span class="classifier">Field(default=nan)</span></dt><dd><p>Time gradient times length</p>
+</dd>
+<dt><strong>lhfit_area</strong><span class="classifier">Field(default=nan deg2, unit=deg2)</span></dt><dd></dd>
+<dt><strong>meta</strong><span class="classifier">dict</span></dt><dd><p>dict of attached metadata</p>
+</dd>
+<dt><strong>prefix</strong><span class="classifier">str</span></dt><dd><p>Prefix attached to column names when saved to a table or file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_TS" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_TS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_TS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_area" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_area</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_call_status" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_call_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_call_status</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_intensity" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_intensity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_intensity</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_intensity_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_intensity_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_intensity_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_length</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_asymmetry" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_asymmetry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_length_asymmetry</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_asymmetry_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_asymmetry_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_length_asymmetry_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_length_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_log_intensity" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_log_intensity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_log_intensity</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_phi" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_phi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_phi</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_psi" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_psi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_psi</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_psi_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_psi_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_psi_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_r" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_r"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_r</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_ref_time" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_ref_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_ref_time</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_ref_time_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_ref_time_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_ref_time_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_t_68" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_t_68"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_t_68</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_time_gradient" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_time_gradient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_time_gradient</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_time_gradient_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_time_gradient_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_time_gradient_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_width" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_width</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_wl" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_wl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_wl</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_wl_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_wl_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_wl_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_x" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_x</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_x_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_x_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_x_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_y" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_y</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_y_uncertainty" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_y_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lhfit_y_uncertainty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.meta" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">meta</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.prefix" title="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_TS">
+<span class="sig-name descname"><span class="pre">lhfit_TS</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_TS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_area">
+<span class="sig-name descname"><span class="pre">lhfit_area</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_area" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_call_status">
+<span class="sig-name descname"><span class="pre">lhfit_call_status</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_call_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_intensity">
+<span class="sig-name descname"><span class="pre">lhfit_intensity</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_intensity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_intensity_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_intensity_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_intensity_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length">
+<span class="sig-name descname"><span class="pre">lhfit_length</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_asymmetry">
+<span class="sig-name descname"><span class="pre">lhfit_length_asymmetry</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_asymmetry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_asymmetry_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_length_asymmetry_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_asymmetry_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_length_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_length_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_log_intensity">
+<span class="sig-name descname"><span class="pre">lhfit_log_intensity</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_log_intensity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_phi">
+<span class="sig-name descname"><span class="pre">lhfit_phi</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_phi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_psi">
+<span class="sig-name descname"><span class="pre">lhfit_psi</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_psi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_psi_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_psi_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_psi_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_r">
+<span class="sig-name descname"><span class="pre">lhfit_r</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_r" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_ref_time">
+<span class="sig-name descname"><span class="pre">lhfit_ref_time</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_ref_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_ref_time_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_ref_time_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_ref_time_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_t_68">
+<span class="sig-name descname"><span class="pre">lhfit_t_68</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_t_68" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_time_gradient">
+<span class="sig-name descname"><span class="pre">lhfit_time_gradient</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_time_gradient" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_time_gradient_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_time_gradient_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_time_gradient_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_width">
+<span class="sig-name descname"><span class="pre">lhfit_width</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_wl">
+<span class="sig-name descname"><span class="pre">lhfit_wl</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_wl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_wl_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_wl_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_wl_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_x">
+<span class="sig-name descname"><span class="pre">lhfit_x</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_x_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_x_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_x_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_y">
+<span class="sig-name descname"><span class="pre">lhfit_y</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_y_uncertainty">
+<span class="sig-name descname"><span class="pre">lhfit_y_uncertainty</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.lhfit_y_uncertainty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.prefix">
+<span class="sig-name descname"><span class="pre">prefix</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.DL1LikelihoodParametersContainer.prefix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lstchain.io.lstcontainers.DL1ParametersContainer.html" class="btn btn-neutral float-left" title="DL1ParametersContainer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.io.lstcontainers.DispContainer.html" class="btn btn-neutral float-right" title="DispContainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

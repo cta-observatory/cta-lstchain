@@ -1,0 +1,6 @@
+write_error_page
+================
+
+.. currentmodule:: lstchain.datachecks.dl1_checker
+
+.. autofunction:: write_error_page

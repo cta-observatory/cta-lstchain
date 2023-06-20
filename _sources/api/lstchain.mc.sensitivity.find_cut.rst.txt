@@ -1,0 +1,6 @@
+find_cut
+========
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: find_cut

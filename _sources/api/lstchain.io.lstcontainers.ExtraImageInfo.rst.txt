@@ -1,0 +1,23 @@
+ExtraImageInfo
+==============
+
+.. currentmodule:: lstchain.io.lstcontainers
+
+.. autoclass:: ExtraImageInfo
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~ExtraImageInfo.meta
+      ~ExtraImageInfo.prefix
+      ~ExtraImageInfo.selected_gain_channel
+      ~ExtraImageInfo.tel_id
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: meta
+   .. autoattribute:: prefix
+   .. autoattribute:: selected_gain_channel
+   .. autoattribute:: tel_id

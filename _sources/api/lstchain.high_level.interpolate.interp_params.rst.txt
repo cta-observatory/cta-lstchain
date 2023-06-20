@@ -1,0 +1,6 @@
+interp_params
+=============
+
+.. currentmodule:: lstchain.high_level.interpolate
+
+.. autofunction:: interp_params

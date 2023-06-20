@@ -1,0 +1,6 @@
+alt_to_theta
+============
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: alt_to_theta

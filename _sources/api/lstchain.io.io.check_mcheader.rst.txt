@@ -1,0 +1,6 @@
+check_mcheader
+==============
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: check_mcheader

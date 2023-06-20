@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DL3Cuts &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DataBinning" href="lstchain.io.event_selection.DataBinning.html" />
+    <link rel="prev" title="EventSelector" href="lstchain.io.event_selection.EventSelector.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/io/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/io/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.config">lstchain.io.config Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.data_management">lstchain.io.data_management Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.event_selection">lstchain.io.event_selection Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.io">lstchain.io.io Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.lstcontainers">lstchain.io.lstcontainers Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+      <li class="breadcrumb-item active">DL3Cuts</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.io.event_selection.DL3Cuts.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dl3cuts">
+<h1>DL3Cuts<a class="headerlink" href="#dl3cuts" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.io.event_selection.</span></span><span class="sig-name descname"><span class="pre">DL3Cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Any" title="(in Python v3.6)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.component.Component.html#ctapipe.core.component.Component" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ctapipe.core.component.Component</span></code></a></p>
+<p>Selection cuts for DL2 to DL3 conversion</p>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.allowed_tels" title="lstchain.io.event_selection.DL3Cuts.allowed_tels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">allowed_tels</span></code></a></p></td>
+<td><p>List of allowed LST telescope ids</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.alpha_containment" title="lstchain.io.event_selection.DL3Cuts.alpha_containment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">alpha_containment</span></code></a></p></td>
+<td><p>Percentage containment region for alpha cuts</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.fill_alpha_cut" title="lstchain.io.event_selection.DL3Cuts.fill_alpha_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_alpha_cut</span></code></a></p></td>
+<td><p>Fill value of alpha cut (deg) in an energy bin with fewer than minimum number of events present</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.fill_theta_cut" title="lstchain.io.event_selection.DL3Cuts.fill_theta_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_theta_cut</span></code></a></p></td>
+<td><p>Fill value of theta cut (deg) in an energy bin with fewer than minimum number of events present</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.gh_efficiency" title="lstchain.io.event_selection.DL3Cuts.gh_efficiency"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gh_efficiency</span></code></a></p></td>
+<td><p>Gamma efficiency for optimized g/h cuts in %</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.global_alpha_cut" title="lstchain.io.event_selection.DL3Cuts.global_alpha_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">global_alpha_cut</span></code></a></p></td>
+<td><p>Global selection cut (deg) for alpha</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.global_gh_cut" title="lstchain.io.event_selection.DL3Cuts.global_gh_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">global_gh_cut</span></code></a></p></td>
+<td><p>Global selection cut for gh_score (gammaness)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.global_theta_cut" title="lstchain.io.event_selection.DL3Cuts.global_theta_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">global_theta_cut</span></code></a></p></td>
+<td><p>Global selection cut (deg) for theta</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.max_alpha_cut" title="lstchain.io.event_selection.DL3Cuts.max_alpha_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_alpha_cut</span></code></a></p></td>
+<td><p>Maximum alpha cut (deg) in an energy bin</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.max_gh_cut" title="lstchain.io.event_selection.DL3Cuts.max_gh_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_gh_cut</span></code></a></p></td>
+<td><p>Maximum gh_score (gammaness) cut in an energy bin</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.max_theta_cut" title="lstchain.io.event_selection.DL3Cuts.max_theta_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_theta_cut</span></code></a></p></td>
+<td><p>Maximum theta cut (deg) in an energy bin</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.min_alpha_cut" title="lstchain.io.event_selection.DL3Cuts.min_alpha_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_alpha_cut</span></code></a></p></td>
+<td><p>Minimum alpha cut (deg) in an energy bin</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.min_event_p_en_bin" title="lstchain.io.event_selection.DL3Cuts.min_event_p_en_bin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_event_p_en_bin</span></code></a></p></td>
+<td><p>Minimum events per energy bin, to evaluate percentile cuts</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.min_gh_cut" title="lstchain.io.event_selection.DL3Cuts.min_gh_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_gh_cut</span></code></a></p></td>
+<td><p>Minimum gh_score (gammaness) cut in an energy bin</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.min_theta_cut" title="lstchain.io.event_selection.DL3Cuts.min_theta_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_theta_cut</span></code></a></p></td>
+<td><p>Minimum theta cut (deg) in an energy bin</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.theta_containment" title="lstchain.io.event_selection.DL3Cuts.theta_containment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">theta_containment</span></code></a></p></td>
+<td><p>Percentage containment region for theta cuts</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.allowed_tels_filter" title="lstchain.io.event_selection.DL3Cuts.allowed_tels_filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">allowed_tels_filter</span></code></a>(data)</p></td>
+<td><p>Applying a filter on telescopes used for observation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_alpha_cuts" title="lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_alpha_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_energy_dependent_alpha_cuts</span></code></a>(data, ...)</p></td>
+<td><p>Applying a given energy-dependent alpha cuts on a given data, along the reco energy bins.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_gh_cuts" title="lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_gh_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_energy_dependent_gh_cuts</span></code></a>(data, gh_cuts)</p></td>
+<td><p>Applying a given energy-dependent gh cuts on the given data, along the reco energy bins.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_theta_cuts" title="lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_theta_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_energy_dependent_theta_cuts</span></code></a>(data, ...)</p></td>
+<td><p>Applying a given energy-dependent theta cuts on a given data, along the reco energy bins.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.apply_global_alpha_cut" title="lstchain.io.event_selection.DL3Cuts.apply_global_alpha_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_global_alpha_cut</span></code></a>(data)</p></td>
+<td><p>Applying a global alpha cut on a given data</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.apply_global_gh_cut" title="lstchain.io.event_selection.DL3Cuts.apply_global_gh_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_global_gh_cut</span></code></a>(data)</p></td>
+<td><p>Applying a global gammaness cut on a given data</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.apply_global_theta_cut" title="lstchain.io.event_selection.DL3Cuts.apply_global_theta_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_global_theta_cut</span></code></a>(data)</p></td>
+<td><p>Applying a global theta cut on a given data</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.energy_dependent_alpha_cuts" title="lstchain.io.event_selection.DL3Cuts.energy_dependent_alpha_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">energy_dependent_alpha_cuts</span></code></a>(data, energy_bins)</p></td>
+<td><p>Evaluating an optimized energy-dependent alpha cuts, in a given data, with provided reco energy bins, and other parameters to pass to the pyirf.cuts.calculate_percentile_cut function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.energy_dependent_gh_cuts" title="lstchain.io.event_selection.DL3Cuts.energy_dependent_gh_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">energy_dependent_gh_cuts</span></code></a>(data, energy_bins)</p></td>
+<td><p>Evaluating energy-dependent gammaness cuts, in a given data, with provided reco energy bins, and other parameters to pass to the pyirf.cuts.calculate_percentile_cut function</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.energy_dependent_theta_cuts" title="lstchain.io.event_selection.DL3Cuts.energy_dependent_theta_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">energy_dependent_theta_cuts</span></code></a>(data, energy_bins)</p></td>
+<td><p>Evaluating energy-dependent theta cuts, in a given MC data, with provided reco energy bins, and other parameters to pass to the pyirf.cuts.calculate_percentile_cut function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DL3Cuts.update_fill_cuts" title="lstchain.io.event_selection.DL3Cuts.update_fill_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_fill_cuts</span></code></a>(cut_table)</p></td>
+<td><p>For an energy-dependent cut table, update the cuts for bins with number of events fewer than the minimum number, for which pyirf uses a constant fill_value, usually at the energy threshold limits, with cut evaluated at the nearest bin with number of events more than the given minimum.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.allowed_tels">
+<span class="sig-name descname"><span class="pre">allowed_tels</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.allowed_tels" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of allowed LST telescope ids</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.alpha_containment">
+<span class="sig-name descname"><span class="pre">alpha_containment</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.alpha_containment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Percentage containment region for alpha cuts</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.fill_alpha_cut">
+<span class="sig-name descname"><span class="pre">fill_alpha_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.fill_alpha_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill value of alpha cut (deg) in an energy bin with fewer than minimum number of events present</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.fill_theta_cut">
+<span class="sig-name descname"><span class="pre">fill_theta_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.fill_theta_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill value of theta cut (deg) in an energy bin with fewer than minimum number of events present</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.gh_efficiency">
+<span class="sig-name descname"><span class="pre">gh_efficiency</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.gh_efficiency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gamma efficiency for optimized g/h cuts in %</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.global_alpha_cut">
+<span class="sig-name descname"><span class="pre">global_alpha_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.global_alpha_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Global selection cut (deg) for alpha</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.global_gh_cut">
+<span class="sig-name descname"><span class="pre">global_gh_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.global_gh_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Global selection cut for gh_score (gammaness)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.global_theta_cut">
+<span class="sig-name descname"><span class="pre">global_theta_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.global_theta_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Global selection cut (deg) for theta</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.max_alpha_cut">
+<span class="sig-name descname"><span class="pre">max_alpha_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.max_alpha_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum alpha cut (deg) in an energy bin</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.max_gh_cut">
+<span class="sig-name descname"><span class="pre">max_gh_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.max_gh_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum gh_score (gammaness) cut in an energy bin</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.max_theta_cut">
+<span class="sig-name descname"><span class="pre">max_theta_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.max_theta_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum theta cut (deg) in an energy bin</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.min_alpha_cut">
+<span class="sig-name descname"><span class="pre">min_alpha_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.min_alpha_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum alpha cut (deg) in an energy bin</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.min_event_p_en_bin">
+<span class="sig-name descname"><span class="pre">min_event_p_en_bin</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.min_event_p_en_bin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum events per energy bin, to evaluate percentile cuts</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.min_gh_cut">
+<span class="sig-name descname"><span class="pre">min_gh_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.min_gh_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum gh_score (gammaness) cut in an energy bin</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.min_theta_cut">
+<span class="sig-name descname"><span class="pre">min_theta_cut</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.min_theta_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum theta cut (deg) in an energy bin</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.theta_containment">
+<span class="sig-name descname"><span class="pre">theta_containment</span></span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.theta_containment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Percentage containment region for theta cuts</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.allowed_tels_filter">
+<span class="sig-name descname"><span class="pre">allowed_tels_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.allowed_tels_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applying a filter on telescopes used for observation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_alpha_cuts">
+<span class="sig-name descname"><span class="pre">apply_energy_dependent_alpha_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha_cuts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_alpha_cuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applying a given energy-dependent alpha cuts on a given data, along the
+reco energy bins.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_gh_cuts">
+<span class="sig-name descname"><span class="pre">apply_energy_dependent_gh_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gh_cuts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_gh_cuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applying a given energy-dependent gh cuts on the given data, along the
+reco energy bins.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_theta_cuts">
+<span class="sig-name descname"><span class="pre">apply_energy_dependent_theta_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta_cuts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.apply_energy_dependent_theta_cuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applying a given energy-dependent theta cuts on a given data, along the
+reco energy bins.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.apply_global_alpha_cut">
+<span class="sig-name descname"><span class="pre">apply_global_alpha_cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.apply_global_alpha_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applying a global alpha cut on a given data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.apply_global_gh_cut">
+<span class="sig-name descname"><span class="pre">apply_global_gh_cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.apply_global_gh_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applying a global gammaness cut on a given data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.apply_global_theta_cut">
+<span class="sig-name descname"><span class="pre">apply_global_theta_cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.apply_global_theta_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applying a global theta cut on a given data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.energy_dependent_alpha_cuts">
+<span class="sig-name descname"><span class="pre">energy_dependent_alpha_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.energy_dependent_alpha_cuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluating an optimized energy-dependent alpha cuts, in a given
+data, with provided reco energy bins, and other parameters to
+pass to the pyirf.cuts.calculate_percentile_cut function.</p>
+<p>Note: Using too fine binning will result in too un-smooth cuts.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.energy_dependent_gh_cuts">
+<span class="sig-name descname"><span class="pre">energy_dependent_gh_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.energy_dependent_gh_cuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluating energy-dependent gammaness cuts, in a given
+data, with provided reco energy bins, and other parameters to
+pass to the pyirf.cuts.calculate_percentile_cut function</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.energy_dependent_theta_cuts">
+<span class="sig-name descname"><span class="pre">energy_dependent_theta_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_same_disp_sign</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.energy_dependent_theta_cuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluating energy-dependent theta cuts, in a given MC data,
+with provided reco energy bins, and other parameters to pass to the
+pyirf.cuts.calculate_percentile_cut function.</p>
+<p>For MC events, the disp_sign may be reconstructed incorrectly with
+respect to the true value, and thus resulting in a bi-modal PSF.
+For evaluating the energy-dependent theta cuts, we want to consider,
+only the central region of PSF. To fix this issue, by default, we apply
+a mask on the data, so as to only use events with the same disp_sign
+after reconstruction, for evaluating the percentile cut.</p>
+<p>Note: In this case, at low energies, where disp_sign determination is
+pretty uncertain, an efficiency of 40% or larger will result in a cut
+which keeps the whole central region of the PSF.</p>
+<p>If the user wishes to not use this method, they can make the boolean
+use_same_disp_sign as False.</p>
+<p>Note: Using too fine binning will result in too un-smooth cuts.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DL3Cuts.update_fill_cuts">
+<span class="sig-name descname"><span class="pre">update_fill_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cut_table</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.event_selection.DL3Cuts.update_fill_cuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>For an energy-dependent cut table, update the cuts for bins with number
+of events fewer than the minimum number, for which pyirf uses a
+constant fill_value, usually at the energy threshold limits, with cut
+evaluated at the nearest bin with number of events more than the given
+minimum.</p>
+<p>In the case, where the low-events bin is in between high-events bins,
+the cut value for that low-events bin is taken as the mean of the
+neighbouring cut values.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lstchain.io.event_selection.EventSelector.html" class="btn btn-neutral float-left" title="EventSelector" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.io.event_selection.DataBinning.html" class="btn btn-neutral float-right" title="DataBinning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

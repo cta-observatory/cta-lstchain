@@ -1,0 +1,6 @@
+get_mc_fov_offset
+=================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: get_mc_fov_offset

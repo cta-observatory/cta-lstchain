@@ -1,0 +1,6 @@
+zero_suppression_tailcut_dilation
+=================================
+
+.. currentmodule:: lstchain.reco.volume_reducer
+
+.. autofunction:: zero_suppression_tailcut_dilation

@@ -1,0 +1,6 @@
+setup_logging
+=============
+
+.. currentmodule:: lstchain.high_level.significance_calculation
+
+.. autofunction:: setup_logging

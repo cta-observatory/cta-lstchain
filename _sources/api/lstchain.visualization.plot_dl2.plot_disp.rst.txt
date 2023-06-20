@@ -1,0 +1,6 @@
+plot_disp
+=========
+
+.. currentmodule:: lstchain.visualization.plot_dl2
+
+.. autofunction:: plot_disp

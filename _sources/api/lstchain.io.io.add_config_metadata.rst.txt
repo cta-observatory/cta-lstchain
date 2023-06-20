@@ -1,0 +1,6 @@
+add_config_metadata
+===================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: add_config_metadata

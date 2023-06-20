@@ -1,0 +1,6 @@
+auto_merge_h5files
+==================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: auto_merge_h5files

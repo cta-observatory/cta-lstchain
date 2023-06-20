@@ -1,0 +1,6 @@
+get_stacked_table
+=================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: get_stacked_table

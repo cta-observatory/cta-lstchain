@@ -1,0 +1,6 @@
+power_law_integrated_distribution
+=================================
+
+.. currentmodule:: lstchain.mc.mc
+
+.. autofunction:: power_law_integrated_distribution

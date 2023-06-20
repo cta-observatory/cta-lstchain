@@ -1,0 +1,6 @@
+plot_trigger_types
+==================
+
+.. currentmodule:: lstchain.datachecks.dl1_checker
+
+.. autofunction:: plot_trigger_types

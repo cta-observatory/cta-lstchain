@@ -1,0 +1,6 @@
+analyze_wobble
+==============
+
+.. currentmodule:: lstchain.high_level.significance_calculation
+
+.. autofunction:: analyze_wobble

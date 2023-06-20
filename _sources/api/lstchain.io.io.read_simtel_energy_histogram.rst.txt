@@ -1,0 +1,6 @@
+read_simtel_energy_histogram
+============================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: read_simtel_energy_histogram

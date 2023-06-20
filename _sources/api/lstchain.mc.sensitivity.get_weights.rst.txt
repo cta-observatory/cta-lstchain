@@ -1,0 +1,6 @@
+get_weights
+===========
+
+.. currentmodule:: lstchain.mc.sensitivity
+
+.. autofunction:: get_weights

@@ -1,0 +1,6 @@
+get_effective_time
+==================
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: get_effective_time

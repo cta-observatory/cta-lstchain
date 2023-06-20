@@ -1,0 +1,6 @@
+get_srcdep_config
+=================
+
+.. currentmodule:: lstchain.io.config
+
+.. autofunction:: get_srcdep_config

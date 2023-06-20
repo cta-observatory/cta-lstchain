@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MonteCarlo (mc) &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="../../_static/custom.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="int_diff_sp" href="../../api/lstchain.mc.mc.int_diff_sp.html" />
+    <link rel="prev" title="ThrownEventsHistogram" href="../../api/lstchain.io.lstcontainers.ThrownEventsHistogram.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lstchain
+          </a>
+              <div class="version">
+                0.10.1.dev5+g781f35ef
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">MonteCarlo (<cite>mc</cite>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-api">Reference/API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.mc.mc">lstchain.mc.mc Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.mc.plot_utils">lstchain.mc.plot_utils Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-lstchain.mc.sensitivity">lstchain.mc.sensitivity Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Docs</a></li>
+      <li class="breadcrumb-item active">MonteCarlo (<cite>mc</cite>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lstchain_api/mc/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="montecarlo-mc">
+<span id="mc"></span><h1>MonteCarlo (<cite>mc</cite>)<a class="headerlink" href="#montecarlo-mc" title="Permalink to this headline">¶</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Module containing functions to analyze MC data and compute sensitivity curves.</p>
+</section>
+<section id="reference-api">
+<h2>Reference/API<a class="headerlink" href="#reference-api" title="Permalink to this headline">¶</a></h2>
+<section id="module-lstchain.mc.mc">
+<span id="lstchain-mc-mc-module"></span><h3>lstchain.mc.mc Module<a class="headerlink" href="#module-lstchain.mc.mc" title="Permalink to this headline">¶</a></h3>
+<section id="functions">
+<h4>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.mc.int_diff_sp.html#lstchain.mc.mc.int_diff_sp" title="lstchain.mc.mc.int_diff_sp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">int_diff_sp</span></code></a>(emin, emax, sp_idx, e0)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.mc.power_law_integrated_distribution.html#lstchain.mc.mc.power_law_integrated_distribution" title="lstchain.mc.mc.power_law_integrated_distribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">power_law_integrated_distribution</span></code></a>(emin, ...)</p></td>
+<td><p>For each bin, return the expected number of events for a power-law distribution.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.mc.rate.html#lstchain.mc.mc.rate" title="lstchain.mc.mc.rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rate</span></code></a>(shape, emin, emax, param, cone, area)</p></td>
+<td><p>Calculates the rate of events for a power-law distribution, in a given energy range, collection area and solid angle</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.mc.weight.html#lstchain.mc.mc.weight" title="lstchain.mc.mc.weight"><code class="xref py py-obj docutils literal notranslate"><span class="pre">weight</span></code></a>(shape, emin, emax, sim_sp_idx, rate, ...)</p></td>
+<td><p>Calculates the weight of events to transform a power-law distribution with spectral index sim_sp_idx to a power-law distribution with  spectral index w_sp_idx</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.mc.plot_utils">
+<span id="lstchain-mc-plot-utils-module"></span><h3>lstchain.mc.plot_utils Module<a class="headerlink" href="#module-lstchain.mc.plot_utils" title="Permalink to this headline">¶</a></h3>
+<section id="id1">
+<h4>Functions<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.fill_bin_content.html#lstchain.mc.plot_utils.fill_bin_content" title="lstchain.mc.plot_utils.fill_bin_content"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_bin_content</span></code></a>(ax, sensitivity, ...)</p></td>
+<td><p>Function to fill bin content to be plotted in the case of an optimized figure array</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.format_axes_array.html#lstchain.mc.plot_utils.format_axes_array" title="lstchain.mc.plot_utils.format_axes_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">format_axes_array</span></code></a>(ax, arr_i, arr_j, plot)</p></td>
+<td><p>Format axes for the theta2 and gammaness optimization for a figure array with all energy bins together</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.format_axes_ebin.html#lstchain.mc.plot_utils.format_axes_ebin" title="lstchain.mc.plot_utils.format_axes_ebin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">format_axes_ebin</span></code></a>(ax, img)</p></td>
+<td><p>Format axes for the theta2 and gammaness optimization per energy bin</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.format_axes_sensitivity.html#lstchain.mc.plot_utils.format_axes_sensitivity" title="lstchain.mc.plot_utils.format_axes_sensitivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">format_axes_sensitivity</span></code></a>(ax)</p></td>
+<td><p>Format axes of the sensitivity plot</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.plot_Crab_SED.html#lstchain.mc.plot_utils.plot_Crab_SED" title="lstchain.mc.plot_utils.plot_Crab_SED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_Crab_SED</span></code></a>(emin, emax[, percentage, ax])</p></td>
+<td><p>Plot a percentage of the Crab SED</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.plot_positions_survived_events.html#lstchain.mc.plot_utils.plot_positions_survived_events" title="lstchain.mc.plot_utils.plot_positions_survived_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_positions_survived_events</span></code></a>(df_gammas, ...)</p></td>
+<td><p>Plot positions of surviving events after cuts</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.plot_sensitivity.html#lstchain.mc.plot_utils.plot_sensitivity" title="lstchain.mc.plot_utils.plot_sensitivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_sensitivity</span></code></a>(energy, sensitivity[, ax])</p></td>
+<td><p>Plot the achieved sensitivity</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.sensitivity_minimization_plot.html#lstchain.mc.plot_utils.sensitivity_minimization_plot" title="lstchain.mc.plot_utils.sensitivity_minimization_plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sensitivity_minimization_plot</span></code></a>(n_bins_energy, ...)</p></td>
+<td><p>Plot the sensitivity minimization plots in different energy bins to check that the theta2 and gammaness cuts were properly applied</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.plot_utils.sensitivity_plot_comparison.html#lstchain.mc.plot_utils.sensitivity_plot_comparison" title="lstchain.mc.plot_utils.sensitivity_plot_comparison"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sensitivity_plot_comparison</span></code></a>(energy, sensitivity)</p></td>
+<td><p>Main sensitivity plot.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="module-lstchain.mc.sensitivity">
+<span id="lstchain-mc-sensitivity-module"></span><h3>lstchain.mc.sensitivity Module<a class="headerlink" href="#module-lstchain.mc.sensitivity" title="Permalink to this headline">¶</a></h3>
+<section id="id2">
+<h4>Functions<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.bin_definition.html#lstchain.mc.sensitivity.bin_definition" title="lstchain.mc.sensitivity.bin_definition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bin_definition</span></code></a>(n_bins_gammaness, n_bins_theta2)</p></td>
+<td><p>Define binning in gammaness and theta2 for the optimization of the sensitivity</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.calculate_sensitivity.html#lstchain.mc.sensitivity.calculate_sensitivity" title="lstchain.mc.sensitivity.calculate_sensitivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_sensitivity</span></code></a>(n_excesses, ...)</p></td>
+<td><p>Sensitivity calculation using n_excesses/sqrt(n_background)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.calculate_sensitivity_lima.html#lstchain.mc.sensitivity.calculate_sensitivity_lima" title="lstchain.mc.sensitivity.calculate_sensitivity_lima"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_sensitivity_lima</span></code></a>(n_signal, ...)</p></td>
+<td><p>Sensitivity calculation using the Li &amp; Ma formula eq.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.diff_events_after_cut.html#lstchain.mc.sensitivity.diff_events_after_cut" title="lstchain.mc.sensitivity.diff_events_after_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">diff_events_after_cut</span></code></a>(events, rates, ...)</p></td>
+<td><p>This function calculates the difference between the number of events after the cut in feature and gamma_efficiency*total number of events</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.find_cut.html#lstchain.mc.sensitivity.find_cut" title="lstchain.mc.sensitivity.find_cut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_cut</span></code></a>(events, rates, obstime, feature, ...)</p></td>
+<td><p>Find cut in feature that corresponds to gamma efficiency.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.get_weights.html#lstchain.mc.sensitivity.get_weights" title="lstchain.mc.sensitivity.get_weights"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_weights</span></code></a>(mc_par, spectral_par)</p></td>
+<td><p>Calculate the weight to transform from MC spectra to target spectra</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.process_mc.html#lstchain.mc.sensitivity.process_mc" title="lstchain.mc.sensitivity.process_mc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_mc</span></code></a>(dl2_file, mc_type)</p></td>
+<td><p>Process the MC simulated and reconstructed to extract the relevant parameters to compute the sensitivity</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.process_real.html#lstchain.mc.sensitivity.process_real" title="lstchain.mc.sensitivity.process_real"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_real</span></code></a>(dl2_file)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.read_sim_par.html#lstchain.mc.sensitivity.read_sim_par" title="lstchain.mc.sensitivity.read_sim_par"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_sim_par</span></code></a>(file)</p></td>
+<td><p>Read MC simulated parameters</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.ring_containment.html#lstchain.mc.sensitivity.ring_containment" title="lstchain.mc.sensitivity.ring_containment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ring_containment</span></code></a>(angdist2, ring_radius, ...)</p></td>
+<td><p>Calculate containment of cosmic ray particles with reconstructed positions within a ring of radius=ring_radius and half width=ring_halfwidth</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.samesign.html#lstchain.mc.sensitivity.samesign" title="lstchain.mc.sensitivity.samesign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">samesign</span></code></a>(a, b)</p></td>
+<td><p>Check if two numbers have the same sign Parameters ---------- a: <cite>float</cite> b: <cite>float</cite></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.sensitivity_gamma_efficiency.html#lstchain.mc.sensitivity.sensitivity_gamma_efficiency" title="lstchain.mc.sensitivity.sensitivity_gamma_efficiency"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sensitivity_gamma_efficiency</span></code></a>(dl2_file_g, ...)</p></td>
+<td><p>Main function to calculate the sensitivity for cuts based on gamma efficiency</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.sensitivity_gamma_efficiency_real_data.html#lstchain.mc.sensitivity.sensitivity_gamma_efficiency_real_data" title="lstchain.mc.sensitivity.sensitivity_gamma_efficiency_real_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sensitivity_gamma_efficiency_real_data</span></code></a>(...)</p></td>
+<td><p>Main function to calculate the sensitivity for cuts based on gamma efficiency using real data as ON and OFF events</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.mc.sensitivity.sensitivity_gamma_efficiency_real_protons.html#lstchain.mc.sensitivity.sensitivity_gamma_efficiency_real_protons" title="lstchain.mc.sensitivity.sensitivity_gamma_efficiency_real_protons"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sensitivity_gamma_efficiency_real_protons</span></code></a>(...)</p></td>
+<td><p>Main function to calculate the sensitivity for cuts based on gamma efficiency using real protons as background events</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../api/lstchain.io.lstcontainers.ThrownEventsHistogram.html" class="btn btn-neutral float-left" title="ThrownEventsHistogram" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api/lstchain.mc.mc.int_diff_sp.html" class="btn btn-neutral float-right" title="int_diff_sp" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

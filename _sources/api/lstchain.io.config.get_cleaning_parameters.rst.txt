@@ -1,0 +1,6 @@
+get_cleaning_parameters
+=======================
+
+.. currentmodule:: lstchain.io.config
+
+.. autofunction:: get_cleaning_parameters

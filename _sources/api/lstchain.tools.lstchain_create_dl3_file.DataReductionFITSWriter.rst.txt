@@ -1,0 +1,77 @@
+DataReductionFITSWriter
+=======================
+
+.. currentmodule:: lstchain.tools.lstchain_create_dl3_file
+
+.. autoclass:: DataReductionFITSWriter
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DataReductionFITSWriter.aliases
+      ~DataReductionFITSWriter.classes
+      ~DataReductionFITSWriter.description
+      ~DataReductionFITSWriter.example
+      ~DataReductionFITSWriter.final_irf_file
+      ~DataReductionFITSWriter.flags
+      ~DataReductionFITSWriter.gzip
+      ~DataReductionFITSWriter.input_dl2
+      ~DataReductionFITSWriter.input_irf_path
+      ~DataReductionFITSWriter.interp_method
+      ~DataReductionFITSWriter.irf_file_pattern
+      ~DataReductionFITSWriter.keep_duplicated_events
+      ~DataReductionFITSWriter.name
+      ~DataReductionFITSWriter.output_dl3_path
+      ~DataReductionFITSWriter.overwrite
+      ~DataReductionFITSWriter.source_dec
+      ~DataReductionFITSWriter.source_dep
+      ~DataReductionFITSWriter.source_name
+      ~DataReductionFITSWriter.source_ra
+      ~DataReductionFITSWriter.use_nearest_irf_node
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~DataReductionFITSWriter.apply_srcdep_gh_alpha_cut
+      ~DataReductionFITSWriter.apply_srcindep_gh_cut
+      ~DataReductionFITSWriter.check_energy_dependent_cuts
+      ~DataReductionFITSWriter.finish
+      ~DataReductionFITSWriter.interp_irfs
+      ~DataReductionFITSWriter.setup
+      ~DataReductionFITSWriter.start
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: aliases
+   .. autoattribute:: classes
+   .. autoattribute:: description
+   .. autoattribute:: example
+   .. autoattribute:: final_irf_file
+   .. autoattribute:: flags
+   .. autoattribute:: gzip
+   .. autoattribute:: input_dl2
+   .. autoattribute:: input_irf_path
+   .. autoattribute:: interp_method
+   .. autoattribute:: irf_file_pattern
+   .. autoattribute:: keep_duplicated_events
+   .. autoattribute:: name
+   .. autoattribute:: output_dl3_path
+   .. autoattribute:: overwrite
+   .. autoattribute:: source_dec
+   .. autoattribute:: source_dep
+   .. autoattribute:: source_name
+   .. autoattribute:: source_ra
+   .. autoattribute:: use_nearest_irf_node
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: apply_srcdep_gh_alpha_cut
+   .. automethod:: apply_srcindep_gh_cut
+   .. automethod:: check_energy_dependent_cuts
+   .. automethod:: finish
+   .. automethod:: interp_irfs
+   .. automethod:: setup
+   .. automethod:: start

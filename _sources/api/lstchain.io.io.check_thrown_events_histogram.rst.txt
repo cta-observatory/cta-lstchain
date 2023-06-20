@@ -1,0 +1,6 @@
+check_thrown_events_histogram
+=============================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: check_thrown_events_histogram
