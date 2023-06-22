@@ -3,12 +3,16 @@ from pathlib import Path
 from pkg_resources import resource_filename
 from datetime import datetime
 import tempfile
+from astropy.time import Time
+import pymongo
 
 from .paths import parse_calibration_name
 
 DEFAULT_BASE_PATH = Path('/fefs/aswg/data/real')
 DEFAULT_R0_PATH = DEFAULT_BASE_PATH / 'R0'
-LEVEL_A_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-A'
+DEFAULT_DL1_PATH = DEFAULT_BASE_PATH / 'DL1'
+CAT_A_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-A'
+CAT_B_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-B'
 
 DEFAULT_CONFIG = Path(resource_filename(
     'lstchain',
@@ -88,7 +92,7 @@ def find_r0_subrun(run, sub_run, r0_dir=DEFAULT_R0_PATH):
 
 def find_pedestal_file(pro, pedestal_run=None, date=None, base_dir=DEFAULT_BASE_PATH):
     # pedestal base dir
-    ped_dir = Path(base_dir) / LEVEL_A_PIXEL_DIR / "drs4_baseline"
+    ped_dir = Path(base_dir) / CAT_A_PIXEL_DIR / "drs4_baseline"
 
     if pedestal_run is None and date is None:
         raise ValueError('Must give at least `date` or `run`')
@@ -123,7 +127,7 @@ def find_run_summary(date, base_dir=DEFAULT_BASE_PATH):
 def find_time_calibration_file(pro, run, time_run=None, base_dir=DEFAULT_BASE_PATH):
     '''Find a time calibration file for given run
     '''
-    time_dir = Path(base_dir) / LEVEL_A_PIXEL_DIR / "drs4_time_sampling_from_FF"
+    time_dir = Path(base_dir) / CAT_A_PIXEL_DIR / "drs4_time_sampling_from_FF"
 
 
     # search the last time run before or equal to the calibration run
@@ -155,7 +159,7 @@ def find_time_calibration_file(pro, run, time_run=None, base_dir=DEFAULT_BASE_PA
 
 
 def find_systematics_correction_file(pro, date, sys_date=None, base_dir=DEFAULT_BASE_PATH):
-    sys_dir = Path(base_dir) / LEVEL_A_PIXEL_DIR / "ffactor_systematics"
+    sys_dir = Path(base_dir) / CAT_A_PIXEL_DIR / "ffactor_systematics"
 
     if sys_date is not None:
         path =  (sys_dir / sys_date / pro / f"ffactor_systematics_{sys_date}.h5").resolve()
@@ -171,3 +175,103 @@ def find_systematics_correction_file(pro, date, sys_date=None, base_dir=DEFAULT_
     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
 
     return (sys_dir / selected_date / pro / f"ffactor_systematics_{selected_date}.h5").resolve()
+
+def find_calibration_file(pro, calibration_run=None, date=None, category='Cat_A',base_dir=DEFAULT_BASE_PATH):
+    # pedestal base dir
+
+    if category == 'Cat_A':
+        cal_dir = Path(base_dir) / CAT_A_PIXEL_DIR / "calibration"
+    elif category == 'Cat_B':
+        cal_dir = Path(base_dir) / CAT_B_PIXEL_DIR / "calibration"
+    else:
+        raise ValueError(f'Argument \'category\' can be only \'Cat_A\' or \'Cat_B\', not {category}')    
+
+    if calibration_run is None and date is None:
+        raise ValueError('Must give at least `date` or `run`')
+
+    if calibration_run is not None:
+        # search a specific calibration run
+        file_list = sorted(cal_dir.rglob(f'{pro}/calibration*.Run{calibration_run:05d}.0000.h5'))
+
+        if len(file_list) == 0:
+            raise IOError(f"Calibration file from run {calibration_run} not found\n")
+
+        return file_list[0].resolve()
+
+    # search for a unique calibration file from the same date
+    file_list = sorted((cal_dir / date / pro).glob('calibration*.0000.h5'))
+    if len(file_list) == 0:
+        raise IOError(f"No calibration file found for date {date}")
+
+    if len(file_list) > 1:
+        raise IOError(f"Too many calibration files found for date {date}: {file_list}, choose one run\n")
+
+    return file_list[0].resolve()
+
+def find_DL1_subrun(run, sub_run, dl1_dir=DEFAULT_DL1_PATH):
+    '''
+    Find the given subrun DL1 file (i.e. globbing for the date part)
+    '''
+    file_list = rglob_symlinks(dl1_dir, f'dl1_LST-1.1.Run{run:05d}.{sub_run:04d}*.h5')
+    # ignore directories that are not a date, e.g. "Trash"
+    file_list = [p for p in file_list if is_date(p.parent.name)]
+
+    if len(file_list) == 0:
+        raise IOError(f"Run {run} not found\n")
+
+    if len(file_list) > 1:
+        raise IOError(f"Found more than one file for run {run}.{sub_run}: {file_list}")
+
+    return file_list[0]
+
+def find_interleaved_subrun(run, sub_run, dl1_dir=DEFAULT_DL1_PATH):
+    '''
+    Find the given subrun interleaved file (i.e. globbing for the date part)
+    '''
+    file_list = rglob_symlinks(dl1_dir, f'interleaved_LST-1.1.Run{run:05d}.{sub_run:04d}*.h5')
+    # ignore directories that are not a date, e.g. "Trash"
+    file_list = [p for p in file_list if is_date(p.parent.name)]
+
+    if len(file_list) == 0:
+        raise IOError(f"Run {run} not found\n")
+
+    if len(file_list) > 1:
+        raise IOError(f"Found more than one file for run {run}.{sub_run}: {file_list}")
+
+    return file_list[0]
+
+    
+def find_filter_wheels(run, database_url):
+    """read the employed filters from mongodb"""
+
+    # there was a change of Mongo DB data names on 5/12/2022
+    NEW_DB_NAMES_DATE = Time("2022-12-04T00:00:00")
+
+    filters = None
+    try:
+
+        myclient = pymongo.MongoClient(database_url)
+
+        mydb = myclient["CACO"]
+        mycol = mydb["RUN_INFORMATION"]
+        mydoc = mycol.find({"run_number": {"$eq": run}})
+        for x in mydoc:
+            date =  Time(x["start_time"])
+            if date < NEW_DB_NAMES_DATE:
+                w1 = int(x["cbox"]["wheel1 position"])
+                w2 = int(x["cbox"]["wheel2 position"])
+            else:
+                w1 = int(x["cbox"]["CBOX_WheelPosition1"])
+                w2 = int(x["cbox"]["CBOX_WheelPosition2"])
+
+            filters = f"{w1:1d}{w2:1d}"
+
+    except Exception as e:
+        print(f"\n >>> Exception: {e}")
+        raise IOError(
+            "--> No mongo DB filter information."
+            " You must pass the filters by argument: -f [filters]"
+        )
+
+    return filters
+ 
