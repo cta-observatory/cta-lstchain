@@ -61,6 +61,7 @@ from ctapipe.io import read_table
 from ctapipe.core import Container, Field
 from ctapipe.io import HDF5TableWriter
 from ctapipe.containers import EventType
+from ctapipe_io_lst import LSTEventSource
 
 parser = argparse.ArgumentParser(description="DVR pixel selector")
 
@@ -232,10 +233,10 @@ def main():
 
         data_parameters = read_table(dl1_file, dl1_params_lstcam_key)
 
-        # Read some useful extra info from the file:
-        subarray_info = SubarrayDescription.from_hdf(dl1_file)
-        camera_geom = subarray_info.tel[1].camera.geometry
-
+        # Get the LST camera geometry:
+        sa = LSTEventSource.create_subarray(tel_id=1)
+        camera_geom = sa.tel[1].camera.geometry
+      
         # Time between first and last timestamp:
         summary_info.elapsed_time = (data_parameters['dragon_time'][-1] -
                                      data_parameters['dragon_time'][0])
