@@ -80,7 +80,7 @@ class CameraDisplay:
             data=dict(
                 poly_xs=xs,
                 poly_ys=ys,
-                image=np.ones_like(geom.pix_x.value).astype(np.float)
+                image=np.ones_like(geom.pix_x.value).astype(float)
             )
         )
 
