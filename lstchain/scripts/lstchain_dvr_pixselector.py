@@ -252,7 +252,7 @@ def main():
 
         found_event_types = np.unique(event_type_data, return_counts=True)
         print('Event types found:', found_event_types[0])
-        print('Number of each type:', found_event_types[1])
+        print('Number of events of each type:', found_event_types[1])
 
         if not np.any(np.isin(found_event_types[0], 
                               event_types_to_be_reduced)):
