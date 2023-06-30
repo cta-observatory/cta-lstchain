@@ -233,8 +233,8 @@ def main():
         data_parameters = read_table(dl1_file, dl1_params_lstcam_key)
 
         # Get the LST camera geometry:
-        sa = LSTEventSource.create_subarray(tel_id=1)
-        camera_geom = sa.tel[1].camera.geometry
+        subarray_info = LSTEventSource.create_subarray(tel_id=1)
+        camera_geom = subarray_info.tel[1].camera.geometry
       
         # Time between first and last timestamp:
         summary_info.elapsed_time = (data_parameters['dragon_time'][-1] -
@@ -252,8 +252,9 @@ def main():
 
         found_event_types = np.unique(event_type_data)
         print('Event types found:', found_event_types)
-        if EventType.SUBARRAY.value not in found_event_types:
-            print('No shower event (SUBARRAY type) found in file! SKIPPING IT!')
+
+        if not np.any(np.isin(found_event_types, event_types_to_be_reduced)):
+            print('No reducible events were found in file! SKIPPING IT!')
             continue
 
         cosmic_mask   = event_type_data == EventType.SUBARRAY.value  # showers
