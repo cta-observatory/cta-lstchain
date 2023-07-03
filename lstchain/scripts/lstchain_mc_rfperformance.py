@@ -21,6 +21,7 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 from ctapipe.instrument import SubarrayDescription
+from ctapipe_io_lst import OPTICS
 
 from lstchain.io import (
     read_configuration_file,
@@ -87,10 +88,15 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    subarray_info = SubarrayDescription.from_hdf(args.gammatest)
-    tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
-
+    try:
+        subarray_info = SubarrayDescription.from_hdf(args.gammatest)
+        tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+        effective_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+    except OSError:
+        print("subarray table is not readable because of the version inompatibility.")
+        print("Use the effective focal lentgh for the standard LST optics")
+        effective_focal_length = OPTICS.effective_focal_length
+        
     reg_energy, reg_disp_norm, cls_disp_sign, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
         args.protonfile,
@@ -110,7 +116,7 @@ def main():
     data = pd.concat([gammas, proton], ignore_index=True)
 
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm,
-                                  cls_disp_sign=cls_disp_sign, focal_length=focal_length,
+                                  cls_disp_sign=cls_disp_sign, effective_focal_length=effective_focal_length,
                                   custom_config=config)
 
     ####PLOT SOME RESULTS#####

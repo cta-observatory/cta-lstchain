@@ -196,7 +196,7 @@ def test_get_source_dependent_parameters_mc(simulated_dl1_file):
     assert (src_dep_df_gamma['on']['expected_src_y'] == dl1_params['src_y']).all()
 
     np.testing.assert_allclose(
-        src_dep_df_proton['on']['expected_src_x'], 0.195, atol=1e-2
+        src_dep_df_proton['on']['expected_src_x'], 0.205, atol=1e-2
     )
     np.testing.assert_allclose(
         src_dep_df_proton['on']['expected_src_y'], 0., atol=1e-2
@@ -224,13 +224,13 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
     assert (src_dep_df_on['on']['expected_src_y'] == 0).all()
 
     np.testing.assert_allclose(
-        src_dep_df_wobble['on']['expected_src_x'], -0.195, atol=1e-2
+        src_dep_df_wobble['on']['expected_src_x'], -0.205, atol=1e-2
     )
     np.testing.assert_allclose(
         src_dep_df_wobble['on']['expected_src_y'], 0., atol=1e-2
     )
     np.testing.assert_allclose(
-        src_dep_df_wobble['off_180']['expected_src_x'], 0.195, atol=1e-2
+        src_dep_df_wobble['off_180']['expected_src_x'], 0.205, atol=1e-2
     )
     np.testing.assert_allclose(
         src_dep_df_wobble['off_180']['expected_src_y'], 0., atol=1e-2
