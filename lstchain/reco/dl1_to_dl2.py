@@ -8,6 +8,7 @@ Usage:
 """
 
 import os
+import logging
 
 import astropy.units as u
 import joblib
@@ -32,6 +33,8 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key, dl1_li
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'apply_models',
@@ -68,15 +71,15 @@ def train_energy(train, custom_config=None):
     features = config['energy_regression_features']
     model = RandomForestRegressor
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Regressor for Energy Reconstruction...")
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training Random Forest Regressor for Energy Reconstruction...")
 
     reg = model(**energy_regression_args)
     reg.fit(train[features],
             train['log_mc_energy'])
 
-    print("Model {} trained!".format(model))
+    logger.info("Model {} trained!".format(model))
     return reg
 
 
@@ -106,16 +109,16 @@ def train_disp_vector(train, custom_config=None, predict_features=None):
     features = config['disp_regression_features']
     model = RandomForestRegressor
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training model {} for disp vector regression".format(model))
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training model {} for disp vector regression".format(model))
 
     reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose([train[f] for f in predict_features])
     reg.fit(x, y)
 
-    print("Model {} trained!".format(model))
+    logger.info("Model {} trained!".format(model))
 
     return reg
 
@@ -140,16 +143,16 @@ def train_disp_norm(train, custom_config=None, predict_feature='disp_norm'):
     features = config['disp_regression_features']
     model = RandomForestRegressor
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training model {} for disp norm regression".format(model))
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training model {} for disp norm regression".format(model))
 
     reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
     reg.fit(x, y)
 
-    print("Model {} trained!".format(model))
+    logger.info("Model {} trained!".format(model))
 
     return reg
 
@@ -174,16 +177,16 @@ def train_disp_sign(train, custom_config=None, predict_feature='disp_sign'):
     features = config["disp_classification_features"]
     model = RandomForestClassifier
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training model {} for disp sign classification".format(model))
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training model {} for disp sign classification".format(model))
 
     clf = model(**classification_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
     clf.fit(x, y)
 
-    print("Model {} trained!".format(model))
+    logger.info("Model {} trained!".format(model))
 
     return clf
 
@@ -212,24 +215,24 @@ def train_reco(train, custom_config=None):
     disp_features = config['disp_regression_features']
     model = RandomForestRegressor
 
-    print("Given energy_features: ", energy_features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Regressor for Energy Reconstruction...")
+    logger.info("Given energy_features: ", energy_features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training Random Forest Regressor for Energy Reconstruction...")
 
     reg_energy = model(**energy_regression_args)
     reg_energy.fit(train[energy_features],
                    train['log_mc_energy'])
 
-    print("Random Forest trained!")
-    print("Given disp_features: ", disp_features)
-    print("Training Random Forest Regressor for disp_norm Reconstruction...")
+    logger.info("Random Forest trained!")
+    logger.info("Given disp_features: ", disp_features)
+    logger.info("Training Random Forest Regressor for disp_norm Reconstruction...")
 
     reg_disp = RandomForestRegressor(**disp_regression_args)
     reg_disp.fit(train[disp_features],
                  train['disp_norm'])
 
-    print("Random Forest trained!")
-    print("Done!")
+    logger.info("Random Forest trained!")
+    logger.info("Done!")
     return reg_energy, reg_disp
 
 
@@ -254,16 +257,16 @@ def train_sep(train, custom_config=None):
     features = config["particle_classification_features"]
     model = RandomForestClassifier
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Classifier for",
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training Random Forest Classifier for",
           "Gamma/Hadron separation...")
 
     clf = model(**classification_args)
 
     clf.fit(train[features],
             train['mc_type'])
-    print("Random Forest trained!")
+    logger.info("Random Forest trained!")
     return clf
 
 
@@ -355,8 +358,8 @@ def build_models(filegammas, fileprotons,
                 tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
                 effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
             except OSError:
-                print("subarray table is not readable because of the version inompatibility.")
-                print("Use the effective focal lentgh for the standard LST optics")
+                logger.warning("subarray table is not readable because of the version inompatibility.")
+                logger.warning("Use the effective focal lentgh for the standard LST optics")
                 effective_focal_length = OPTICS.effective_focal_length
 
             src_dep_df_gamma = get_source_dependent_parameters(
@@ -376,8 +379,8 @@ def build_models(filegammas, fileprotons,
                 tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
                 effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
             except OSError:
-                print("subarray table is not readable because of the version inompatibility.")
-                print("Use the effective focal lentgh for the standard LST optics")
+                logger.warning("subarray table is not readable because of the version inompatibility.")
+                logger.warning("Use the effective focal lentgh for the standard LST optics")
                 effective_focal_length = OPTICS.effective_focal_length
 
             src_dep_df_proton = get_source_dependent_parameters(
