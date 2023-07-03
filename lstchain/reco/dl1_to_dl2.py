@@ -14,6 +14,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from astropy.coordinates import SkyCoord
+from astropy.coordinates import Angle
 from astropy.time import Time
 from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -391,6 +392,16 @@ def build_models(filegammas, fileprotons,
                                                   + config['particle_classification_features']
                                                   + config['disp_classification_features'],
                                     )
+
+    # Normalize all azimuth angles to the range [0, 360) degrees
+    df_gamma.az_tel = Angle(df_gamma.az_tel, u.rad).wrap_at(360 * u.deg).rad
+    df_proton.az_tel = Angle(df_proton.az_tel, u.rad).wrap_at(360 * u.deg).rad
+
+    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
+    if 'sin_az_tel' not in df_gamma.columns:
+        df_gamma.sin_az_tel = np.sin(df_gamma.az_tel)
+    if 'sin_az_tel' not in df_proton.columns:
+        df_proton.sin_az_tel = np.sin(df_proton.az_tel)
 
     # Training MC gammas in reduced viewcone
     src_r_min = config['train_gamma_src_r_deg'][0]

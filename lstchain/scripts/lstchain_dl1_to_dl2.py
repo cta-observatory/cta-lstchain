@@ -12,6 +12,8 @@ import joblib
 
 import numpy as np
 import pandas as pd
+import astropy.units as u
+from astropy.coordinates import Angle
 from ctapipe.instrument import SubarrayDescription
 from tables import open_file
 
@@ -94,6 +96,13 @@ def apply_to_file(filename, models_dict, output_dir, config):
         else:
             data.alt_tel = - np.pi / 2.
             data.az_tel = - np.pi / 2.
+
+    # Normalize all azimuth angles to the range [0, 360) degrees 
+    data.az_tel = Angle(data.az_tel, u.rad).wrap_at(360 * u.deg).rad
+
+    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
+    if 'sin_az_tel' not in data.columns:
+        data.sin_az_tel = np.sin(data.az_tel)
 
     subarray_info = SubarrayDescription.from_hdf(filename)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
