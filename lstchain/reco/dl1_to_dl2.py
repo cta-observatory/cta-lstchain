@@ -31,6 +31,7 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key, dl1_li
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
+from ctapipe_io_lst import OPTICS
 
 __all__ = [
     'apply_models',
@@ -349,10 +350,18 @@ def build_models(filegammas, fileprotons,
             src_dep_df_gamma = get_srcdep_params(filegammas)
 
         else:
-            subarray_info = SubarrayDescription.from_hdf(filegammas)
-            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
-            src_dep_df_gamma = get_source_dependent_parameters(df_gamma, config, focal_length=focal_length)
+            try:
+                subarray_info = SubarrayDescription.from_hdf(filegammas)
+                tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+                effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
+            except OSError:
+                print("subarray table is not readable because of the version inompatibility.")
+                print("Use the effective focal lentgh for the standard LST optics")
+                effective_focal_length = OPTICS.effective_focal_length
+
+            src_dep_df_gamma = get_source_dependent_parameters(
+                df_gamma, config, effective_focal_length=effective_focal_length
+            )
 
         df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)
 
@@ -362,10 +371,18 @@ def build_models(filegammas, fileprotons,
             src_dep_df_proton = get_srcdep_params(fileprotons)
 
         else:
-            subarray_info = SubarrayDescription.from_hdf(fileprotons)
-            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
-            src_dep_df_proton = get_source_dependent_parameters(df_proton, config, focal_length=focal_length)
+            try:
+                subarray_info = SubarrayDescription.from_hdf(fileprotons)
+                tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+                effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
+            except OSError:
+                print("subarray table is not readable because of the version inompatibility.")
+                print("Use the effective focal lentgh for the standard LST optics")
+                effective_focal_length = OPTICS.effective_focal_length
+
+            src_dep_df_proton = get_source_dependent_parameters(
+                df_proton, config, effective_focal_length=effective_focal_length
+            )
 
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
@@ -536,7 +553,7 @@ def apply_models(dl1,
                  reg_disp_vector=None,
                  reg_disp_norm=None,
                  cls_disp_sign=None,
-                 focal_length=28 * u.m,
+                 effective_focal_length=29.30565 * u.m,
                  custom_config=None,
                  ):
     """
@@ -562,7 +579,7 @@ def apply_models(dl1,
     cls_disp_sign: string | Path | bytes | sklearn.ensemble.RandomForestClassifier
         Path to the random forest filename or file or pre-loaded RandomForestClassifier object
         for disp sign reconstruction
-    focal_length: `astropy.unit`
+    effective_focal_length: `astropy.unit`
     custom_config: dictionary
         Modified configuration to update the standard one
 
@@ -654,7 +671,7 @@ def apply_models(dl1,
                                                   dl2.y.values * u.m,
                                                   dl2.reco_disp_dx.values * u.m,
                                                   dl2.reco_disp_dy.values * u.m,
-                                                  focal_length,
+                                                  effective_focal_length,
                                                   alt_tel * u.rad,
                                                   az_tel * u.rad)
 
@@ -688,7 +705,7 @@ def apply_models(dl1,
     return dl2
 
 
-def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
+def get_source_dependent_parameters(data, config, effective_focal_length=29.30565 * u.m):
     """Get parameters dict for source-dependent analysis.
 
     Parameters
@@ -704,8 +721,9 @@ def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
     else:
         data_type = 'real_data'
 
-    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config,
-                                                                         focal_length=focal_length)
+    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(
+        data, data_type, config, effective_focal_length=effective_focal_length
+    )
 
     src_dep_params = calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_pos_y_m)
     src_dep_params_dict = {'on': src_dep_params}
@@ -755,7 +773,7 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
     return src_dep_params
 
 
-def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
+def get_expected_source_pos(data, data_type, config, effective_focal_length=29.30565 * u.m):
     """Get expected source position for source-dependent analysis .
 
     Parameters
@@ -775,7 +793,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
         expected_src_pos = utils.sky_to_camera(
             u.Quantity(data['mc_alt_tel'].values + config['mc_nominal_source_x_deg'], u.deg, copy=False),
             u.Quantity(data['mc_az_tel'].values + config['mc_nominal_source_y_deg'], u.deg, copy=False),
-            focal_length,
+            effective_focal_length,
             u.Quantity(data['mc_alt_tel'].values, u.deg, copy=False),
             u.Quantity(data['mc_az_tel'].values, u.deg, copy=False)
         )
@@ -806,7 +824,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             obstime = Time(time, scale='utc', format='unix')
             pointing_alt = u.Quantity(data['alt_tel'], u.rad, copy=False)
             pointing_az = u.Quantity(data['az_tel'], u.rad, copy=False)
-            source_pos = utils.radec_to_camera(source_coord, obstime, pointing_alt, pointing_az, focal_length)
+            source_pos = utils.radec_to_camera(source_coord, obstime, pointing_alt, pointing_az, effective_focal_length)
 
             expected_src_pos_x_m = source_pos.x.to_value(u.m)
             expected_src_pos_y_m = source_pos.y.to_value(u.m)

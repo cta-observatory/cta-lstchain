@@ -18,6 +18,7 @@ import os
 
 import pandas as pd
 from ctapipe.instrument import SubarrayDescription
+from ctapipe_io_lst import OPTICS
 
 from lstchain.io import (
     get_standard_config,
@@ -61,11 +62,17 @@ def main():
             pass
 
     dl1_params = pd.read_hdf(dl1_filename, key=dl1_params_lstcam_key)
-    subarray_info = SubarrayDescription.from_hdf(dl1_filename)
-    tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
-
-    src_dep_df = pd.concat(get_source_dependent_parameters(dl1_params, config, focal_length=focal_length), axis=1)
+    try:
+        subarray_info = SubarrayDescription.from_hdf(dl1_filename)
+        tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+        effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
+    except OSError:
+        print("subarray table is not readable because of the version inompatibility.")
+        print("Use the effective focal lentgh for the standard LST optics")
+        effective_focal_length = OPTICS.effective_focal_length
+        
+    src_dep_df = pd.concat(get_source_dependent_parameters(
+        dl1_params, config, effective_focal_length=effective_focal_length), axis=1)
 
     metadata = global_metadata()
     write_dataframe(src_dep_df, dl1_filename, dl1_params_src_dep_lstcam_key, config=config, meta=metadata)
