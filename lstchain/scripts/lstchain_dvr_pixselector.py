@@ -56,11 +56,11 @@ from lstchain.paths import parse_dl1_filename
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.io import dl1_params_tel_mon_cal_key
 
-from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import read_table
 from ctapipe.core import Container, Field
 from ctapipe.io import HDF5TableWriter
 from ctapipe.containers import EventType
+from ctapipe_io_lst import LSTEventSource
 
 parser = argparse.ArgumentParser(description="DVR pixel selector")
 
@@ -232,10 +232,10 @@ def main():
 
         data_parameters = read_table(dl1_file, dl1_params_lstcam_key)
 
-        # Read some useful extra info from the file:
-        subarray_info = SubarrayDescription.from_hdf(dl1_file)
+        # Get the LST camera geometry:
+        subarray_info = LSTEventSource.create_subarray(tel_id=1)
         camera_geom = subarray_info.tel[1].camera.geometry
-
+      
         # Time between first and last timestamp:
         summary_info.elapsed_time = (data_parameters['dragon_time'][-1] -
                                      data_parameters['dragon_time'][0])
@@ -250,14 +250,27 @@ def main():
         # event_type: physics trigger (32) interleaved flat-field(0) pedestal (2),
         # unknown(255)  are those currently in use in LST1
 
-        found_event_types = np.unique(event_type_data)
-        print('Event types found:', found_event_types)
-        if EventType.SUBARRAY.value not in found_event_types:
-            print('No shower event (SUBARRAY type) found in file! SKIPPING IT!')
+        found_event_types = np.unique(event_type_data, return_counts=True)
+        print('Event types found:', found_event_types[0])
+        print('Number of events of each type:', found_event_types[1])
+
+        if not np.any(np.isin(found_event_types[0], 
+                              event_types_to_be_reduced)):
+            print('No reducible events were found in file! SKIPPING IT!')
             continue
 
         cosmic_mask   = event_type_data == EventType.SUBARRAY.value  # showers
+        unknown_mask = event_type_data == EventType.UNKNOWN.value
         pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
+
+        # In some pathological runs (e.g. 1877) very few events are labeled
+        # as cosmics, most get the tag "UNKNOWN" instead. Statistically,
+        # chances are that they are actually cosmics. If for a run we spot 
+        # that more than half of the events are labeled as UNKNOWN, we assume 
+        # they are cosmics:
+        if unknown_mask.sum() > 0.5 * len(event_type_data):
+            print('Too many events tagged UNKNOWN! I will assume they are cosmics!')
+            cosmic_mask |= unknown_mask
 
         data_images = read_table(dl1_file, dl1_images_lstcam_key)
 
