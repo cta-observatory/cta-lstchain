@@ -399,9 +399,9 @@ def build_models(filegammas, fileprotons,
 
     # Dealing with `sin_az_tel` missing data because of the former version of lstchain
     if 'sin_az_tel' not in df_gamma.columns:
-        df_gamma.sin_az_tel = np.sin(df_gamma.az_tel)
+        df_gamma['sin_az_tel'] = np.sin(df_gamma.az_tel)
     if 'sin_az_tel' not in df_proton.columns:
-        df_proton.sin_az_tel = np.sin(df_proton.az_tel)
+        df_proton['sin_az_tel'] = np.sin(df_proton.az_tel)
 
     # Training MC gammas in reduced viewcone
     src_r_min = config['train_gamma_src_r_deg'][0]

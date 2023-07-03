@@ -102,7 +102,7 @@ def apply_to_file(filename, models_dict, output_dir, config):
 
     # Dealing with `sin_az_tel` missing data because of the former version of lstchain
     if 'sin_az_tel' not in data.columns:
-        data.sin_az_tel = np.sin(data.az_tel)
+        data['sin_az_tel'] = np.sin(data.az_tel)
 
     subarray_info = SubarrayDescription.from_hdf(filename)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
