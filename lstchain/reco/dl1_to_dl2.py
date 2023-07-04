@@ -13,8 +13,7 @@ import astropy.units as u
 import joblib
 import numpy as np
 import pandas as pd
-from astropy.coordinates import SkyCoord
-from astropy.coordinates import Angle
+from astropy.coordinates import SkyCoord, Angle
 from astropy.time import Time
 from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
