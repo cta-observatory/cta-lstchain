@@ -3,11 +3,13 @@ from tqdm import tqdm
 from ctapipe_io_lst import LSTEventSource
 from ctapipe_io_lst.calibration import get_spike_A_positions
 from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_SAMPLES, N_PIXELS_MODULE, CLOCK_FREQUENCY_KHZ
+from ctapipe.io import read_table
 import numba
 import tables
 
-from ctapipe.io.hdf5tableio import DEFAULT_FILTERS
-from ctapipe.core import Tool
+from ctapipe.io.hdf5tableio import HDF5TableWriter
+from ctapipe.io.tableio import FixedPointColumnTransform
+from ctapipe.core import Tool, Container, Field
 from ctapipe.core.traits import Path, Integer
 
 from ..statistics import OnlineStats
@@ -17,6 +19,18 @@ N_BINS = 25
 N_BINS_TOTAL = N_BINS + 2
 LOG_DT_MIN_MS = -1
 LOG_DT_MAX_MS = 2
+
+
+class OnlineStatsContainer(Container):
+    prefix = ""
+    counts = Field(0, "Number of samples")
+    mean = Field(np.nan, "mean")
+    std = Field(np.nan, "standard deviation")
+
+
+def read_drs4_baseline(path, tel_id):
+    table = read_table(path, f'/r1/monitoring/drs4_baseline/tel_{tel_id:03d}')
+    return np.array(table[0]['baseline_mean'])
 
 
 @numba.njit(cache=True, inline='always')
@@ -31,14 +45,13 @@ def bin_index(x, low, high, n_bins):
 
 
 @numba.njit(cache=True, inline='always')
-def flat_index(gain, pixel, cap, dt):
+def flat_index(gain, pixel, dt):
     '''Flattened index of (gain, pixel, cap, dt) in the flat stats array'''
     log_dt = np.log10(dt)
     dt_bin = bin_index(log_dt, LOG_DT_MIN_MS, LOG_DT_MAX_MS, N_BINS_TOTAL)
     return (
-        N_PIXELS * N_CAPACITORS_PIXEL * N_BINS_TOTAL * gain
-        + N_CAPACITORS_PIXEL * N_BINS_TOTAL * pixel
-        + N_BINS_TOTAL * cap
+        N_PIXELS * N_BINS_TOTAL * gain
+        + N_BINS_TOTAL * pixel
         + dt_bin
     )
 
@@ -46,6 +59,7 @@ def flat_index(gain, pixel, cap, dt):
 @numba.njit(cache=True)
 def fill_stats(
     waveform,
+    baseline,
     first_cap,
     last_first_cap,
     last_readout_time,
@@ -76,13 +90,14 @@ def fill_stats(
                         continue
 
                     dt = (time_now - last_read) / CLOCK_FREQUENCY_KHZ
-                    idx = flat_index(gain, pixel, cap, dt)
+                    idx = flat_index(gain, pixel, dt)
 
                     # ignore spikes
                     if sample in spike_positions or (sample - 1) in spike_positions or (sample - 2) in spike_positions:
                         continue
 
-                    dt_stats.add_value(idx, waveform[gain, pixel, sample])
+                    value = waveform[gain, pixel, sample] - baseline[gain, pixel, cap]
+                    dt_stats.add_value(idx, value)
 
 
 class DRS4Timelapse(Tool):
@@ -91,9 +106,11 @@ class DRS4Timelapse(Tool):
     output_path = Path(directory_ok=False).tag(config=True)
     skip_samples_front = Integer(default_value=10).tag(config=True)
     skip_samples_end = Integer(default_value=1).tag(config=True)
+    drs4_baseline_path = Path(directory_ok=False).tag(config=True)
 
     aliases = {
         ('i', 'input'): 'LSTEventSource.input_url',
+        ('b', 'drs4-baseline'): 'DRS4Timelapse.drs4_baseline_path',
         ('o', 'output'): 'DRS4Timelapse.output_path',
         ('m', 'max-events'): 'LSTEventSource.max_events',
     }
@@ -120,6 +137,7 @@ class DRS4Timelapse(Tool):
         # for under and overflow, add two bins
         n_stats = N_GAINS * N_PIXELS * N_CAPACITORS_PIXEL * N_BINS_TOTAL
         self.dt_stats = OnlineStats(n_stats)
+        self.baseline = read_drs4_baseline(self.drs4_baseline_path, self.source.tel_id)
 
     def start(self):
         tel_id = self.source.tel_id
@@ -132,6 +150,7 @@ class DRS4Timelapse(Tool):
         for event in tqdm(self.source, total=total):
             fill_stats(
                 waveform=event.r1.tel[tel_id].waveform,
+                baseline=self.baseline,
                 first_cap=self.source.r0_r1_calibrator.first_cap[tel_id],
                 last_first_cap=self.source.r0_r1_calibrator.first_cap_old[tel_id],
                 last_readout_time=self.source.r0_r1_calibrator.last_readout_time[tel_id],
@@ -145,24 +164,22 @@ class DRS4Timelapse(Tool):
 
     def finish(self):
         self.log.info('Writing output to %s', self.output_path)
-        shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_BINS_TOTAL)
-        with tables.open_file(self.output_path, 'w') as f:
+        shape = (N_GAINS, N_PIXELS, N_BINS_TOTAL)
 
-            g = f.create_group('/', 'dt')
-            f.root._v_attrs['dt_n_bins'] = N_BINS
-            f.root._v_attrs['log10_dt_min'] = LOG_DT_MIN_MS
-            f.root._v_attrs['log10_dt_max'] = LOG_DT_MAX_MS
+        transform = FixedPointColumnTransform(scale=100, offset=0, source_dtype=np.float64, target_dtype=np.int32)
+        tel_id = self.source.tel_id
+        table_name = f"/r0/monitoring/tel_{tel_id:03d}"
 
-            for attr in ('counts', 'mean', 'std'):
-                array = getattr(self.dt_stats, attr).reshape(shape)
-
-                # store mean / std as int32 scaled by 100
-                # aka fixed precision with two decimal digits
-                if attr in ('mean', 'std'):
-                    array *= 100
-                array = array.astype(np.int32)
-
-                f.create_carray(g, attr, obj=array, chunkshape=array.shape, filters=DEFAULT_FILTERS)
+        with HDF5TableWriter(self.output_path) as writer:
+            for col in ('mean', 'std'):
+                writer.add_column_transform(table_name, col, transform)
+            
+            container = OnlineStatsContainer(
+                count=self.dt_stats.count.reshape(shape),
+                mean=self.dt_stats.mean.reshape(shape),
+                std=self.dt_stats.std.reshape(shape),
+            )
+            writer.write(table_name, container)
 
 
 def main():
