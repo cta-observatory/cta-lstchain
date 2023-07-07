@@ -5,7 +5,8 @@ from ctapipe_io_lst.calibration import get_spike_A_positions
 from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_SAMPLES, N_PIXELS_MODULE, CLOCK_FREQUENCY_KHZ
 from ctapipe.io import read_table
 import numba
-import tables
+from iminuit import Minuit
+from iminuit.cost import LeastSquares
 
 from ctapipe.io.hdf5tableio import HDF5TableWriter
 from ctapipe.io.tableio import FixedPointColumnTransform
@@ -15,17 +16,37 @@ from ctapipe.core.traits import Path, Integer
 from ..statistics import OnlineStats
 
 
-N_BINS = 25
+N_BINS = 100
+# for under and overflow, add two bins
 N_BINS_TOTAL = N_BINS + 2
-LOG_DT_MIN_MS = -1
+LOG_DT_MIN_MS = -2
 LOG_DT_MAX_MS = 2
 
 
+def delta_t_correction(x, scale, exponent, offset):
+    return scale * x**(-exponent) + offset
+
+
+def fit_timelapse(centers, counts, mean, std):
+    mean_err = std / np.sqrt(counts)
+    mask = (counts > 500) & (centers > 0.05)
+    cost = LeastSquares(centers[mask], mean[mask], mean_err[mask], delta_t_correction)
+    m = Minuit(cost, scale=32, exponent=0.22, offset=-12)
+    m.limits['scale'] = (1e-30, None)
+    m.migrad()
+    return m.values
+
 class OnlineStatsContainer(Container):
-    prefix = ""
+    default_prefix = ""
     counts = Field(0, "Number of samples")
     mean = Field(np.nan, "mean")
     std = Field(np.nan, "standard deviation")
+
+class TimeLapseCoefficients(Container):
+    default_prefix = ""
+    scale = Field(np.nan, "Number of samples")
+    exponent = Field(np.nan, "mean")
+    offset = Field(np.nan, "standard deviation")
 
 
 def read_drs4_baseline(path, tel_id):
@@ -134,8 +155,7 @@ class DRS4Timelapse(Tool):
         self.source.r0_r1_calibrator.apply_timelapse_correction = False
         self.source.r0_r1_calibrator.apply_drs4_pedestal_correction = False
 
-        # for under and overflow, add two bins
-        n_stats = N_GAINS * N_PIXELS * N_CAPACITORS_PIXEL * N_BINS_TOTAL
+        n_stats = N_GAINS * N_PIXELS * N_BINS_TOTAL
         self.dt_stats = OnlineStats(n_stats)
         self.baseline = read_drs4_baseline(self.drs4_baseline_path, self.source.tel_id)
 
@@ -143,11 +163,7 @@ class DRS4Timelapse(Tool):
         tel_id = self.source.tel_id
         expected_pixels_id = self.source.camera_config.expected_pixels_id
 
-        total = len(self.source.multi_file)
-        if self.source.max_events is not None:
-            total = min(self.source.max_events, total)
-
-        for event in tqdm(self.source, total=total):
+        for event in tqdm(self.source):
             fill_stats(
                 waveform=event.r1.tel[tel_id].waveform,
                 baseline=self.baseline,
@@ -160,7 +176,27 @@ class DRS4Timelapse(Tool):
                 skip_samples_front=self.skip_samples_front,
                 skip_samples_end=self.skip_samples_end,
             )
-            self.source.r0_r1_calibrator.update_last_readout_time(event, tel_id)
+            self.source.r0_r1_calibrator.update_last_readout_times(event, tel_id)
+
+        bins = np.logspace(LOG_DT_MIN_MS, LOG_DT_MAX_MS, N_BINS)
+        centers = 0.5 * (bins[:-1] + bins[1:])
+        scale = np.empty((N_GAINS, N_PIXELS), dtype=np.float32)
+        exponent = np.empty((N_GAINS, N_PIXELS), dtype=np.float32)
+        offset = np.empty((N_GAINS, N_PIXELS), dtype=np.float32)
+
+        shape = (N_GAINS, N_PIXELS, N_BINS_TOTAL)
+        counts = self.dt_stats.counts.reshape(shape)
+        mean = self.dt_stats.mean.reshape(shape)
+
+        with tqdm(total=N_GAINS * N_PIXELS) as bar:
+            for gain in range(N_GAINS):
+                for pixel in range(N_PIXELS):
+                    result = fit_timelapse(centers, counts, mean)
+
+                    scale[gain, pixel] = result['scale']
+                    exponent[gain, pixel] = result['exponent']
+                    offset[gain, pixel] = result['offset']
+                    bar.update(1)
 
     def finish(self):
         self.log.info('Writing output to %s', self.output_path)
@@ -168,14 +204,14 @@ class DRS4Timelapse(Tool):
 
         transform = FixedPointColumnTransform(scale=100, offset=0, source_dtype=np.float64, target_dtype=np.int32)
         tel_id = self.source.tel_id
-        table_name = f"/r0/monitoring/tel_{tel_id:03d}"
+        table_name = f"r0/monitoring/timelapse_data/tel_{tel_id:03d}"
 
         with HDF5TableWriter(self.output_path) as writer:
             for col in ('mean', 'std'):
                 writer.add_column_transform(table_name, col, transform)
             
             container = OnlineStatsContainer(
-                count=self.dt_stats.count.reshape(shape),
+                counts=self.dt_stats.counts.reshape(shape),
                 mean=self.dt_stats.mean.reshape(shape),
                 std=self.dt_stats.std.reshape(shape),
             )
