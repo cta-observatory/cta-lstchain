@@ -54,6 +54,13 @@ parser.add_argument(
     default="/fefs/aswg/data/real/monitoring/RunSummary",
 )
 
+parser.add_argument(
+    "--overwrite",
+    action="store_true",
+    help="Overwrite existing Run Summary file",
+    default=False,
+)
+
 dtypes = {
     "ucts_timestamp": np.int64,
     "run_start": np.int64,
@@ -306,7 +313,10 @@ def main():
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(run_types, name="run_type", index=2)
     run_summary.write(
-        args.output_dir / f"RunSummary_{args.date}.ecsv", format="ascii.ecsv", delimiter=",",
+        args.output_dir / f"RunSummary_{args.date}.ecsv",
+        format="ascii.ecsv",
+        delimiter=",",
+        overwrite=args.overwrite,
     )
 
 
