@@ -30,6 +30,13 @@ __all__ = [
 ]
 
 
+class OnlineStatsContainer(Container):
+    default_prefix = ""
+    counts = Field(0, "Number of samples")
+    mean = Field(np.nan, "mean")
+    std = Field(np.nan, "standard deviation")
+
+
 class DL1ParametersContainer(Container):
     """
     TODO: maybe fields could be inherited from ctapipe containers definition

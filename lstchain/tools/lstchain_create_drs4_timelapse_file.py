@@ -5,15 +5,14 @@ from ctapipe_io_lst.calibration import get_spike_A_positions
 from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_SAMPLES, N_PIXELS_MODULE, CLOCK_FREQUENCY_KHZ
 from ctapipe.io import read_table
 import numba
-from iminuit import Minuit
-from iminuit.cost import LeastSquares
 
 from ctapipe.io.hdf5tableio import HDF5TableWriter
 from ctapipe.io.tableio import FixedPointColumnTransform
-from ctapipe.core import Tool, Container, Field
+from ctapipe.core import Tool
 from ctapipe.core.traits import Path, Integer
 
 from ..statistics import OnlineStats
+from ..io.lstcontainers import OnlineStatsContainer
 
 
 N_BINS = 100
@@ -21,32 +20,6 @@ N_BINS = 100
 N_BINS_TOTAL = N_BINS + 2
 LOG_DT_MIN_MS = -2
 LOG_DT_MAX_MS = 2
-
-
-def delta_t_correction(x, scale, exponent, offset):
-    return scale * x**(-exponent) + offset
-
-
-def fit_timelapse(centers, counts, mean, std):
-    mean_err = std / np.sqrt(counts)
-    mask = (counts > 500) & (centers > 0.05)
-    cost = LeastSquares(centers[mask], mean[mask], mean_err[mask], delta_t_correction)
-    m = Minuit(cost, scale=32, exponent=0.22, offset=-12)
-    m.limits['scale'] = (1e-30, None)
-    m.migrad()
-    return m.values
-
-class OnlineStatsContainer(Container):
-    default_prefix = ""
-    counts = Field(0, "Number of samples")
-    mean = Field(np.nan, "mean")
-    std = Field(np.nan, "standard deviation")
-
-class TimeLapseCoefficients(Container):
-    default_prefix = ""
-    scale = Field(np.nan, "Number of samples")
-    exponent = Field(np.nan, "mean")
-    offset = Field(np.nan, "standard deviation")
 
 
 def read_drs4_baseline(path, tel_id):
@@ -178,26 +151,6 @@ class DRS4Timelapse(Tool):
             )
             self.source.r0_r1_calibrator.update_last_readout_times(event, tel_id)
 
-        bins = np.logspace(LOG_DT_MIN_MS, LOG_DT_MAX_MS, N_BINS)
-        centers = 0.5 * (bins[:-1] + bins[1:])
-        scale = np.empty((N_GAINS, N_PIXELS), dtype=np.float32)
-        exponent = np.empty((N_GAINS, N_PIXELS), dtype=np.float32)
-        offset = np.empty((N_GAINS, N_PIXELS), dtype=np.float32)
-
-        shape = (N_GAINS, N_PIXELS, N_BINS_TOTAL)
-        counts = self.dt_stats.counts.reshape(shape)
-        mean = self.dt_stats.mean.reshape(shape)
-
-        with tqdm(total=N_GAINS * N_PIXELS) as bar:
-            for gain in range(N_GAINS):
-                for pixel in range(N_PIXELS):
-                    result = fit_timelapse(centers, counts, mean)
-
-                    scale[gain, pixel] = result['scale']
-                    exponent[gain, pixel] = result['exponent']
-                    offset[gain, pixel] = result['offset']
-                    bar.update(1)
-
     def finish(self):
         self.log.info('Writing output to %s', self.output_path)
         shape = (N_GAINS, N_PIXELS, N_BINS_TOTAL)
@@ -209,12 +162,14 @@ class DRS4Timelapse(Tool):
         with HDF5TableWriter(self.output_path) as writer:
             for col in ('mean', 'std'):
                 writer.add_column_transform(table_name, col, transform)
-            
+
             container = OnlineStatsContainer(
                 counts=self.dt_stats.counts.reshape(shape),
                 mean=self.dt_stats.mean.reshape(shape),
                 std=self.dt_stats.std.reshape(shape),
             )
+            container.meta["log10_dt_min_ms"] = LOG_DT_MIN_MS
+            container.meta["log10_dt_max_ms"] = LOG_DT_MAX_MS
             writer.write(table_name, container)
 
 
