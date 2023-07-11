@@ -6,7 +6,6 @@ Usage:
 import os
 
 import astropy.units as u
-import ctaplot
 import joblib
 import matplotlib
 import matplotlib.pyplot as plt
@@ -176,8 +175,12 @@ def energy_results(dl2_data, points_outfile=None, plot_outfile=None):
     -------
     fig, axes: `matplotlib.pyplot.figure`, `matplotlib.pyplot.axes`
     """
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    try:
+        import ctaplot
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("This function needs ctaplot. Please install ctaplot: pip install ctaplot")
 
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     ctaplot.plot_energy_resolution(dl2_data.mc_energy.values * u.TeV,
                                    dl2_data.reco_energy.values * u.TeV,
                                    ax=axes[0, 0], bias_correction=False)
@@ -562,6 +565,11 @@ def plot_roc_gamma(dl2_data, energy_bins=None, ax=None, **kwargs):
     -------
     ax: `matplotlib.pyplot.axis`
     """
+    try:
+        import ctaplot
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("This function needs ctaplot. Please install ctaplot: pip install ctaplot")
+
     if energy_bins is None:
         ax = ctaplot.plot_roc_curve_gammaness(dl2_data.mc_type, dl2_data.gammaness,
                                               ax=ax,
@@ -595,6 +603,10 @@ def plot_energy_resolution(dl2_data, ax=None, bias_correction=False, cta_req_nor
     -------
     ax: `matplotlib.pyplot.axes`
     """
+    try:
+        import ctaplot
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("This function needs ctaplot. Please install ctaplot: pip install ctaplot")
 
     ax = ctaplot.plot_energy_resolution(dl2_data.mc_energy.values * u.TeV,
                                         dl2_data.reco_energy.values * u.TeV,
@@ -628,6 +640,10 @@ def plot_angular_resolution(dl2_data, ax=None, bias_correction=False, cta_req_no
     -------
     ax: `matplotlib.pyplot.axes`
     """
+    try:
+        import ctaplot
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("This function needs ctaplot. Please install ctaplot: pip install ctaplot")
 
     ax = ctaplot.plot_angular_resolution_per_energy(dl2_data.mc_alt.values * u.rad,
                                                     dl2_data.reco_alt.values * u.rad,
@@ -660,6 +676,10 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     -------
     fig, axes: `matplotlib.pyplot.figure`, `matplotlib.pyplot.axes`
     """
+    try:
+        import ctaplot
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("This function needs ctaplot. Please install ctaplot: pip install ctaplot")
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
 

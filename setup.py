@@ -43,7 +43,6 @@ setup(
         'bokeh~=2.0',
         'ctapipe~=0.19.2',
         'ctapipe_io_lst~=0.22.0',
-        'ctaplot~=0.6.2',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=1.1',
         'h5py',
@@ -66,7 +65,7 @@ setup(
         'jinja2~=3.0.2',  # pinned for bokeh 1.0 compatibility
     ],
     extras_require={
-        "all": tests_require + docs_require,
+        "all": tests_require + docs_require + ["ctaplot~=0.6.2"],
         "tests": tests_require,
         "docs": docs_require,
     },

@@ -2,7 +2,6 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ctaplot.plots import plot_sensitivity_magic_performance
 from matplotlib.colors import LogNorm
 from pyirf.spectral import CRAB_MAGIC_JHEAP2015
 from astropy.visualization import quantity_support
@@ -304,6 +303,10 @@ def sensitivity_plot_comparison(energy, sensitivity, ax=None):
     -------
     fig_sens: `matplotlib.pyplot.figure` Figure containing sensitivity plot
     """
+    try:
+        from ctaplot.plots import plot_sensitivity_magic_performance
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("Please install ctaplot: pip install ctaplot")
 
     # Final sensitivity plot
     ax = plt.gca() if ax is None else ax

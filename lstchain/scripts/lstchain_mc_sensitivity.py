@@ -13,13 +13,12 @@ $> python lstchain_mc_sensitivity.py
 --o /output/path
 
 """
-
+import sys
 import argparse
 import os
 import warnings
 
 import astropy.units as u
-import ctaplot
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -36,8 +35,6 @@ from lstchain.mc.sensitivity import (
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
-
-ctaplot.set_style()
 
 parser = argparse.ArgumentParser(description="Compute MC sensitivity curve.")
 
@@ -57,6 +54,15 @@ parser.add_argument('--output_path', '--o', type=str,
 
 def main():
     args = parser.parse_args()
+
+    try:
+        import ctaplot
+    except ModuleNotFoundError:
+        print("ctaplot is needed for this script, please install using `pip install ctaplot`", file=sys.stderr)
+        sys.exit(1)
+
+    ctaplot.set_style()
+
     
     ntelescopes_gamma = 1
     n_bins_energy = 20  # Number of energy bins

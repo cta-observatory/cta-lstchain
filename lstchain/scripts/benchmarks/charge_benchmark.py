@@ -4,15 +4,9 @@ import os
 import sys
 from pathlib import Path
 
-import ctaplot
 import matplotlib.pyplot as plt
 import tables
 from astropy.table import Table
-from ctaplot.plots.calib import (
-    plot_charge_resolution,
-    plot_photoelectron_true_reco,
-    plot_pixels_pe_spectrum,
-)
 from matplotlib.backends.backend_pdf import PdfPages
 
 from lstchain.io.config import (
@@ -49,6 +43,18 @@ args = parser.parse_args()
 
 
 def main():
+    try:
+        import ctaplot
+    except ModuleNotFoundError:
+        print("ctaplot is needed for this script, please install using `pip install ctaplot`", file=sys.stderr)
+        sys.exit(1)
+
+    from ctaplot.plots.calib import (
+        plot_charge_resolution,
+        plot_photoelectron_true_reco,
+        plot_pixels_pe_spectrum,
+    )
+
     ctaplot.set_style()
 
     output_dir = args.output_dir.absolute()
