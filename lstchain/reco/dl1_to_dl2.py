@@ -47,6 +47,7 @@ __all__ = [
     'train_energy',
     'train_reco',
     'train_sep',
+    'update_disp'
 ]
 
 
@@ -346,6 +347,19 @@ def build_models(filegammas, fileprotons,
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
+    # Update parameters related to target direction on camera frame for gamma MC
+    # taking into account of the abrration effect using effective focal length
+    try:
+        subarray_info = SubarrayDescription.from_hdf(filegammas)
+        tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+        effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
+    except OSError:
+        logger.warning("subarray table is not readable because of the version inompatibility.")
+        logger.warning("Use the effective focal lentgh for the standard LST optics")
+        effective_focal_length = OPTICS.effective_focal_length
+
+    df_gamma = update_disp(df_gamma, effective_focal_length = effective_focal_length)
+
     if config['source_dependent']:
         # if source-dependent parameters are already in dl1 data, just read those data
         # if not, source-dependent parameters are added here
@@ -353,15 +367,6 @@ def build_models(filegammas, fileprotons,
             src_dep_df_gamma = get_srcdep_params(filegammas)
 
         else:
-            try:
-                subarray_info = SubarrayDescription.from_hdf(filegammas)
-                tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-                effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
-            except OSError:
-                logger.warning("subarray table is not readable because of the version inompatibility.")
-                logger.warning("Use the effective focal lentgh for the standard LST optics")
-                effective_focal_length = OPTICS.effective_focal_length
-
             src_dep_df_gamma = get_source_dependent_parameters(
                 df_gamma, config, effective_focal_length=effective_focal_length
             )
@@ -607,6 +612,13 @@ def apply_models(dl1,
                                             + config['disp_classification_features'],
                               )
 
+    # Update parameters related to target direction on camera frame for MC data
+    # taking into account of the abrration effect using effective focal length
+    is_simu = (dl2['mc_type'] >= 0).all() if 'mc_type' in dl2.columns else False
+    if is_simu:
+        dl2 = update_disp(dl2, effective_focal_length = effective_focal_length)
+    
+
     # Reconstruction of Energy and disp_norm distance
     if isinstance(reg_energy, (str, bytes, Path)):
         reg_energy = joblib.load(reg_energy)
@@ -838,3 +850,43 @@ def get_expected_source_pos(data, data_type, config, effective_focal_length=29.3
             )
 
     return expected_src_pos_x_m, expected_src_pos_y_m
+
+
+def update_disp(data, effective_focal_length=29.30565 * u.m):
+    """Update disp parameters using effective focal length
+
+    Parameters
+    ----------
+    data: Pandas DataFrame
+    config: dictionnary containing configuration
+    """
+
+    source_pos_in_camera = utils.sky_to_camera(
+        u.Quantity(data['mc_alt'].values, u.rad, copy=False),
+        u.Quantity(data['mc_az'].values, u.rad, copy=False),
+        effective_focal_length,
+        u.Quantity(data['mc_alt_tel'].values, u.rad, copy=False),
+        u.Quantity(data['mc_az_tel'].values, u.rad, copy=False)
+    )
+    
+    expected_src_pos_x_m = source_pos_in_camera.x.to_value(u.m)
+    expected_src_pos_y_m = source_pos_in_camera.y.to_value(u.m)
+    
+    data['src_x'] = expected_src_pos_x_m
+    data['src_y'] = expected_src_pos_y_m
+
+    disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp.disp(
+        data['x'].values,
+        data['y'].values,
+        expected_src_pos_x_m,
+        expected_src_pos_y_m,
+        data['psi'].values
+    )
+    
+    data['disp_dx'] = disp_dx
+    data['disp_dy'] = disp_dy
+    data['disp_norm'] = disp_norm
+    data['disp_angle'] = disp_angle
+    data['disp_sign'] = disp_sign
+
+    return data
