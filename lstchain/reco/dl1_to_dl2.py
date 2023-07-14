@@ -47,7 +47,7 @@ __all__ = [
     'train_energy',
     'train_reco',
     'train_sep',
-    'update_disp'
+    'update_disp_with_effective_focal_length'
 ]
 
 
@@ -358,7 +358,7 @@ def build_models(filegammas, fileprotons,
         logger.warning("Use the effective focal lentgh for the standard LST optics")
         effective_focal_length = OPTICS.effective_focal_length
 
-    df_gamma = update_disp(df_gamma, effective_focal_length = effective_focal_length)
+    df_gamma = update_disp_with_effective_focal_length(df_gamma, effective_focal_length = effective_focal_length)
 
     if config['source_dependent']:
         # if source-dependent parameters are already in dl1 data, just read those data
@@ -614,9 +614,9 @@ def apply_models(dl1,
 
     # Update parameters related to target direction on camera frame for MC data
     # taking into account of the abrration effect using effective focal length
-    is_simu = (dl2['mc_type'] >= 0).all() if 'mc_type' in dl2.columns else False
+    is_simu = 'disp_norm' in dl2.columns
     if is_simu:
-        dl2 = update_disp(dl2, effective_focal_length = effective_focal_length)
+        dl2 = update_disp_with_effective_focal_length(dl2, effective_focal_length = effective_focal_length)
     
 
     # Reconstruction of Energy and disp_norm distance
@@ -852,7 +852,7 @@ def get_expected_source_pos(data, data_type, config, effective_focal_length=29.3
     return expected_src_pos_x_m, expected_src_pos_y_m
 
 
-def update_disp(data, effective_focal_length=29.30565 * u.m):
+def update_disp_with_effective_focal_length(data, effective_focal_length=29.30565 * u.m):
     """Update disp parameters using effective focal length
 
     Parameters
