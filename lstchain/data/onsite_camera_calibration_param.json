@@ -7,6 +7,9 @@
     "log_level": "INFO"
   },
   "LSTEventSource": {
+    "MultiFiles": {
+      "all_subruns": true
+     },
     "allowed_tels": [
       1
     ],
