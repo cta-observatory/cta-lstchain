@@ -805,16 +805,8 @@ def get_expected_source_pos(data, data_type, config, effective_focal_length=29.3
 
     # For proton MC, nominal source position is one written in config file
     if data_type == 'mc_proton':
-        expected_src_pos = utils.sky_to_camera(
-            u.Quantity(data['mc_alt_tel'].values + np.deg2rad(config['mc_nominal_source_x_deg']), u.rad, copy=False),
-            u.Quantity(data['mc_az_tel'].values + np.deg2rad(config['mc_nominal_source_y_deg']), u.rad, copy=False),
-            effective_focal_length,
-            u.Quantity(data['mc_alt_tel'].values, u.rad, copy=False),
-            u.Quantity(data['mc_az_tel'].values, u.rad, copy=False)
-        )
-
-        expected_src_pos_x_m = expected_src_pos.x.to_value(u.m)
-        expected_src_pos_y_m = expected_src_pos.y.to_value(u.m)
+        expected_src_pos_x_m = np.tan(np.deg2rad(config['mc_nominal_source_x_deg'])) * effective_focal_length
+        expected_src_pos_y_m = np.tan(np.deg2rad(config['mc_nominal_source_y_deg'])) * effective_focal_length
 
     # For real data
     if data_type == 'real_data':
