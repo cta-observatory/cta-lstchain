@@ -12,6 +12,7 @@ import joblib
 
 import numpy as np
 import pandas as pd
+from math import pi
 from ctapipe.instrument import SubarrayDescription
 from tables import open_file
 
@@ -99,6 +100,12 @@ def apply_to_file(filename, models_dict, output_dir, config):
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
     focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
 
+    if config['log_intensity_correction']:
+        # Add log-intensity feature with zenith dependent correction term 
+        a_med,b_med = (config['P2corr']['a_med'],config['P2corr']['b_med'])
+        data['coszd'] = np.cos((0.5*pi - data['alt_tel']))
+        data['log_intensity_corr'] = data['log_intensity']-a_med*data['coszd']**2 - b_med*data['coszd']
+    
     # Apply the models to the data
 
     # Source-independent analysis
