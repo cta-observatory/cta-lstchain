@@ -238,8 +238,8 @@ class CalibrationHDF5Writer(Tool):
 
         self.log.info(f"Written {self.n_calib} calibration events")
         if self.n_calib == 0:
-             self.log.critical(f"!!! No calibration events in the output file !!! : ")
-             self.log.critical(f"flatfiels collected statistics = {self.processor.flatfield.num_events_seen} events")
+             self.log.critical("!!! No calibration events in the output file !!! : ")
+             self.log.critical(f"flatfield collected statistics = {self.processor.flatfield.num_events_seen} events")
              self.log.critical(f"pedestal collected statistics = {self.processor.pedestal.num_events_seen} events")
              self.exit(1)
 
