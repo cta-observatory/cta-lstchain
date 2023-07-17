@@ -590,6 +590,12 @@ def apply_models(dl1,
     classification_features = config["particle_classification_features"]
     events_filters = config["events_filters"]
 
+    if config['log_intensity_correction']:
+        # Add log-intensity feature with zenith dependent correction term 
+        a_med,b_med = (config['P2corr']['a_med'],config['P2corr']['b_med'])
+        dl1['coszd'] = np.cos((0.5*pi - dl1['alt_tel']))
+        dl1['log_intensity_corr'] = dl1['log_intensity']-a_med*dl1['coszd']**2 - b_med*dl1['coszd']
+
     dl2 = utils.filter_events(dl1,
                               filters=events_filters,
                               finite_params=config['disp_regression_features']
