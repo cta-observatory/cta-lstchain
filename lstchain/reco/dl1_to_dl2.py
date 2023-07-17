@@ -13,6 +13,7 @@ import astropy.units as u
 import joblib
 import numpy as np
 import pandas as pd
+from math import pi
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from pathlib import Path
@@ -340,7 +341,7 @@ def build_models(filegammas, fileprotons,
     events_filters['mc_type'] = [-9000, np.inf]
 
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
-    df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
+    df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key) 
 
     if config['source_dependent']:
         # if source-dependent parameters are already in dl1 data, just read those data
@@ -368,6 +369,16 @@ def build_models(filegammas, fileprotons,
             src_dep_df_proton = get_source_dependent_parameters(df_proton, config, focal_length=focal_length)
 
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
+
+    if config['log_intensity_correction']:
+        # Add log-intensity feature with zenith dependent correction term
+        a_med,b_med = (config['P2corr']['a_med'],config['P2corr']['b_med'])
+
+        df_gamma['coszd'] = np.cos((0.5*pi - df_gamma['alt_tel']))
+        df_gamma['log_intensity_corr'] = df_gamma['log_intensity']-a_med*df_gamma['coszd']**2 - b_med*df_gamma['coszd']
+        
+        df_proton['coszd'] = np.cos((0.5*pi - df_proton['alt_tel']))
+        df_proton['log_intensity_corr'] = df_proton['log_intensity']-a_med*df_proton['coszd']**2 - b_med*df_proton['coszd']
 
     if 'lh_fit_config' in config.keys():
         lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
