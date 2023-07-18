@@ -48,6 +48,11 @@ class CalibrationCalculator(Component):
         help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
     ).tag(config=True)
 
+    relative_qe_dispersion = traits.Float(
+        0.07,
+        help='Relative (effective) quantum efficiency dispersion of PMs over the camera'
+    ).tag(config=True)
+
     pedestal_product = traits.create_class_enum_trait(
         PedestalCalculator,
         default_value='PedestalIntegrator'
@@ -210,10 +215,12 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # define unusables on number of estimated pe
         npe_deviation =  calib_data.n_pe - npe_median[:,np.newaxis]
 
-        # cut on the base of pe statistical uncertanty (neglect the 7% spread due to detection QE)
+        # cut on the base of pe statistical uncertainty (adding a 7% spread due to different detection QE among PMs) 
+        tot_std = np.sqrt(npe_median + (self.relative_qe_dispersion * npe_median)**2)
+
         npe_outliers = (
-            np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * np.sqrt(npe_median)[:,np.newaxis],
-                          npe_deviation > self.npe_median_cut_outliers[1] * np.sqrt(npe_median)[:,np.newaxis]))
+            np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * tot_std[:,np.newaxis],
+                          npe_deviation > self.npe_median_cut_outliers[1] * tot_std[:,np.newaxis]))
 
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers)
