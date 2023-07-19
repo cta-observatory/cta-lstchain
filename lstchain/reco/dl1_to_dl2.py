@@ -32,6 +32,7 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key, dl1_li
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
+from ctapipe.coordinates import CameraFrame, TelescopeFrame
 from ctapipe_io_lst import OPTICS
 
 logger = logging.getLogger(__name__)
@@ -816,8 +817,15 @@ def get_expected_source_pos(data, data_type, config, effective_focal_length=29.3
 
     # For proton MC, nominal source position is one written in config file
     if data_type == 'mc_proton':
-        expected_src_pos_x_m = np.tan(np.deg2rad(config['mc_nominal_source_x_deg'])) * effective_focal_length
-        expected_src_pos_y_m = np.tan(np.deg2rad(config['mc_nominal_source_y_deg'])) * effective_focal_length
+        source_pos = SkyCoord(
+            fov_lon = -1 * config['mc_nominal_source_y_deg'] * u.deg,
+            fov_lat = config['mc_nominal_source_x_deg'] * u.deg,
+            frame=TelescopeFrame()
+        )
+        camera_frame = CameraFrame(focal_length=effective_focal_length)
+        source_camera = source_pos.transform_to(camera_frame)
+        expected_src_pos_x_m = source_camera.x.to_value(u.m)
+        expected_src_pos_y_m = source_camera.y.to_value(u.m)
 
     # For real data
     if data_type == 'real_data':
