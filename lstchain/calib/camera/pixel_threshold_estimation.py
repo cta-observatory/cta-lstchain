@@ -75,6 +75,7 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     # return pedestal interleaved threshold from data run for high gain
     return threshold_clean_pe[pedestal_id, HIGH_GAIN, :]
 
+
 def get_unusable_pixels(dl1_path, pedestal_id):
     with tables.open_file(dl1_path) as f:
         calibration_id = f.root.dl1.event.telescope.monitoring.pedestal.col('calibration_id')

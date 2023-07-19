@@ -126,7 +126,10 @@ def main():
 
         catB_calib_time = np.array(catB_calib["time_min"])
         catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
+
         catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
+        catB_pedestal_mean = np.array(catB_pedestal["charge_mean"])
+        catB_pedestal_std= np.array(catB_pedestal["charge_std"])
 
         catB_time_correction = np.array(catB_calib["time_correction"])
         catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
@@ -324,6 +327,14 @@ def main():
                     # store it to save it later
                     image_table['image'][ii] = image
                     image_table['peak_time'][ii] = peak_time
+
+                    # use CatB pedestals to estimate the picture threshold
+                    if args.pedestal_cleaning:
+                        ped_charge_mean_pe = catB_pedestal_mean[calib_idx][selected_gain, pixel_index]
+                        ped_charge_std_pe = catB_pedestal_std[calib_idx][selected_gain, pixel_index]
+                        threshold_clean_pe = ped_charge_mean_pe + sigma * ped_charge_std_pe
+                        threshold_clean_pe[unusable_pixels] = pic_th
+                        picture_th = np.clip(pedestal_thresh, pic_th, None)
 
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
