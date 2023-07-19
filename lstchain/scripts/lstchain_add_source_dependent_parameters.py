@@ -67,8 +67,8 @@ def main():
         tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
         effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
     except OSError:
-        print("subarray table is not readable because of the version inompatibility.")
-        print("Use the effective focal lentgh for the standard LST optics")
+        print("subarray table is not readable because of the version incompatibility.")
+        print("The effective focal length for the standard LST optics will be used.")
         effective_focal_length = OPTICS.effective_focal_length
         
     src_dep_df = pd.concat(get_source_dependent_parameters(

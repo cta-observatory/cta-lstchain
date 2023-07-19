@@ -354,8 +354,8 @@ def build_models(filegammas, fileprotons,
         tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
         effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
     except OSError:
-        logger.warning("subarray table is not readable because of the version inompatibility.")
-        logger.warning("Use the effective focal lentgh for the standard LST optics")
+        logger.warning("subarray table is not readable because of the version incompatibility.")
+        logger.warning("The effective focal length for the standard LST optics will be used.")
         effective_focal_length = OPTICS.effective_focal_length
 
     df_gamma = update_disp_with_effective_focal_length(df_gamma, effective_focal_length = effective_focal_length)
@@ -384,8 +384,8 @@ def build_models(filegammas, fileprotons,
                 tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
                 effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
             except OSError:
-                logger.warning("subarray table is not readable because of the version inompatibility.")
-                logger.warning("Use the effective focal lentgh for the standard LST optics")
+                logger.warning("subarray table is not readable because of the version incompatibility.")
+                logger.warning("The effective focal length for the standard LST optics will be used.")
                 effective_focal_length = OPTICS.effective_focal_length
 
             src_dep_df_proton = get_source_dependent_parameters(
