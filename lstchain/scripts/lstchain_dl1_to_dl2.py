@@ -12,6 +12,8 @@ import joblib
 
 import numpy as np
 import pandas as pd
+import astropy.units as u
+from astropy.coordinates import Angle
 from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
 from tables import open_file
@@ -104,6 +106,14 @@ def apply_to_file(filename, models_dict, output_dir, config):
         print("subarray table is not readable because of the version inompatibility.")
         print("Use the effective focal lentgh for the standard LST optics")
         effective_focal_length = OPTICS.effective_focal_length
+        
+    # Normalize all azimuth angles to the range [0, 360) degrees 
+    data.az_tel = Angle(data.az_tel, u.rad).wrap_at(360 * u.deg).rad
+
+    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
+    if 'sin_az_tel' not in data.columns:
+        data['sin_az_tel'] = np.sin(data.az_tel)
+
 
     # Apply the models to the data
 

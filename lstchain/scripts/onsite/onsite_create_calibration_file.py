@@ -236,7 +236,7 @@ def main():
         f"--PedestalCalculator.sample_size={stat_events}",
         f"--config={config_file}",
         f"--log-file={log_file}",
-        "--log-file-level=DEBUG",
+        "--log-file-level=INFO",
         *remaining_args,
     ]
 
