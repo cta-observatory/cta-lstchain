@@ -810,6 +810,7 @@ def get_expected_source_pos(data, data_type, config, effective_focal_length=29.3
 
     # For gamma MC, expected source position is actual one for each event
     if data_type == 'mc_gamma':
+        data = update_disp_with_effective_focal_length(data, effective_focal_length = effective_focal_length)
         expected_src_pos_x_m = data['src_x'].values
         expected_src_pos_y_m = data['src_y'].values
 
