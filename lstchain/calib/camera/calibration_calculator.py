@@ -241,6 +241,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         if self.use_scaled_low_gain:
             calib_data.unusable_pixels[constants.LOW_GAIN] = calib_data.unusable_pixels[constants.HIGH_GAIN]
             calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.hg_lg_ratio
+            calib_data.time_correction[constants.LOW_GAIN] = calib_data.time_correction[constants.HIGH_GAIN]
             
         # eliminate inf values id any (still necessary?)
         calib_data.dc_to_pe[np.isinf(calib_data.dc_to_pe)] = 0
