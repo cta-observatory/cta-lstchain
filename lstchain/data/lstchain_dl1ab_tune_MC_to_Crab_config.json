@@ -1,12 +1,23 @@
 {
+  "LocalPeakWindowSum":{
+    "window_shift": 4,
+    "window_width": 8,
+    "apply_integration_correction": true
+  },
+  "GlobalPeakWindowSum":{
+    "window_shift": 4,
+    "window_width": 8,
+    "apply_integration_correction": true
+  },
+
   "image_modifier": {
     "increase_nsb": true,
-    "extra_noise_in_dim_pixels": 1.2,
-    "extra_bias_in_dim_pixels": 0.5,
+    "extra_noise_in_dim_pixels": 1.62,
+    "extra_bias_in_dim_pixels": 0.655,
     "transition_charge": 8,
-    "extra_noise_in_bright_pixels": 1.2,
-    "increase_psf": true,
-    "smeared_light_fraction": 0.125
+    "extra_noise_in_bright_pixels": 2.08,
+    "increase_psf": false,
+    "smeared_light_fraction": 0
   },
 
   "tailcut": {

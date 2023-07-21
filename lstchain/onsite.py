@@ -1,3 +1,4 @@
+from glob import glob
 from pathlib import Path
 from pkg_resources import resource_filename
 from datetime import datetime
@@ -27,8 +28,6 @@ def create_symlink_overwrite(link, target):
     '''
     Create a symlink from link to target, replacing an existing link atomically.
     '''
-    target = target.resolve()
-
     if not link.exists():
         link.symlink_to(target)
         return
@@ -53,16 +52,27 @@ def create_symlink_overwrite(link, target):
 
 
 def create_pro_symlink(output_dir):
+    '''Create a "pro" symlink to the dir in the same directory'''
     output_dir = Path(output_dir)
-    pro_dir = output_dir / '../pro'
-    create_symlink_overwrite(pro_dir, output_dir)
+    pro_link = output_dir.parent / 'pro'
+
+    # the pro-link should be relative to make moving / copying a tree easy
+    create_symlink_overwrite(pro_link, output_dir.relative_to(pro_link.parent))
+
+
+def rglob_symlinks(path, pattern):
+    """
+    Same as Path.rglob, but actually following symlinks, needed to find R0G files
+    """
+    # convert results back to path
+    return (Path(p) for p in glob(f'{path}/**/{pattern}'))
 
 
 def find_r0_subrun(run, sub_run, r0_dir=DEFAULT_R0_PATH):
     '''
     Find the given subrun R0 file (i.e. globbing for the date part)
     '''
-    file_list = r0_dir.rglob(f'LST-1.1.Run{run:05d}.{sub_run:04d}*.fits.fz')
+    file_list = rglob_symlinks(r0_dir, f'LST-1.1.Run{run:05d}.{sub_run:04d}*.fits.fz')
     # ignore directories that are not a date, e.g. "Trash"
     file_list = [p for p in file_list if is_date(p.parent.name)]
 

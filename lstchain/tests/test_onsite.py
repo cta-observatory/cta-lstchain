@@ -10,7 +10,7 @@ test_r0_path = test_data / 'real/R0/'
 test_subrun1 = test_r0_path / '20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_subrun2 = test_r0_path / '20210215/LST-1.1.Run03669.0000_first50.fits.fz'
 
-PRO = 'v0.8.2.post2.dev48+gb1343281'
+PRO = 'ctapipe-v0.17'
 BASE_DIR = test_data / 'real'
 
 
@@ -61,6 +61,9 @@ def test_create_pro_link(tmp_path: Path):
     create_pro_symlink(v1)
     assert pro.exists()
     assert pro.resolve() == v1
+
+    # test that prolink is relative, not absolute
+    assert os.readlink(pro) == 'v1'
 
     # test pro exists and points to older version
     create_pro_symlink(v2)
@@ -171,3 +174,47 @@ def test_find_systematics_correction_file():
     with pytest.raises(IOError):
         # nonexistent sys date
         path = find_systematics_correction_file(pro=PRO, date='20200218', sys_date='20190101', base_dir=BASE_DIR)
+
+
+
+def test_rglob_symlinks(tmp_path):
+    from lstchain.onsite import rglob_symlinks
+
+    # create a test structure similar to the real data
+    r0 = tmp_path / 'R0'
+    r0g = tmp_path / 'R0G'
+
+    paths = [
+        r0 / '20220101/run1.dat',
+        r0 / '20220101/run2.dat',
+        r0 / '20220102/run3.dat',
+        r0 / '20220102/run4.dat',
+        r0g / '20220103/run5.dat',
+        r0g / '20220103/run6.dat',
+    ]
+    for path in paths:
+        path.parent.mkdir(exist_ok=True, parents=True)
+        path.open("w").close()
+        if "R0G" in path.parts:
+            # symlink R0G files to R0
+            target = Path(str(path.parent).replace('R0G', 'R0'))
+            print(target, target.exists())
+            if not target.exists():
+                target.symlink_to(path.parent)
+
+
+    # check "normal" file
+    matches = rglob_symlinks(r0, "run1.dat")
+    # check we get an iterator and not a list
+    assert iter(matches) is iter(matches)
+    assert list(matches) == [r0 / "20220101/run1.dat"]
+
+    # check file in symlinked dir
+    matches = rglob_symlinks(r0, "run5.dat")
+    # check we get an iterator and not a list
+    assert list(matches) == [r0 / "20220103/run5.dat"]
+
+    # check multiple files
+    matches = rglob_symlinks(r0, "run*.dat")
+    # check we get an iterator and not a list
+    assert len(list(matches)) == 6

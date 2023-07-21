@@ -128,6 +128,26 @@ parser.add_argument(
     help='Path to the file containing the event ids of interleaved pedestals',
 )
 
+parser.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+
+parser.add_argument(
+    '--default-trigger-type',
+    help='Alias for LSTEventSource.default_trigger_type, can be set to "tib" for runs with UCTS problems.',
+)
+
 
 def main():
     args = parser.parse_args()
@@ -186,6 +206,9 @@ def main():
     if args.pedestal_ids_path is not None:
         lst_event_source['pedestal_ids_path'] = args.pedestal_ids_path
 
+    if args.default_trigger_type is not None:
+        lst_event_source["default_trigger_type"] = args.default_trigger_type
+
     lst_r0_corrections = lst_event_source['LSTR0Corrections']
     if args.pedestal_file is not None:
         lst_r0_corrections['drs4_pedestal_path'] = args.pedestal_file
@@ -197,6 +220,9 @@ def main():
     calib_config = config[config['calibration_product']]
     if args.systematic_correction_file is not None:
         calib_config['systematic_correction_path'] = args.systematic_correction_file
+
+    if args.use_flatfield_heuristic is not None:
+        lst_event_source["use_flatfield_heuristic"] = args.use_flatfield_heuristic
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,

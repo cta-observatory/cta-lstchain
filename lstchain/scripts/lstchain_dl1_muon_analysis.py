@@ -30,7 +30,7 @@ from lstchain.image.muon import (
     tag_pix_thr,
 )
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
-from lstchain.visualization import plot_calib
+from lstchain.io import read_calibration_file
 
 parser = argparse.ArgumentParser()
 
@@ -93,8 +93,8 @@ def main():
     output_parameters = create_muon_table()
 
     if args.calib_file is not None:
-        plot_calib.read_file(args.calib_file)
-        bad_pixels = plot_calib.calib_data.unusable_pixels[0]
+        calibration = read_calibration_file(args.calib_file)
+        bad_pixels = calibration.calibration.unusable_pixels[0]
         print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
 
     # image = pd.read_hdf(args.input_file, key = dl1_image_lstcam_key)
@@ -114,10 +114,6 @@ def main():
         print('Opening file', filename)
 
         subarray = SubarrayDescription.from_hdf(filename)
-        telescope_description = subarray.tel[lst1_tel_id]
-        geom = telescope_description.camera.geometry
-        equivalent_focal_length = telescope_description.optics.equivalent_focal_length
-        mirror_area = telescope_description.optics.mirror_area
 
         images = Table.read(filename, path=dl1_images_lstcam_key)['image']
         parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
@@ -155,9 +151,9 @@ def main():
                 muonintensityparam, dist_mask, size, size_outside_ring,
                 muonringparam, good_ring, radial_distribution,
                 mean_pixel_charge_around_ring, muonparameters
-            ) = analyze_muon_event(subarray,
-                                   event_id, image, geom, equivalent_focal_length,
-                                   mirror_area, args.plot_rings, args.plots_path
+            ) = analyze_muon_event(subarray, lst1_tel_id, event_id,
+                                   image, good_ring_config=None,
+                                   plot_rings=args.plot_rings, plots_path=args.plots_path
                                    )
 
             if good_ring:

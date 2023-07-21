@@ -23,9 +23,12 @@ from ctapipe.image import (
     tailcuts_clean,
 )
 from ctapipe.image import number_of_islands, apply_time_delta_cleaning
-from ctapipe.io import EventSource, HDF5TableWriter
+from ctapipe.io import EventSource, HDF5TableWriter, DataWriter 
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
+from ctapipe_io_lst.constants import (
+    PIXEL_INDEX
+)
 
 from . import disp
 from .utils import sky_to_camera
@@ -35,10 +38,12 @@ from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.cleaning import apply_dynamic_cleaning
 from ..image.modifier import tune_nsb_on_waveform, calculate_required_additional_nsb
+from .reconstructor import TimeWaveformFitter
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..io import (
     DL1ParametersContainer,
+    DL1LikelihoodParametersContainer,
     replace_config,
     standard_config,
     HDF5_ZSTD_FILTERS,
@@ -57,6 +62,7 @@ from ..io import (
 from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
+from ..visualization.plot_reconstructor import plot_debug
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +70,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     'add_disp_to_parameters_table',
     'get_dl1',
+    'apply_lh_fit',
     'r0_to_dl1',
 ]
 
@@ -83,7 +90,6 @@ def setup_writer(writer, subarray, is_simulation):
     # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
     writer.h5file.filters = HDF5_ZSTD_FILTERS
     logger.info(f"USING FILTERS: {writer.h5file.filters}")
-
 
     tel_names = {str(tel)[4:] for tel in subarray.telescope_types}
 
@@ -144,7 +150,7 @@ def parametrize_image(image, peak_time, signal_pixels, camera_geometry, focal_le
 
     # convert ctapipe's width and length (in m) to deg:
 
-    for key  in ['width', 'width_uncertainty', 'length', 'length_uncertainty']:
+    for key in ['width', 'width_uncertainty', 'length', 'length_uncertainty']:
         value = getattr(dl1_container, key)
         setattr(dl1_container, key, _camera_distance_to_angle(value, focal_length))
 
@@ -166,7 +172,7 @@ def get_dl1(
     subarray,
     telescope_id,
     dl1_container=None,
-    custom_config={},
+    custom_config={}
 ):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -242,7 +248,6 @@ def get_dl1(
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
-
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)
         dl1_container.n_pixels = n_pixels
@@ -267,6 +272,46 @@ def get_dl1(
     return dl1_container
 
 
+def apply_lh_fit(
+        event,
+        telescope_id,
+        dl1_container,
+        fitter
+):
+    """
+    Prepare and performs the extraction of DL1 parameters using a likelihood
+    based reconstruction method.
+
+    Parameters
+    ----------
+    event: ctapipe event container
+    telescope_id: int
+    dl1_container: DL1ParametersContainer
+    fitter: TimeWaveformFitter
+
+    Returns
+    -------
+    DL1LikelihoodParametersContainer
+
+    """
+    # Applied to all physic events
+    if event.trigger.event_type == EventType.SUBARRAY:
+        # Don't fit if the cleaning used in the seed parametrisation didn't select any pixels
+        if dl1_container.n_pixels <= 0:
+            lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=0)
+        else:
+            try:
+                lhfit_container = fitter(event=event, telescope_id=telescope_id, dl1_container=dl1_container)
+            except Exception:
+                logger.error("Unexpected error encountered in likelihood reconstruction.\n"
+                             "Compiled likelihood reconstruction numbaCC functions may be missing.\n"
+                             "In this case you should run: lstchain/scripts/numba_compil_lhfit.py")
+                raise
+    else:
+        lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=-10)
+    return lhfit_container
+
+
 def r0_to_dl1(
     input_filename=None,
     output_filename=None,
@@ -279,7 +324,7 @@ def r0_to_dl1(
     Parameters
     ----------
     input_filename: str
-        path to input file, default: `gamma_test_large.simtel.gz`
+        path to input file, default is an example simulation file
     output_filename: str or None
         path to output file, defaults to writing dl1 into the current directory
     custom_config: path to a configuration file
@@ -346,7 +391,6 @@ def r0_to_dl1(
         )
 
     calibration_index = DL1MonitoringEventIndexContainer()
-
     dl1_container = DL1ParametersContainer()
 
     extra_im = ExtraImageInfo()
@@ -357,7 +401,7 @@ def r0_to_dl1(
 
     if is_simu:
         write_mcheader(
-            source.simulation_config,
+            source.simulation_config[source.obs_ids[0]],
             output_filename,
             obs_id=source.obs_ids[0],
             filters=HDF5_ZSTD_FILTERS,
@@ -370,7 +414,7 @@ def r0_to_dl1(
             if is_simu:
                 nsb_original = extract_simulation_nsb(input_filename)
                 pulse_template = NormalizedPulseTemplate.load_from_eventsource(
-                    subarray.tel[1].camera.readout
+                    subarray.tel[1].camera.readout, resample=True
                 )
                 if 'nsb_tuning_ratio' in config['waveform_nsb_tuning'].keys():
                     # get value from config to possibly extract it beforehand on multiple files for averaging purposes
@@ -384,7 +428,7 @@ def r0_to_dl1(
                                                                          config=config)[0]
                 spe = np.loadtxt(config['waveform_nsb_tuning']['spe_location']).T
                 spe_integral = np.cumsum(spe[1])
-                charge_spe_cumulative_pdf = interp1d(spe_integral,spe[0], kind='cubic',
+                charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                                      bounds_error=False, fill_value=0.,
                                                      assume_sorted=True)
                 allowed_tel = np.zeros(len(nsb_original), dtype=bool)
@@ -397,7 +441,25 @@ def r0_to_dl1(
                 logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
                 nsb_tuning = False
 
-    with HDF5TableWriter(
+    lhfit_fitter = None
+    if 'lh_fit_config' in config.keys():
+        lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
+        lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
+
+    # initialize the writer of the interleaved events 
+    interleaved_writer = None
+    if 'write_interleaved_events' in config:
+        interleaved_writer_config = Config(config['write_interleaved_events'])
+        dir, name = os.path.split(output_filename)
+        if 'dl1' in name: 
+            name = name.replace('dl1', 'interleaved').replace('LST-1.1', 'LST-1')
+        else:
+            name = f"interleaved_{name}"
+        interleaved_output_file = Path(dir, name)
+        interleaved_writer = DataWriter(event_source=source,output_path=interleaved_output_file,config=interleaved_writer_config)
+        interleaved_writer._writer.exclude("/r1/event/telescope/.*", "selected_gain_channel")
+
+    with HDF5TableWriter( 
         filename=output_filename,
         group_name='dl1/event',
         mode='a',
@@ -463,10 +525,27 @@ def r0_to_dl1(
                                            calibration_index,
                                            event.mon.tel[tel_id],
                                            new_ped=new_ped_event, new_ff=new_ff_event)
-
-                    # calibrate and gain select the event by hand for DL1
+                    
+                    # write the calibrated R1 waveform without gain selection
+                    source.r0_r1_calibrator.select_gain = False
                     source.r0_r1_calibrator.calibrate(event)
+                
+                    if interleaved_writer is not None:
+                        interleaved_writer(event)
 
+                    # gain select the events
+                    source.r0_r1_calibrator.select_gain = True
+
+                    r1 = event.r1.tel[tel_id]                   
+                    r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
+                    r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX]
+
+                    event.calibration.tel[tel_id].dl1.time_shift = \
+                    event.calibration.tel[tel_id].dl1.time_shift[r1.selected_gain_channel, PIXEL_INDEX]
+                    
+                    event.calibration.tel[tel_id].dl1.relative_factor = \
+                    event.calibration.tel[tel_id].dl1.relative_factor[r1.selected_gain_channel, PIXEL_INDEX]
+                    
             # Option to add nsb in waveforms
             if nsb_tuning:
                 # FIXME? assumes same correction ratio for all telescopes
@@ -502,7 +581,6 @@ def r0_to_dl1(
                 add_config_metadata(extra_im, config)
 
                 focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
-                mirror_area = subarray.tel[telescope_id].optics.mirror_area
 
                 dl1_container.reset()
 
@@ -551,6 +629,7 @@ def r0_to_dl1(
 
                 dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
+                dl1_container.sin_az_tel = np.sin(dl1_container.az_tel)
 
                 dl1_container.trigger_time = event.trigger.time.unix
                 dl1_container.event_type = event.trigger.event_type
@@ -568,6 +647,17 @@ def r0_to_dl1(
                     table_name=f'telescope/image/{tel_name}',
                     containers=[event.index, dl1_tel, extra_im]
                 )
+
+                if lhfit_fitter is not None:
+                    lhfit_container = apply_lh_fit(event, telescope_id, dl1_container, lhfit_fitter)
+                    # Plotting code for development purpose only, will disappear in final release
+                    if lhfit_fitter.verbose >= 2 and lhfit_container["lhfit_call_status"] == 1:
+                        plot_debug(lhfit_fitter, event, telescope_id, dl1_container, str(event.index.event_id))
+                    lhfit_container.prefix = dl1_tel.prefix
+                    add_global_metadata(lhfit_container, metadata)
+                    add_config_metadata(lhfit_container, config)
+                    writer.write(table_name=f'telescope/likelihood_parameters/{tel_name}',
+                                 containers=[event.index, lhfit_container])
 
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:
@@ -593,27 +683,26 @@ def r0_to_dl1(
 
                         event.r1.tel[telescope_id].waveform *= ~bad_waveform
                         r1_dl1_calibrator_for_muon_rings(event)
-                        image = dl1_tel.image*(~bad_pixels)
+                        # since ctapipe 0.17,  the calibrator overwrites the full dl1 container
+                        # instead of overwriting the image in the existing container
+                        # so we need to get the image again
+                        image = event.dl1.tel[telescope_id].image * (~bad_pixels)
 
                         # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
                         # perhaps the event is no longer promising (e.g. if it has a large time evolution)
                         if not tag_pix_thr(image):
                             good_ring = False
                         else:
-                            # read geometry from event.inst. But not needed for every event. FIXME?
-                            geom = subarray.tel[telescope_id].\
-                                camera.geometry
-
                             muonintensityparam, dist_mask, \
                             ring_size, size_outside_ring, muonringparam, \
                             good_ring, radial_distribution, \
                             mean_pixel_charge_around_ring,\
                             muonpars = \
                                 analyze_muon_event(subarray,
-                                                   event.index.event_id,
-                                                   image, geom, focal_length,
-                                                   mirror_area, False, '')
-                            #                      mirror_area, True, './')
+                                                   tel_id, event.index.event_id,
+                                                   image, good_ring_config=None,
+                                                   plot_rings=False, plots_path='')
+                            #                      plot_rings=True, plots_path='./')
                             #           (test) plot muon rings as png files
 
                             # Now we want to obtain the waveform sample (in HG & LG) at which the ring light peaks:
@@ -689,6 +778,11 @@ def r0_to_dl1(
         muon_output_filename = Path(dir, name)
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
+        
+        # close the interleaved output file and write metadata
+        if interleaved_writer is not None:
+            interleaved_writer.finish()
+
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
@@ -717,7 +811,8 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
     disp_parameters = disp.disp(df.x.values * u.m,
                                 df.y.values * u.m,
                                 source_pos_in_camera.x,
-                                source_pos_in_camera.y)
+                                source_pos_in_camera.y,
+                                df.psi.values * u.rad)
 
     with tables.open_file(dl1_file, mode="a") as file:
         tab = file.root[table_path]

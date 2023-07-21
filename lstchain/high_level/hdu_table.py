@@ -1,52 +1,71 @@
+"""
+Module containing functions to create DL3 event lists and DL3 index files,
+following recommendations from GADF v0.3
+
+For reference to the documentation of GADF v0.3 follow various sections in,
+https://gamma-astro-data-formats.readthedocs.io/en/latest/
+"""
+
 import logging
 import os
 
 import astropy.units as u
 import numpy as np
-from astropy.coordinates import SkyCoord, AltAz
+from astropy.coordinates import AltAz, SkyCoord
 from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.io import fits
-from astropy.table import Table, QTable
+from astropy.table import QTable, Table
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
-from lstchain.reco.utils import location, camera_to_altaz
+from lstchain.reco.utils import camera_to_altaz, location
 
 __all__ = [
     "add_icrs_position_params",
     "create_event_list",
     "create_hdu_index_hdu",
     "create_obs_index_hdu",
+    "fill_reco_altaz_w_expected_pos",
+    "get_timing_params",
     "get_pointing_params",
     "get_timing_params",
-    "set_expected_pos_to_reco_altaz",
 ]
 
 log = logging.getLogger(__name__)
 
 DEFAULT_HEADER = fits.Header()
 DEFAULT_HEADER["CREATOR"] = f"lstchain v{__version__}"
-DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
-DEFAULT_HEADER["HDUVERS"] = "0.2"
+DEFAULT_HEADER["HDUDOC"] = (
+    "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
+)
+DEFAULT_HEADER["HDUVERS"] = "0.3"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
 DEFAULT_HEADER["ORIGIN"] = "CTA"
 DEFAULT_HEADER["TELESCOP"] = "CTA-N"
 
-wobble_offset = 0.4 * u.deg
+# Observation_mode is POINTING for all LST observations as per GADF v0.3
+OBS_MODE = "POINTING"
+# LST-specific MJD time reference
+LST_EPOCH = Time("2018-10-01T00:00:00", scale="utc")
 
 
-def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
+def time_to_fits(time, epoch=LST_EPOCH):
+    """
+    Convert time to time since epoch.
+
+    This is the real elapsed time, i.e. including leap seconds for UTC.
+    """
+    return (time - epoch).to(u.s)
+
+
+def create_obs_index_hdu(file_list, obs_index_file, overwrite):
     """
     Create the obs index table and write it to the given file.
-    The Index table is created as per,
-    http://gamma-astro-data-formats.readthedocs.io/en/latest/data_storage/obs_index/index.html
 
     Parameters
     ----------
-    filename_list : list
-        list of filenames of the fits files
-    fits_dir : Path
-        Path of the fits files
+    file_list : list
+        list of the fits files
     obs_index_file : Path
         Path for the OBS index file
     overwrite : Bool
@@ -55,11 +74,10 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
     obs_index_tables = []
 
     # loop through the files
-    for file in filename_list:
-        filepath = fits_dir / file
-        if filepath.is_file():
+    for file in file_list:
+        if file.is_file():
             try:
-                hdu_list = fits.open(filepath)
+                hdu_list = fits.open(file)
                 evt_hdr = hdu_list["EVENTS"].header
             except Exception:
                 log.error(f"fits corrupted for file {file}")
@@ -113,23 +131,14 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
     obs_index_list.writeto(obs_index_file, overwrite=overwrite)
 
 
-def create_hdu_index_hdu(
-        filename_list,
-        fits_dir,
-        hdu_index_file,
-        overwrite=False
-):
+def create_hdu_index_hdu(file_list, hdu_index_file, overwrite=False):
     """
     Create the hdu index table and write it to the given file.
-    The Index table is created as per,
-    http://gamma-astro-data-formats.readthedocs.io/en/latest/data_storage/hdu_index/index.html
 
     Parameters
     ----------
-    filename_list : list
-        list of filenames of the fits files
-    fits_dir : Path
-        Path of the fits files
+    file_list : list
+        list of the fits files
     hdu_index_file : Path
         Path for HDU index file
     overwrite : Bool
@@ -139,20 +148,15 @@ def create_hdu_index_hdu(
     hdu_index_tables = []
 
     base_dir = os.path.commonpath(
-        [
-            hdu_index_file.parent.absolute().resolve(),
-            fits_dir.absolute().resolve()
-        ]
+        [hdu_index_file.parent.resolve(), file_list[0].resolve()]
     )
     # loop through the files
-    for file in filename_list:
-        filepath = fits_dir / file
-        if filepath.is_file():
+    for file in file_list:
+        if file.is_file():
             try:
-                hdu_list = fits.open(filepath)
+                hdu_list = fits.open(file)
+                # check that the HDUs are present
                 evt_hdr = hdu_list["EVENTS"].header
-
-                # just test they are here
                 hdu_list["GTI"].header
                 hdu_list["POINTING"].header
             except Exception:
@@ -162,17 +166,15 @@ def create_hdu_index_hdu(
             log.error(f"fits {file} doesn't exist")
             continue
 
-        # The column names for the table follows the scheme as shown in
-        # https://gamma-astro-data-formats.readthedocs.io/en/latest/general/hduclass.html
         # Event list
         t_events = {
             "OBS_ID": evt_hdr["OBS_ID"],
             "HDU_TYPE": "events",
             "HDU_CLASS": "events",
-            "FILE_DIR": str(os.path.relpath(fits_dir, hdu_index_file.parent)),
-            "FILE_NAME": str(file),
+            "FILE_DIR": os.path.relpath(file.parent, hdu_index_file.parent),
+            "FILE_NAME": file.name,
             "HDU_NAME": "EVENTS",
-            "SIZE": filepath.stat().st_size,
+            "SIZE": file.stat().st_size,
         }
         hdu_index_tables.append(t_events)
 
@@ -194,8 +196,11 @@ def create_hdu_index_hdu(
 
         hdu_index_tables.append(t_pnt)
         hdu_names = [
-            "EFFECTIVE AREA", "ENERGY DISPERSION", "BACKGROUND",
-            "PSF", "RAD_MAX"
+            "EFFECTIVE AREA",
+            "ENERGY DISPERSION",
+            "BACKGROUND",
+            "PSF",
+            "RAD_MAX",
         ]
 
         for irf in hdu_names:
@@ -205,14 +210,12 @@ def create_hdu_index_hdu(
 
                 t_irf["HDU_CLASS"] = irf_hdu.lower()
                 t_irf["HDU_TYPE"] = irf_hdu.lower().strip(
-                    '_' + irf_hdu.lower().split("_")[-1]
+                    "_" + irf_hdu.lower().split("_")[-1]
                 )
                 t_irf["HDU_NAME"] = irf
                 hdu_index_tables.append(t_irf)
             except KeyError:
-                log.error(
-                    f"Run {t_events['OBS_ID']} does not contain HDU {irf}"
-                )
+                log.error(f"Run {t_events['OBS_ID']} does not contain HDU {irf}")
 
     hdu_index_table = Table(hdu_index_tables)
 
@@ -230,42 +233,41 @@ def create_hdu_index_hdu(
     hdu_index_list.writeto(hdu_index_file, overwrite=overwrite)
 
 
-def get_timing_params(data):
+def get_timing_params(data, epoch=LST_EPOCH):
     """
-    Get event lists and retrieve some timing parameters for the DL3 event list
-    as a dict
-
+    Retrieve some timing parameters for the DL3 event list as a dict and
+    also have a common time_utc object for use in other functions.
     """
     time_utc = Time(data["dragon_time"], format="unix", scale="utc")
     t_start_iso = time_utc[0].to_value("iso", "date_hms")
     t_stop_iso = time_utc[-1].to_value("iso", "date_hms")
 
+    mjdreff, mjdrefi = np.modf(epoch.mjd)
+
     time_pars = {
-        "t_start": data["dragon_time"].value[0],
-        "t_stop": data["dragon_time"].value[-1],
+        "t_start": time_to_fits(time_utc[0], epoch=epoch),
+        "t_stop": time_to_fits(time_utc[-1], epoch=epoch),
         "t_start_iso": t_start_iso,
         "t_stop_iso": t_stop_iso,
         "date_obs": t_start_iso[:10],
         "time_obs": t_start_iso[11:],
         "date_end": t_stop_iso[:10],
         "time_end": t_stop_iso[11:],
-        "MJDREF": Time("1970-01-01T00:00", scale="utc")
+        "MJDREFI": int(mjdrefi),
+        "MJDREFF": mjdreff,
     }
-    return time_pars
+    return time_pars, time_utc
 
 
-def get_pointing_params(data, source_pos, wobble_offset_std):
+def get_pointing_params(data, source_pos, time_utc):
     """
-    Convert the telescope pointing and reconstructed pointing position for
-    each event into AltAz and ICRS Frame of reference.
-    Also get the observational mode and wobble offset of the data as per
-    the given source position and standard wobble offset to compare.
+    Convert the telescope pointing position for the first event from AltAz
+    into ICRS frame of reference.
 
+    Note: The angular difference from the source is just used for logging here.
     """
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
-
-    time_utc = Time(data["dragon_time"], format="unix", scale="utc")
 
     pnt_icrs = SkyCoord(
         alt=pointing_alt[0],
@@ -273,40 +275,26 @@ def get_pointing_params(data, source_pos, wobble_offset_std):
         frame=AltAz(obstime=time_utc[0], location=location),
     ).transform_to(frame="icrs")
 
-    # Observation modes
     source_pointing_diff = source_pos.separation(pnt_icrs)
-    if np.around(source_pointing_diff, 1) == wobble_offset_std:
-        mode = "WOBBLE"
-    elif np.around(source_pointing_diff, 1) > 1 * u.deg:
-        mode = "OFF"
-    elif np.around(source_pointing_diff, 1) == 0.0 * u.deg:
-        mode = "ON"
-    else:
-        # Nomenclature is to be worked out or have a separate way to mark mispointings
-        mode = "UNDETERMINED"
 
     log.info(
-        "Source pointing difference with camera pointing"
-        f" is {source_pointing_diff:.3f}"
+        f"Source pointing difference with camera pointing is {source_pointing_diff:.3f}"
     )
 
-    return pnt_icrs, mode, source_pointing_diff
+    return pnt_icrs
 
 
-def add_icrs_position_params(data, source_pos):
+def add_icrs_position_params(data, source_pos, time_utc):
     """
     Updating data with ICRS position values of reconstructed positions in
-    RA DEC coordinates and add column on separation form true source position.
+    RA, DEC coordinates and add a column, theta, on separation from the true
+    source position.
     """
     reco_alt = data["reco_alt"]
     reco_az = data["reco_az"]
 
-    time_utc = Time(data["dragon_time"], format="unix", scale="utc")
-
     reco_altaz = SkyCoord(
-        alt=reco_alt, az=reco_az, frame=AltAz(
-            obstime=time_utc, location=location
-        )
+        alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
     )
 
     with erfa_astrom.set(ErfaAstromInterpolator(300 * u.s)):
@@ -318,28 +306,42 @@ def add_icrs_position_params(data, source_pos):
 
     return data
 
-def set_expected_pos_to_reco_altaz(data):
+
+def fill_reco_altaz_w_expected_pos(data):
     """
-    Set expected source positions to reconstructed alt, az positions for source-dependent analysis
-    This is just a trick to easily extract ON/OFF events in gammapy analysis. 
+    Fill the reconstructed alt, az positions with the expected source positions,
+    for source-dependent analysis.
+
+    Note: This is just a trick to easily extract ON/OFF events in gammapy
+    analysis.
     """
-    # set expected source positions as reco positions
-    time = data['dragon_time']
-    obstime = Time(time, scale='utc', format='unix')
-    expected_src_x = data['expected_src_x'] * u.m
-    expected_src_y = data['expected_src_y'] * u.m
+    obstime = Time(data["dragon_time"], scale="utc", format="unix")
+    expected_src_x = data["expected_src_x"] * u.m
+    expected_src_y = data["expected_src_y"] * u.m
     focal = 28 * u.m
-    pointing_alt = data['pointing_alt']
-    pointing_az  = data['pointing_az']
-    expected_src_altaz = camera_to_altaz(expected_src_x, expected_src_y, focal, pointing_alt, pointing_az, obstime=obstime)
+    pointing_alt = data["pointing_alt"]
+    pointing_az = data["pointing_az"]
+
+    expected_src_altaz = camera_to_altaz(
+        expected_src_x,
+        expected_src_y,
+        focal,
+        pointing_alt,
+        pointing_az,
+        obstime=obstime,
+    )
+
     data["reco_alt"] = expected_src_altaz.alt
-    data["reco_az"]  = expected_src_altaz.az
-    
+    data["reco_az"] = expected_src_altaz.az
+
+    return data
+
+
 def create_event_list(
-        data, run_number, source_name, source_pos, effective_time, elapsed_time
+    data, run_number, source_name, source_pos, effective_time, elapsed_time, data_pars
 ):
     """
-    Create the event_list BinTableHDUs from the given data
+    Create the BinTableHDUs for storing DL3 event data.
 
     Parameters
     ----------
@@ -355,6 +357,8 @@ def create_event_list(
         Float
     elapsed_time: Total elapsed time of triggered events of the run
         Float
+    data_pars: Dict of paramters to get the IRF interpolation parameters
+        Dict
 
     Returns
     -------
@@ -362,20 +366,18 @@ def create_event_list(
     GTI HDU:  `astropy.io.fits.BinTableHDU`
     Pointing HDU:  `astropy.io.fits.BinTableHDU`
     """
-
     tel_list = np.unique(data["tel_id"])
 
-    time_params = get_timing_params(data)
-    reco_icrs = SkyCoord(ra=data["RA"], dec=data["Dec"], unit="deg")
+    time_params, time_utc = get_timing_params(data)
 
-    pnt_icrs, mode, wobble_pos = get_pointing_params(
-        data, source_pos, wobble_offset
-    )
+    data = add_icrs_position_params(data, source_pos, time_utc)
+    reco_icrs = SkyCoord(ra=data["RA"], dec=data["Dec"], unit="deg")
+    pnt_icrs = get_pointing_params(data, source_pos, time_utc)
 
     event_table = QTable(
         {
             "EVENT_ID": data["event_id"],
-            "TIME": data["dragon_time"],
+            "TIME": time_to_fits(time_utc),
             "RA": data["RA"].to(u.deg),
             "DEC": data["Dec"].to(u.deg),
             "ENERGY": data["reco_energy"],
@@ -418,20 +420,23 @@ def create_event_list(
     ev_header["TIME-OBS"] = time_params["time_obs"]
     ev_header["DATE-END"] = time_params["date_end"]
     ev_header["TIME-END"] = time_params["time_end"]
-    ev_header["TSTART"] = time_params["t_start"]
-    ev_header["TSTOP"] = time_params["t_stop"]
-    ev_header["MJDREFI"] = int(time_params["MJDREF"].mjd)
-    ev_header["MJDREFF"] = time_params["MJDREF"].mjd - int(time_params["MJDREF"].mjd)
+    ev_header["TSTART"] = (time_params["t_start"].value, time_params["t_start"].unit)
+    ev_header["TSTOP"] = (time_params["t_stop"].value, time_params["t_stop"].unit)
+    ev_header["MJDREFI"] = time_params["MJDREFI"]
+    ev_header["MJDREFF"] = time_params["MJDREFF"]
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
     ev_header["TIMEREF"] = "TOPOCENTER"
     ev_header["ONTIME"] = elapsed_time
-    ev_header["TELAPSE"] = time_params["t_stop"] - time_params["t_start"]
+    ev_header["TELAPSE"] = (
+        (time_params["t_stop"] - time_params["t_start"]).to_value(u.s),
+        u.s,
+    )
     ev_header["DEADC"] = effective_time / elapsed_time
     ev_header["LIVETIME"] = effective_time
 
     ev_header["OBJECT"] = source_name
-    ev_header["OBS_MODE"] = mode
+    ev_header["OBS_MODE"] = OBS_MODE
 
     ev_header["N_TELS"] = len(tel_list)
     ev_header["TELLIST"] = "LST-" + " ".join(map(str, tel_list))
@@ -481,6 +486,9 @@ def create_event_list(
     )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
+    pnt_header["MEAN_ZEN"] = str(data_pars["ZEN_PNT"])
+    pnt_header["MEAN_AZ"] = str(data_pars["AZ_PNT"])
+    pnt_header["B_DELTA"] = str(data_pars["B_DELTA"])
 
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")

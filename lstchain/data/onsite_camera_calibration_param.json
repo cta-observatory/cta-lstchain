@@ -4,38 +4,12 @@
     "one_event": true,
     "events_to_skip": 1000,
     "calibration_product": "LSTCalibrationCalculator",
-    "log_level": "DEBUG",
-    "log_config": {
-      "loggers": {
-        "ctapipe.CalibrationHDF5Writer.LSTEventSource": {
-          "propagate": false,
-          "level": "INFO",
-          "handlers": [
-            "console"
-          ]
-        },
-        "ctapipe.core.provenance":{
-          "level": "INFO",
-          "handlers": [
-            "console"
-          ]
-        },
-        "ctapipe.core.traits":{
-          "level": "INFO",
-          "handlers": [
-            "console"
-          ]
-        },
-        "ctapipe.io.hdf5tableio.HDF5TableWriter": {
-          "level": "INFO",
-          "handlers": [
-            "console"
-          ]
-        }
-      }
-    }
+    "log_level": "INFO"
   },
   "LSTEventSource": {
+    "MultiFiles": {
+      "all_subruns": true
+     },
     "allowed_tels": [
       1
     ],

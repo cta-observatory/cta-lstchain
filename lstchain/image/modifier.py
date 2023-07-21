@@ -13,6 +13,7 @@ from traitlets.config import Config
 
 from lstchain.io import standard_config
 from lstchain.io.config import read_configuration_file
+from lstchain.reco.reconstructorCC import nsb_only_waveforms
 
 __all__ = [
     'add_noise_in_pixels',
@@ -173,11 +174,11 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     Returns
     -------
     extra_noise_in_dim_pixels: `float`
-        Extra noise of dim pixels.
+        Extra noise of dim pixels (number of NSB photoelectrons).
     extra_bias_in_dim_pixels: `float`
-        Extra bias of dim pixels.
+        Extra bias of dim pixels  (direct shift in photoelectrons).
     extra_noise_in_bright_pixels: `float`
-        Extra noise of bright pixels
+        Extra noise of bright pixels  (number of NSB photoelectrons).
 
     """
 
@@ -351,6 +352,8 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # The idea is that when a strong signal is present, the biased extractor
     # will integrate around it, and the additional noise is unbiased because
     # it won't modify the integration range.
+    # The noise is defined as the number of NSB photoelectrons, i.e. the extra
+    # variance, rather than standard deviation, of the distribution
     extra_noise_in_bright_pixels = \
         ((data_median_std_ped_pe**2 - mc_unbiased_std_ped_pe**2) *
          shower_extractor_window_width / pedestal_extractor_window_width)
@@ -370,11 +373,11 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # calculate widening of the noise bump:
     added_noise = (np.sum(dq[dq<maxq]**2)/len(dq[dq<maxq]) -
                    np.sum(dqmc[dqmc<maxq]**2)/len(dqmc[dqmc < maxq]))
-    added_noise = (max(0, added_noise))**0.5
-    extra_noise_in_dim_pixels = added_noise
+    extra_noise_in_dim_pixels = max(0., added_noise)
 
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
            extra_noise_in_bright_pixels
+
 
 def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
                          dt, pulse_templates, gain, charge_spe_cumulative_pdf):
@@ -393,22 +396,28 @@ def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
     fluctuation cumulative pdf used to randomise the normalisation of
     injected pulses
     """
+    n = 25
     n_pixels, n_samples = waveform.shape
-    duration = (20 + n_samples) * dt  # TODO check needed time window, effect of edges
-    t = np.arange(-20, n_samples) * dt.value
+    duration = (n + n_samples) * dt  # TODO check needed time window, effect of edges
+    t = np.arange(-n, n_samples) * dt.value
     mean_added_nsb = (added_nsb_fraction * original_nsb) * duration
     rng = np.random.default_rng()
     additional_nsb = rng.poisson(mean_added_nsb, n_pixels)
-    added_nsb_time = rng.uniform(-20 * dt.value, -20 * dt.value + duration.value, (n_pixels, max(additional_nsb)))
+    added_nsb_time = rng.uniform(-n * dt.value, -n * dt.value + duration.value, (n_pixels, max(additional_nsb)))
     added_nsb_amp = charge_spe_cumulative_pdf(rng.uniform(size=(n_pixels, max(additional_nsb))))
-
     baseline_correction = (added_nsb_fraction * original_nsb * dt).value
     waveform -= baseline_correction
-    for i in range(n_pixels):
-        for j in range(additional_nsb[i]):
-            waveform[i] += (added_nsb_amp[i][j]
-                            * (pulse_templates(t[20:] - added_nsb_time[i][j], 'HG' if gain[i] else 'LG')))
-
+    waveform += nsb_only_waveforms(
+        time=t[n:],
+        is_high_gain=gain,
+        additional_nsb=additional_nsb,
+        amplitude=added_nsb_amp,
+        t_0=added_nsb_time,
+        t0_template=pulse_templates.t0,
+        dt_template=pulse_templates.dt,
+        a_hg_template=pulse_templates.amplitude_HG,
+        a_lg_template=pulse_templates.amplitude_LG
+    )
 
 def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config=None):
     # TODO check if good estimation
@@ -532,7 +541,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     mc_unbiased_std_ped_pe = np.std(mc_ped_charges)
 
     # Find the additional noise (in data w.r.t. MC) for the unbiased extractor
-    # The idea is that pedestal std scales with NSB (But better correction with sqrt(variance ratio-1) observed)
+    # The idea is that pedestal variance scales with NSB
 
     data_ped_variance = data_median_std_ped_pe ** 2
     mc_ped_variance = mc_unbiased_std_ped_pe ** 2

@@ -35,8 +35,22 @@ class FITSIndexWriter(Tool):
     > lstchain_create_dl3_index_files
         -d /path/to/DL3/files/
         -o /path/to/DL3/index/files
-        -p dl3*[run_1-run_n]*.fits.gz
+        -p "dl3*[run_1-run_n]*.fits"
         --overwrite
+
+    Or if the DL3 files are stored in sub-directories:
+    > lstchain_create_dl3_index_files
+       -d /path/to/DL3/files/
+       -o /path/to/DL3/index/files
+       -p "/sub-directory*/dl3*[run_1-run_n]*.fits"
+       --overwrite
+
+    Or if the DL3 files are stored in the current directory:
+    > lstchain_create_dl3_index_files
+       -d ./
+       -o ./
+       -p "dl3*[run_1-run_n]*.fits"
+       --overwrite
     """
 
     input_dl3_dir = traits.Path(
@@ -48,7 +62,7 @@ class FITSIndexWriter(Tool):
 
     file_pattern = traits.Unicode(
         help="File pattern to search in the given Path",
-        default_value="dl3*.fits*"
+        default_value="dl3*.fits"
     ).tag(config=True)
 
     output_index_path = traits.Path(
@@ -80,18 +94,18 @@ class FITSIndexWriter(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.file_list = []
         self.hdu_index_filename = "hdu-index.fits.gz"
         self.obs_index_filename = "obs-index.fits.gz"
 
     def setup(self):
 
-        list_files = sorted(self.input_dl3_dir.glob(self.file_pattern))
-        if len(list_files) == 0:
-            raise ToolConfigurationError(f"No files found with pattern {self.file_pattern} in {self.input_dl3_dir}")
+        self.list_files = sorted(self.input_dl3_dir.glob(self.file_pattern))
+        if len(self.list_files) == 0:
+            raise ToolConfigurationError(
+                f"No files found with pattern {self.file_pattern} in {self.input_dl3_dir}"
+            )
 
-        for f in list_files:
-            self.file_list.append(f.name)
+        for f in self.list_files:
             Provenance().add_input_file(f)
 
         if not self.output_index_path:
@@ -128,14 +142,12 @@ class FITSIndexWriter(Tool):
     def start(self):
 
         create_hdu_index_hdu(
-            self.file_list,
-            self.input_dl3_dir,
+            self.list_files,
             self.hdu_index_file,
             self.overwrite,
         )
         create_obs_index_hdu(
-            self.file_list,
-            self.input_dl3_dir,
+            self.list_files,
             self.obs_index_file,
             self.overwrite
         )

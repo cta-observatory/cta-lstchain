@@ -1,34 +1,37 @@
 name: lst-dev
 channels:
   - conda-forge
-  - default
 dependencies:
-  - python=3.8
-  - numpy=1.21
-  - astropy~=4.2
+  - python=3.11
+  - numpy
+  - astropy=5
   - pip
-  - ctapipe=0.12
-  - gammapy=0.19
+  - ctapipe=0.19.2
+  - gammapy=1.1
   - h5py
   - ipython
   - jupyter
-  - matplotlib=3.5
+  - matplotlib=3.7
   - notebook
-  - joblib
+  - iminuit>=2
+  - joblib~=1.2.0
   - toml
-  - protozfits=2.0
+  - protobuf=3.20
   - pyparsing
-  - scikit-learn=1.0
-  - sphinx~=4.2
+  - scikit-learn=1.2
+  - sphinx=4
   - sphinx-automodapi
   - sphinx_rtd_theme
   - sphinx-argparse
+  - sphinxcontrib-mermaid
   - nbsphinx
+  - numba
   - numpydoc
-  - pandas
+  - pandas>=2
   - pymongo
   - seaborn
+  - ctapipe_io_lst=0.22
+  - pytest
+  - pyirf=0.8
   - pip:
-      - ctapipe_io_lst~=0.15.1
-      - ctaplot~=0.5.5
-      - pyirf~=0.6.0
+      - ctaplot~=0.6.2
