@@ -44,6 +44,9 @@ from lstchain.io.io import (
     dl1_params_lstcam_key,
     global_metadata,
     write_metadata,
+    dl1_params_mon_tel_catB_ped_key,
+    dl1_params_mon_tel_catB_ff_key,
+    dl1_params_mon_tel_catB_cal_key
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
@@ -442,9 +445,9 @@ def main():
 
             # write a cat-B calibrations in DL1b
             if catB_calib:
-                write_table(catB_calib, outfile, "/dl1/event/telescope/monitoring/catB/calibration")
-                write_table(catB_pedestal, outfile, "/dl1/event/telescope/monitoring/catB/pedestal")
-                write_table(catB_flatfield, outfile, "/dl1/event/telescope/monitoring/catB/flatfield")
+                write_table(catB_calib, outfile, dl1_params_mon_tel_catB_cal_key)
+                write_table(catB_pedestal, outfile, dl1_params_mon_tel_catB_ped_key)
+                write_table(catB_flatfield, outfile,dl1_params_mon_tel_catB_flat_key)
 
         write_metadata(metadata, args.output_file)
 
