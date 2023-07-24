@@ -224,21 +224,18 @@ def find_DL1_subrun(run, sub_run, dl1_dir=DEFAULT_DL1_PATH):
 
     return file_list[0]
 
-def find_interleaved_subrun(run, sub_run, dl1_dir=DEFAULT_DL1_PATH):
+def find_interleaved_subruns(run, dl1_dir=DEFAULT_DL1_PATH):
     '''
     Find the given subrun interleaved file (i.e. globbing for the date part)
     '''
-    file_list = rglob_symlinks(dl1_dir, f'interleaved_LST-1.1.Run{run:05d}.{sub_run:04d}*.h5')
+    file_list = rglob_symlinks(dl1_dir, f'interleaved_LST-1.Run{run:05d}.*.h5')
     # ignore directories that are not a date, e.g. "Trash"
     file_list = [p for p in file_list if is_date(p.parent.name)]
 
     if len(file_list) == 0:
         raise IOError(f"Run {run} not found\n")
 
-    if len(file_list) > 1:
-        raise IOError(f"Found more than one file for run {run}.{sub_run}: {file_list}")
-
-    return file_list[0]
+    return file_list
 
     
 def find_filter_wheels(run, database_url):
