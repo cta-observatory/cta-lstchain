@@ -4,7 +4,7 @@ Extract flat field coefficients from flasher data files.
 import numpy as np
 from pathlib import Path
 from copy import deepcopy
-from traitlets import Unicode,  Bool
+from traitlets import Unicode,  Bool, Integer
 from tqdm.auto import tqdm
 from ctapipe.instrument.subarray import SubarrayDescription
 from ctapipe.core import Provenance, traits
@@ -57,6 +57,11 @@ class CatBCalibrationHDF5Writer(Tool):
         help='Pattern for searching the input files with interleaved events to be processed'
     ).tag(config=True)
 
+    n_subruns = Integer(
+        1000000,
+        help='Number of subruns to be processed'
+    ).tag(config=True)    
+
     cat_A_calibration_file = Unicode(
         'catA_calibration.hdf5',
         help='Name of category A calibration file'
@@ -75,6 +80,7 @@ class CatBCalibrationHDF5Writer(Tool):
         ("s", "systematics_file"): "LSTCalibrationCalculator.systematic_correction_path",
         ("input_file_pattern"): 'CatBCalibrationHDF5Writer.input_file_pattern',
         ("input_path"): 'CatBCalibrationHDF5Writer.input_path',
+        ("n_subruns"): 'CatBCalibrationHDF5Writer.n_subruns',
 
     }
 
@@ -112,6 +118,12 @@ class CatBCalibrationHDF5Writer(Tool):
         self.log.info("Opening file")
 
         self.input_paths = sorted(Path(f"{self.input_path}").rglob(f"{self.input_file_pattern}"))
+              
+        if self.n_subruns > len(self.input_paths):
+            self.n_subruns = len(self.input_paths)
+
+        self.log.info(f"Process {self.n_subruns} subruns ")
+      
         self.subarray = SubarrayDescription.from_hdf(self.input_paths[0])
 
         self.processor = CalibrationCalculator.from_name(
@@ -149,8 +161,8 @@ class CatBCalibrationHDF5Writer(Tool):
         # initialize the monitoring data with the cat-A calibration
         monitoring_data = deepcopy(self.cat_A_monitoring_data)
 
-        for path in self.input_paths:
-            self.log.info(f"read {path}")
+        for path in self.input_paths[:self.n_subruns]:
+            self.log.debug(f"read {path}")
 
             with EventSource(path,parent=self) as eventsource:
      
