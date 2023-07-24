@@ -82,7 +82,7 @@ parser.add_argument(
 
 parser.add_argument(
     '--no-image', action='store_true',
-    help='Pass this argument to avoid writing the images in the new DL1 files. Beware, if `increase_nsb` or `increase_psf` are True in the config, the images will not be written.',
+    help='Pass this argument to avoid writing the images in the new DL1 files.',
 )
 
 parser.add_argument(
@@ -148,7 +148,7 @@ def main():
 
     if increase_nsb or increase_psf:
         log.info(f"image_modifier configuration: {imconfig}")
-        if ~args.no_image:
+        if not args.no_image:
             log.info("Modified images are saved in the output file.")
  
     if increase_nsb:
@@ -243,7 +243,7 @@ def main():
 
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = read_table(infile, dl1_images_lstcam_key)
-        images = image_table.col('image')
+        images = image_table['image']
         params = read_table(infile, dl1_params_lstcam_key)
         dl1_params_input = params.colnames
 
@@ -278,7 +278,6 @@ def main():
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
-
 
             # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
             for k, item in metadata.as_dict().items():
@@ -422,7 +421,7 @@ def main():
                 if 'image_mask' in image_table.colnames:
                     image_table['image_mask'][ii] = signal_pixels
 
-            if ~args.no_image:
+            if not args.no_image:
                 write_table(image_table, outfile, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
             write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
