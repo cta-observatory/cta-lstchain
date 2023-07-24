@@ -18,6 +18,10 @@ DEFAULT_CONFIG = Path(resource_filename(
     'lstchain',
     "data/onsite_camera_calibration_param.json",
 ))
+DEFAULT_CONFIG_CAT_B_CALIB = Path(resource_filename(
+    'lstchain',
+    "data/catB_camera_calibration_param.json",
+))
 
 
 def is_date(s):
