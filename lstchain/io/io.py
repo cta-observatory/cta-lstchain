@@ -77,6 +77,10 @@ __all__ = [
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
+dl1_params_tel_mon_CatA_ped_key = "/dl1/monitoring/telescope/CatA/pedestal"
+dl1_params_tel_mon_CatA_flat_key = "/dl1/monitoring/telescope/CatA/flatfield"
+dl1_params_tel_mon_CatA_cal_key = "/dl1/monitoring/telescope/CatA/calibration"
+
 dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
 dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
@@ -815,7 +819,7 @@ def recursive_copy_node(src_file, dir_file, path):
             recursive_path = os.path.join(recursive_path, p)
 
 
-def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=False):
+def write_calibration_data(writer, table_group, mon_index, mon_event, new_ped=False, new_ff=False):
     mon_event.pedestal.prefix = ''
     mon_event.flatfield.prefix = ''
     mon_event.calibration.prefix = ''
@@ -831,21 +835,22 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
 
     if new_ped:
         # write ped container
+        print(f"{table_group}/pedestal")
         writer.write(
-            table_name="telescope/monitoring/pedestal",
+            table_name=f"{table_group}/pedestal",
             containers=[mon_index, mon_event.pedestal],
         )
 
     if new_ff:
         # write calibration container
         writer.write(
-            table_name="telescope/monitoring/flatfield",
+            table_name=f"{table_group}/flatfield",
             containers=[mon_index, mon_event.flatfield],
         )
 
         # write ff container
         writer.write(
-            table_name="telescope/monitoring/calibration",
+            table_name=f"{table_group}/calibration",
             containers=[mon_index, mon_event.calibration],
         )
 
