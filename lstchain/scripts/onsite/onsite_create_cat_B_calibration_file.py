@@ -29,7 +29,7 @@ from lstchain.onsite import (
     find_filter_wheels,
 )
 
-MAX_SUBRUNS = 10000
+MAX_SUBRUNS = 100000
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -128,7 +128,7 @@ def main():
     calib_dir = args.base_dir / CAT_B_PIXEL_DIR
     output_dir = calib_dir / "calibration" / date / prod_id
     if not output_dir.exists():
-        print(f"--> Create directory {output_dir}")
+        print(f"\n--> Create directory {output_dir}")
         output_dir.mkdir(parents=True, exist_ok=True)
 
     if pro_symlink:
@@ -162,7 +162,7 @@ def main():
     else:
         filter_info = ""
     
-    input_file_pattern=f"interleaved_LST-1.Run{run}.*.h5"
+    input_file_pattern=f"interleaved_LST-1.Run{run:05d}.*.h5"
     output_name = f"cat_B_calibration{filter_info}.Run{run:05d}"
 
     output_file = output_dir / f'{output_name}.h5'

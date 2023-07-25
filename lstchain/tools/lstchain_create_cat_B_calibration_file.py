@@ -115,12 +115,19 @@ class CatBCalibrationHDF5Writer(Tool):
 
     def setup(self):
 
-        self.log.info("Opening file")
-
         self.input_paths = sorted(Path(f"{self.input_path}").rglob(f"{self.input_file_pattern}"))
-              
-        if self.n_subruns > len(self.input_paths):
-            self.n_subruns = len(self.input_paths)
+
+        tot_subruns = len(self.input_paths)
+        if tot_subruns == 0:
+            self.log.critical(f"= No interleaved files found to be processed in " 
+                              f"{self.input_path} with pattern {self.input_file_pattern}")
+            self.exit(1)
+
+        if self.n_subruns > tot_subruns:
+            self.n_subruns = tot_subruns
+
+        # keep only the requested subruns
+        self.input_paths = self.input_paths[:self.n_subruns]  
 
         self.log.info(f"Process {self.n_subruns} subruns ")
       
@@ -161,7 +168,7 @@ class CatBCalibrationHDF5Writer(Tool):
         # initialize the monitoring data with the cat-A calibration
         monitoring_data = deepcopy(self.cat_A_monitoring_data)
 
-        for path in self.input_paths[:self.n_subruns]:
+        for path in self.input_paths:
             self.log.debug(f"read {path}")
 
             with EventSource(path,parent=self) as eventsource:
@@ -249,7 +256,6 @@ class CatBCalibrationHDF5Writer(Tool):
             if stop:
                 break  
                      
-
     def finish(self):
         
         self.log.info(f"Written {self.n_calib} calibration events")

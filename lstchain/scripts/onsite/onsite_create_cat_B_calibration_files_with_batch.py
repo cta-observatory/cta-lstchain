@@ -196,7 +196,7 @@ def main():
             fh.write(" \\\n  ".join(cmd))
             fh.write('\n')
 
-        #subprocess.run(["sbatch", job_file], check=True)
+        subprocess.run(["sbatch", job_file], check=True)
 
 
 if __name__ == '__main__':
