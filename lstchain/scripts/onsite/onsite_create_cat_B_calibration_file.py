@@ -29,19 +29,21 @@ from lstchain.onsite import (
     find_filter_wheels,
 )
 
+MAX_SUBRUNS = 10000
+
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 required = parser.add_argument_group('required arguments')
 optional = parser.add_argument_group('optional arguments')
 
-required.add_argument('-r', '--run_number', help="Run number if the flat-field data",
+required.add_argument('-r', '--run_number', help="Run number of interleaved data",
                       type=int, required=True)
 
 version = lstchain.__version__
 
 optional.add_argument('-c', '--catA_calibration_run',
-                      help="CatA_calibration run to be used. If None, it looks for the calibration run of the date of the interleaved data.",
+                      help="Cat-A calibration run to be used. If None, it looks for the calibration run of the date of the interleaved data.",
                       type=int)
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
@@ -67,7 +69,7 @@ optional.add_argument('--output_base_name', help="Base of output file name (chan
                       default="calibration")
 
 optional.add_argument('--n_subruns', help="Number of subruns to be processed",
-                      type=int, default=10000)
+                      type=int, default=MAX_SUBRUNS)
 
 #optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('-f', '--filters', help="Calibox filters")
@@ -84,7 +86,7 @@ optional.add_argument('--no_pro_symlink', action="store_true",
 def main():
     args, remaining_args = parser.parse_known_args()
     run = args.run_number
-
+    n_subruns = args.n_subruns
     prod_id = args.prod_version
     stat_events = args.statistics
     
@@ -118,8 +120,9 @@ def main():
 
     date = input_files[0].parent.name
     input_path = input_files[0].parent
-    print(f"\n--> Found {len(input_files)} interleaved files in {input_path}")
-    print(f"\n--> Process {args.n_subruns} files")
+    print(f"\n--> Found {len(input_files)} interleaved subruns in {input_path}")
+    if n_subruns < MAX_SUBRUNS:
+        print(f"--> Process {n_subruns} subruns")
 
     # verify output dir
     calib_dir = args.base_dir / CAT_B_PIXEL_DIR
@@ -190,7 +193,7 @@ def main():
         f"--input_path={input_path}",
         f"--output_file={output_file}",
         f"--input_file_pattern={input_file_pattern}",
-        f"--n_subruns={args.n_subruns}",
+        f"--n_subruns={n_subruns}",
         f"--cat_A_calibration_file={cat_A_calib_file}",
         f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file}",
         f"--FlatFieldCalculator.sample_size={stat_events}",
