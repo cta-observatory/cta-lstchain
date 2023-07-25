@@ -178,7 +178,6 @@ def main():
                     f"--sub_run={sub_run}",
                     f"-b {base_dir}",
                     f"-s {stat_events}",
-                    f"--r0-dir={r0_dir}",
                     f"--output_base_name={output_base_name}",
                     f"--config={config_file}",
                 ]
@@ -207,6 +206,9 @@ def main():
                 if args.use_flatfield_heuristic is False:
                     cmd.append("--no-flatfield-heuristic")
 
+                if args.no_pro_symlink is True:
+                    cmd.append("--no_pro_symlink")
+    
                 cmd.extend(remaining_args)
 
                 # join command together with newline, line continuation and indentation
