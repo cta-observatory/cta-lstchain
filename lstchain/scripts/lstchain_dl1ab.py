@@ -45,7 +45,7 @@ from lstchain.io.io import (
     global_metadata,
     write_metadata,
     dl1_params_mon_tel_catB_ped_key,
-    dl1_params_mon_tel_catB_ff_key,
+    dl1_params_mon_tel_catB_flat_key,
     dl1_params_mon_tel_catB_cal_key
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
