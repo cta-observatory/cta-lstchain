@@ -28,7 +28,7 @@ rm environment.yml
 
 Alternatively, you can directly create an environment and install lstchain from conda-forge as:
 ```
-mamba create -n lstchain-v0.10.3 python=3.11 lstchain=0.10.3
+mamba create -c conda-forge -n lstchain-v0.10.3 python=3.11 lstchain=0.10.3
 ```
 
 
