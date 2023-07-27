@@ -12,11 +12,17 @@ are unit tested and should be working as long as the build status is passing.
 
 ## Install
 
-- You will need to install [miniconda](https://docs.conda.io/en/latest/miniconda.html) (recommended) or [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
+You will need to install [micromamba/mamba](https://mamba.readthedocs.io/en/latest/installation.html) (recommended), [miniconda](https://docs.conda.io/en/latest/miniconda.html) or [anaconda](https://www.anaconda.com/distribution/#download-section) first.
 
 
 ### As user
 
+You can create an environment and install `lstchain` from conda-forge as:
+```
+mamba create -c conda-forge -n lstchain-v0.10.3 python=3.11 lstchain=0.10.3
+```
+
+Alternatively, you can also install `lstchain` from PyPi with `pip`:
 ```
 LSTCHAIN_VER=0.10.3  (or the version you want to install - usually the latest release)
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
@@ -24,11 +30,6 @@ conda env create -n lst -f environment.yml
 conda activate lst
 pip install lstchain==$LSTCHAIN_VER
 rm environment.yml
-```
-
-Alternatively, you can directly create an environment and install lstchain from conda-forge as:
-```
-mamba create -c conda-forge -n lstchain-v0.10.3 python=3.11 lstchain=0.10.3
 ```
 
 
@@ -47,7 +48,7 @@ conda activate lst-dev
 conda env config vars set PYTHONNOUSERSITE=1 -n <environment_name>
 ```
 
-To update the environment (e.g. when depenencies got updated), use:
+To update the environment (e.g. when dependencies got updated), use:
 ```
 conda env update -n lst-dev -f environment.yml
 ```
