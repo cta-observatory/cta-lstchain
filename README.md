@@ -1,4 +1,4 @@
-# cta-lstchain [![Build Status](https://github.com/cta-observatory/cta-lstchain/workflows/CI/badge.svg?branch=main)](https://github.com/cta-observatory/cta-lstchain/actions?query=workflow%3ACI+branch%3Amain) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6344673.svg)](https://doi.org/10.5281/zenodo.6344673) [![PyPI version](https://badge.fury.io/py/lstchain.svg)](https://badge.fury.io/py/lstchain)
+# cta-lstchain [![Build Status](https://github.com/cta-observatory/cta-lstchain/workflows/CI/badge.svg?branch=main)](https://github.com/cta-observatory/cta-lstchain/actions?query=workflow%3ACI+branch%3Amain) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6344673.svg)](https://doi.org/10.5281/zenodo.6344673) [![PyPI version](https://badge.fury.io/py/lstchain.svg)](https://badge.fury.io/py/lstchain) [![Conda version](https://anaconda.org/conda-forge/lstchain/badges/version.svg)](https://anaconda.org/conda-forge/lstchain)
 
 Repository for the high level analysis of the LST.
 The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
@@ -18,13 +18,19 @@ are unit tested and should be working as long as the build status is passing.
 ### As user
 
 ```
-LSTCHAIN_VER=0.10.0  (or the version you want to install - usually the latest release)
+LSTCHAIN_VER=0.10.3  (or the version you want to install - usually the latest release)
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
 pip install lstchain==$LSTCHAIN_VER
 rm environment.yml
 ```
+
+Alternatively, you can directly create an environment and install lstchain from conda-forge as:
+```
+mamba create -n lstchain-v0.10.3 python=3.11 lstchain=0.10.3
+```
+
 
 ### As developer
 
