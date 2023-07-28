@@ -337,7 +337,7 @@ def main():
                         ped_charge_std_pe = catB_pedestal_std[calib_idx][selected_gain, pixel_index]
                         threshold_clean_pe = ped_charge_mean_pe + sigma * ped_charge_std_pe
                         threshold_clean_pe[unusable_pixels] = pic_th
-                        picture_th = np.clip(pedestal_thresh, pic_th, None)
+                        picture_th = np.clip(threshold_clean_pe, pic_th, None)
 
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
