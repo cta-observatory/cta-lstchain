@@ -131,8 +131,6 @@ def main():
         catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
 
         catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
-        catB_pedestal_mean = np.array(catB_pedestal["charge_mean"])
-        catB_pedestal_std= np.array(catB_pedestal["charge_std"])
 
         catB_time_correction = np.array(catB_calib["time_correction"])
         catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
@@ -174,11 +172,18 @@ def main():
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
-        log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
+        log.info(f"Fraction of Cat_A pixel cleaning thresholds above Cat_A picture thr.:"
                  f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
+        
+        if args.catB_calibration_file is not None:
+            catB_pedestal_mean = np.array(catB_pedestal["charge_mean"])
+            catB_pedestal_std= np.array(catB_pedestal["charge_std"])
+            catB_threshold_clean_pe = catB_pedestal_mean + sigma * catB_pedestal_std
+
+
     else:
         clean_method_name = 'tailcut'
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
@@ -333,9 +338,7 @@ def main():
 
                     # use CatB pedestals to estimate the picture threshold
                     if args.pedestal_cleaning:
-                        ped_charge_mean_pe = catB_pedestal_mean[calib_idx][selected_gain, pixel_index]
-                        ped_charge_std_pe = catB_pedestal_std[calib_idx][selected_gain, pixel_index]
-                        threshold_clean_pe = ped_charge_mean_pe + sigma * ped_charge_std_pe
+                        threshold_clean_pe = catB_threshold_clean_pe[calib_idx][selected_gain, pixel_index]
                         threshold_clean_pe[unusable_pixels] = pic_th
                         picture_th = np.clip(threshold_clean_pe, pic_th, None)
 
