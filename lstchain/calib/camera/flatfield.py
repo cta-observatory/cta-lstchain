@@ -369,7 +369,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                           deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:, np.newaxis]))
         
         # mask pixels with NaN mean, due to missing statistics
-        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)
+        pixels_without_stat = np.nonzero(np.isnan(pixel_mean))
         charge_median_outliers[pixels_without_stat] = True
         charge_std_outliers[pixels_without_stat] = True
         
