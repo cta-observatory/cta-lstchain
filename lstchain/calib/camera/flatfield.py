@@ -330,6 +330,10 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             axis=0,
         )
 
+        pixel_mean = np.ma.array(pixel_mean, mask=np.isnan(pixel_mean))
+        pixel_median = np.ma.array(pixel_median, mask=np.isnan(pixel_median))
+        pixel_std = np.ma.array(pixel_std, mask=np.isnan(pixel_std))
+
         unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
