@@ -330,11 +330,13 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             axis=0,
         )
 
+        # mask pixels without defined statistical values (mainly due to hardware problems)
         pixel_mean = np.ma.array(pixel_mean, mask=np.isnan(pixel_mean))
         pixel_median = np.ma.array(pixel_median, mask=np.isnan(pixel_median))
         pixel_std = np.ma.array(pixel_std, mask=np.isnan(pixel_std))
 
         unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
+
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
         check_outlier_mask(outliers, self.log, "flatfield")
@@ -360,18 +362,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         charge_median_outliers = (
             np.logical_or(charge_deviation < self.charge_median_cut_outliers[0] * median_of_pixel_median[:,np.newaxis],
                           charge_deviation > self.charge_median_cut_outliers[1] * median_of_pixel_median[:,np.newaxis]))
-        
-        
+
         # outliers from standard deviation
         deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
         charge_std_outliers = (
             np.logical_or(deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:, np.newaxis],
                           deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:, np.newaxis]))
-        
-        # mask pixels with NaN mean, due to missing statistics
-        pixels_without_stat = np.nonzero(np.isnan(pixel_mean))
-        charge_median_outliers[pixels_without_stat] = True
-        charge_std_outliers[pixels_without_stat] = True
         
         return {
             'relative_gain_median': np.ma.getdata(np.ma.median(relative_gain_event, axis=0)),
