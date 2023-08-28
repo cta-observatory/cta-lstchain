@@ -376,6 +376,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             'charge_median': np.ma.getdata(pixel_median),
             'charge_mean': np.ma.getdata(pixel_mean),
             'charge_std': np.ma.getdata(pixel_std),
-            'charge_std_outliers': np.ma.getdata(charge_std_outliers),
-            'charge_median_outliers': np.ma.getdata(charge_median_outliers),
+            'charge_std_outliers': charge_std_outliers.filled(True),
+            'charge_median_outliers': charge_median_outliers.filled(True)
         }

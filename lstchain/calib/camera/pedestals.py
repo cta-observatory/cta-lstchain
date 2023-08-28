@@ -307,13 +307,13 @@ class PedestalIntegrator(PedestalCalculator):
             deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
             deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis],
         )
-        
+
         return {
             'charge_median': np.ma.getdata(pixel_median),
             'charge_mean': np.ma.getdata(pixel_mean),
             'charge_std': np.ma.getdata(pixel_std),
-            'charge_std_outliers': np.ma.getdata(charge_std_outliers),
-            'charge_median_outliers': np.ma.getdata(charge_median_outliers)
+            'charge_std_outliers': charge_std_outliers.filled(True),
+            'charge_median_outliers': charge_median_outliers.filled(True)
         }
 
 
