@@ -1,7 +1,6 @@
 """
 Component for the estimation of the calibration coefficients  events
 """
-
 import numpy as np
 import h5py
 from ctapipe.core import Component, traits
@@ -223,7 +222,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
                           npe_deviation > self.npe_median_cut_outliers[1] * tot_std[:,np.newaxis]))
 
         # calibration unusable pixels are an OR of all masks
-        calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers)
+        calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers).filled(True)
         
         # give to the unusable pixels the median camera value for the dc_to_pe and pedestal
         # (these are the starting data for the Cat-B calibration)        
@@ -268,6 +267,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
             # if new ff, calculate new calibration coefficients
             if new_ff:
                 self.calculate_calibration_coefficients(event)
+
 
         return new_ped, new_ff
 
