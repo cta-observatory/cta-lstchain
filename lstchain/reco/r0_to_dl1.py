@@ -661,7 +661,8 @@ def r0_to_dl1(
 
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:
-                    bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
+                    bad_pixels = source.r0_r1_calibrator.mon_data.tel[telescope_id].calibration.unusable_pixels[0]
+
                     # Set to 0 unreliable pixels:
                     image = dl1_tel.image*(~bad_pixels)
 
@@ -670,8 +671,9 @@ def r0_to_dl1(
 
                         # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
                         numsamples = event.r1.tel[telescope_id].waveform.shape[1]  # not necessarily the same as in r0!
-                        bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
-                        bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
+                        bad_pixels_hg = source.r0_r1_calibrator.mon_data.tel[telescope_id].calibration.unusable_pixels[0]
+                        bad_pixels_lg = source.r0_r1_calibrator.mon_data.tel[telescope_id].calibration.unusable_pixels[1]
+
                         # Now set to 0 all samples in unreliable pixels. Important for global peak
                         # integrator in case of crazy pixels!  TBD: can this be done in a simpler
                         # way?
