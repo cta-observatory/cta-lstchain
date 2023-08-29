@@ -279,8 +279,8 @@ class PedestalIntegrator(PedestalCalculator):
         outliers = unused_values & (~masked_trace_integral.mask)
         check_outlier_mask(outliers, self.log, "pedestal")
 
-        # ignore outliers identified by sigma clipping also for following operations
-        masked_trace_integral.mask = unused_values
+        # add outliers identified by sigma clipping for following operations
+        masked_trace_integral.mask |= unused_values
 
         # median over the camera
         median_of_pixel_median = np.ma.median(pixel_median, axis=1)
@@ -309,9 +309,9 @@ class PedestalIntegrator(PedestalCalculator):
         )
 
         return {
-            'charge_median': np.ma.getdata(pixel_median),
-            'charge_mean': np.ma.getdata(pixel_mean),
-            'charge_std': np.ma.getdata(pixel_std),
+            'charge_median': pixel_median.filled(np.nan),
+            'charge_mean': pixel_mean.filled(np.nan),
+            'charge_std': pixel_std.filled(np.nan),
             'charge_std_outliers': charge_std_outliers.filled(True),
             'charge_median_outliers': charge_median_outliers.filled(True)
         }
