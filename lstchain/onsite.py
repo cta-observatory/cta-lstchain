@@ -1,5 +1,6 @@
 from glob import glob
 from pathlib import Path
+from enum import Enum, auto
 from pkg_resources import resource_filename
 from datetime import datetime
 import tempfile
@@ -14,6 +15,7 @@ DEFAULT_DL1_PATH = DEFAULT_BASE_PATH / 'DL1'
 CAT_A_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-A'
 CAT_B_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-B'
 
+
 DEFAULT_CONFIG = Path(resource_filename(
     'lstchain',
     "data/onsite_camera_calibration_param.json",
@@ -23,6 +25,13 @@ DEFAULT_CONFIG_CAT_B_CALIB = Path(resource_filename(
     "data/catB_camera_calibration_param.json",
 ))
 
+class DataCategory(Enum):
+    #: Real-Time data processing
+    A = auto()
+    #: Onsite processing
+    B = auto()
+    #: Offsite processing
+    C = auto()
 
 def is_date(s):
     try:
@@ -180,15 +189,14 @@ def find_systematics_correction_file(pro, date, sys_date=None, base_dir=DEFAULT_
 
     return (sys_dir / selected_date / pro / f"ffactor_systematics_{selected_date}.h5").resolve()
 
-def find_calibration_file(pro, calibration_run=None, date=None, category='Cat_A',base_dir=DEFAULT_BASE_PATH):
-    # pedestal base dir
+def find_calibration_file(pro, calibration_run=None, date=None, category=DataCategory.A, base_dir=DEFAULT_BASE_PATH):
 
-    if category == 'Cat_A':
+    if category == DataCategory.A:
         cal_dir = Path(base_dir) / CAT_A_PIXEL_DIR / "calibration"
-    elif category == 'Cat_B':
+    elif category == DataCategory.C:
         cal_dir = Path(base_dir) / CAT_B_PIXEL_DIR / "calibration"
     else:
-        raise ValueError(f'Argument \'category\' can be only \'Cat_A\' or \'Cat_B\', not {category}')    
+        raise ValueError(f'Argument \'category\' can be only \'DataCategory.A\' or \'DataCategory.B\', not {category}')    
 
     if calibration_run is None and date is None:
         raise ValueError('Must give at least `date` or `run`')
