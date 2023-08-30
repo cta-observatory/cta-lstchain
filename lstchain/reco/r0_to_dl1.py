@@ -376,7 +376,6 @@ def r0_to_dl1(
     )
 
     if not is_simu:
-        calibration_mon = source.r0_r1_calibrator.mon_data.tel[telescope_id].calibration
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
         # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
@@ -613,6 +612,9 @@ def r0_to_dl1(
                     )
 
                 if not is_simu:
+
+                    calibration_mon = source.r0_r1_calibrator.mon_data.tel[telescope_id].calibration
+ 
                     dl1_container.ucts_time = 0
                     # convert Time to unix timestamp in (UTC) to keep compatibility
                     # with older lstchain
