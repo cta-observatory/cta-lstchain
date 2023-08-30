@@ -48,7 +48,7 @@ optional.add_argument('-c', '--catA_calibration_run',
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
-                      type=int, default=10000)
+                      type=int, default=2500)
 optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
                       default=DEFAULT_BASE_PATH)
 optional.add_argument('--dl1-dir', help="Root dir for the input r tree. By default, <base_dir>/DL1 will be used",
@@ -196,14 +196,14 @@ def main():
         f"--n_subruns={n_subruns}",
         f"--cat_A_calibration_file={cat_A_calib_file}",
         f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file}",
-        f"--FlatFieldCalculator.sample_size={stat_events}",
-        f"--PedestalCalculator.sample_size={stat_events}",
+        f"--FlasherFlatFieldCalculator.sample_size={stat_events}",
+        f"--PedestalIntegrator.sample_size={stat_events}",
         f"--config={config_file}",
         f"--log-file={log_file}",
         "--log-file-level=INFO",
         *remaining_args,
     ]
-
+    
     print("\n--> RUNNING...")
     subprocess.run(cmd, check=True)
 
