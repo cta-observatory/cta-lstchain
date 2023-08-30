@@ -268,13 +268,19 @@ class PedestalIntegrator(PedestalCalculator):
             axis=0,
         )
 
+        # mask pixels without defined statistical values (mainly due to hardware problems)
+        pixel_mean = np.ma.array(pixel_mean, mask=np.isnan(pixel_mean))
+        pixel_median = np.ma.array(pixel_median, mask=np.isnan(pixel_median))
+        pixel_std = np.ma.array(pixel_std, mask=np.isnan(pixel_std))
+
         unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
+
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
         check_outlier_mask(outliers, self.log, "pedestal")
 
-        # ignore outliers identified by sigma clipping also for following operations
-        masked_trace_integral.mask = unused_values
+        # add outliers identified by sigma clipping for following operations
+        masked_trace_integral.mask |= unused_values
 
         # median over the camera
         median_of_pixel_median = np.ma.median(pixel_median, axis=1)
@@ -301,18 +307,13 @@ class PedestalIntegrator(PedestalCalculator):
             deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
             deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis],
         )
-        
-        # mask pixels with NaN mean, due to missing statistics
-        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)
-        charge_median_outliers[pixels_without_stat] = True
-        charge_std_outliers[pixels_without_stat] = True
-        
+
         return {
-            'charge_median': np.ma.getdata(pixel_median),
-            'charge_mean': np.ma.getdata(pixel_mean),
-            'charge_std': np.ma.getdata(pixel_std),
-            'charge_std_outliers': np.ma.getdata(charge_std_outliers),
-            'charge_median_outliers': np.ma.getdata(charge_median_outliers)
+            'charge_median': pixel_median.filled(np.nan),
+            'charge_mean': pixel_mean.filled(np.nan),
+            'charge_std': pixel_std.filled(np.nan),
+            'charge_std_outliers': charge_std_outliers.filled(True),
+            'charge_median_outliers': charge_median_outliers.filled(True)
         }
 
 

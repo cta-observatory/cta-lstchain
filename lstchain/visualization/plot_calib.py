@@ -1,4 +1,5 @@
 import numpy as np
+from astropy import units as u
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.visualization import CameraDisplay
 from ctapipe_io_lst import load_camera_geometry
@@ -139,7 +140,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 plt.tight_layout()
                 disp = CameraDisplay(camera)
                 disp.highlight_pixels(mask[chan], linewidth=2)
-                disp.image = image[chan]
+                disp.image = image[chan].to_value(u.ns) 
                 disp.cmap = plt.cm.coolwarm
                 # disp.axes.text(lposx, 0, f'{channel[chan]} time', rotation=90)
                 plt.title(f"{channel[chan]} time")
