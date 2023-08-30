@@ -172,7 +172,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # find unusable pixel from pedestal and flat-field data
         unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
-                                                   status_data.flatfield_failing_pixels)
+                                        status_data.flatfield_failing_pixels)
         
         signal = ff_data.charge_median - ped_data.charge_median
 
@@ -237,6 +237,10 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         fill_array = np.ones((constants.N_GAINS, constants.N_PIXELS)) * median_pedestal_per_sample
         calib_data.pedestal_per_sample = np.ma.filled(pedestal_per_sample_masked, fill_array)
         
+        # set to zero time corrections of unusable pixels
+        time_correction_masked =  np.ma.array(calib_data.time_correction, mask=calib_data.unusable_pixels)
+        calib_data.time_correction = time_correction_masked.filled(0)
+
         # in the case FF intensity is not sufficiently high, better to scale low gain calibration from high gain results
         if self.use_scaled_low_gain:
             calib_data.unusable_pixels[constants.LOW_GAIN] = calib_data.unusable_pixels[constants.HIGH_GAIN]
