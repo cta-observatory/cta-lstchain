@@ -77,7 +77,8 @@ class CalibrationCalculator(Component):
 
     hg_lg_ratio = traits.Float(
         1.,
-        help='HG/LG ratio applied if use_scaled_low_gain is True. In case of calibrated data the ratio should be 1.'
+        help='HG/LG ratio applied if use_scaled_low_gain is True. The ratio is ~1 for calibrated data, ~17.4 for uncalibrated data.' 
+
     ).tag(config=True)
 
     classes = (
