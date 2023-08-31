@@ -2,9 +2,10 @@
 
 """
 
- Onsite script for recontruct a run list from a filter scan
+ Onsite script to process (in batch) the interleaved events of several runs 
+ and to create the Cat-B calibration files
 
- --> onsite_create_calibration_files_with_batch -r xxx yyy zzz
+ --> onsite_create_catB_calibration_files_with_batch -r xxx yyy zzz
 
 """
 

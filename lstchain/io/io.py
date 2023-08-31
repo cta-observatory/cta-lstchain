@@ -819,11 +819,12 @@ def recursive_copy_node(src_file, dir_file, path):
             recursive_path = os.path.join(recursive_path, p)
 
 
-def write_calibration_data(writer, table_group, mon_index, mon_event, new_ped=False, new_ff=False):
+def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=False):
     mon_event.pedestal.prefix = ''
     mon_event.flatfield.prefix = ''
     mon_event.calibration.prefix = ''
     mon_index.prefix = ''
+    table_group='telescope/monitoring'
 
     # update index
     if new_ped:

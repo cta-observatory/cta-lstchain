@@ -509,7 +509,6 @@ def r0_to_dl1(
                     # write the first calibration event (initialized from calibration h5 file)
                     # these data a supposed to change table_path with "dl1/monitoring/telescope/CatA" in short future
                     write_calibration_data(writer,
-                                           'telescope/monitoring',
                                            calibration_index,
                                            event.mon.tel[tel_id],
                                            new_ped=True, new_ff=True)
@@ -525,7 +524,6 @@ def r0_to_dl1(
                     # these data a supposed to be replaced by the Cat_B data in a short future
                     if new_ped_event or new_ff_event:
                         write_calibration_data(writer,
-                                           'telescope/monitoring',
                                            calibration_index,
                                            event.mon.tel[tel_id],
                                            new_ped=new_ped_event, new_ff=new_ff_event)
@@ -761,7 +759,7 @@ def r0_to_dl1(
             new_ped, new_ff = calibration_calculator.output_interleaved_results(event)
             # write monitoring events
             # these data a supposed to be replaced by the Cat_B data in a short future
-            write_calibration_data(writer,'telescope/monitoring',
+            write_calibration_data(writer,
                                    calibration_index,
                                    event.mon.tel[tel_id],
                                    new_ped=new_ped, new_ff=new_ff)
