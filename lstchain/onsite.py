@@ -193,7 +193,7 @@ def find_calibration_file(pro, calibration_run=None, date=None, category=DataCat
 
     if category == DataCategory.A:
         cal_dir = Path(base_dir) / CAT_A_PIXEL_DIR / "calibration"
-    elif category == DataCategory.C:
+    elif category == DataCategory.B:
         cal_dir = Path(base_dir) / CAT_B_PIXEL_DIR / "calibration"
     else:
         raise ValueError(f'Argument \'category\' can be only \'DataCategory.A\' or \'DataCategory.B\', not {category}')    
