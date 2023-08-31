@@ -147,7 +147,7 @@ class FitIntensityScan(Tool):
                 
                 for chan in self.gain_channels:
                     # verify that the median signal is inside the asked range
-                    median_charge = np.median(mon.flatfield.charge_median[chan])
+                    median_charge = np.nanmedian(mon.flatfield.charge_median[chan])
 
                     if median_charge > self.signal_range[chan][1] or median_charge < self.signal_range[chan][0]:
                         self.log.debug(
@@ -275,7 +275,7 @@ class FitIntensityScan(Tool):
                     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                     ax.yaxis.set_major_locator(plt.MultipleLocator(1))
 
-                    plt.plot(np.median(self.signal[chan], axis=0), self.selected_runs[chan], "o")
+                    plt.plot(np.nanmedian(self.signal[chan], axis=0), self.selected_runs[chan], "o")
                     plt.xlabel(r'$\mathrm{\overline{Q}-\overline{ped}}$ [ADC]')
                     plt.ylabel(r'Runs used in the fit')
 
