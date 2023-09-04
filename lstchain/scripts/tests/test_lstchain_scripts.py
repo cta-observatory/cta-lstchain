@@ -430,6 +430,24 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
             assert (new_parameters['length'] != old_parameters['length']).any()
 
 
+@pytest.mark.xfail(raises=ValueError, reason="One should not be able to re-modify already modified images")
+def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
+    config_path = tmp_path / 'config.json'
+    output_file = tmp_path / 'dl1ab_on_modified_images.h5'
+    with config_path.open('w') as f:
+        config = get_standard_config()
+        config['image_modifier'] = {'increase_psf': True, 'increase_nsb': True}
+        json.dump(config, f)
+
+    run_program(
+        'lstchain_dl1ab',
+        '-f', simulated_dl1ab,
+        '-o', output_file,
+        '-c', config_path,
+        '--no-image',
+    )
+
+
 @pytest.mark.private_data
 def test_observed_dl1ab(tmp_path, observed_dl1_files):
     output_dl1ab = tmp_path / "dl1ab.h5"

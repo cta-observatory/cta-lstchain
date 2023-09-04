@@ -15,6 +15,7 @@ import sys
 import argparse
 import logging
 from pathlib import Path
+import json
 
 import astropy.units as u
 import numpy as np
@@ -90,6 +91,27 @@ parser.add_argument(
     dest='pedestal_cleaning',
     help='Disable pedestal cleaning. This is also done automatically for simulations.',
 )
+
+
+def image_modifier_checker(config):
+    """
+    Check if the image modifier has been used in the given configuration.
+
+    Parameters
+    ----------
+    config : `dict`
+        The configuration dictionary to check.
+
+    Returns
+    -------
+    `bool`
+        `True` if the image modifier has been used, `False` otherwise.
+    """
+    imconfig = config.get('image_modifier', {})
+    increase_nsb = imconfig.get("increase_nsb", False)
+    increase_psf = imconfig.get("increase_psf", False)
+
+    return increase_nsb or increase_psf
 
 
 def main():
@@ -243,6 +265,13 @@ def main():
 
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = read_table(infile, dl1_images_lstcam_key)
+        # if the image modifier has been used to produce these images, stop here
+        config_from_image_table = json.loads(image_table.meta['config'])
+        if image_modifier_checker(config_from_image_table) and image_modifier_checker(config):
+            log.error(f"The image modifier has already been used to produce the images in file {args.input_file}."
+                        "Re-applying the image modifier is not a good practice, start again from unmodified images please.")
+            sys.exit(0)
+
         images = image_table['image']
         params = read_table(infile, dl1_params_lstcam_key)
         dl1_params_input = params.colnames
