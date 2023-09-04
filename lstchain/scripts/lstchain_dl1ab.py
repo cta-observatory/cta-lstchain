@@ -268,7 +268,7 @@ def main():
         # if the image modifier has been used to produce these images, stop here
         config_from_image_table = json.loads(image_table.meta['config'])
         if includes_image_modification(config_from_image_table) and includes_image_modification(config):
-            log.critical(f"\nThe image modifier has already been used to produce the images in file {args.input_file}."
+            log.critical(f"\nThe image modifier has already been used to produce the images in file {args.input_file}.\n"
                         "Re-applying the image modifier is not a good practice, start again from unmodified images please.")
             sys.exit(1)
 
