@@ -451,6 +451,7 @@ def r0_to_dl1(
     if 'write_interleaved_events' in config:
         interleaved_writer_config = Config(config['write_interleaved_events'])
         dir, name = os.path.split(output_filename)
+        dir = f"{dir}/interleaved"
         if 'dl1' in name: 
             name = name.replace('dl1', 'interleaved').replace('LST-1.1', 'LST-1')
         else:
