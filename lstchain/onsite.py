@@ -285,13 +285,13 @@ def find_filter_wheels(run, database_url):
     except Exception as e:  # In the case the entry says 'No available'
         print(f"\n >>> Exception: {e}")
         raise IOError(
-            "--> Filter data = \"No available\" in mongo DB."
+            "--> No mongo DB filter information."
             " You must pass the filters by argument: -f [filters]"
         )
 
     if filters is None:  # In the case the entry is missing
         raise IOError(
-            "--> No  filter information."
+            "--> No filter information in mongo DB."
             " You must pass the filters by argument: -f [filters]"
         )
 
