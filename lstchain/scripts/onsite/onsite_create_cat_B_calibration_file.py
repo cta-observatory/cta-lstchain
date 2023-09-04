@@ -51,7 +51,9 @@ optional.add_argument('-s', '--statistics', help="Number of events for the flat-
                       type=int, default=2500)
 optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
                       default=DEFAULT_BASE_PATH)
-optional.add_argument('--dl1-dir', help="Root dir for the input r tree. By default, <base_dir>/DL1 will be used",
+optional.add_argument('--dl1-dir', help="Root dir for the input DL1 tree. By default, <base_dir>/DL1 will be used",
+                      type=Path)
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
                       type=Path)
 
 optional.add_argument(
@@ -71,7 +73,6 @@ optional.add_argument('--output_base_name', help="Base of output file name (chan
 optional.add_argument('--n_subruns', help="Number of subruns to be processed",
                       type=int, default=MAX_SUBRUNS)
 
-#optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('-f', '--filters', help="Calibox filters")
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 
@@ -96,6 +97,9 @@ def main():
     config_file = args.config
     yes = args.yes
     pro_symlink = not args.no_pro_symlink
+    r0_dir = args.r0_dir or args.base_dir / 'R0'
+    dl1_dir = args.dl1_dir or args.base_dir / 'DL1'
+
 
     # looks for the filter values in the database if not given
     if args.filters is None:
@@ -114,17 +118,15 @@ def main():
 
     print(f"\n--> Config file {config_file}")
 
-    # verify input file
-    dl1_dir = args.dl1_dir or args.base_dir / 'DL1'
-    input_files = find_interleaved_subruns(run, dl1_dir)
-
-    date = input_files[0].parent.name
+   # verify input file
+    input_files = find_interleaved_subruns(run, r0_dir, dl1_dir)
     input_path = input_files[0].parent
     print(f"\n--> Found {len(input_files)} interleaved subruns in {input_path}")
     if n_subruns < MAX_SUBRUNS:
         print(f"--> Process {n_subruns} subruns")
 
     # verify output dir
+    date = input_files[0].parents[1].name
     calib_dir = args.base_dir / CAT_B_PIXEL_DIR
     output_dir = calib_dir / "calibration" / date / prod_id
     if not output_dir.exists():
