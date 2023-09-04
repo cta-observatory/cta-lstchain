@@ -93,7 +93,7 @@ parser.add_argument(
 )
 
 
-def image_modifier_checker(config):
+def includes_image_modification(config):
     """
     Check if the image modifier has been used in the given configuration.
 
@@ -267,7 +267,7 @@ def main():
         image_table = read_table(infile, dl1_images_lstcam_key)
         # if the image modifier has been used to produce these images, stop here
         config_from_image_table = json.loads(image_table.meta['config'])
-        if image_modifier_checker(config_from_image_table) and image_modifier_checker(config):
+        if includes_image_modification(config_from_image_table) and includes_image_modification(config):
             log.critical(f"\nThe image modifier has already been used to produce the images in file {args.input_file}."
                         "Re-applying the image modifier is not a good practice, start again from unmodified images please.")
             sys.exit(1)
