@@ -89,13 +89,14 @@ def find_r0_subrun(run, sub_run, r0_dir=DEFAULT_R0_PATH):
     '''
     Find the given subrun R0 file (i.e. globbing for the date part)
     '''
+
     file_list = rglob_symlinks(r0_dir, f'LST-1.1.Run{run:05d}.{sub_run:04d}*.fits.fz')
     # ignore directories that are not a date, e.g. "Trash"
     file_list = [p for p in file_list if is_date(p.parent.name)]
 
 
     if len(file_list) == 0:
-        raise IOError(f"Run {run} not found\n")
+        raise IOError(f"Run {run} not found in r0_dir {r0_dir} \n")
 
     if len(file_list) > 1:
         raise IOError(f"Found more than one file for run {run}.{sub_run}: {file_list}")
@@ -224,7 +225,8 @@ def find_DL1_subrun(run, sub_run, dl1_dir=DEFAULT_DL1_PATH):
     '''
     Find the given subrun DL1 file (i.e. globbing for the date part)
     '''
-    file_list = rglob_symlinks(dl1_dir, f'dl1_LST-1.1.Run{run:05d}.{sub_run:04d}*.h5')
+    file_list = rglob_symlinks(dl1_dir, f'dl1_LST-1.Run{run:05d}.{sub_run:04d}*.h5')
+    
     # ignore directories that are not a date, e.g. "Trash"
     file_list = [p for p in file_list if is_date(p.parent.name)]
 
@@ -236,20 +238,25 @@ def find_DL1_subrun(run, sub_run, dl1_dir=DEFAULT_DL1_PATH):
 
     return file_list[0]
 
-def find_interleaved_subruns(run, dl1_dir=DEFAULT_DL1_PATH):
+def find_interleaved_subruns(run, r0_dir=DEFAULT_R0_PATH, dl1_dir=DEFAULT_DL1_PATH):
     '''
-    Find the given subrun interleaved file (i.e. globbing for the date part)
+    Find the given subrun of interleaved file in onsite tree (dir [dl1_dir]/interleaved)
     '''
-    file_list = rglob_symlinks(dl1_dir, f'interleaved_LST-1.Run{run:05d}.*.h5')
-    # ignore directories that are not a date, e.g. "Trash"
-    file_list = [p for p in file_list if is_date(p.parent.name)]
+    
+    # look in R0 to find the date
+    r0_list = find_r0_subrun(run,0,r0_dir)
+    date = r0_list.parent.name
 
+    # search the files 
+    interleaved_dir =  Path(f"{dl1_dir}/{date}/interleaved")
+
+    file_list = sorted(interleaved_dir.rglob(f'interleaved_LST-1.Run{run:05d}.*.h5'))
+    
     if len(file_list) == 0:
-        raise IOError(f"Run {run} not found\n")
-
+        raise IOError(f"Run {run} not found in interleaved dir {interleaved_dir}\n")
+    
     return file_list
 
-    
 def find_filter_wheels(run, database_url):
     """read the employed filters from mongodb"""
 
@@ -275,10 +282,16 @@ def find_filter_wheels(run, database_url):
 
             filters = f"{w1:1d}{w2:1d}"
 
-    except Exception as e:
+    except Exception as e:  # In the case the entry says 'No available'
         print(f"\n >>> Exception: {e}")
         raise IOError(
-            "--> No mongo DB filter information."
+            "--> Filter data = \"No available\" in mongo DB."
+            " You must pass the filters by argument: -f [filters]"
+        )
+
+    if filters is None:  # In the case the entry is missing
+        raise IOError(
+            "--> No  filter information."
             " You must pass the filters by argument: -f [filters]"
         )
 
