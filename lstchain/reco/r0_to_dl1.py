@@ -448,7 +448,7 @@ def r0_to_dl1(
 
     # initialize the writer of the interleaved events 
     interleaved_writer = None
-    if 'write_interleaved_events' in config:
+    if 'write_interleaved_events' in config and not is_simu:
         interleaved_writer_config = Config(config['write_interleaved_events'])
         dir, name = os.path.split(output_filename)
         dir = f"{dir}/interleaved"
