@@ -105,10 +105,11 @@ class CatBCalibrationHDF5Writer(Tool):
         self.eventsource = None
         self.processor = None
         self.writer = None
+        self.n_calib = 0
 
     def setup(self):
 
-        self.log.debug("Opening file")
+        self.log.info("Opening file")
 
         self.input_paths = sorted(Path(f"{self.input_path}").rglob(f"{self.input_file_pattern}"))
         self.subarray = SubarrayDescription.from_hdf(self.input_paths[0])
@@ -123,7 +124,7 @@ class CatBCalibrationHDF5Writer(Tool):
 
         group_name = 'tel_' + str(tel_id)
 
-        self.log.debug(f"Open output file {self.output_file}")
+        self.log.info(f"Open output file {self.output_file}")
 
         self.writer = HDF5TableWriter(
             filename=self.output_file, group_name=group_name, overwrite=True
@@ -149,7 +150,7 @@ class CatBCalibrationHDF5Writer(Tool):
         monitoring_data = deepcopy(self.cat_A_monitoring_data)
 
         for path in self.input_paths:
-            self.log.debug(f"read {path}")
+            self.log.info(f"read {path}")
 
             with EventSource(path,parent=self) as eventsource:
      
@@ -193,15 +194,15 @@ class CatBCalibrationHDF5Writer(Tool):
                         
                     # write flatfield results when enough statistics (also for pedestals)
                     if (new_ff and new_ped):
-                        self.log.debug(f"Write calibration at event n. {count+1}, event id {event.index.event_id} ")
+                        self.log.info(f"Write calibration at event n. {count+1}, event id {event.index.event_id} ")
                                         
-                        self.log.debug(f"Ready flatfield data at event n. {count_ff} "
+                        self.log.info(f"Ready flatfield data at event n. {count_ff} "
                                         f"stat = {ff_data.n_events} events")
 
                         # write on file
                         self.writer.write('flatfield', ff_data)
 
-                        self.log.debug(f"Ready pedestal data at event n. {count_ped} "
+                        self.log.info(f"Ready pedestal data at event n. {count_ped} "
                                         f"stat = {ped_data.n_events} events")
 
                         # write only pedestal data used for calibration
@@ -217,11 +218,12 @@ class CatBCalibrationHDF5Writer(Tool):
                         calib_data.time_correction -= self.cat_A_monitoring_data.calibration.time_correction 
 
                         # write calib and pixel status
-                        self.log.debug("Write pixel_status data")
+                        self.log.info("Write pixel_status data")
                         self.writer.write('pixel_status', status_data) 
 
-                        self.log.debug("Write calibration data")
+                        self.log.info("Write calibration data")
                         self.writer.write('calibration', calib_data)
+                        self.n_calib += 1
                         
                         if self.one_event:
                             stop = True                
@@ -237,6 +239,14 @@ class CatBCalibrationHDF5Writer(Tool):
                      
 
     def finish(self):
+        
+        self.log.info(f"Written {self.n_calib} calibration events")
+        if self.n_calib == 0:
+             self.log.critical("!!! No calibration events in the output file !!! : ")
+             self.log.critical(f"flatfield collected statistics = {self.processor.flatfield.num_events_seen} events")
+             self.log.critical(f"pedestal collected statistics = {self.processor.pedestal.num_events_seen} events")
+             self.exit(1)
+
         Provenance().add_output_file(
             self.output_file,
             role='mon.tel.calibration'

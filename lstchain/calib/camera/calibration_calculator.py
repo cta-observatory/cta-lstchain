@@ -1,7 +1,6 @@
 """
 Component for the estimation of the calibration coefficients  events
 """
-
 import numpy as np
 import h5py
 from ctapipe.core import Component, traits
@@ -75,9 +74,9 @@ class CalibrationCalculator(Component):
         )
     ).tag(config=True)
 
-    HG_LG_ratio = traits.Float(
-        17.4,
-        help='HG/LG ratio applied if use_scaled_low_gain is True'
+    hg_lg_ratio = traits.Float(
+        1.,
+        help='HG/LG ratio applied if use_scaled_low_gain is True. In case of calibrated data the ratio should be 1.'
     ).tag(config=True)
 
     classes = (
@@ -172,7 +171,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # find unusable pixel from pedestal and flat-field data
         unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
-                                                   status_data.flatfield_failing_pixels)
+                                        status_data.flatfield_failing_pixels)
         
         signal = ff_data.charge_median - ped_data.charge_median
 
@@ -223,7 +222,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
                           npe_deviation > self.npe_median_cut_outliers[1] * tot_std[:,np.newaxis]))
 
         # calibration unusable pixels are an OR of all masks
-        calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers)
+        calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers).filled(True)
         
         # give to the unusable pixels the median camera value for the dc_to_pe and pedestal
         # (these are the starting data for the Cat-B calibration)        
@@ -237,10 +236,15 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         fill_array = np.ones((constants.N_GAINS, constants.N_PIXELS)) * median_pedestal_per_sample
         calib_data.pedestal_per_sample = np.ma.filled(pedestal_per_sample_masked, fill_array)
         
+        # set to zero time corrections of unusable pixels
+        time_correction_masked =  np.ma.array(calib_data.time_correction, mask=calib_data.unusable_pixels)
+        calib_data.time_correction = time_correction_masked.filled(0)
+
         # in the case FF intensity is not sufficiently high, better to scale low gain calibration from high gain results
         if self.use_scaled_low_gain:
             calib_data.unusable_pixels[constants.LOW_GAIN] = calib_data.unusable_pixels[constants.HIGH_GAIN]
             calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.hg_lg_ratio
+            calib_data.time_correction[constants.LOW_GAIN] = calib_data.time_correction[constants.HIGH_GAIN]
             
         # eliminate inf values id any (still necessary?)
         calib_data.dc_to_pe[np.isinf(calib_data.dc_to_pe)] = 0
@@ -267,6 +271,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
             # if new ff, calculate new calibration coefficients
             if new_ff:
                 self.calculate_calibration_coefficients(event)
+
 
         return new_ped, new_ff
 

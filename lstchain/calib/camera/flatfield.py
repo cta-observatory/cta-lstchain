@@ -300,11 +300,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             'sample_time': (time_start + (trigger_time - time_start) / 2).unix * u.s,
             'sample_time_min': time_start.unix*u.s,
             'sample_time_max': trigger_time.unix*u.s,
-            'time_mean': np.ma.getdata(pixel_mean)*u.ns,
-            'time_median': np.ma.getdata(pixel_median)*u.ns,
-            'time_std': np.ma.getdata(pixel_std)*u.ns,
-            'relative_time_median': np.ma.getdata(relative_median)*u.ns,
-            'time_median_outliers': np.ma.getdata(time_median_outliers),
+            'time_mean': pixel_mean.filled(np.nan)*u.ns,
+            'time_median': pixel_median.filled(np.nan)*u.ns,
+            'time_std': pixel_std.filled(np.nan)*u.ns,
+            'relative_time_median': relative_median.filled(np.nan)*u.ns,
+            'time_median_outliers': time_median_outliers.filled(True),
 
         }
 
@@ -330,13 +330,19 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             axis=0,
         )
 
+        # mask pixels without defined statistical values (mainly due to hardware problems)
+        pixel_mean = np.ma.array(pixel_mean, mask=np.isnan(pixel_mean))
+        pixel_median = np.ma.array(pixel_median, mask=np.isnan(pixel_median))
+        pixel_std = np.ma.array(pixel_std, mask=np.isnan(pixel_std))
+
         unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
+
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
         check_outlier_mask(outliers, self.log, "flatfield")
 
-        # ignore outliers identified by sigma clipping also for following operations
-        masked_trace_integral.mask = unused_values
+        # add outliers identified by sigma clipping for following operations
+        masked_trace_integral.mask |= unused_values
 
         # median of the median over the camera
         median_of_pixel_median = np.ma.median(pixel_median, axis=1)
@@ -356,26 +362,20 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         charge_median_outliers = (
             np.logical_or(charge_deviation < self.charge_median_cut_outliers[0] * median_of_pixel_median[:,np.newaxis],
                           charge_deviation > self.charge_median_cut_outliers[1] * median_of_pixel_median[:,np.newaxis]))
-        
-        
+
         # outliers from standard deviation
         deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
         charge_std_outliers = (
             np.logical_or(deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:, np.newaxis],
                           deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:, np.newaxis]))
         
-        # mask pixels with NaN mean, due to missing statistics
-        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)
-        charge_median_outliers[pixels_without_stat] = True
-        charge_std_outliers[pixels_without_stat] = True
-        
         return {
-            'relative_gain_median': np.ma.getdata(np.ma.median(relative_gain_event, axis=0)),
-            'relative_gain_mean': np.ma.getdata(np.ma.mean(relative_gain_event, axis=0)),
-            'relative_gain_std': np.ma.getdata(np.ma.std(relative_gain_event, axis=0)),
-            'charge_median': np.ma.getdata(pixel_median),
-            'charge_mean': np.ma.getdata(pixel_mean),
-            'charge_std': np.ma.getdata(pixel_std),
-            'charge_std_outliers': np.ma.getdata(charge_std_outliers),
-            'charge_median_outliers': np.ma.getdata(charge_median_outliers),
+            'relative_gain_median': np.ma.median(relative_gain_event, axis=0).filled(np.nan),
+            'relative_gain_mean': np.ma.mean(relative_gain_event, axis=0).filled(np.nan),
+            'relative_gain_std': np.ma.std(relative_gain_event, axis=0).filled(np.nan),
+            'charge_median': pixel_median.filled(np.nan),
+            'charge_mean': pixel_mean.filled(np.nan),
+            'charge_std': pixel_std.filled(np.nan),
+            'charge_std_outliers': charge_std_outliers.filled(True),
+            'charge_median_outliers': charge_median_outliers.filled(True)
         }

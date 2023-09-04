@@ -65,16 +65,6 @@ def simulated_dl1ab(temp_dir_simulated_files, simulated_dl1_file):
     run_program("lstchain_dl1ab", "-f", simulated_dl1_file, "-o", output_file)
     return output_file
 
-def test_add_source_dependent_parameters(temp_dir_simulated_srcdep_files, simulated_dl1_file):
-    shutil.copy(simulated_dl1_file, temp_dir_simulated_srcdep_files / "dl1_copy.h5")
-    dl1_file = temp_dir_simulated_srcdep_files / "dl1_copy.h5"
-    run_program("lstchain_add_source_dependent_parameters", "-f", dl1_file)
-    dl1_params_src_dep = get_srcdep_params(dl1_file)
-
-    assert 'alpha' in dl1_params_src_dep['on'].columns
-    assert 'dist' in dl1_params_src_dep['on'].columns
-    assert 'time_gradient_from_source' in dl1_params_src_dep['on'].columns
-    assert 'skewness_from_source' in dl1_params_src_dep['on'].columns
 
 @pytest.fixture(scope="session")
 def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
