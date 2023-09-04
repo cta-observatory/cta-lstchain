@@ -32,7 +32,7 @@ from ctapipe_io_lst import constants
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.image.cleaning import apply_dynamic_cleaning
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
-from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
+from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames, add_config_metadata
 
 from lstchain.io.config import (
     get_cleaning_parameters,
@@ -268,9 +268,9 @@ def main():
         # if the image modifier has been used to produce these images, stop here
         config_from_image_table = json.loads(image_table.meta['config'])
         if image_modifier_checker(config_from_image_table) and image_modifier_checker(config):
-            log.error(f"The image modifier has already been used to produce the images in file {args.input_file}."
+            log.critical(f"\nThe image modifier has already been used to produce the images in file {args.input_file}."
                         "Re-applying the image modifier is not a good practice, start again from unmodified images please.")
-            sys.exit(0)
+            sys.exit(1)
 
         images = image_table['image']
         params = read_table(infile, dl1_params_lstcam_key)
@@ -450,9 +450,12 @@ def main():
                 if 'image_mask' in image_table.colnames:
                     image_table['image_mask'][ii] = signal_pixels
 
+
+            add_config_metadata(image_table, config)
             if not args.no_image:
                 write_table(image_table, outfile, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
+            add_config_metadata(params, config)
             write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
             # write a cat-B calibrations in DL1b
