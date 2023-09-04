@@ -7,8 +7,8 @@ import argparse
 from astropy.coordinates import SkyCoord, AltAz
 from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.time import Time
-from lstchain.reco.utils import location, add_delta_t_key, get_effective_time
-from ctapipe.coordinates import CameraFrame, TelescopeFrame
+from lstchain.reco.utils import location
+from ctapipe.coordinates import CameraFrame
 from ctapipe_io_lst import LSTEventSource
 
 import sys
