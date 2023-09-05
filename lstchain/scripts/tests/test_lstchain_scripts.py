@@ -430,7 +430,6 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
             assert (new_parameters['length'] != old_parameters['length']).any()
 
 
-@pytest.mark.xfail(raises=ValueError, reason="One should not be able to re-modify already modified images")
 def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
     config_path = tmp_path / 'config_image_modifier.json'
     output_file = tmp_path / 'dl1ab_on_modified_images.h5'
@@ -448,12 +447,13 @@ def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
     )
 
     # second process should fail as we are trying to re-modify already modified images
-    run_program(
-        'lstchain_dl1ab',
-        '-f', output_file,
-        '-o', reprocess_output_file,
-        '-c', config_path,
-    )
+    with pytest.raises(ValueError):
+        run_program(
+            'lstchain_dl1ab',
+            '-f', output_file,
+            '-o', reprocess_output_file,
+            '-c', config_path,
+        )
 
 
 @pytest.mark.private_data
