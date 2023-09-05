@@ -229,3 +229,10 @@ def test_add_config_metadata():
     container = Container()
     add_config_metadata(container, config)
     assert json.loads(container.meta["config"]) == expected_config
+
+    # test also with standard config in case of future changes 
+    from lstchain.io.config import get_standard_config
+    config = get_standard_config()
+    container = Container()
+    add_config_metadata(container, config)
+    assert json.loads(container.meta["config"]) == config
