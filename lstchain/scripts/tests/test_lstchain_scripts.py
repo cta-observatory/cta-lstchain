@@ -7,7 +7,6 @@ import pkg_resources
 import pytest
 import tables
 from importlib.resources import files
-from pathlib import Path
 from astropy import units as u
 from astropy.time import Time
 from ctapipe.instrument import SubarrayDescription
