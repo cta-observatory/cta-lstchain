@@ -208,6 +208,34 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     }
 
 
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def interleaved_r1_file(temp_dir_observed_files, run_summary_path):
+    test_pedcal_run = test_data / 'real/R0/20200218/LST-1.1.Run02006.0000_first50.fits.fz'
+
+    run_program(
+        "lstchain_data_r0_to_dl1",
+        "-f",
+        test_pedcal_run,
+        "-o",
+        temp_dir_observed_files,
+        "--pedestal-file",
+        test_drs4_pedestal_path,
+        "--calibration-file",
+        test_calib_path,
+        "--time-calibration-file",
+        test_time_calib_path,
+        "--pointing-file",
+        test_drive_report,
+        '--run-summary-path',
+        run_summary_path,
+        "--default-trigger-type=tib",
+    )
+
+    return temp_dir_observed_files / "interleaved_LST-1.Run02006.0000.h5"
+
+
 @pytest.fixture(scope="session")
 def simulated_dl2_file(temp_dir_simulated_files, simulated_dl1_file, rf_models):
     """
