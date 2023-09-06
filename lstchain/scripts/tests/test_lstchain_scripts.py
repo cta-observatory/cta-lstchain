@@ -92,9 +92,11 @@ def test_lstchain_data_r0_to_dl1(observed_dl1_files):
     assert observed_dl1_files["dl1_file1"].is_file()
     assert observed_dl1_files["muons1"].is_file()
     assert observed_dl1_files["datacheck1"].is_file()
+    assert observed_dl1_files["interleaved_file1"].is_file()
     assert observed_dl1_files["dl1_file2"].is_file()
     assert observed_dl1_files["muons2"].is_file()
     assert observed_dl1_files["datacheck2"].is_file()
+    assert observed_dl1_files["interleaved_file2"].is_file()
 
 
 @pytest.mark.private_data

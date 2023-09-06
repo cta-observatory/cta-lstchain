@@ -106,11 +106,13 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     datacheck_file1 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0000.h5"
     dvr_file1 = temp_dir_observed_files / "DVR_settings_LST-1.Run02008.h5"
     pixmasks_file1 = temp_dir_observed_files / "Pixel_selection_LST-1.Run02008.0000.h5"
-
+    interleaved_file1 = temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02008.0000.h5"
+ 
     # Second set of files
     dl1_output_path2 = temp_dir_observed_files / "dl1_LST-1.Run02008.0100.h5"
     muons_file2 = temp_dir_observed_files / "muons_LST-1.Run02008.0100.fits"
     datacheck_file2 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0100.h5"
+    interleaved_file2 = temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02008.0100.h5"
 
     run_program(
         "lstchain_data_r0_to_dl1",
@@ -198,9 +200,11 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         'datacheck1': datacheck_file1,
         'dvr_file1': dvr_file1,
         'pixmasks_file1': pixmasks_file1,
+        'interleaved_file1': interleaved_file1,
         'dl1_file2': dl1_output_path2,
         'muons2': muons_file2,
-        'datacheck2': datacheck_file2
+        'datacheck2': datacheck_file2,
+        'interleaved_file2': interleaved_file2
     }
 
 
