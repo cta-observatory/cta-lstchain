@@ -6,6 +6,7 @@ import pandas as pd
 import pkg_resources
 import pytest
 import tables
+from pathlib import Path
 from astropy import units as u
 from astropy.time import Time
 from ctapipe.instrument import SubarrayDescription
@@ -434,10 +435,7 @@ def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
     config_path = tmp_path / 'config_image_modifier.json'
     output_file = tmp_path / 'dl1ab_on_modified_images.h5'
     reprocess_output_file = tmp_path / 'dl1ab_on_modified_images_reprocess.h5'
-    with config_path.open('w') as f:
-        config = get_standard_config()
-        config['image_modifier'] = {'increase_psf': True, 'increase_nsb': True}
-        json.dump(config, f)
+    config_path = Path(__file__).parent.joinpath("../../data/lstchain_dl1ab_tune_MC_to_Crab_config.json")
 
     run_program(
         'lstchain_dl1ab',
