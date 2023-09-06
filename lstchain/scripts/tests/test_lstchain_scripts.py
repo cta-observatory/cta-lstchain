@@ -6,6 +6,7 @@ import pandas as pd
 import pkg_resources
 import pytest
 import tables
+from importlib.resources import files
 from pathlib import Path
 from astropy import units as u
 from astropy.time import Time
@@ -435,7 +436,7 @@ def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
     config_path = tmp_path / 'config_image_modifier.json'
     output_file = tmp_path / 'dl1ab_on_modified_images.h5'
     reprocess_output_file = tmp_path / 'dl1ab_on_modified_images_reprocess.h5'
-    config_path = Path(__file__).parent.joinpath("../../data/lstchain_dl1ab_tune_MC_to_Crab_config.json")
+    config_path = files("lstchain.data").joinpath("lstchain_dl1ab_tune_MC_to_Crab_config.json")
 
     run_program(
         'lstchain_dl1ab',
