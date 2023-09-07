@@ -39,6 +39,7 @@ from lstchain.io.config import (
     get_standard_config,
     read_configuration_file,
     replace_config,
+    includes_image_modification,
 )
 from lstchain.io.io import (
     dl1_images_lstcam_key,
@@ -91,27 +92,6 @@ parser.add_argument(
     dest='pedestal_cleaning',
     help='Disable pedestal cleaning. This is also done automatically for simulations.',
 )
-
-
-def includes_image_modification(config):
-    """
-    Check if the image modifier has been used in the given configuration.
-
-    Parameters
-    ----------
-    config : `dict`
-        The configuration dictionary to check.
-
-    Returns
-    -------
-    `bool`
-        `True` if the image modifier has been used, `False` otherwise.
-    """
-    imconfig = config.get('image_modifier', {})
-    increase_nsb = imconfig.get("increase_nsb", False)
-    increase_psf = imconfig.get("increase_psf", False)
-
-    return increase_nsb or increase_psf
 
 
 def main():
