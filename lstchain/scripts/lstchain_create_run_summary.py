@@ -22,7 +22,7 @@ from ctapipe_io_lst import (
     LSTEventSource,
     MultiFiles,
 )
-from ctapipe_io_lst.event_time import combine_counters
+from ctapipe_io_lst.event_time import combine_counters, S_TO_NS
 from traitlets.config import Config
 
 from lstchain import __version__
@@ -231,7 +231,7 @@ def read_counters(date_path, run_number):
         )
 
         ucts_available = bool(first_event.lstcam.extdevices_presence & 2)
-        run_start = int(round(Time(f.camera_config.date, format="unix").unix_tai)) * int(1e9)
+        run_start = int(round(Time(f.camera_config_date, format="unix").unix_tai * S_TO_NS))
 
         if ucts_available:
             if int(f.camera_config.lstcam.idaq_version) > 37201:
