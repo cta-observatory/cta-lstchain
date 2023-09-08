@@ -11,8 +11,6 @@ from lstchain.reco.utils import location
 from ctapipe.coordinates import CameraFrame
 from ctapipe_io_lst import LSTEventSource
 
-import sys
-
 parser = argparse.ArgumentParser(description="Source position adder. Calculates x,y coordinates of a source in CameraFrame, event-wise.")
 parser.add_argument('-f', '--dl2-file', dest='file', required=True,
                     type=str, help='DL2 file to be processed')
