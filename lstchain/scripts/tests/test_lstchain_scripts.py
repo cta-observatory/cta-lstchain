@@ -515,3 +515,18 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_source" in run_summary_table.columns
 
     assert (run_summary_table["run_type"] == ["DATA", "PEDCALIB", "DATA"]).all()
+
+
+@pytest.mark.private_data
+def test_merge_run_summaries(tmp_path):
+    test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+    monitoring_path = test_data / "real/monitoring"
+    merged_file = tmp_path / "merged_summaries.ecsv"
+    output = run_program(
+        "lstchain_merge_run_summaries", "-m", monitoring_path, merged_file
+        )
+    assert merged_file.exists()
+    table = Table.read(merged_file)
+    # Since no drive log is present in the test sample, only the runs
+    # of the first summary appear
+    assert 2005 in table["run_id"]
