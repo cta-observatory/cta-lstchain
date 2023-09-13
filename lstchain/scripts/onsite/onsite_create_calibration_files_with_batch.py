@@ -9,7 +9,6 @@
 """
 
 import argparse
-import os
 import shutil
 import subprocess
 import sys
@@ -17,6 +16,12 @@ from datetime import datetime
 from pathlib import Path
 
 import lstchain
+from lstchain.onsite import (
+    DEFAULT_BASE_PATH,
+    LEVEL_A_PIXEL_DIR,
+    find_r0_subrun,
+    DEFAULT_CONFIG,
+)
 
 # parse arguments
 parser = argparse.ArgumentParser(
@@ -44,8 +49,8 @@ optional.add_argument('-p', '--pedestal_run',
 optional.add_argument('--time_run',
                       help="Run for the time calibration. If None, search the last time run before or equal the first filter scan run",
                       type=int)
-optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=str,
-                      default='/fefs/aswg/data/real')
+optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
+                      default=DEFAULT_BASE_PATH)
 optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
                       type=Path)
 
@@ -66,38 +71,55 @@ optional.add_argument('-y', '--yes', action="store_true", help='Do not ask inter
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 
-default_config = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
-optional.add_argument('--config', help="Config file", default=default_config)
+optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG, type=Path)
 
-args = parser.parse_args()
-run_list = args.run_list
-filters_list = args.filters_list
-ped_run = args.pedestal_run
-prod_id = args.prod_version
-stat_events = args.statistics
-base_dir = args.base_dir
-time_run = args.time_run
-
-sub_run_list = args.sub_run_list
-config_file = args.config
-sys_date = args.sys_date
-no_sys_correction = args.no_sys_correction
-yes = args.yes
-pro_symlink = not args.no_pro_symlink
-
-output_base_name = args.output_base_name
-
-calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
+optional.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+optional.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+optional.add_argument('--queue',
+                      help="Slurm queue. Deafault: short ",
+                      default="short")
 
 
 def main():
+    args, remaining_args = parser.parse_known_args()
+    run_list = args.run_list
+    filters_list = args.filters_list
+    ped_run = args.pedestal_run
+    prod_id = args.prod_version
+    stat_events = args.statistics
+    base_dir = args.base_dir
+    time_run = args.time_run
+
+    sub_run_list = args.sub_run_list
+    config_file = args.config
+    sys_date = args.sys_date
+    no_sys_correction = args.no_sys_correction
+    yes = args.yes
+    queue = args.queue
+
+    output_base_name = args.output_base_name
+
+    calib_dir = base_dir / LEVEL_A_PIXEL_DIR
+
     if shutil.which('srun') is None:
         sys.exit(">>> This script needs a slurm batch system. Stop")
 
     print(f"\n--> Start reconstruct runs {run_list} and sub-runs {sub_run_list}")
 
     # verify config file
-    if not os.path.exists(config_file):
+    if not config_file.exists():
         sys.exit(f"Config file {config_file} does not exists. \n")
 
     print(f"\n--> Config file {config_file}")
@@ -107,6 +129,7 @@ def main():
     if filters_list is not None and len(filters_list) != len(run_list):
         sys.exit("Filter list length must be equal to run list length. Verify \n")
 
+    r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
     # loops over runs and sub_runs and send jobs
     filters = None
     for i, run in enumerate(run_list):
@@ -114,44 +137,34 @@ def main():
             filters = filters_list[i]
 
         for sub_run in sub_run_list:
-            print(f"\n--> Runs {run} and sub-run {sub_run}")
-
-            # verify input file
-            r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
-            file_list = sorted(r0_dir.rglob(f'*{run}.{sub_run:04d}*'))
-            if len(file_list) == 0:
-                raise IOError(f"Run {run} not found\n")
-            else:
-                input_file = file_list[0]
-
+            print(f"\n--> Run {run} and sub-run {sub_run}")
+            input_file = find_r0_subrun(run, sub_run, r0_dir)
             print(f"--> Input file: {input_file}")
 
-            # find date
-            input_dir, name = os.path.split(os.path.abspath(input_file))
-            path, date = input_dir.rsplit('/', 1)
+            date = input_file.parent.name
 
             # verify output dir
-            output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
-            if not os.path.exists(output_dir):
+            output_dir = calib_dir / "calibration" / date / prod_id
+            if not output_dir.exists():
                 print(f"--> Create directory {output_dir}")
-                os.makedirs(output_dir, exist_ok=True)
+                output_dir.mkdir(parents=True, exist_ok=True)
 
             # verify log dir
-            log_dir = f"{calib_dir}/calibration/{date}/{prod_id}/log"
-            if not os.path.exists(log_dir):
+            log_dir = output_dir / "log"
+            if not log_dir.exists():
                 print(f"--> Create directory {log_dir}\n")
-                os.makedirs(log_dir, exist_ok=True)
+                log_dir.mkdir(parents=True, exist_ok=True)
 
             # job file
             now = datetime.now().replace(microsecond=0).isoformat(sep='T')
-            job_file = f"{log_dir}/run_{run}_subrun_{sub_run}_date_{now}.job"
+            job_file = log_dir / f"run_{run}_subrun_{sub_run}_date_{now}.job"
 
-            with open(job_file, "w") as fh:
+            with job_file.open(mode="w") as fh:
                 fh.write("#!/bin/bash\n")
                 fh.write("#SBATCH --job-name=%s.job\n" % run)
                 fh.write("#SBATCH --output=log/run_%s_subrun_%s_date_%s.out\n" % (run, sub_run, now))
                 fh.write("#SBATCH --error=log/run_%s_subrun_%s_date_%s.err\n" % (run, sub_run, now))
-                fh.write("#SBATCH -p short\n")
+                fh.write("#SBATCH -p %s\n" % queue)
                 fh.write("#SBATCH --cpus-per-task=1\n")
                 fh.write("#SBATCH --mem-per-cpu=10G\n")
                 fh.write("#SBATCH -D %s \n" % output_dir)
@@ -161,9 +174,11 @@ def main():
                     "onsite_create_calibration_file",
                     f"-r {run}",
                     f"-v {prod_id}",
+                    f"--r0-dir {r0_dir}",
                     f"--sub_run={sub_run}",
                     f"-b {base_dir}",
                     f"-s {stat_events}",
+                    f"--r0-dir={r0_dir}",
                     f"--output_base_name={output_base_name}",
                     f"--config={config_file}",
                 ]
@@ -185,6 +200,14 @@ def main():
 
                 if no_sys_correction:
                     cmd.append("--no_sys_correction")
+
+                if args.use_flatfield_heuristic is True:
+                    cmd.append("--flatfield-heuristic")
+
+                if args.use_flatfield_heuristic is False:
+                    cmd.append("--no-flatfield-heuristic")
+
+                cmd.extend(remaining_args)
 
                 # join command together with newline, line continuation and indentation
                 fh.write(" \\\n  ".join(cmd))

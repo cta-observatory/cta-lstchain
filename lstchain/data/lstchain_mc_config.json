@@ -1,0 +1,12 @@
+{
+  "LocalPeakWindowSum":{
+    "window_shift": 4,
+    "window_width": 8,
+    "apply_integration_correction": true
+  },
+  "GlobalPeakWindowSum":{
+    "window_shift": 4,
+    "window_width": 8,
+    "apply_integration_correction": true
+  }
+}

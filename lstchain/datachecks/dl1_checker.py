@@ -24,18 +24,16 @@ import matplotlib.dates as dates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
-import pandas as pd
 import tables
 from astropy import units as u
 from astropy.table import Table, vstack
 from ctapipe.containers import EventType
 from ctapipe.coordinates import EngineeringCameraFrame
-from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableWriter
+from ctapipe.io import read_table
+from ctapipe_io_lst import TriggerBits, load_camera_geometry
 from ctapipe.visualization import CameraDisplay
-from ctapipe_io_lst import TriggerBits
-# from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
-# from bokeh.models.widgets import Panel
+
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import poisson, sem
 
@@ -43,7 +41,7 @@ from lstchain.datachecks.containers import (
     DL1DataCheckContainer,
     DL1DataCheckHistogramBins,
 )
-from lstchain.io.io import dl1_params_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.paths import (
     parse_datacheck_dl1_filename,
     parse_dl1_filename,
@@ -117,6 +115,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
                               root_uep='/dl1/event/telescope/parameters') as f:
             for name in trig_tags:
                 trig_tags[name].extend(f.root.LST_LSTCam.col(name))
+
     num_pedestals = {'trigger_type':
                          (np.array(trig_tags['trigger_type']) ==
                           TriggerBits.PEDESTAL.value).sum(),
@@ -169,8 +168,8 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
         # write also the histogram binnings:
         writer.write("dl1datacheck/histogram_binning", histogram_binning)
 
-    subarray_info = SubarrayDescription.from_hdf(filenames[0])
-    subarray_info.to_hdf(datacheck_filename)
+    # subarray_info = SubarrayDescription.from_hdf(filenames[0])
+    # subarray_info.to_hdf(datacheck_filename)
 
     # write out also which trigger tag has been used for finding pedestals:
     file = h5py.File(datacheck_filename, mode='a')
@@ -225,95 +224,98 @@ def process_dl1_file(filename, bins, tel_id=1):
     dl1datacheck_flatfield = DL1DataCheckContainer()
     dl1datacheck_cosmics = DL1DataCheckContainer()
 
-    subarray_info = SubarrayDescription.from_hdf(filename)
-    geom = subarray_info.tel[tel_id].camera.geometry
-    equivalent_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+    #subarray_info = SubarrayDescription.from_hdf(filename)
+    #geom = subarray_info.tel[tel_id].camera.geometry
+    #equivalent_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+
+    geom = load_camera_geometry()
+    equivalent_focal_length = geom.frame.focal_length
+
     m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
-    with tables.open_file(filename) as file:
-        # unfortunately pandas.read_hdf does not seem compatible with
-        # 'with... as...' statements
-        parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+    parameters = read_table(filename, dl1_params_lstcam_key)
 
-        # convert cog distance to camera center from meters to degrees:
-        parameters['r'] *= m2deg
-        # time gradient from ns/m to ns/deg
-        parameters['time_gradient'] /= m2deg
+    # convert cog distance to camera center from meters to degrees:
+    parameters['r'] = parameters['r'].quantity * m2deg
+    # time gradient from ns/m to ns/deg
+    parameters['time_gradient'] = \
+        parameters['time_gradient'].quantity / m2deg
 
-        # We do not convert the x,y, cog coordinates, because only in m can
-        # CameraGeometry find the pixel where a given cog falls
+    image_table = read_table(filename, dl1_images_lstcam_key)
+    # create flatfield mask from the images table. For the time being,
+    # trigger type tags are not reliable. We first identify flatfield events
+    # by their looks.
+    flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
+    # The same mask should be valid for image_table, since the entry in
+    # the two tables correspond one to one.
 
-        # in order to read in the images we have to use tables,
-        # because pandas is not compatible with vector columns
-        image_table = file.root.dl1.event.telescope.image.LST_LSTCam
+    # Revise flatfield_mask : event_type can be rarely wrong, so check
+    # here that all events look like interleaved flat field events:
+    # Note (AM, 20211202): finally we won't use this, the event source
+    # takes care of it
+    # flatfield_mask &= ((parameters['intensity'] > 50000) &
+    #                    (parameters['concentration_pixel'] < 0.005))
 
-        # create flatfield mask from the images table. For the time being,
-        # trigger type tags are not reliable. We first identify flatfield events
-        # by their looks.
-        flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
-        # The same mask should be valid for image_table, since the entry in
-        # the two tables correspond one to one.
+    pedestal_mask = (parameters['event_type'] ==
+                     EventType.SKY_PEDESTAL.value)
 
-        # Revise flatfield_mask : event_type can be rarely wrong, so check
-        # here that all events look like interleaved flat field events:
-        # Note (AM, 20211202): finally we won't use this, the event source
-        # takes care of it
-        # flatfield_mask &= ((parameters['intensity'] > 50000) &
-        #                    (parameters['concentration_pixel'] < 0.005))
+    # Now obtain by exclusion the masks for cosmics:
+    cosmics_mask = ~(pedestal_mask | flatfield_mask)
 
-        pedestal_mask = (parameters['event_type'] ==
-                         EventType.SKY_PEDESTAL.value)
+    logger.info(f'   pedestals: {np.sum(pedestal_mask)}, '
+                f' flatfield: {np.sum(flatfield_mask)}, '
+                f' cosmics: {np.sum(cosmics_mask)}')
 
-        # Now obtain by exclusion the masks for cosmics:
-        cosmics_mask = ~(pedestal_mask | flatfield_mask)
+    # Fill quantities which depend on event-wise (i.e. not
+    # pixel-wise) parameters.
+    # Set None for a container that has not been filled,
+    # otherwise it will give trouble in the plotting stage.
 
-        logger.info(f'   pedestals: {np.sum(pedestal_mask)}, '
-                    f' flatfield: {np.sum(flatfield_mask)}, '
-                    f' cosmics: {np.sum(cosmics_mask)}')
+    if pedestal_mask.sum() > 1:
+        dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
+                                                    parameters,
+                                                    pedestal_mask,
+                                                    geom, bins)
+        dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
+                                                    pedestal_mask, bins,
+                                                    equivalent_focal_length,
+                                                    geom,
+                                                    'pedestals')
+    else:
+        dl1datacheck_pedestals = None
 
-        # Fill quantities which depend on event-wise (i.e. not
-        # pixel-wise) parameters.
-        # Set None for a container that has not been filled,
-        # otherwise it will give trouble in the plotting stage.
+    if flatfield_mask.sum() > 1:
+        dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
+                                                    parameters,
+                                                    flatfield_mask,
+                                                    geom, bins)
+        dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
+                                                    flatfield_mask, bins,
+                                                    equivalent_focal_length,
+                                                    geom,
+                                                    'flatfield')
+    else:
+        dl1datacheck_flatfield = None
 
-        if pedestal_mask.sum() > 1:
-            dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
-                                                        parameters,
-                                                        pedestal_mask,
-                                                        geom, bins)
-            dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
-                                                        pedestal_mask, bins,
-                                                        'pedestals')
-        else:
-            dl1datacheck_pedestals = None
+    if cosmics_mask.sum() > 1:
+        dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
+                                                  parameters,
+                                                  cosmics_mask,
+                                                  geom, bins)
+        dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
+                                                  cosmics_mask, bins,
+                                                  equivalent_focal_length,
+                                                  geom,
+                                                  'cosmics')
+    else:
+        dl1datacheck_cosmics = None
 
-        if flatfield_mask.sum() > 1:
-            dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
-                                                        parameters,
-                                                        flatfield_mask,
-                                                        geom, bins)
-            dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
-                                                        flatfield_mask, bins,
-                                                        'flatfield')
-        else:
-            dl1datacheck_flatfield = None
-
-        if cosmics_mask.sum() > 1:
-            dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
-                                                      parameters,
-                                                      cosmics_mask,
-                                                      geom, bins)
-            dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
-                                                      cosmics_mask, bins,
-                                                      'cosmics')
-        else:
-            dl1datacheck_cosmics = None
-
-        return dl1datacheck_pedestals, dl1datacheck_flatfield, \
-               dl1datacheck_cosmics
+    return dl1datacheck_pedestals, dl1datacheck_flatfield, \
+           dl1datacheck_cosmics
 
 
-def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=None, tel_id=1):
+def plot_datacheck(datacheck_filename, out_path=None, batch=False,
+                   muons_dir=None, create_pdf=True, tel_id=1):
     """
     Plot datacheck
 
@@ -353,14 +355,19 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
             # just a single .h5 file:
             datacheck_filename = datacheck_filename[0]
 
+    if not create_pdf:
+        # Nothing else to be done:
+        return
+
     pdf_filename = Path(datacheck_filename).with_suffix('.pdf')
     # set output directory if provided:
     if out_path is not None:
         pdf_filename = Path(out_path, pdf_filename.name)
 
     # Read camera geometry
-    subarray_info = SubarrayDescription.from_hdf(datacheck_filename)
-    geom = subarray_info.tel[tel_id].camera.geometry
+    # subarray_info = SubarrayDescription.from_hdf(datacheck_filename)
+    # geom = subarray_info.tel[tel_id].camera.geometry
+    geom = load_camera_geometry()
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
     # For future bokeh-based display, turned off for now:
@@ -1096,18 +1103,31 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False,
 
     logger = logging.getLogger(__name__)
 
+    # We first check for inf values that occasionally appear for data with
+    # problems, and transform them in nans (ignored in later calculations)
+    varmean = table.col(columns[0])
+    varstddev = table.col(columns[1])
+
+    if np.isnan(varmean).sum() > 0:
+        nanmask = np.isnan(np.mean(varmean, axis=0))
+        logger.info(f'Pixels with NaNs in {columns[0]}: '
+                    f'{np.array(camgeom.pix_id.tolist())[nanmask]}')
+    if np.isinf(varmean).sum() > 0:
+        infmask = np.isinf(np.mean(varmean, axis=0))
+        logger.info(f'Pixels with infs in {columns[0]}: '
+                    f'{np.array(camgeom.pix_id.tolist())[infmask]}')
+
+    varmean = np.where(np.isfinite(varmean), varmean, np.nan)    
+    varstddev = np.where(np.isfinite(varstddev), varstddev, np.nan) 
+
     # calculate pixel-wise mean and standard deviation for the whole run,
     # from the subrun-wise values:
-    mean = np.sum(np.multiply(table.col(columns[0]),
-                              table.col('num_events')[:, None]),
-                  axis=0) / np.sum(table.col('num_events'))
-    stddev = np.sqrt(np.sum(np.multiply(table.col(columns[1]) ** 2,
-                                        table.col('num_events')[:, None]),
-                            axis=0) / np.sum(table.col('num_events')))
-
-    if np.isnan(mean).sum() > 0:
-        logger.info(f'Pixels with NaNs in {columns[0]}: '
-                    f'{np.array(camgeom.pix_id.tolist())[np.isnan(mean)]}')
+    mean = np.nansum(np.multiply(varmean,
+                                 table.col('num_events')[:, None]),
+                     axis=0) / np.sum(table.col('num_events'))
+    stddev = np.sqrt(np.nansum(np.multiply(varstddev ** 2,
+                                           table.col('num_events')[:, None]),
+                               axis=0) / np.sum(table.col('num_events')))
 
     # plot mean and std dev (of e.g. pedestal charge or time), as camera
     # display, vs. pixel id, and as a histogram:
@@ -1115,18 +1135,27 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False,
                              figsize=pagesize)
     fig.suptitle(labels[2], fontsize='xx-large')
     fig.tight_layout(rect=[0, 0.03, 1, 0.98], pad=3.0, h_pad=3.0, w_pad=2.0)
+
     cam = CameraDisplay(camgeom, mean, ax=axes[0, 0], norm=norm,
                         title=labels[0])
-    cam.add_colorbar(ax=axes[0, 0])
+    if np.isfinite(mean).sum() > 0:
+        cam.add_colorbar(ax=axes[0, 0])
     if not batch:
         cam.show()
+
     cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0], norm=norm,
                         title=labels[1])
-    cam.add_colorbar(ax=axes[1, 0])
+    if np.isfinite(stddev).sum() > 0:
+        cam.add_colorbar(ax=axes[1, 0])
+
     # line below needed to get the top and bottom camera displays of equal size:
     axes[1, 0].set_xlim((axes[0, 0].get_xlim()))
     if not batch:
         cam.show()
+
+    if (np.isfinite(mean).sum() == 0) and (np.isfinite(stddev).sum() == 0):
+        return
+
     # plot mean vs. pixel_id and as histogram:
     axes[0, 1].plot(camgeom.pix_id, mean)
     axes[0, 1].set_xlabel('Pixel id')
@@ -1135,6 +1164,10 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False,
     axes[0, 2].hist(mean[~np.isnan(mean)], bins=200)
     axes[0, 2].set_xlabel(labels[0])
     axes[0, 2].set_ylabel('Number of pixels')
+
+    if np.isfinite(stddev).sum() == 0:
+        return
+
     # now the standard deviation:
     axes[1, 1].plot(camgeom.pix_id, stddev)
     axes[1, 1].set_xlabel('Pixel id')
@@ -1191,7 +1224,7 @@ def merge_dl1datacheck_files(file_list):
 
     first_file_name = file_list[0]
     first_file = tables.open_file(first_file_name)
-    #  get run number and build the name of the merged file:
+    # get run number and build the name of the merged file:
     file = parse_datacheck_dl1_filename(os.path.basename(first_file_name))
     merged_filename = run_to_datacheck_dl1_filename(file.tel_id, file.run,
                                                     None, None)
@@ -1209,56 +1242,38 @@ def merge_dl1datacheck_files(file_list):
     merged_file.create_group('/', 'dl1datacheck')
     merged_file.create_group('/', 'instrument')
 
-    # The tables in the merged file will be copied from the first file. If a
-    # table is missing in the first file (e.g. pedestals) it will be left
-    # empty in the whole merged file.
-
-    if '/dl1datacheck/pedestals' in first_file.root.dl1datacheck:
-        pedestals = \
-            first_file.copy_node('/dl1datacheck', name='pedestals',
-                                 newparent=merged_file.root.dl1datacheck)
-    else:
-        pedestals = None
-
-    if '/dl1datacheck/flatfield' in first_file.root.dl1datacheck:
-        flatfield = \
-            first_file.copy_node('/dl1datacheck', name='flatfield',
-                                 newparent=merged_file.root.dl1datacheck)
-    else:
-        flatfield = None
-
-    # the ones below are compulsory, an exception will be raised if not present:
-    cosmics = first_file.copy_node('/dl1datacheck', name='cosmics',
-                                   newparent=merged_file.root.dl1datacheck)
+    # The tables below are the same in all merged files, so they are just
+    # copied from the first file:
     first_file.copy_node('/dl1datacheck', name='histogram_binning',
                          newparent=merged_file.root.dl1datacheck)
     first_file.copy_node('/dl1datacheck', name='used_trigger_tag',
                          newparent=merged_file.root.dl1datacheck)
     first_file.close()
 
-    for filename in file_list[1:]:
-        file = tables.open_file(filename)
-        if pedestals is not None:
-            if '/dl1datacheck/pedestals' in file.root.dl1datacheck:
-                pedestals.append(file.root.dl1datacheck.pedestals[:])
-            else:
-                logger.warning('Table pedestals is missing in file ' +
-                               str(filename))
-        if flatfield is not None:
-            if '/dl1datacheck/flatfield' in file.root.dl1datacheck:
-                flatfield.append(file.root.dl1datacheck.flatfield[:])
-            else:
-                logger.warning('Table flatfield is missing in file ' +
-                               str(filename))
+    # Now merge the rest of the other tables for all files:
+    newtables = {}
 
-        cosmics.append(file.root.dl1datacheck.cosmics[:])
+    for filename in file_list:
+        file = tables.open_file(filename)
+        for tablename in ['pedestals', 'flatfield', 'cosmics']:
+            if tablename in file.root.dl1datacheck:
+                if tablename in newtables:
+                    newtables[tablename].append(file.root.dl1datacheck[
+                                              tablename][:])
+                else:
+                    newtables[tablename] = file.copy_node(
+                            '/dl1datacheck',
+                            name=tablename,
+                            newparent=merged_file.root.dl1datacheck)
+            else:
+                logger.warning(f'Table {tablename} is missing in file {filename}')
         file.close()
 
     merged_file.close()
 
     # For copying the camera geometry we use astropy tables to avoid a
     # NaturalNameWarning from tables/path.py
-    subarray_info = SubarrayDescription.from_hdf(first_file_name)
-    subarray_info.to_hdf(merged_filename)
+    # subarray_info = SubarrayDescription.from_hdf(first_file_name)
+    # subarray_info.to_hdf(merged_filename)
 
     return merged_filename

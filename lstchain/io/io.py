@@ -24,12 +24,12 @@ from eventio.simtel.objects import History, HistoryConfig
 
 from pyirf.simulations import SimulatedEventsInfo
 
+from lstchain.reco.utils import get_geomagnetic_delta
 from .lstcontainers import (
     ExtraMCInfo,
     MetaData,
     ThrownEventsHistogram,
 )
-
 
 log = logging.getLogger(__name__)
 
@@ -41,12 +41,14 @@ __all__ = [
     'auto_merge_h5files',
     'check_mcheader',
     'check_metadata',
+    'check_mc_type',
     'check_thrown_events_histogram',
     'copy_h5_nodes',
     'extract_simulation_nsb',
     'extract_observation_time',
     'get_dataset_keys',
-    'get_srcdep_index_keys',
+    'get_mc_fov_offset',
+    'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'get_stacked_table',
     'global_metadata',
@@ -61,6 +63,7 @@ __all__ = [
     'read_simu_info_hdf5',
     'read_simu_info_merged_hdf5',
     'recursive_copy_node',
+    'remove_duplicated_events',
     'stack_tables_h5files',
     'write_calibration_data',
     'write_dataframe',
@@ -69,7 +72,6 @@ __all__ = [
     'write_metadata',
     'write_simtel_energy_histogram',
     'write_subarray_tables',
-
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -80,6 +82,8 @@ dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
 dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
 dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
+dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
@@ -104,7 +108,7 @@ def read_simu_info_hdf5(filename):
     """
 
     with HDF5TableReader(filename) as reader:
-        mc_reader = reader.read("/simulation/run_config", SimulationConfigContainer())
+        mc_reader = reader.read("/simulation/run_config", SimulationConfigContainer)
         mc = next(mc_reader)
 
     return mc
@@ -114,7 +118,7 @@ def read_simu_info_merged_hdf5(filename):
     """
     Read simu info from a merged hdf5 file.
     Check that simu info are the same for all runs from merged file
-    Combine relevant simu info such as num_showers (sum)
+    Combine relevant simu info such as n_showers (sum)
     Note: works for a single run file as well
 
     Parameters
@@ -129,13 +133,13 @@ def read_simu_info_merged_hdf5(filename):
     with open_file(filename) as file:
         simu_info = file.root["simulation/run_config"]
         colnames = simu_info.colnames
-        skip = {"num_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
+        skip = {"n_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
         for k in filter(lambda k: k not in skip, colnames):
             assert np.all(simu_info[:][k] == simu_info[0][k])
-        num_showers = simu_info[:]["num_showers"].sum()
+        n_showers = simu_info[:]["n_showers"].sum()
 
     combined_mcheader = read_simu_info_hdf5(filename)
-    combined_mcheader["num_showers"] = num_showers
+    combined_mcheader["n_showers"] = n_showers
 
     for k in combined_mcheader.keys():
         if (
@@ -292,7 +296,8 @@ def auto_merge_h5files(
         nodes_keys=None,
         merge_arrays=False,
         filters=HDF5_ZSTD_FILTERS,
-        progress_bar=True
+        progress_bar=True,
+        run_checks=True,
 ):
     """
     Automatic merge of HDF5 files.
@@ -306,12 +311,14 @@ def auto_merge_h5files(
     nodes_keys: list of path
     merge_arrays: bool
     filters
-    progress_bar : bool
+    progress_bar: bool
         Enabling the display of the progress bar during event processing.
+    run_checks: bool
+        Check if the files to be merged are consistent
     """
 
     file_list = list(file_list)
-    if len(file_list) > 1:
+    if len(file_list) > 1 and run_checks:
         file_list = merging_check(file_list)
 
     if nodes_keys is None:
@@ -513,7 +520,7 @@ def check_mcheader(mcheader1, mcheader2):
     keys = list(mcheader1.keys())
     """keys that don't need to be checked: """
     for k in [
-        "num_showers",
+        "n_showers",
         "shower_reuse",
         "detector_prog_start",
         "detector_prog_id",
@@ -527,7 +534,7 @@ def check_mcheader(mcheader1, mcheader2):
         v1 = mcheader1[k]
         v2 = mcheader2[k]
         if v1 != v2:
-            raise ValueError('MC headers do not match for key {k}:  {v1!r} / {v2!r}')
+            raise ValueError(f'MC headers do not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
@@ -612,7 +619,7 @@ def check_metadata(metadata1, metadata2):
         v1 = metadata1[k]
         v2 = metadata2[k]
         if v1 != v2:
-            raise ValueError('Metadata does not match for key {k}:  {v1!r} / {v2!r}')
+            raise ValueError(f'Metadata does not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def global_metadata():
@@ -846,7 +853,8 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
 def read_mc_dl2_to_QTable(filename):
     """
     Read MC DL2 files from lstchain and convert into pyirf internal format
-    - astropy.table.QTable
+    - astropy.table.QTable.
+    Also include simulation information necessary for some functions.
 
     Parameters
     ----------
@@ -854,7 +862,9 @@ def read_mc_dl2_to_QTable(filename):
 
     Returns
     -------
-    `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
+    events: `astropy.table.QTable`
+    pyirf_simu_info: `pyirf.simulations.SimulatedEventsInfo`
+    extra_data: 'Dict'
     """
 
     # mapping
@@ -878,37 +888,67 @@ def read_mc_dl2_to_QTable(filename):
         "reco_az": u.rad,
     }
 
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
     simu_info = read_simu_info_merged_hdf5(filename)
+
+    # Temporary addition here, but can be included in the pyirf.simulations
+    # class of SimulatedEventsInfo
+    extra_data = {}
+    extra_data["GEOMAG_TOTAL"] = simu_info.prod_site_B_total
+    extra_data["GEOMAG_DEC"] = simu_info.prod_site_B_declination
+    extra_data["GEOMAG_INC"] = simu_info.prod_site_B_inclination
+
+    extra_data["GEOMAG_DELTA"] = get_geomagnetic_delta(
+        zen = np.pi/2 - simu_info.min_alt.to_value(u.rad),
+        az = simu_info.min_az.to_value(u.rad),
+        geomag_dec = simu_info.prod_site_B_declination.to_value(u.rad),
+        geomag_inc = simu_info.prod_site_B_inclination.to_value(u.rad)
+    ) * u.rad
+
     pyirf_simu_info = SimulatedEventsInfo(
-        n_showers=simu_info.num_showers * simu_info.shower_reuse,
+        n_showers=simu_info.n_showers * simu_info.shower_reuse,
         energy_min=simu_info.energy_range_min,
         energy_max=simu_info.energy_range_max,
         max_impact=simu_info.max_scatter_range,
         spectral_index=simu_info.spectral_index,
-        viewcone=simu_info.max_viewcone_radius,
+        viewcone=simu_info.max_viewcone_radius
     )
 
-    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
-        columns=name_mapping
-    )
+    events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        events_srcdep = get_srcdep_params(filename, 'on')
+        events = pd.concat([events, events_srcdep], axis=1)
+
+    events = events.rename(columns=name_mapping)
+
     events = QTable.from_pandas(events)
 
     for k, v in unit_mapping.items():
         events[k] *= v
 
-    return events, pyirf_simu_info
+    return events, pyirf_simu_info, extra_data
 
 
-def read_data_dl2_to_QTable(filename):
+def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     """
-    Read data DL2 files from lstchain and return QTable format
+    Read data DL2 files from lstchain and return QTable format, along with
+    a dict of target parameters for IRF interpolation
+
     Parameters
     ----------
     filename: path to the lstchain DL2 file
+    srcdep_pos: assumed source position for source-dependent analysis
 
     Returns
     -------
-    `astropy.table.QTable`
+    data: `astropy.table.QTable`
+    data_params: 'Dict' of target interpolation parameters
     """
 
     # Mapping
@@ -926,15 +966,39 @@ def read_data_dl2_to_QTable(filename):
         "dragon_time": u.s,
     }
 
-    data = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
 
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
+    data = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        data_srcdep = get_srcdep_params(filename, srcdep_pos)
+        data = pd.concat([data, data_srcdep], axis=1)
+
+    data = data.rename(columns=name_mapping)
     data = QTable.from_pandas(data)
 
     # Make the columns as Quantity
     for k, v in unit_mapping.items():
         data[k] *= v
 
-    return data
+    # Create dict of target parameters for IRF interpolation
+    data_params = {}
+
+    zen = np.pi / 2 * u.rad - data["pointing_alt"].mean().to(u.rad)
+    az = data["pointing_az"].mean().to(u.rad)
+    if az < 0:
+        az += 2*np.pi * u.rad
+    b_delta = u.Quantity(get_geomagnetic_delta(zen=zen, az=az))
+
+    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 5) * u.deg
+    data_params["AZ_PNT"] = round(az.to_value(u.deg), 5) * u.deg
+    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 5) * u.deg
+
+    return data, data_params
 
 
 def read_dl2_params(t_filename, columns_to_read=None):
@@ -1009,9 +1073,9 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     return observation_time, df
 
 
-def get_srcdep_index_keys(filename):
+def get_srcdep_assumed_positions(filename):
     """
-    get index column name of source-dependent multi index columns
+    get assumed positions of source-dependent multi index columns
 
     Parameters
     ----------
@@ -1019,7 +1083,7 @@ def get_srcdep_index_keys(filename):
 
     Returns
     -------
-    source-dependent index names
+    assumed positions for source-dependent parameters
     """
     dataset_keys = get_dataset_keys(filename)
 
@@ -1029,6 +1093,9 @@ def get_srcdep_index_keys(filename):
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
         data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
+    else:
+        raise IOError('File does not contain source-dependent parameters')
+
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
@@ -1036,14 +1103,15 @@ def get_srcdep_index_keys(filename):
     return data.columns.levels[0]
 
 
-def get_srcdep_params(filename, key):
+def get_srcdep_params(filename, wobble_angles=None):
     """
     get srcdep parameter data frame
 
     Parameters
     ----------
     filename: str - path to the HDF5 file
-    key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+    wobble_angles: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+    If it is not specified, source-dependent parameters with each assumed position are loaded
 
     Returns
     -------
@@ -1057,11 +1125,51 @@ def get_srcdep_params(filename, key):
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
         data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
+    else:
+        raise IOError('File does not contain source-dependent parameters')
+
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
 
-    return data[key]
+    if wobble_angles is not None:
+        data = data[wobble_angles]
+
+    return data
+
+
+def remove_duplicated_events(data):
+    """
+    Remove duplicated events after gammaness/alpha cut when generating DL3 files.
+    This function is for source-dependent analysis since each event has multiple gammaness
+    values depending on assumed source positions. When any events are duplicated, it 
+    selects a row with higher gammaness assumed a given source position.
+    
+    Parameters                                                                                                                                                                                                                
+    ----------                                                                                                                                                                                                               
+    `astropy.table.QTable`
+
+    Returns                                                                                                                                                                                                                
+    -------                                                                                                                                                                                                                  
+    `astropy.table.QTable` 
+    """
+    
+    event_id = data['event_id'].data
+    gh_score = data['gh_score'].data
+    
+    unique_event_ids, counts = np.unique(event_id, return_counts=True)
+    duplicated_event_ids = unique_event_ids[counts>1]
+    
+    remove_row_list = []
+    
+    # Check which row has higher gammaness value for each duplicated event
+    for dup_ev_id in duplicated_event_ids:
+        dup_ev_index = np.where(event_id==dup_ev_id)[0]
+        dup_ev_max_gh_index = dup_ev_index[np.argmax(gh_score[dup_ev_index])]
+        dup_ev_lower_gh_index = dup_ev_index[dup_ev_index!=dup_ev_max_gh_index]
+        remove_row_list.extend(dup_ev_lower_gh_index)
+        
+    data.remove_rows(remove_row_list)
 
 
 def parse_cfg_bytestring(bytestring):
@@ -1097,3 +1205,59 @@ def extract_simulation_nsb(filename):
                     print('Unexpected end of %s,\n caught exception %s', filename, e)
     return nsb
 
+
+def check_mc_type(filename):
+    """
+    Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting
+    Parameters
+    ----------
+    filename:path (DL1/DL2 hdf file)
+    Returns
+    -------
+    string
+    """
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+
+    min_viewcone = simu_info.min_viewcone_radius.value
+    max_viewcone = simu_info.max_viewcone_radius.value
+
+    if max_viewcone == 0.0:
+        mc_type = 'point_like'
+
+    elif min_viewcone == 0.0:
+        mc_type = 'diffuse'
+
+    elif (max_viewcone - min_viewcone) < 0.1:
+        mc_type = 'ring_wobble'
+
+    else:
+        raise ValueError('mc type cannot be identified')
+
+    return mc_type
+
+
+def get_mc_fov_offset(filename):
+    """
+    Calculate the mean field of view offset (the "wobble-distance")
+    from the simulation info.
+
+    Parameters
+    ----------
+    filename:path (DL1/DL2 hdf file)
+
+    Returns
+    -------
+    mean_offset: float
+    """
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+
+    # Make sure we have full precision here
+    min_viewcone = simu_info.min_viewcone_radius.value.astype(float)
+    max_viewcone = simu_info.max_viewcone_radius.value.astype(float)
+
+    # This calculation is slightly more stable
+    mean_offset = min_viewcone + 0.5 * (max_viewcone - min_viewcone)
+
+    return mean_offset

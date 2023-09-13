@@ -1,9 +1,8 @@
-import copy
 import logging
 from bokeh.layouts import gridplot
 from bokeh.models import HoverTool
 from bokeh.models import ColumnDataSource, CustomJS, Slider
-from bokeh.models import Range1d, RangeSlider
+from bokeh.models import Range1d, RangeSlider, Div
 from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
@@ -81,7 +80,7 @@ class CameraDisplay:
             data=dict(
                 poly_xs=xs,
                 poly_ys=ys,
-                image=np.ones_like(geom.pix_x.value).astype(np.float)
+                image=np.ones_like(geom.pix_x.value).astype(float)
             )
         )
 
@@ -153,7 +152,7 @@ class CameraDisplay:
         self.update()
 
 
-def show_camera(content, geom, pad_width, pad_height, label, titles=None,
+def show_camera(content, camgeom, pad_width, label, titles=None,
                 showlog=True, display_range=None,
                 content_lowlim=None, content_upplim=None):
     """
@@ -166,6 +165,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     be just (number_of_pixels), in case a single camera display is to be shown
 
     geom: camera geometry
+
     pad_width: width in pixels of each of the 3 pads in the plot
     pad_height: height in pixels of each of the 3 pads in the plot
     label: string to label the quantity which is displayed, the same for the N
@@ -182,15 +182,19 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
     Returns
     -------
-    [p1, p2, p3]: three bokeh figures, intended for showing them on the same row
+    [slider, p1, range_slider, p2, p3]: three bokeh figures, intended for
+    showing them on the same row, and two sliders, one for the run numbers (
+    or whatever "sets" of data we are displaying) and the other for the
+    z-range of the plots.
     p1 is the camera display (with "content" in linear & logarithmic scale)
     p2: content vs. pixel
     p3: histogram of content (with one entry per pixel)
 
     """
 
-    # patch to reduce gaps between bokeh's cam circular pixels:
-    camgeom = copy.deepcopy(geom)
+    if np.isfinite(content).sum() == 0:
+        # Nothing to plot...
+        return [None]
 
     numsets = 1
     if np.ndim(content) > 1:
@@ -215,6 +219,11 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     if display_range is not None:
         display_min = display_range[0]
         display_max = display_range[1]
+
+    if display_min == display_max:
+        # Avoid problems with bokeh display
+        display_min *= 0.99
+        display_max *= 1.01
 
     cam = CameraDisplay(camgeom, display_min, display_max,
                         label, titles[0], use_notebook=False, autoshow=False)
@@ -267,7 +276,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
         # c.add_colorbar()
         c.figure.plot_width = pad_width
-        c.figure.plot_height = int(pad_height * 0.85)
+        c.figure.plot_height = int(pad_width * 0.9)
         c.figure.grid.visible = False
         c.figure.axis.visible = True
         c.figure.xaxis.axis_label = 'X position (m)'
@@ -291,29 +300,32 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                 y_range=(display_min, display_max),
                 x_axis_label='Pixel id',
                 y_axis_label=label)
-    p2.min_border_top = 60
-    p2.min_border_bottom = 70
+    p2.min_border_top = 40
+    p2.min_border_bottom = 50
+    p2.plot_width = pad_width
 
     source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                          value=cam.image))
     pixel_data = p2.circle(x='pix_id', y='value', size=2, source=source2)
 
-    source2_lowlim = None
-    if content_lowlim is not None:
-        if np.isscalar(content_lowlim):
-            content_lowlim = content_lowlim * np.ones_like(content)
-        source2_lowlim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
-                                                    value=content_lowlim[0]))
-        p2.line(x='pix_id', y='value', source=source2_lowlim,
-                line_dash='dashed', color='orange', line_width=2)
-    source2_upplim = None
-    if content_upplim is not None:
-        if np.isscalar(content_upplim):
-            content_upplim = content_upplim * np.ones_like(content)
-        source2_upplim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
-                                                    value=content_upplim[0]))
-        p2.line(x='pix_id', y='value', source=source2_upplim,
-                line_dash='dashed', color='red')
+    if content_lowlim is None:
+        content_lowlim = np.nan * np.ones_like(content)
+    if content_upplim is None:
+        content_upplim = np.nan * np.ones_like(content)
+
+    if np.isscalar(content_lowlim):
+        content_lowlim = content_lowlim* np.ones_like(content)
+    source2_lowlim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
+                                      value=content_lowlim[0]))
+    p2.line(x='pix_id', y='value', source=source2_lowlim,
+            line_dash='dashed', color='orange', line_width=2)
+
+    if np.isscalar(content_upplim):
+        content_upplim = content_upplim* np.ones_like(content)
+    source2_upplim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
+                                                value=content_upplim[0]))
+    p2.line(x='pix_id', y='value', source=source2_upplim,
+            line_dash='dashed', color='red')
 
     p2.add_tools(
         HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
@@ -347,16 +359,16 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top='top', bottom='bottom', left='left', right='right',
             source=source3)
+    p3.plot_width = pad_width
 
     if titles is None:
         titles = [None] * len(allimages)
 
     cdsdata = dict(z=allimages, hist=allhists, edges=alledges, titles=titles)
-    if content_lowlim is not None:
-        # BEWARE!! these have to be lists of arrays. Not 2D numpy arrays!!
-        cdsdata['lowlim'] = [x for x in content_lowlim]
-    if content_upplim is not None:
-        cdsdata['upplim'] = [x for x in content_upplim]
+    # BEWARE!! these have to be lists of arrays. Not 2D numpy arrays!!
+    cdsdata['lowlim'] = [x for x in content_lowlim]
+    cdsdata['upplim'] = [x for x in content_upplim]
+
     if showlog:
         cdsdata['zlog'] = allimageslog
 
@@ -375,44 +387,65 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                         code="""
         var slider_value = cb_obj.value
         var z = zz.data['z']
-        varzlow = zz.data['lowlim']
-        varzupp = zz.data['upplim']
+        var zlog = zz.data['zlog']
+        var zlow = zz.data['lowlim']
+        var zupp = zz.data['upplim']
         var edges = zz.data['edges']
         var hist = zz.data['hist']
         for (var i = 0; i < source1.data['image'].length; i++) {
-             source1.data['image'][i] = z[slider_value-1][i]
-             if (showlog) {
-                 var zlog = zz.data['zlog']
-                 source1log.data['image'][i] = zlog[slider_value-1][i]
-             }
-             source2.data['value'][i] = source1.data['image'][i]
-             
-             if (source2_lowlim != null)
-                 source2_lowlim.data['value'][i] = varzlow[slider_value-1][i]
-             if (source2_upplim != null)
-                 source2_upplim.data['value'][i] = varzupp[slider_value-1][i]
+            source1.data['image'][i] = z[slider_value-1][i]
+            if (showlog) {
+                source1log.data['image'][i] = zlog[slider_value-1][i]
+            }
+            source2.data['value'][i] = source1.data['image'][i]
+            source2_lowlim.data['value'][i] = zlow[slider_value-1][i]
+            source2_upplim.data['value'][i] = zupp[slider_value-1][i]
         }
-        for (var i = 0; i < source3.data['top'].length; i++) {
-            source3.data['top'][i] = hist[slider_value-1][i]
-            source3.data['left'][i] = edges[slider_value-1][i]
-            source3.data['right'][i] = edges[slider_value-1][i+1]
+        for (var j = 0; j < source3.data['top'].length; j++) {
+            source3.data['top'][j] = hist[slider_value-1][j]
+            source3.data['left'][j] = edges[slider_value-1][j]
+            source3.data['right'][j] = edges[slider_value-1][j+1]
         }
         title.text = zz.data['titles'][slider_value-1]
         source1.change.emit()
-        if (showlog) {
-            titlelog.text = title.text
-            source1log.change.emit()
-        }
         source2.change.emit()
         source2_lowlim.change.emit()
         source2_upplim.change.emit()
         source3.change.emit()
+        if (showlog) {
+            titlelog.text = title.text
+            source1log.change.emit()
+        }
     """)
+
+
+    # https://github.com/bokeh/bokeh/issues/10444
+    slider_height = 300
+    slider_style = Div(text=f"""<style>
+    .fixed-length-slider .bk-input-group {{
+        height: {slider_height}px;
+    }}
+    .custom-length-slider .bk-input-group {{
+        height: {100*(numsets+1)}px;
+    }}
+    </style>
+    """)
+
 
     slider = None
     if numsets > 1:
+        sstyle = ["fixed-length-slider"]
+        
+        # WARNING: the page won't look nice for number of sets much larger
+        # than 300! (=very long slider) But in this way we avoid that the
+        # run slider skips elements:
+        if numsets > 299:
+            sstyle = ["custom-length-slider"]
+
         slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
-                        orientation='vertical', show_value=False, height=300)
+                        show_value=False,
+                        orientation='vertical', css_classes=sstyle)
+
         slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
 
@@ -434,13 +467,13 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     step = (display_max - display_min) / 100.
     range_slider = RangeSlider(start=display_min, end=display_max,
                                value=(display_min, display_max), step=step,
-                               title="z_range", orientation='vertical',
-                               direction='rtl', height=300,
+                               title="z_range",
+                               orientation='vertical', direction='rtl',
+                               css_classes=["fixed-length-slider"],
                                show_value=False)
     range_slider.js_on_change('value', callback2)
 
-    return [slider, p1, range_slider, p2, p3]
-
+    return [slider, p1, range_slider, p2, p3, slider_style]
 
 def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     """

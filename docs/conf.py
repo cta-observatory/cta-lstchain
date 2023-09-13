@@ -47,6 +47,8 @@ extensions = [
     "nbsphinx",
     "sphinx_automodapi.automodapi",
     "sphinxarg.ext",
+    "sphinxcontrib.mermaid",
+    "sphinx_togglebutton",
 ]
 
 numpydoc_show_class_members = False
@@ -61,22 +63,33 @@ templates_path = ['_templates']
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.6", None),
     "numpy": ("https://numpy.org/doc/stable", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy", None),
     "astropy": ("https://docs.astropy.org/en/latest/", None),
     "pytables": ("https://www.pytables.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "traitlets": ("https://traitlets.readthedocs.io/en/stable/", None),
-    "ctapipe": ("https://cta-observatory.github.io/ctapipe/", None)
+    "ctapipe": ("https://ctapipe.readthedocs.io/en/v0.19.2/", None)
 }
 
 # These links are ignored in the checks, necessary due to broken intersphinx for
 # these
 nitpick_ignore = [
-    # ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
-    # ("py:class", "ctapipe.core.tool.Tool"),
-    # ("py:class", "ctapipe.core.component.Component"),
-    # ("py:class", "ctapipe.core.container.Container"),
+    ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
+    ("py:class", "ctapipe.core.tool.Tool"),
+    ("py:class", "ctapipe.core.component.Component"),
+    ("py:class", "ctapipe.core.container.Container"),
+    ("py:class", "ctapipe.calib.camera.flatfield.FlatFieldCalculator"),
+    ("py:class", "ctapipe.calib.camera.pedestals.PedestalCalculator"),
+    # coming from inherited traitlets docs
+    ("py:class", "t.Union"),
+    ("py:class", "t.Dict"),
+    ("py:class", "t.Tuple"),
+    ("py:class", "t.List"),
+    ("py:class", "t.Any"),
+    ("py:class", "t.Type"),
+    ("py:class", "Config"),
+    ("py:class", "Unicode"),
 ]
 
 # The suffix(es) of source filenames.
@@ -140,6 +153,10 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_js_files = ['custom.js']
+html_css_files = ['custom.css']
+
+html_extra_path = ['examples']
 
 
 # -- Options for HTMLHelp output ------------------------------------------

@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "CatBCalibrationHDF5Writer": {
+    "one_event": false,
+    "calibration_product": "LSTCalibrationCalculator",
+    "log_level": "INFO"
+  },
+  "LSTCalibrationCalculator": {
+    "squared_excess_noise_factor": 1.222,
+    "use_scaled_low_gain": true,
+    "npe_median_cut_outliers": [-5,5],
+    "flatfield_product": "FlasherFlatFieldCalculator",
+    "pedestal_product": "PedestalIntegrator"
+  },
+  "PedestalIntegrator": {
+    "sample_duration": 100000,
+    "sample_size": 2500,
+    "tel_id": 1,
+    "charge_median_cut_outliers": [
+      -15,
+      15
+    ],
+    "charge_std_cut_outliers": [
+      -15,
+      15
+    ],
+    "charge_product": "FixedWindowSum"
+  },
+  "FlasherFlatFieldCalculator": {
+    "sample_duration": 1000000,
+    "sample_size": 2500,
+    "tel_id": 1,
+    "charge_product": "LocalPeakWindowSum",
+    "charge_median_cut_outliers": [
+      -0.9,
+      8
+    ],
+    "charge_std_cut_outliers": [
+      -15,
+      15
+    ],
+    "time_cut_outliers": [
+      2,
+      38
+    ]
+  },
+  "LocalPeakWindowSum": {
+    "window_shift": 5,
+    "window_width": 12,
+    "apply_integration_correction": false
+  },
+  "FixedWindowSum": {
+    "peak_index": 18,
+    "window_shift": 6,
+    "window_width": 12,
+    "apply_integration_correction": false
+  }
+}

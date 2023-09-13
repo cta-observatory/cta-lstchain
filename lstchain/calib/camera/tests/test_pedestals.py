@@ -1,31 +1,24 @@
 import numpy as np
 import astropy.units as u
 from ctapipe.containers import ArrayEventContainer
-from ctapipe.instrument import SubarrayDescription, TelescopeDescription
 from traitlets.config import Config
 from astropy.time import Time
+from copy import deepcopy
 
-def test_pedestal_calculator():
+def test_pedestal_calculator(lst1_subarray):
     """ test of PedestalIntegrator """
     from lstchain.calib.camera.pedestals import PedestalIntegrator
 
-    tel_id = 0
-    n_events = 10
+    tel_id = 1
+    n_events = 1000
     n_gain = 2
     n_pixels = 1855
     ped_level = 300
+    ped_std = 10
 
-    subarray = SubarrayDescription(
-        "test array",
-        tel_positions={0: np.zeros(3) * u.m},
-        tel_descriptions={
-            0: TelescopeDescription.from_name(
-                optics_name="SST-ASTRI", camera_name="CHEC"
-            ),
-        },
-    )
-    subarray.tel[0].camera.readout.reference_pulse_shape = np.ones((1, 2))
-    subarray.tel[0].camera.readout.reference_pulse_sample_width = u.Quantity(1, u.ns)
+    subarray = deepcopy(lst1_subarray)
+    subarray.tel[tel_id].camera.readout.reference_pulse_shape = np.ones((1, 2))
+    subarray.tel[tel_id].camera.readout.reference_pulse_sample_width = u.Quantity(1, u.ns)
 
     config = Config({
         "FixedWindowSum": {
@@ -45,14 +38,24 @@ def test_pedestal_calculator():
     data.mon.tel[tel_id].pixel_status.hardware_failing_pixels = np.zeros(
         (n_gain, n_pixels), dtype=bool
     )
-    data.r1.tel[tel_id].waveform = np.full((2, n_pixels, 40), ped_level)
+    rng = np.random.default_rng(0)
     data.trigger.time = Time(0, format='mjd', scale='tai')
+
+
+    window_width = ped_calculator.extractor.window_width.tel[tel_id]
     while ped_calculator.num_events_seen < n_events:
+        data.r1.tel[tel_id].waveform = rng.normal(ped_level, ped_std, (2, n_pixels, 40))
         if ped_calculator.calculate_pedestals(data):
             assert data.mon.tel[tel_id].pedestal
-            assert np.mean(data.mon.tel[tel_id].pedestal.charge_median) == (
-                ped_calculator.extractor.window_width.tel[tel_id] * ped_level
+            assert np.isclose(
+                np.mean(data.mon.tel[tel_id].pedestal.charge_median),
+                window_width * ped_level,
+                rtol=0.01,
             )
-            assert np.mean(data.mon.tel[tel_id].pedestal.charge_std) == 0
+            assert np.isclose(
+                np.mean(data.mon.tel[tel_id].pedestal.charge_std),
+                np.sqrt(window_width) * ped_std,
+                rtol=0.05,
+            )
 
 

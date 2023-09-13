@@ -1,6 +1,4 @@
-#!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-# import sys
 from setuptools import setup, find_packages
 import os
 
@@ -32,35 +30,40 @@ docs_require = [
     "sphinx_argparse",
     "sphinx_rtd_theme",
     "numpydoc",
-    "nbsphinx"
+    "nbsphinx",
+    "sphinxcontrib-mermaid",
+    "sphinx-togglebutton"
 ]
 
 setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
-    packages=find_packages(),
+    packages=find_packages(exclude="lstchain._dev_version"),
     install_requires=[
-        'astropy~=4.2',
-        'bokeh~=1.0',
-        'ctapipe~=0.12.0',
-        'ctapipe_io_lst~=0.14.0',
-        'ctaplot~=0.5.5',
-        'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
-        'gammapy~=0.19.0',
+        'astropy~=5.0',
+        'bokeh~=2.0',
+        'ctapipe~=0.19.2',
+        'ctapipe_io_lst~=0.22.0',
+        'ctaplot~=0.6.2',
+        'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
+        'gammapy~=1.1',
         'h5py',
-        'joblib',
-        'matplotlib~=3.5',
+        'iminuit>=2',
+        'joblib~=1.2.0',
+        'matplotlib~=3.7',
         'numba',
-        'numpy<1.22.0a0',
+        'numpy',
         'pandas',
-        'pyirf~=0.5.0',
-        'scipy',
+        'protobuf~=3.20.0',
+        'pyirf~=0.8.0',
+        'scipy>=1.8',
         'seaborn',
-        'scikit-learn~=1.0',
+        'scikit-learn~=1.2',
         'tables',
         'toml',
         'pymongo',
         'pyparsing',
         'setuptools_scm',
+        'jinja2~=3.0.2',  # pinned for bokeh 1.0 compatibility
     ],
     extras_require={
         "all": tests_require + docs_require,
