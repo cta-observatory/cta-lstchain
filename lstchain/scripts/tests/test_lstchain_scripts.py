@@ -1,5 +1,8 @@
+import json
+import os
 import shutil
 import subprocess as sp
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -7,24 +10,17 @@ import pkg_resources
 import pytest
 import tables
 from astropy import units as u
+from astropy.table import Table
 from astropy.time import Time
 from ctapipe.instrument import SubarrayDescription
-
 from ctapipe.io import read_table
 
-from lstchain.io.io import (
-    dl1_params_lstcam_key,
-    dl2_params_lstcam_key,
-    dl1_images_lstcam_key,
-    get_dataset_keys,
-    get_srcdep_params,
-    dl1_params_tel_mon_ped_key,
-    dl1_params_tel_mon_cal_key,
-    dl1_params_tel_mon_flat_key,
-)
-
-from lstchain.io.config import get_standard_config, get_srcdep_config
-import json
+from lstchain.io.config import get_srcdep_config, get_standard_config
+from lstchain.io.io import (dl1_images_lstcam_key, dl1_params_lstcam_key,
+                            dl1_params_tel_mon_cal_key,
+                            dl1_params_tel_mon_flat_key,
+                            dl1_params_tel_mon_ped_key, dl2_params_lstcam_key,
+                            get_dataset_keys, get_srcdep_params)
 
 
 def find_entry_points(package_name):
@@ -469,8 +465,9 @@ def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
 
 
 def test_read_mc_dl2_to_QTable(simulated_dl2_file):
-    from lstchain.io.io import read_mc_dl2_to_QTable
     import astropy.units as u
+
+    from lstchain.io.io import read_mc_dl2_to_QTable
 
     events, sim_info, simu_geomag = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
@@ -492,8 +489,9 @@ def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
 
 @pytest.mark.private_data
 def test_run_summary(run_summary_path):
-    from astropy.table import Table
     from datetime import datetime
+
+    from astropy.table import Table
 
     date = "20200218"
 
@@ -522,9 +520,9 @@ def test_merge_run_summaries(tmp_path):
     test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
     monitoring_path = test_data / "real/monitoring"
     merged_file = tmp_path / "merged_summaries.ecsv"
-    output = run_program(
+    run_program(
         "lstchain_merge_run_summaries", "-m", monitoring_path, merged_file
-        )
+    )
     assert merged_file.exists()
     table = Table.read(merged_file)
     # Since no drive log is present in the test sample, only the runs
