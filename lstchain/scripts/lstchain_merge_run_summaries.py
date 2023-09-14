@@ -99,7 +99,7 @@ def merge_run_summary_with_pointing(run_summary, drive_report):
     if len(table) == 0:
         return None
 
-    table['run_start'] = Time(table['run_start'] / 1e9, format='unix', scale='utc')
+    table['run_start'] = Time(table['run_start'] / 1e9, format='unix_tai', scale='utc')
 
     pointing_info = get_pointing_info(table['run_start'], drive_report)
     for k, v in pointing_info.items():
