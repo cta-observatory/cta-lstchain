@@ -15,6 +15,7 @@ import sys
 import argparse
 import logging
 from pathlib import Path
+import json
 
 import astropy.units as u
 import numpy as np
@@ -31,13 +32,14 @@ from ctapipe_io_lst import constants
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.image.cleaning import apply_dynamic_cleaning
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
-from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
+from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames, add_config_metadata
 
 from lstchain.io.config import (
     get_cleaning_parameters,
     get_standard_config,
     read_configuration_file,
     replace_config,
+    includes_image_modification,
 )
 from lstchain.io.io import (
     dl1_images_lstcam_key,
@@ -82,7 +84,7 @@ parser.add_argument(
 
 parser.add_argument(
     '--no-image', action='store_true',
-    help='Pass this argument to avoid writing the images in the new DL1 files. Beware, if `increase_nsb` or `increase_psf` are True in the config, the images will not be written.',
+    help='Pass this argument to avoid writing the images in the new DL1 files.',
 )
 
 parser.add_argument(
@@ -148,9 +150,9 @@ def main():
 
     if increase_nsb or increase_psf:
         log.info(f"image_modifier configuration: {imconfig}")
-        log.info("NOTE: Using the image_modifier options means images will "
-                 "not be saved.")
-        args.no_image = True
+        if not args.no_image:
+            log.info("Modified images are saved in the output file.")
+ 
     if increase_nsb:
         extra_noise_in_dim_pixels = imconfig["extra_noise_in_dim_pixels"]
         extra_bias_in_dim_pixels = imconfig["extra_bias_in_dim_pixels"]
@@ -243,6 +245,14 @@ def main():
 
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = read_table(infile, dl1_images_lstcam_key)
+        # if the image modifier has been used to produce these images, stop here
+        config_from_image_table = json.loads(image_table.meta['config'])
+        if includes_image_modification(config_from_image_table) and includes_image_modification(config):
+            log.critical(f"\nThe image modifier has already been used to produce the images in file {args.input_file}.\n"
+                        "Re-applying the image modifier is not a good practice, start again from unmodified images please.")
+            sys.exit(1)
+
+        images = image_table['image']
         params = read_table(infile, dl1_params_lstcam_key)
         dl1_params_input = params.colnames
 
@@ -270,10 +280,6 @@ def main():
         if increase_psf:
             set_numba_seed(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
-        image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
-        if image_mask_save:
-            image_mask = image_table['image_mask']
-
         new_params = set(parameters_to_update.keys()) - set(params.colnames)
         for p in new_params:
             params[p] = np.empty(len(params), dtype=parameters_to_update[p])
@@ -281,7 +287,6 @@ def main():
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
-
 
             # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
             for k, item in metadata.as_dict().items():
@@ -420,13 +425,17 @@ def main():
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
-                if image_mask_save:
-                    image_mask[ii] = signal_pixels
+                images[ii] = image
 
-            if image_mask_save or catB_calib:
-                # the image table has been modified and needs to be saved
+                if 'image_mask' in image_table.colnames:
+                    image_table['image_mask'][ii] = signal_pixels
+
+
+            add_config_metadata(image_table, config)
+            if not args.no_image:
                 write_table(image_table, outfile, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
+            add_config_metadata(params, config)
             write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
             # write a cat-B calibrations in DL1b

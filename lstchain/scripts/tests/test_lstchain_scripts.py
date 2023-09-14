@@ -6,6 +6,7 @@ import pandas as pd
 import pkg_resources
 import pytest
 import tables
+from importlib.resources import files
 from astropy import units as u
 from astropy.time import Time
 from ctapipe.instrument import SubarrayDescription
@@ -428,6 +429,29 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
             assert (new_parameters['n_pixels'] <= old_parameters['n_pixels']).all()
             assert (new_parameters['n_pixels'] < old_parameters['n_pixels']).any()
             assert (new_parameters['length'] != old_parameters['length']).any()
+
+
+def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
+    config_path = tmp_path / 'config_image_modifier.json'
+    output_file = tmp_path / 'dl1ab_on_modified_images.h5'
+    reprocess_output_file = tmp_path / 'dl1ab_on_modified_images_reprocess.h5'
+    config_path = files("lstchain.data").joinpath("lstchain_dl1ab_tune_MC_to_Crab_config.json")
+
+    run_program(
+        'lstchain_dl1ab',
+        '-f', simulated_dl1ab,
+        '-o', output_file,
+        '-c', config_path,
+    )
+
+    # second process should fail as we are trying to re-modify already modified images
+    with pytest.raises(ValueError):
+        run_program(
+            'lstchain_dl1ab',
+            '-f', output_file,
+            '-o', reprocess_output_file,
+            '-c', config_path,
+        )
 
 
 @pytest.mark.private_data
