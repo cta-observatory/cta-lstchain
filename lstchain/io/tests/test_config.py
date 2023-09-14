@@ -1,7 +1,6 @@
 import tempfile
 from lstchain.io import config
-from lstchain.io.config import get_cleaning_parameters
-from lstchain.scripts.lstchain_dl1ab import includes_image_modification
+from lstchain.io.config import get_cleaning_parameters, includes_image_modification
 
 
 def test_get_standard_config():
