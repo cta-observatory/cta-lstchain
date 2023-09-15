@@ -13,7 +13,7 @@ from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_ima
 from lstchain.reco.utils import filter_events
 from lstchain.reco.dl1_to_dl2 import build_models
 
-test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data')).absolute()
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
