@@ -233,7 +233,7 @@ def interleaved_r1_file(temp_dir_observed_files, run_summary_path):
         "--default-trigger-type=tib"
     )
 
-    return temp_dir_observed_files / "interleaved_LST-1.Run02006.0000.h5"
+    return temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02006.0000.h5"
 
 
 @pytest.fixture(scope="session")

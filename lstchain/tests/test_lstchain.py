@@ -241,7 +241,7 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
 @pytest.mark.private_data
 def test_get_interleaved_r1_file(interleaved_r1_file):
     assert interleaved_r1_file.is_file()
-    
+
 
 def test_build_models(simulated_dl1_file, rf_models):
     infile = simulated_dl1_file
