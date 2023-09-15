@@ -1,10 +1,7 @@
-import os
-from pathlib import Path
-
 import numpy as np
 
 from ctapipe.core import run_tool
-from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL
+from ctapipe_io_lst.constants import N_GAINS, N_PIXELS
 from ctapipe.io import read_table
 from lstchain.onsite import DEFAULT_CONFIG
 
@@ -24,7 +21,7 @@ def test_create_calibration_file(tmp_path):
     input_path = test_data / "real/R0/20200218/LST-1.1.Run02006.0000_first50.fits.fz"
     output_path = tmp_path / "calibration_02006.h5"
     stat_events = 90
-   
+    
     ret =  run_tool(
         CalibrationHDF5Writer(),
         argv=[

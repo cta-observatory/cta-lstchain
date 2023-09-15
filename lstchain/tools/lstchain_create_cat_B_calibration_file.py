@@ -140,7 +140,6 @@ class CatBCalibrationHDF5Writer(Tool):
         )
 
         tel_id = self.processor.tel_id
-
         group_name = 'tel_' + str(tel_id)
 
         self.log.info(f"Open output file {self.output_file}")
@@ -199,7 +198,7 @@ class CatBCalibrationHDF5Writer(Tool):
         
                     # if pedestal event
                     if self._is_pedestal(event, tel_id):
-                    
+                        #breakpoint()
                         if self.processor.pedestal.calculate_pedestals(event):
                             new_ped = True
                             count_ped = count+1
