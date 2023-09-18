@@ -55,10 +55,10 @@ jobs:
           sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
 
       - name: Mamba setup
-        uses: mamba-org/provision-with-micromamba@v14
+        uses: mamba-org/setup-micromamba@v1
         with:
-          environment-name: "lst-dev"
           environment-file: environment.yml
+          cache-downloads: true
 
       - name: Install dependencies
         env:
