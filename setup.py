@@ -52,7 +52,7 @@ setup(
         'matplotlib~=3.5',
         'numba',
         'numpy<1.22.0a0',
-        'pandas',
+        'pandas~=1.5',
         'protobuf~=3.20.0',
         'pyirf~=0.6.0',
         'scipy',
