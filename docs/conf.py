@@ -60,7 +60,7 @@ templates_path = ['_templates']
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.6", None),
+    "python": ("https://docs.python.org/3.8", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "scipy": ("https://docs.scipy.org/doc/scipy", None),
     "astropy": ("https://docs.astropy.org/en/latest/", None),
@@ -68,7 +68,7 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "traitlets": ("https://traitlets.readthedocs.io/en/stable/", None),
-    "ctapipe": ("https://cta-observatory.github.io/ctapipe/", None)
+    "ctapipe": ("https://ctapipe.readthedocs.io/en/v0.12.0-rtd/", None)
 }
 
 # These links are ignored in the checks, necessary due to broken intersphinx for
