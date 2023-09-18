@@ -512,4 +512,4 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_counter" in run_summary_table.columns
     assert "dragon_reference_source" in run_summary_table.columns
 
-    assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
+    assert (run_summary_table["run_type"] == ["DATA", "PEDCALIB", "DATA"]).all()
