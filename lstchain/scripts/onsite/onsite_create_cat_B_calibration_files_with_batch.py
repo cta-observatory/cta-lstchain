@@ -1,4 +1,4 @@
-#!/usr//bin/env python
+#!/usr/bin/env python
 
 """
 
@@ -42,7 +42,7 @@ optional.add_argument('-v', '--prod_version',
 optional.add_argument('-s', '--statistics',
                       help="Number of events for the flat-field and pedestal statistics",
                       type=int,
-                      default=10000)
+                      default=2500)
 optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
                       default=DEFAULT_BASE_PATH)
 optional.add_argument('--dl1-dir', help="Root dir for the input r tree. By default, <base_dir>/DL1 will be used",
