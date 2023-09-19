@@ -569,11 +569,8 @@ class IRFFITSWriter(Tool):
         )
         # Different normalization of EDISP had been assumed so far (to the sum of 1).
         # According to GADF definition, it should be normalized to the integral of 1.
+        # This normalization definition is assumed in pyirf >= v0.10.0.
         # See https://github.com/cta-observatory/pyirf/pull/250
-        self.log.warning(
-            "Fixing EDISP normalization for v0.9 data products. The proper "
-            "normalization is assumed in lstchain v0.10.5 which uses pyirf >= v0.10.0"
-        )
         bin_width = np.diff(migration_bins)
         self.edisp /= bin_width[np.newaxis, :, np.newaxis]
         self.hdus.append(
