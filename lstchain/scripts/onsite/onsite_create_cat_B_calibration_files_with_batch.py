@@ -47,6 +47,9 @@ optional.add_argument('-b', '--base_dir', help="Root dir for the output director
                       default=DEFAULT_BASE_PATH)
 optional.add_argument('--dl1-dir', help="Root dir for the input r tree. By default, <base_dir>/DL1 will be used",
                       type=Path)
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
+                      type=Path)
+
 optional.add_argument('--n_subruns', help="Number of subruns to be processed",
                       type=int)
 
@@ -64,20 +67,7 @@ optional.add_argument('--no_pro_symlink', action="store_true",
 
 optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG_CAT_B_CALIB, type=Path)
 
-optional.add_argument(
-    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
-    help=(
-        "If given, try to identify flatfield events from the raw data."
-        " Should be used only for data from before 2022"
-    )
-)
-optional.add_argument(
-    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
-    help=(
-        "If given, do not to identify flatfield events from the raw data."
-        " Should be used only for data from before 2022"
-    )
-)
+
 optional.add_argument('--queue',
                       help="Slurm queue. Deafault: short ",
                       default="short")
@@ -99,6 +89,8 @@ def main():
     no_sys_correction = args.no_sys_correction
     yes = args.yes
     queue = args.queue
+    r0_dir = args.r0_dir or args.base_dir / 'R0'
+    dl1_dir = args.dl1_dir or Path(args.base_dir) / 'DL1'
 
     calib_dir = base_dir / CAT_B_PIXEL_DIR
 
@@ -118,7 +110,6 @@ def main():
     if filters_list is not None and len(filters_list) != len(run_list):
         sys.exit("Filter list length must be equal to run list length. Verify \n")
 
-    dl1_dir = args.dl1_dir or Path(args.base_dir) / 'DL1'
     # loops over runs and send jobs
     filters = None
     for i, run in enumerate(run_list):
@@ -126,7 +117,7 @@ def main():
         if filters_list is not None:
             filters = filters_list[i]
 
-        input_files = find_interleaved_subruns(run, dl1_dir)    
+        input_files = find_interleaved_subruns(run, r0_dir, dl1_dir)    
 
         date = input_files[0].parent.name
         input_path = input_files[0].parent
@@ -167,6 +158,7 @@ def main():
                 f"-r {run}",
                 f"-v {prod_id}",
                 f"--dl1-dir {dl1_dir}",
+                f"--r0-dir {r0_dir}",
                 f"-b {base_dir}",
                 f"-s {stat_events}",
                 f"--config={config_file}",
