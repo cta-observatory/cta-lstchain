@@ -86,8 +86,7 @@ pytest -m 'private_data or not private_data' -v lstchain
 
 All contribution are welcomed.
 
-Guidelines are the same as [ctapipe's ones](https://cta-observatory.github.io/ctapipe/development/index.html)    
-See [here](https://cta-observatory.github.io/ctapipe/development/pullrequests.html) for the general guidelines on how to make a pull request to contribute to the repository. Since the addition of the private data, the CI tests for Pull Requests from forks are not working, therefore we would like to ask to push your modified branches directly to the main cta-lstchain repo. If you do not have writing permissions in the repo, please contact one of the main developers. 
+Guidelines are the same as [ctapipe's ones](https://ctapipe.readthedocs.io/en/latest/developer-guide/index.html). See [here](https://ctapipe.readthedocs.io/en/latest/developer-guide/pullrequests.html) for the general guidelines on how to make a pull request to contribute to the repository. Since the addition of the private data, the CI tests for Pull Requests from forks are not working, therefore we would like to ask to push your modified branches directly to the main cta-lstchain repo. If you do not have writing permissions in the repo, please contact one of the main developers. 
 
 
 ## Report issue / Ask a question
