@@ -319,7 +319,7 @@ def main():
                     image[unusable_pixels] = 0
 
                     # time flafielding
-                    peak_time = peak_time - time_correction
+                    peak_time = peak_time + time_correction
 
                     # store it to save it later
                     image_table['image'][ii] = image
