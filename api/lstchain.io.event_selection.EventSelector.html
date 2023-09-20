@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EventSelector &mdash; lstchain 0.10.1.dev5+g781f35ef documentation</title>
+  <title>EventSelector &mdash; lstchain 0.10.5.dev40+gbb39662e documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
@@ -44,7 +44,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.1.dev5+g781f35ef
+                0.10.5.dev40+gbb39662e
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -138,10 +138,10 @@ Data Model.</p>
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.EventSelector.filters" title="lstchain.io.event_selection.EventSelector.filters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filters</span></code></a></p></td>
-<td><p>Dict of event filter parameters</p></td>
+<td><p>An instance of a Python dict.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.EventSelector.finite_params" title="lstchain.io.event_selection.EventSelector.finite_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finite_params</span></code></a></p></td>
-<td><p>List of parameters to ensure finite values</p></td>
+<td><p>An instance of a Python list.</p></td>
 </tr>
 </tbody>
 </table>
@@ -161,13 +161,23 @@ Data Model.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="lstchain.io.event_selection.EventSelector.filters">
 <span class="sig-name descname"><span class="pre">filters</span></span><a class="headerlink" href="#lstchain.io.event_selection.EventSelector.filters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dict of event filter parameters</p>
+<dd><p>An instance of a Python dict.</p>
+<p>One or more traits can be passed to the constructor
+to validate the keys and/or values of the dict.
+If you need more detailed validation,
+you may use a custom validator method.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 5.0: </span>Added key_trait for validating dict keys.</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 5.0: </span>Deprecated ambiguous <code class="docutils literal notranslate"><span class="pre">trait</span></code>, <code class="docutils literal notranslate"><span class="pre">traits</span></code> args in favor of <code class="docutils literal notranslate"><span class="pre">value_trait</span></code>, <code class="docutils literal notranslate"><span class="pre">per_key_traits</span></code>.</p>
+</div>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="lstchain.io.event_selection.EventSelector.finite_params">
 <span class="sig-name descname"><span class="pre">finite_params</span></span><a class="headerlink" href="#lstchain.io.event_selection.EventSelector.finite_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of parameters to ensure finite values</p>
+<dd><p>An instance of a Python list.</p>
 </dd></dl>
 
 <p class="rubric">Methods Documentation</p>
@@ -192,7 +202,7 @@ Data Model.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2023 12:37.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 20 Sep 2023 15:47.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

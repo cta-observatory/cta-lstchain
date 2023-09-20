@@ -1,0 +1,6 @@
+update_disp_with_effective_focal_length
+=======================================
+
+.. currentmodule:: lstchain.reco.dl1_to_dl2
+
+.. autofunction:: update_disp_with_effective_focal_length

@@ -9,7 +9,6 @@ The scripts to be executed from the command line are described below:
    Currently both `scripts` and `Tools` are meant to be run from the command line.
    Please see also :ref:`tools` section for more information.
 
-* `lstchain_add_source_dependent_parameters`_
 * `lstchain_check_dl1`_
 * `lstchain_create_run_summary`_
 * `lstchain_data_create_time_calibration_file`_
@@ -29,20 +28,6 @@ The scripts to be executed from the command line are described below:
 * `lstchain_merge_muon_files`_
 * `lstchain_tune_nsb`_
 
-
-.. _lstchain_add_source_dependent_parameters:
-
-lstchain_add_source_dependent_parameters
-++++++++++++++++++++++++++++++++++++++++
-
-.. automodule:: lstchain.scripts.lstchain_add_source_dependent_parameters
-
-Usage
------
-.. argparse::
-   :module: lstchain.scripts.lstchain_add_source_dependent_parameters
-   :func: parser
-   :prog: lstchain_add_source_dependent_parameters
 
 .. _lstchain_check_dl1:
 
