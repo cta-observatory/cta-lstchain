@@ -216,8 +216,11 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # define unusables on number of estimated pe
         npe_deviation =  calib_data.n_pe - npe_median[:,np.newaxis]
 
-        # cut on the base of pe statistical uncertainty (adding a 7% spread due to different detection QE among PMs) 
-        tot_std = np.sqrt(npe_median + (self.relative_qe_dispersion * npe_median)**2)
+        # cut on the base of mean pe statistical uncertainty which is given by:
+        # the npe poisson statistics, std_npe=sqrt(npe), divided by the sqrt of the sample statistics
+        # std_pe_mean=std_npe/sqrt(n_events) (we use the error of the mean for simplicity)
+        # we finally add a 7% spread due to different detection QE among PMs, which is actually the dominating value
+        tot_std = np.sqrt(npe_median/ff_data.n_events + (self.relative_qe_dispersion * npe_median)**2)
 
         npe_outliers = (
             np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * tot_std[:,np.newaxis],
