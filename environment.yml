@@ -7,7 +7,7 @@ dependencies:
   - astropy=5
   - pip
   - ctapipe=0.19.2
-  - ctaplot~=0.6.2
+  - ctaplot~=0.6.4
   - gammapy=1.1
   - h5py
   - ipython
