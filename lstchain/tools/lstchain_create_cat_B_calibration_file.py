@@ -198,7 +198,7 @@ class CatBCalibrationHDF5Writer(Tool):
         
                     # if pedestal event
                     if self._is_pedestal(event, tel_id):
-                        #breakpoint()
+
                         if self.processor.pedestal.calculate_pedestals(event):
                             new_ped = True
                             count_ped = count+1
