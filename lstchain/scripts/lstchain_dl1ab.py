@@ -75,6 +75,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--max-unusable-pixels',
+    type=int,
+    default=70,
+    help='Maximum accepted number of unusable pixels. Default: 70 (= 10 modules)',
+)
+
+parser.add_argument(
     '-c', '--config',
     dest='config_file',
     help='Path to a configuration file. If none is given, a standard configuration is applied',
@@ -130,6 +137,10 @@ def main():
 
         catB_time_correction = np.array(catB_calib["time_correction"])
         catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
+
+        # set unusable all pixels in periods with too many unusable pixels (car flashes, etc...)
+        catB_unusable_pixels[np.sum(catB_unusable_pixels, axis=2) > args.max_unusable_pixels] = True
+
         pixel_index = np.arange(constants.N_PIXELS)
 
 
