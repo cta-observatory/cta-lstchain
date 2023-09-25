@@ -567,6 +567,12 @@ class IRFFITSWriter(Tool):
             fov_offset_bins,
             migration_bins,
         )
+        # Different normalization of EDISP had been assumed so far (to the sum of 1).
+        # According to GADF definition, it should be normalized to the integral of 1.
+        # This normalization definition is assumed in pyirf >= v0.10.0.
+        # See https://github.com/cta-observatory/pyirf/pull/250
+        bin_width = np.diff(migration_bins)
+        self.edisp /= bin_width[np.newaxis, :, np.newaxis]
         self.hdus.append(
             create_energy_dispersion_hdu(
                 self.edisp,
@@ -576,6 +582,7 @@ class IRFFITSWriter(Tool):
                 point_like=self.point_like,
                 extname="ENERGY DISPERSION",
                 **extra_headers,
+                FIXEDNRM=True,
             )
         )
         self.log.info("Energy Dispersion HDU created")
