@@ -736,20 +736,34 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None, complevel=1):
+def write_dataframe(dataframe: pd.DataFrame, outfile: str, table_path: str, mode: str = "a", index: bool = False, config: dict = None, meta: dict = None, complevel: int = 1) -> None:
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
+    lstchain.io.io.HDF5_ZSTD_FILTERS are used as filters.
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    table_path: str
-        path to the table to write in the HDF5 file
-    config: config metadata
-    meta: global metadata
-    """
+    dataframe : pandas.DataFrame
+        The dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    table_path : str
+        The path to the table to write in the HDF5 file.
+    mode : str, optional
+        The mode to open the HDF5 file in. Default is 'a'.
+    index : bool, optional
+        Whether to include the index of the dataframe in the output. Default is False.
+    config : dict, optional
+        Configuration metadata to be stored as an attribute of the output table. Default is None.
+    meta : dict, optional
+        Global metadata to be stored as attributes of the output table. Default is None.
+    complevel : int, optional
+        The compression level to use when writing the output table. Default is 1.
 
+    Returns
+    -------
+    None
+    """
     filters = HDF5_ZSTD_FILTERS.copy()
     filters.complevel = complevel
 
@@ -769,7 +783,7 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, confi
         if config:
             t.attrs["config"] = config
         if meta:
-            for k, item in meta.as_dict().items():
+            for k, item in meta.items():
                 t.attrs[k] = item
 
 
