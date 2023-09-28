@@ -736,7 +736,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None, complib='zlib', complevel=5):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None, complevel=1):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -750,7 +750,8 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, confi
     meta: global metadata
     """
 
-    filters = tables.Filters(complevel=complevel, complib=complib)
+    filters = HDF5_ZSTD_FILTERS.copy()
+    filters.complevel = complevel
 
     if not table_path.startswith("/"):
         table_path = "/" + table_path
