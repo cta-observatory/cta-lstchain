@@ -179,7 +179,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 mymax = np.median(image[chan]) + 2 * np.std(image[chan])
                 disp.set_limits_minmax(mymin, mymax)
                 disp.cmap = plt.cm.coolwarm
-                plt.title(f"{channel[chan]} photon-electrons")
+                plt.title(f"{channel[chan]} n pe, {np.sum(mask[chan])} unusable pixels")
                 # disp.axes.text(lposx, 0, f'{channel[chan]} photon-electrons', rotation=90)
                 disp.add_colorbar()
 
