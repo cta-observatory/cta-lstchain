@@ -77,7 +77,7 @@ optional.add_argument('-f', '--filters', help="Calibox filters")
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 
 optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG_CAT_B_CALIB, type=Path)
-optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.101:27017/")
+optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.161:27018/")
 
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 optional.add_argument('--no_pro_symlink', action="store_true",
