@@ -19,7 +19,7 @@ from astropy.table import Table, vstack, QTable
 
 from ctapipe.containers import SimulationConfigContainer
 from ctapipe.instrument import SubarrayDescription
-from ctapipe.io import HDF5TableReader, HDF5TableWriter
+from ctapipe.io import HDF5TableReader, HDF5TableWriter, write_table
 
 from eventio import Histograms, EventIOFile
 from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
@@ -33,7 +33,6 @@ from .lstcontainers import (
     MetaData,
     ThrownEventsHistogram,
 )
-
 
 
 log = logging.getLogger(__name__)
@@ -79,6 +78,7 @@ __all__ = [
     'write_subarray_tables',
 ]
 
+
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
@@ -90,8 +90,9 @@ dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/L
 dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
 dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
+
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
+    complevel=1,  # enable compression, 5 is a good tradeoff between compression and speed
     complib='blosc:zstd',  # compression using blosc/zstd
     fletcher32=True,  # attach a checksum to each chunk for error correction
     bitshuffle=False,  # for BLOSC, shuffle bits for better compression
@@ -736,10 +737,18 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe: pd.DataFrame, outfile: str, table_path: str, mode: str = "a", index: bool = False, config: dict = None, meta: dict = None, complevel: int = 1) -> None:
+def write_dataframe(dataframe: pd.DataFrame, 
+                    outfile: str,
+                    table_path: str,
+                    append=False,
+                    overwrite=False,
+                    mode: str = "a",
+                    index: bool = False,
+                    config: dict = None,
+                    meta=None,
+                    filters=HDF5_ZSTD_FILTERS) -> None:
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
-    lstchain.io.io.HDF5_ZSTD_FILTERS are used as filters.
 
     Parameters
     ----------
@@ -749,56 +758,65 @@ def write_dataframe(dataframe: pd.DataFrame, outfile: str, table_path: str, mode
         The path to the output HDF5 file.
     table_path : str
         The path to the table to write in the HDF5 file.
-    mode : str, optional
-        The mode to open the HDF5 file in. Default is 'a'.
+    append: bool
+        Wether to try to append to or replace an existing table
+    overwrite: bool
+        If table is already in file and overwrite and append are false,
+        raise an error.
+    mode: str
+        If given a path for ``h5file``, it will be opened in this mode.
+        See the docs of ``tables.open_file``.
     index : bool, optional
         Whether to include the index of the dataframe in the output. Default is False.
     config : dict, optional
         Configuration metadata to be stored as an attribute of the output table. Default is None.
-    meta : dict, optional
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
         Global metadata to be stored as attributes of the output table. Default is None.
-    complevel : int, optional
-        The compression level to use when writing the output table. Default is 1.
+    filters : tables.Filters, optional
+        Filters to apply when writing the output table. Default is tables.Filters(complevel=1, complib='zstd', shuffle=True).
 
     Returns
     -------
     None
     """
-    filters = HDF5_ZSTD_FILTERS.copy()
-    filters.complevel = complevel
-
     if not table_path.startswith("/"):
         table_path = "/" + table_path
 
-    with tables.open_file(outfile, mode=mode) as f:
-        path, table_name = table_path.rsplit("/", maxsplit=1)
-
-        t = f.create_table(
-            path,
-            table_name,
-            dataframe.to_records(index=index),
-            createparents=True,
-            filters=filters
-        )
-        if config:
-            t.attrs["config"] = config
-        if meta:
-            for k, item in meta.items():
-                t.attrs[k] = item
+    t = Table.from_pandas(dataframe, index=index)
+    t.meta = meta.as_dict() if meta else {}
+    t.meta["config"] = config
+    write_table(t, outfile, table_path, append=append, overwrite=overwrite, mode=mode, filters=filters)
 
 
-def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
+def write_dl2_dataframe(dataframe, outfile, append=True, overwrite=False, config=None, meta=None):
     """
     Write DL2 dataframe to a HDF5 file
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The DL2 dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    append: bool
+        Wether to try to append to or replace an existing table
+    overwrite: bool
+        If table is already in file and overwrite and append are false,
+        raise an error.
+    mode: str
+        If given a path for ``h5file``, it will be opened in this mode.
+        See the docs of ``tables.open_file``.
+    config : dict, optional
+        A dictionary containing used configuration.
+        Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        global metadata.
+        Default is None.
     """
-    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
+    write_dataframe(dataframe, outfile=outfile,
+                    table_path=dl2_params_lstcam_key,
+                    append=append, overwrite=overwrite,
+                    config=config, meta=meta)
 
 
 def add_column_table(table, ColClass, col_label, values):
