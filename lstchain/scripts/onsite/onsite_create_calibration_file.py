@@ -79,7 +79,7 @@ optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, de
 
 optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG, type=Path)
 
-optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.161:27018/")
+optional.add_argument('--mongodb', help="Mongo data-base (CACO DB) connection.", default="mongodb://10.200.10.161:27018/")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
