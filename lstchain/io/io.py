@@ -92,7 +92,7 @@ dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/L
 
 
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=1,  # enable compression, 5 is a good tradeoff between compression and speed
+    complevel=1,  # enable compression, after some tests on DL1 data (images and parameters), complevel>1 does not improve compression very much but slows down IO significantly
     complib='blosc:zstd',  # compression using blosc/zstd
     fletcher32=True,  # attach a checksum to each chunk for error correction
     bitshuffle=False,  # for BLOSC, shuffle bits for better compression
