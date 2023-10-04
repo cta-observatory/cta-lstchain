@@ -19,7 +19,7 @@ from astropy.table import Table, vstack, QTable
 
 from ctapipe.containers import SimulationConfigContainer
 from ctapipe.instrument import SubarrayDescription
-from ctapipe.io import HDF5TableReader, HDF5TableWriter, write_table
+from ctapipe.io import HDF5TableReader, HDF5TableWriter
 
 from eventio import Histograms, EventIOFile
 from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
