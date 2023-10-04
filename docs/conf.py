@@ -90,6 +90,8 @@ nitpick_ignore = [
     ("py:class", "t.Type"),
     ("py:class", "Config"),
     ("py:class", "Unicode"),
+    ("py:class", "StrDict"),
+    ("py:class", "ClassesType")
 ]
 
 # The suffix(es) of source filenames.
