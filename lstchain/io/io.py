@@ -737,16 +737,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe: pd.DataFrame, 
-                    outfile: str,
-                    table_path: str,
-                    append=False,
-                    overwrite=False,
-                    mode: str = "a",
-                    index: bool = False,
-                    config: dict = None,
-                    meta=None,
-                    filters=HDF5_ZSTD_FILTERS) -> None:
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None, filters=HDF5_ZSTD_FILTERS):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -758,11 +749,6 @@ def write_dataframe(dataframe: pd.DataFrame,
         The path to the output HDF5 file.
     table_path : str
         The path to the table to write in the HDF5 file.
-    append: bool
-        Wether to try to append to or replace an existing table
-    overwrite: bool
-        If table is already in file and overwrite and append are false,
-        raise an error.
     mode: str
         If given a path for ``h5file``, it will be opened in this mode.
         See the docs of ``tables.open_file``.
@@ -782,13 +768,24 @@ def write_dataframe(dataframe: pd.DataFrame,
     if not table_path.startswith("/"):
         table_path = "/" + table_path
 
-    t = Table.from_pandas(dataframe, index=index)
-    t.meta = meta.as_dict() if meta else {}
-    t.meta["config"] = config
-    write_table(t, outfile, table_path, append=append, overwrite=overwrite, mode=mode, filters=filters)
+    with tables.open_file(outfile, mode=mode) as f:
+        path, table_name = table_path.rsplit("/", maxsplit=1)
+
+        t = f.create_table(
+            path,
+            table_name,
+            dataframe.to_records(index=index),
+            createparents=True,
+            filters=filters,
+        )
+        if config:
+            t.attrs["config"] = config
+        if meta:
+            for k, item in meta.as_dict().items():
+                t.attrs[k] = item
 
 
-def write_dl2_dataframe(dataframe, outfile, append=True, overwrite=False, config=None, meta=None):
+def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
     """
     Write DL2 dataframe to a HDF5 file
 
@@ -798,14 +795,6 @@ def write_dl2_dataframe(dataframe, outfile, append=True, overwrite=False, config
         The DL2 dataframe to be written to the HDF5 file.
     outfile : str
         The path to the output HDF5 file.
-    append: bool
-        Wether to try to append to or replace an existing table
-    overwrite: bool
-        If table is already in file and overwrite and append are false,
-        raise an error.
-    mode: str
-        If given a path for ``h5file``, it will be opened in this mode.
-        See the docs of ``tables.open_file``.
     config : dict, optional
         A dictionary containing used configuration.
         Default is None.
@@ -813,10 +802,7 @@ def write_dl2_dataframe(dataframe, outfile, append=True, overwrite=False, config
         global metadata.
         Default is None.
     """
-    write_dataframe(dataframe, outfile=outfile,
-                    table_path=dl2_params_lstcam_key,
-                    append=append, overwrite=overwrite,
-                    config=config, meta=meta)
+    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
 
 
 def add_column_table(table, ColClass, col_label, values):
