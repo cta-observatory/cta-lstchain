@@ -299,9 +299,6 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     pedestal_calibrator.image_extractors[ped_config['charge_product']].apply_integration_correction = True
     shower_calibrator.image_extractors[shower_extractor_type].apply_integration_correction = True
 
-
-
-
     # Pulse integration window width of the (biased) extractor for showers:
     shower_extractor_window_width = config[config['image_extractor']]['window_width']
 

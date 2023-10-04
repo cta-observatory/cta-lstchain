@@ -6,6 +6,7 @@ import pandas as pd
 import pkg_resources
 import pytest
 import tables
+from importlib.resources import files
 from astropy import units as u
 from astropy.time import Time
 from ctapipe.instrument import SubarrayDescription
@@ -432,6 +433,29 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
             assert (new_parameters['length'] != old_parameters['length']).any()
 
 
+def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
+    config_path = tmp_path / 'config_image_modifier.json'
+    output_file = tmp_path / 'dl1ab_on_modified_images.h5'
+    reprocess_output_file = tmp_path / 'dl1ab_on_modified_images_reprocess.h5'
+    config_path = files("lstchain.data").joinpath("lstchain_dl1ab_tune_MC_to_Crab_config.json")
+
+    run_program(
+        'lstchain_dl1ab',
+        '-f', simulated_dl1ab,
+        '-o', output_file,
+        '-c', config_path,
+    )
+
+    # second process should fail as we are trying to re-modify already modified images
+    with pytest.raises(ValueError):
+        run_program(
+            'lstchain_dl1ab',
+            '-f', output_file,
+            '-o', reprocess_output_file,
+            '-c', config_path,
+        )
+
+
 @pytest.mark.private_data
 def test_observed_dl1ab(tmp_path, observed_dl1_files):
     output_dl1ab = tmp_path / "dl1ab.h5"
@@ -516,4 +540,4 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_counter" in run_summary_table.columns
     assert "dragon_reference_source" in run_summary_table.columns
 
-    assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
+    assert (run_summary_table["run_type"] == ["DATA", "PEDCALIB", "DATA"]).all()

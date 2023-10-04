@@ -10,6 +10,9 @@ import pandas as pd
 import tables
 from tables import open_file
 from tqdm import tqdm
+import json
+from traitlets.config.loader import DeferredConfigString, LazyConfigValue
+from pathlib import PosixPath
 
 import astropy.units as u
 from astropy.table import Table, vstack, QTable
@@ -30,6 +33,8 @@ from .lstcontainers import (
     MetaData,
     ThrownEventsHistogram,
 )
+
+
 
 log = logging.getLogger(__name__)
 
@@ -661,6 +666,50 @@ def add_global_metadata(container, metadata):
         container.meta[k] = item
 
 
+
+
+def serialize_config(obj):
+    """
+    Serialize an object to a JSON-serializable format.
+
+    Parameters
+    ----------
+    obj : object
+        The object to serialize.
+
+    Returns
+    -------
+    object
+        The serialized object.
+
+    Raises
+    ------
+    TypeError
+        If the object is not serializable.
+
+    Notes
+    -----
+    This function serializes an object to a JSON-serializable format. It supports the following types:
+    - LazyConfigValue
+    - DeferredConfigString
+    - PosixPath
+    - numpy.ndarray
+
+    If the object is not one of the above types, a TypeError is raised.
+
+    """
+    if isinstance(obj, LazyConfigValue):
+        return obj.to_dict()
+    elif isinstance(obj, DeferredConfigString):
+        return str(obj)
+    elif isinstance(obj, PosixPath):
+        return obj.as_posix()
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        raise TypeError(f"Type {type(obj).__name__} not serializable")
+
+
 def add_config_metadata(container, configuration):
     """
     Add configuration parameters to a container in container.meta.config
@@ -670,18 +719,7 @@ def add_config_metadata(container, configuration):
     container: `ctapipe.containers.Container`
     configuration: config dict
     """
-    linted_config = str(configuration)
-    linted_config = linted_config.replace("<LazyConfigValue {}>", "None")
-    linted_config = re.sub(r"<LazyConfigValue\svalue=(.*?)>", "\\1", linted_config)
-    linted_config = re.sub(r"DeferredConfigString\((.*?)\)", "\\1", linted_config)
-    linted_config = re.sub(r"PosixPath\((.*?)\)", "\\1", linted_config)
-    linted_config = linted_config.replace("\'", "\"")
-    linted_config = linted_config.replace("None", "\"None\"")
-    linted_config = linted_config.replace("inf", "\"inf\"")
-    linted_config = linted_config.replace("True", "true")
-    linted_config = linted_config.replace("False", "false")
-
-    container.meta["config"] = linted_config
+    container.meta["config"] = json.dumps(configuration, default=serialize_config)
 
 
 def write_subarray_tables(writer, event, metadata=None):
@@ -1267,3 +1305,4 @@ def get_mc_fov_offset(filename):
     mean_offset = min_viewcone + 0.5 * (max_viewcone - min_viewcone)
 
     return mean_offset
+
