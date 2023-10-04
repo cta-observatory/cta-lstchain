@@ -81,6 +81,11 @@ nitpick_ignore = [
     ("py:class", "ctapipe.core.container.Container"),
     ("py:class", "ctapipe.calib.camera.flatfield.FlatFieldCalculator"),
     ("py:class", "ctapipe.calib.camera.pedestals.PedestalCalculator"),
+    ("py:class", "lstchain.tools.lstchain_create_dl3_file.DataReductionFITSWriter"),
+    ("py:class", "lstchain.tools.lstchain_create_dl3_index_files.FITSIndexWriter"),
+    ("py:class", "lstchain.tools.lstchain_create_calibration_file.CalibrationHDF5Writer"),
+    ("py:class", "lstchain.tools.lstchain_create_irf_files.IRFFITSWriter"),
+    ("py:class", "lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan"),
     # coming from inherited traitlets docs
     ("py:class", "t.Union"),
     ("py:class", "t.Dict"),
