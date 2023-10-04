@@ -126,6 +126,7 @@ def main():
             print(f"--> Process {n_subruns} subruns")
 
         # verify output dir
+        date = input_files[0].parents[1].name
         calib_dir = args.base_dir / CAT_B_PIXEL_DIR
         output_dir = calib_dir / "calibration" / date / prod_id
         if not output_dir.exists():
