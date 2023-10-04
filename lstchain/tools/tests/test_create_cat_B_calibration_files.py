@@ -14,11 +14,9 @@ def test_create_catB_calibration_file(tmp_path,interleaved_r1_file):
     '''Test the lstchain_create_cat_B_calibration_file tool'''
     from lstchain.tools.lstchain_create_cat_B_calibration_file import CatBCalibrationHDF5Writer
 
-
     input_path = interleaved_r1_file.parent
     output_path = tmp_path / "calibration_cat_B_02006.h5"
-    stat_events = 5
-    print(f"config {DEFAULT_CONFIG_CAT_B_CALIB}")
+    stat_events = 90
     
     ret =  run_tool(
         CatBCalibrationHDF5Writer(),
@@ -44,13 +42,9 @@ def test_create_catB_calibration_file(tmp_path,interleaved_r1_file):
     unusable_pixels = cal_data['unusable_pixels']
     dc_to_pe = cal_data["dc_to_pe"]
     
-    print(np.sum(unusable_pixels))
-    print(np.median(n_pe[~unusable_pixels]))
-    print(np.median(dc_to_pe[~unusable_pixels], axis=0))
- 
     assert n_pe.shape == (N_GAINS, N_PIXELS)
-    
-    #assert np.sum(unusable_pixels) == 67
-    #assert np.isclose(np.median(n_pe[~unusable_pixels]), 86.21, rtol=0.1)
-    #assert np.isclose(np.median(dc_to_pe[~unusable_pixels], axis=0), 0.0133, rtol=0.01)
+
+    assert np.sum(unusable_pixels) == 4
+    assert np.isclose(np.median(n_pe[~unusable_pixels]), 86.34, rtol=0.1)
+    assert np.isclose(np.median(dc_to_pe[~unusable_pixels], axis=0), 1.07, rtol=0.01)
 

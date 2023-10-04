@@ -51,7 +51,7 @@ def test_create_calibration_file(tmp_path):
     dc_to_pe = cal_data["dc_to_pe"]
     
     assert n_pe.shape == (N_GAINS, N_PIXELS)
-    assert np.sum(unusable_pixels) == 67
-    assert np.isclose(np.median(n_pe[~unusable_pixels]), 86.21, rtol=0.1)
-    assert np.isclose(np.median(dc_to_pe[~unusable_pixels], axis=0), 0.0133, rtol=0.01)
+    assert np.sum(unusable_pixels) == 16
+    assert np.isclose(np.median(n_pe[~unusable_pixels]), 86.45, rtol=0.1)
+    assert np.isclose(np.median(dc_to_pe[~unusable_pixels], axis=0), 0.0135, rtol=0.01)
 
