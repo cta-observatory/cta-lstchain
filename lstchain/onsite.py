@@ -1,4 +1,5 @@
 from glob import glob
+import logging
 from pathlib import Path
 from enum import Enum, auto
 from pkg_resources import resource_filename
@@ -8,6 +9,8 @@ from astropy.time import Time
 import pymongo
 
 from .paths import parse_calibration_name
+
+log = logging.getLogger(__name__)
 
 DEFAULT_BASE_PATH = Path('/fefs/aswg/data/real')
 DEFAULT_R0_PATH = DEFAULT_BASE_PATH / 'R0'
@@ -283,7 +286,7 @@ def find_filter_wheels(run, database_url):
             filters = f"{w1:1d}{w2:1d}"
 
     except Exception as e:  # In the case the entry says 'No available'
-        print(f"\n >>> Exception: {e}")
+        log.exception(f"\n >>> Exception: {e}")
         raise IOError(
             "--> No mongo DB filter information."
             " You must pass the filters by argument: -f [filters]"

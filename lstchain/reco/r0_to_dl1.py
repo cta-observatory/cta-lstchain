@@ -511,7 +511,7 @@ def r0_to_dl1(
                         add_config_metadata(container, config)
 
                     # write the first calibration event (initialized from calibration h5 file)
-                    # these data a supposed to change table_path with "dl1/monitoring/telescope/CatA" in short future
+                    # TODO: these data are supposed to change table_path with "dl1/monitoring/telescope/CatA" in short future
                     write_calibration_data(writer,
                                            calibration_index,
                                            event.mon.tel[tel_id],
