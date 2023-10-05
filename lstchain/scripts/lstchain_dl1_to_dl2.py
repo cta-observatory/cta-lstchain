@@ -9,7 +9,7 @@ Run lstchain_dl1_to_dl2 --help to see the options.
 import argparse
 from pathlib import Path
 import joblib
-
+import logging
 import numpy as np
 import pandas as pd
 import astropy.units as u
@@ -40,7 +40,7 @@ from lstchain.io.io import (
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 
-
+logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description=__doc__)
 
 # Required arguments
@@ -189,6 +189,11 @@ def apply_to_file(filename, models_dict, output_dir, config):
 
             if i == 0:
                 dl2_srcindep = dl2_df[srcindep_keys]
+    
+    # do not write file if empty
+    if len(dl2) == 0:
+        logger.warning("No dl2 output file written.")
+        return
 
     output_dir.mkdir(exist_ok=True)
     output_file = output_dir.joinpath(filename.name.replace('dl1', 'dl2', 1))

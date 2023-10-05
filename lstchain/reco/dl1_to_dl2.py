@@ -624,7 +624,7 @@ def apply_models(dl1,
                               )
     # if no events in dl2, e.g. for bad time interval from Cat-B calibration
     if len(dl2) == 0:
-        logger.warning("No events in dl2. Return.")
+        logger.warning("No events in dl2.")
         return dl2
     
     # Update parameters related to target direction on camera frame for MC data
