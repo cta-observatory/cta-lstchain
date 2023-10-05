@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>write_dataframe &mdash; lstchain 0.10.5.dev40+gbb39662e documentation</title>
+  <title>write_dataframe &mdash; lstchain 0.10.5.dev51+g675b2454 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
@@ -44,7 +44,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.5.dev40+gbb39662e
+                0.10.5.dev51+g675b2454
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -122,17 +122,33 @@
 <h1>write_dataframe<a class="headerlink" href="#write-dataframe" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="lstchain.io.io.write_dataframe">
-<span class="sig-prename descclassname"><span class="pre">lstchain.io.io.</span></span><span class="sig-name descname"><span class="pre">write_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.io.write_dataframe" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">lstchain.io.io.</span></span><span class="sig-name descname"><span class="pre">write_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Filters(complevel=1,</span> <span class="pre">complib='blosc:zstd',</span> <span class="pre">shuffle=True,</span> <span class="pre">bitshuffle=False,</span> <span class="pre">fletcher32=True,</span> <span class="pre">least_significant_digit=None)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.io.write_dataframe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a pandas dataframe to a HDF5 file using pytables formatting.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>dataframe: `pandas.DataFrame`</strong></dt><dd></dd>
-<dt><strong>outfile: path</strong></dt><dd></dd>
-<dt><strong>table_path: str</strong></dt><dd><p>path to the table to write in the HDF5 file</p>
+<dd class="field-odd"><dl>
+<dt><strong>dataframe</strong><span class="classifier">pandas.DataFrame</span></dt><dd><p>The dataframe to be written to the HDF5 file.</p>
 </dd>
-<dt><strong>config: config metadata</strong></dt><dd></dd>
-<dt><strong>meta: global metadata</strong></dt><dd></dd>
+<dt><strong>outfile</strong><span class="classifier">str</span></dt><dd><p>The path to the output HDF5 file.</p>
+</dd>
+<dt><strong>table_path</strong><span class="classifier">str</span></dt><dd><p>The path to the table to write in the HDF5 file.</p>
+</dd>
+<dt><strong>mode: str</strong></dt><dd><p>If given a path for <code class="docutils literal notranslate"><span class="pre">h5file</span></code>, it will be opened in this mode.
+See the docs of <code class="docutils literal notranslate"><span class="pre">tables.open_file</span></code>.</p>
+</dd>
+<dt><strong>index</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to include the index of the dataframe in the output. Default is False.</p>
+</dd>
+<dt><strong>config</strong><span class="classifier">dict, optional</span></dt><dd><p>Configuration metadata to be stored as an attribute of the output table. Default is None.</p>
+</dd>
+<dt><strong>meta</strong><span class="classifier"><cite>lstchain.io.lstcontainers.MetaData</cite>, optional</span></dt><dd><p>Global metadata to be stored as attributes of the output table. Default is None.</p>
+</dd>
+<dt><strong>filters</strong><span class="classifier">tables.Filters, optional</span></dt><dd><p>Filters to apply when writing the output table. Default is tables.Filters(complevel=1, complib=’zstd’, shuffle=True).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>None</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -151,7 +167,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 20 Sep 2023 15:47.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 05 Oct 2023 14:15.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
