@@ -35,7 +35,6 @@ from .lstcontainers import (
 )
 
 
-
 log = logging.getLogger(__name__)
 
 __all__ = [
@@ -79,6 +78,7 @@ __all__ = [
     'write_subarray_tables',
 ]
 
+
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
@@ -90,8 +90,9 @@ dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/L
 dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
 dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
+
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
+    complevel=1,  # enable compression, after some tests on DL1 data (images and parameters), complevel>1 does not improve compression very much but slows down IO significantly
     complib='blosc:zstd',  # compression using blosc/zstd
     fletcher32=True,  # attach a checksum to each chunk for error correction
     bitshuffle=False,  # for BLOSC, shuffle bits for better compression
@@ -736,18 +737,33 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None, filters=HDF5_ZSTD_FILTERS):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    table_path: str
-        path to the table to write in the HDF5 file
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    table_path : str
+        The path to the table to write in the HDF5 file.
+    mode: str
+        If given a path for ``h5file``, it will be opened in this mode.
+        See the docs of ``tables.open_file``.
+    index : bool, optional
+        Whether to include the index of the dataframe in the output. Default is False.
+    config : dict, optional
+        Configuration metadata to be stored as an attribute of the output table. Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        Global metadata to be stored as attributes of the output table. Default is None.
+    filters : tables.Filters, optional
+        Filters to apply when writing the output table. Default is tables.Filters(complevel=1, complib='zstd', shuffle=True).
+
+    Returns
+    -------
+    None
     """
     if not table_path.startswith("/"):
         table_path = "/" + table_path
@@ -760,6 +776,7 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, confi
             table_name,
             dataframe.to_records(index=index),
             createparents=True,
+            filters=filters,
         )
         if config:
             t.attrs["config"] = config
@@ -774,10 +791,16 @@ def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The DL2 dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    config : dict, optional
+        A dictionary containing used configuration.
+        Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        global metadata.
+        Default is None.
     """
     write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
 
