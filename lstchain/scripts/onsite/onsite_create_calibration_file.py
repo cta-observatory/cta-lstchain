@@ -247,7 +247,7 @@ def main():
 
     print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
     mon = read_calibration_file(output_file, tel_id)
-    calib.plot_calibration_results(mon.pedestal, mon.flatfield, mon.calibration, run, plot_file)
+    calib.plot_calibration_results(mon.pedestal, mon.flatfield, mon.calibration, run, plot_file,"Cat-A")
 
     print("\n--> END")
 
