@@ -189,9 +189,9 @@ def apply_to_file(filename, models_dict, output_dir, config):
 
             if i == 0:
                 dl2_srcindep = dl2_df[srcindep_keys]
-    
+
     # do not write file if empty
-    if len(dl2) == 0:
+    if (config['source_dependent'] and len(dl2_df) == 0) or (not config['source_dependent'] and len(dl2) == 0):
         logger.warning("No dl2 output file written.")
         return
 
