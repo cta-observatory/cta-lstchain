@@ -24,6 +24,7 @@ from ctapipe_io_lst import (
 )
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
+from pymongo import MongoClient
 
 from lstchain import __version__
 from lstchain.paths import parse_r0_filename
@@ -129,16 +130,15 @@ def get_runs_and_subruns(list_of_run_objects, stream=1):
     return run, number_of_files
 
 
-def type_of_run(date_path, run_number, counters, n_events=500):
+def guess_run_type(date_path, run_number, counters, n_events=500):
     """
-    Guessing empirically the type of run based on the percentage of
+    Guess empirically the type of run based on the percentage of
     pedestals/mono trigger types from the first n_events:
     DRS4 pedestal run (DRS4): 100% mono events (trigger_type == 1)
     cosmic data run (DATA): <10% pedestal events (trigger_type == 32)
     pedestal-calibration run (PEDCALIB): ~50% mono, ~50% pedestal events
     Otherwise (ERROR) the run is not expected to be processed.
     This method may not give always the correct type.
-    At some point this should be taken directly from TCU.
 
     Parameters
     ----------
@@ -156,7 +156,6 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     run_type: str
         Type of run (DRS4, PEDCALIB, DATA, ERROR)
     """
-
     pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
     list_of_files = sorted(date_path.glob(pattern))
     if len(list_of_files) == 0:
@@ -194,6 +193,69 @@ def type_of_run(date_path, run_number, counters, n_events=500):
 
         run_type = "ERROR"
 
+    return run_type
+
+
+def get_run_type_from_TCU(run_number, tcu_server):
+    """
+    Get the run type of a run from the TCU database.
+    
+    Parameters
+    ----------
+    run_number : int
+        Run id
+    tcu_server : str
+        Host of the TCU database
+
+    Returns
+    -------
+    run_type: str
+        Type of run (DRS4, PEDCALIB, DATA)
+    """
+    
+    client = MongoClient(tcu_server)
+    collection = client["lst1_obs_summary"]["camera"]
+    summary = collection.find_one({"run_number": int(run_number)})
+
+    if summary is not None:
+        
+        run_type = summary["kind"].replace(
+            "calib_drs4", "DRS4"
+        ).replace(
+            "calib_ped_run", "PEDCALIB"
+        ).replace(
+            "data_taking", "DATA")
+        
+        return run_type
+
+
+def type_of_run(date_path, run_number, tcu_server):
+    """
+    Get the run type of a run by first looking in the TCU 
+    database, and if its run type is not available, guess it
+    based on the percentage of different event types.
+    
+    Parameters
+    ----------
+    date_path : pathlib.Path
+        Path to the R0 files
+    run_number : int
+        Run id
+    tcu_server : str
+        Host of the TCU database
+        
+    Returns
+    -------
+    run_type: str
+        Type of run (DRS4, PEDCALIB, DATA, ERROR)
+    """
+ 
+    run_type = get_run_type_from_TCU(run_number, tcu_server)
+    
+    if run_type is None:
+        counters = read_counters(date_path, run_number)
+        run_type = guess_run_type(date_path, run_number, counters)
+    
     return run_type
 
 
@@ -297,8 +359,8 @@ def main():
     reference_counters = [read_counters(date_path, run) for run in run_numbers]
 
     run_types = [
-        type_of_run(date_path, run, counters)
-        for run, counters in zip(run_numbers, reference_counters)
+        type_of_run(date_path, run, tcu_server="lst101-int")
+        for run in run_numbers
     ]
 
     run_summary = Table(
