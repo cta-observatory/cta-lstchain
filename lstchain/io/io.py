@@ -82,9 +82,9 @@ __all__ = [
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
-dl1_params_tel_mon_CatA_ped_key = "/dl1/monitoring/telescope/CatA/pedestal"
-dl1_params_tel_mon_CatA_flat_key = "/dl1/monitoring/telescope/CatA/flatfield"
-dl1_params_tel_mon_CatA_cal_key = "/dl1/monitoring/telescope/CatA/calibration"
+dl1_params_tel_mon_CatB_ped_key = "/dl1/event/telescope/monitoring/catB/pedestal"
+dl1_params_tel_mon_CatB_cal_key = "/dl1/event/telescope/monitoring/catB/calibration"
+dl1_params_tel_mon_CatB_flat_key = "/dl1/event/telescope/monitoring/catB/flatfield"
 
 dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
 dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"

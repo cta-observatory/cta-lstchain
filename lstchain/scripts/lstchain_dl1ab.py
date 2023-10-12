@@ -44,6 +44,9 @@ from lstchain.io.config import (
 from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
+    dl1_params_tel_mon_CatB_cal_key,
+    dl1_params_tel_mon_CatB_ped_key,
+    dl1_params_tel_mon_CatB_flat_key,
     global_metadata,
     write_metadata,
 )
@@ -451,9 +454,9 @@ def main():
 
             # write a cat-B calibrations in DL1b
             if catB_calib:
-                write_table(catB_calib, outfile, "/dl1/event/telescope/monitoring/catB/calibration")
-                write_table(catB_pedestal, outfile, "/dl1/event/telescope/monitoring/catB/pedestal")
-                write_table(catB_flatfield, outfile, "/dl1/event/telescope/monitoring/catB/flatfield")
+                write_table(catB_calib, outfile, dl1_params_tel_mon_CatB_cal_key)
+                write_table(catB_pedestal, outfile, dl1_params_tel_mon_CatB_ped_key)
+                write_table(catB_flatfield, outfile, dl1_params_tel_mon_CatB_flat_key)
 
         write_metadata(metadata, args.output_file)
 
