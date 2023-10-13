@@ -316,7 +316,7 @@ def auto_merge_h5files(
     file_list: list of path
     output_filename: path
     nodes_keys: list of path
-    keys_to_copy: list of nodes that must be copied (because the saem in all the files)
+    keys_to_copy: list of nodes that must be copied and not merged (because the same in all files)
     merge_arrays: bool
     filters
     progress_bar: bool
@@ -347,7 +347,7 @@ def auto_merge_h5files(
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
 
-            # do not merge specifics nodes with equal data in all files
+            # do not merge specific nodes with equal data in all files
             common_keys=common_keys.difference(copy_keys)
 
             with open_file(filename) as file:
