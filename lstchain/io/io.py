@@ -300,6 +300,7 @@ def auto_merge_h5files(
         file_list,
         output_filename="merged.h5",
         nodes_keys=None,
+        keys_to_copy=None,
         merge_arrays=False,
         filters=HDF5_ZSTD_FILTERS,
         progress_bar=True,
@@ -315,6 +316,7 @@ def auto_merge_h5files(
     file_list: list of path
     output_filename: path
     nodes_keys: list of path
+    keys_to_copy: list of nodes that must be copied (because the saem in all the files)
     merge_arrays: bool
     filters
     progress_bar: bool
@@ -332,6 +334,10 @@ def auto_merge_h5files(
     else:
         keys = set(nodes_keys)
 
+    copy_keys = {}
+    if keys_to_copy:
+        copy_keys = set(keys_to_copy)
+
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
@@ -340,6 +346,10 @@ def auto_merge_h5files(
         bar.update(1)
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
+
+            # do not merge specifics nodes with equal data in all files
+            common_keys=common_keys.difference(copy_keys)
+
             with open_file(filename) as file:
                 for k in common_keys:
                     in_node = file.root[k]

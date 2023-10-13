@@ -72,6 +72,11 @@ parser.add_argument(
     help='Skip checks when merging files'
 )
 
+parser.add_argument(
+    '--keys-to-copy',
+    nargs="+", default=[''],
+    help='List of duplicated keys to be copied and not to be merged'
+)
 
 def main():
     args = parser.parse_args()
@@ -95,6 +100,7 @@ def main():
         file_list,
         args.output_file,
         nodes_keys=keys,
+        keys_to_copy=args.keys_to_copy,
         progress_bar=not args.no_progress,
         run_checks=not args.skip_checks
     )
