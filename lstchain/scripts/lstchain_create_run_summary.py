@@ -63,6 +63,14 @@ parser.add_argument(
     default=False,
 )
 
+parser.add_argument(
+    "-t",
+    "--tcu-server",
+    type=str,
+    help="TCU database server",
+    default="lst101-int",
+)
+
 dtypes = {
     "ucts_timestamp": np.int64,
     "run_start": np.int64,
@@ -371,9 +379,9 @@ def main():
 
     reference_counters = [read_counters(date_path, run) for run in run_numbers]
 
-    if is_db_available("lst101-int"):
+    if is_db_available(args.tcu_server):
         run_types = [
-            type_of_run(date_path, run, tcu_server="lst101-int")
+            type_of_run(date_path, run, args.tcu_server)
             for run in run_numbers
         ]
 
