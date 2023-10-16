@@ -196,6 +196,18 @@ def guess_run_type(date_path, run_number, counters, n_events=500):
     return run_type
 
 
+def is_db_available(server: str) -> bool:
+    """Returns True if database server is available."""
+    client = MongoClient(server, serverSelectionTimeoutMS=3000, directConnection=True)
+    try:
+        client.admin.command('ping')
+    except (ConnectionFailure, ServerSelectionTimeoutError):
+        log.warning("Database server not available")
+        return False
+    else:
+        return True
+
+
 def get_run_type_from_TCU(run_number, tcu_server):
     """
     Get the run type of a run from the TCU database.
@@ -358,10 +370,17 @@ def main():
 
     reference_counters = [read_counters(date_path, run) for run in run_numbers]
 
-    run_types = [
-        type_of_run(date_path, run, tcu_server="lst101-int")
-        for run in run_numbers
-    ]
+    if is_db_available("lst101-int"):
+        run_types = [
+            type_of_run(date_path, run, tcu_server="lst101-int")
+            for run in run_numbers
+        ]
+
+    else:
+        run_types = [
+            guess_run_type(date_path, run, counters)
+            for (run, counters) in zip(run_numbers, reference_counters)
+        ]
 
     run_summary = Table(
         {
