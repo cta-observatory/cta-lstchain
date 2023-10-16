@@ -25,6 +25,7 @@ from ctapipe_io_lst import (
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from lstchain import __version__
 from lstchain.paths import parse_r0_filename
