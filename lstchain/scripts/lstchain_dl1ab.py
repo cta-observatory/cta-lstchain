@@ -143,8 +143,8 @@ def main():
         catB_time_correction = np.array(catB_calib["time_correction"])
         catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
 
-        # set unusable all pixels in periods with too many unusable pixels (car flashes, etc...)
-        catB_unusable_pixels[np.sum(catB_unusable_pixels, axis=2) > args.max_unusable_pixels] = True
+        # add good time interval column (gti)
+        catB_calib['gti'] = np.max(np.sum(catB_unusable_pixels, axis=2),axis=1) < args.max_unusable_pixels
 
         pixel_index = np.arange(constants.N_PIXELS)
 
@@ -249,7 +249,7 @@ def main():
     }
 
     if catB_calib:
-        parameters_to_update["calibration_id"] = np.int32 
+        parameters_to_update["calibration_id"] = np.int32
 
     nodes_keys = get_dataset_keys(args.input_file)
     if args.no_image:
