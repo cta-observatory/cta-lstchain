@@ -82,9 +82,9 @@ __all__ = [
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
-dl1_params_tel_mon_CatB_ped_key = "/dl1/event/telescope/monitoring/catB/pedestal"
-dl1_params_tel_mon_CatB_cal_key = "/dl1/event/telescope/monitoring/catB/calibration"
-dl1_params_tel_mon_CatB_flat_key = "/dl1/event/telescope/monitoring/catB/flatfield"
+dl1_mon_tel_CatB_ped_key = "/dl1/monitoring/telescope/catB/pedestal"
+dl1_mon_tel_CatB_cal_key = "/dl1/monitoring/telescope/catB/calibration"
+dl1_mon_tel_CatB_flat_key = "/dl1/monitoring/telescope/catB/flatfield"
 
 dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
 dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
@@ -862,7 +862,7 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     mon_event.flatfield.prefix = ''
     mon_event.calibration.prefix = ''
     mon_index.prefix = ''
-    table_group='telescope/monitoring'
+    monitoring_table='telescope/monitoring'
 
     # update index
     if new_ped:
@@ -874,16 +874,15 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
 
     if new_ped:
         # write ped container
-        print(f"{table_group}/pedestal")
         writer.write(
-            table_name=f"{table_group}/pedestal",
+            table_name=f"{monitoring_table}/pedestal",
             containers=[mon_index, mon_event.pedestal],
         )
 
     if new_ff:
         # write calibration container
         writer.write(
-            table_name=f"{table_group}/flatfield",
+            table_name=f"{monitoring_table}/flatfield",
             containers=[mon_index, mon_event.flatfield],
         )
 
