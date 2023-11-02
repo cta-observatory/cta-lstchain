@@ -2,7 +2,7 @@
 
 """
 
- Onsite script for creating a Cat-B flat-field calibration file file to be run as a command line:
+ Onsite script for creating a Cat-B flat-field calibration file to be run as a command line:
 
  --> onsite_create_cat_B_calibration_file
 
@@ -32,7 +32,7 @@ from lstchain.onsite import (
 MAX_SUBRUNS = 100000
 
 # parse arguments
-parser = argparse.ArgumentParser(description='Create flat-field calibration files',
+parser = argparse.ArgumentParser(description='Create flat-field calibration Cat-B files',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 required = parser.add_argument_group('required arguments')
 optional = parser.add_argument_group('optional arguments')
