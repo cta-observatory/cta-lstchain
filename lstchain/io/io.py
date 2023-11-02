@@ -888,7 +888,7 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
 
         # write ff container
         writer.write(
-            table_name=f"{table_group}/calibration",
+            table_name=f"{monitoring_table}/calibration",
             containers=[mon_index, mon_event.calibration],
         )
 
