@@ -38,6 +38,7 @@ default_keys_to_copy = [dl1_params_tel_mon_ped_key,
                        dl1_mon_tel_CatB_ped_key,
                        dl1_mon_tel_CatB_flat_key
 ]
+
 parser = argparse.ArgumentParser(description='Merge HDF5 files')
 
 # Required arguments
@@ -89,7 +90,7 @@ parser.add_argument(
 
 parser.add_argument(
     '--keys-to-copy',
-    nargs="+", default=[''],
+    nargs="*", default=[],
     help='List of duplicated keys to be copied and not to be merged'
 )
 

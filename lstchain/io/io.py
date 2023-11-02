@@ -348,12 +348,21 @@ def auto_merge_h5files(
 
         bar.update(1)
         for filename in file_list[1:]:
+
             common_keys = keys.intersection(get_dataset_keys(filename))
 
             # do not merge specific nodes with equal data in all files
             common_keys=common_keys.difference(copy_keys)
 
             with open_file(filename) as file:
+
+                # check value of Table.nrow for keys copied from the first file
+                for k in copy_keys:
+                    first_node = merge_file.root[k]
+                    present_node = file.root[k]
+                    if first_node.nrows != present_node.nrows:
+                        raise ValueError("Length of key {} from file {} different than in file {}".format(k, filename, file_list[0]))
+
                 for k in common_keys:
                     in_node = file.root[k]
                     out_node = merge_file.root[k]
