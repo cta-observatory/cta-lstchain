@@ -44,9 +44,9 @@ from lstchain.io.io import (
     dl1_params_lstcam_key,
     global_metadata,
     write_metadata,
-    dl1_params_mon_tel_catB_ped_key,
-    dl1_params_mon_tel_catB_flat_key,
-    dl1_params_mon_tel_catB_cal_key
+    dl1_mon_tel_catB_ped_key,
+    dl1_mon_tel_catB_flat_key,
+    dl1_mon_tel_catB_cal_key
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
@@ -336,7 +336,8 @@ def main():
                     image_table['image'][ii] = image
                     image_table['peak_time'][ii] = peak_time
 
-                    # use CatB pedestals to estimate the picture threshold
+                    # use CatB pedestals to estimate the picture threshold 
+                    # as defined in the config file
                     if args.pedestal_cleaning:
                         threshold_clean_pe = catB_threshold_clean_pe[calib_idx][selected_gain, pixel_index]
                         threshold_clean_pe[unusable_pixels] = pic_th
@@ -448,9 +449,9 @@ def main():
 
             # write a cat-B calibrations in DL1b
             if catB_calib:
-                write_table(catB_calib, outfile, dl1_params_mon_tel_catB_cal_key)
-                write_table(catB_pedestal, outfile, dl1_params_mon_tel_catB_ped_key)
-                write_table(catB_flatfield, outfile,dl1_params_mon_tel_catB_flat_key)
+                write_table(catB_calib, outfile, dl1_mon_tel_catB_cal_key)
+                write_table(catB_pedestal, outfile, dl1_mon_tel_catB_ped_key)
+                write_table(catB_flatfield, outfile,dl1_mon_tel_catB_flat_key)
 
         write_metadata(metadata, args.output_file)
 
