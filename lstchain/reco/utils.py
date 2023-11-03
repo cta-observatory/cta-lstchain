@@ -838,7 +838,8 @@ def get_events_in_GTI(events, CatB_cal_table):
 
     Parameters
     ----------
-    events: pandas DataFrame or astropy.table.QTable of DL1 or Dl2 events
+    events : pandas DataFrame or astropy.table.QTable 
+        Data frame or table of DL1 or DL2 events.
     CatB_cal_table: table of CatB calibration applied to the events (dl1_mon_tel_CatB_cal_key)
 
     Returns
