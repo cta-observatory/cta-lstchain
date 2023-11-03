@@ -339,6 +339,7 @@ def auto_merge_h5files(
 
     copy_keys = {}
     if keys_to_copy:
+        keys_to_copy = {k for k in keys_to_copy if k in keys}
         copy_keys = set(keys_to_copy)
 
     bar = tqdm(total=len(file_list), disable=not progress_bar)
