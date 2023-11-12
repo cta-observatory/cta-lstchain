@@ -66,3 +66,6 @@ def main():
     table[['src_x', 'src_y']].to_hdf(args.file, new_table_name, mode='r+',
                                      format='table', data_columns=True)
     print('... done!')
+
+if __name__ == '__main__':
+    main()
