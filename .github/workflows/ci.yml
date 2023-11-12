@@ -119,9 +119,9 @@ jobs:
         run: cd docs && make html SPHINXOPTS="-W --keep-going -n --color -j auto"
 
       - name: Deploy to gihub pages
-        # only run on push to master
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+        # only run on push to main
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages

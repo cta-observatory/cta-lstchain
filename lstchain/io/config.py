@@ -126,3 +126,24 @@ def dump_config(config, filename, overwrite=False):
         raise FileExistsError(f"File {filename} exists, use overwrite=True")
     with open(filename, 'w') as file:
         json.dump(config, file, indent=2)
+
+
+def includes_image_modification(config):
+    """
+    Check if the image modifier has been used in the given configuration.
+
+    Parameters
+    ----------
+    config : `dict`
+        The configuration dictionary to check.
+
+    Returns
+    -------
+    `bool`
+        `True` if the image modifier has been used, `False` otherwise.
+    """
+    imconfig = config.get('image_modifier', {})
+    increase_nsb = imconfig.get("increase_nsb", False)
+    increase_psf = imconfig.get("increase_psf", False)
+
+    return increase_nsb or increase_psf

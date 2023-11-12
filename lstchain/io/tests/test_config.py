@@ -1,6 +1,6 @@
-from lstchain.io import config
-from lstchain.io.config import get_cleaning_parameters
 import tempfile
+from lstchain.io import config
+from lstchain.io.config import get_cleaning_parameters, includes_image_modification
 
 
 def test_get_standard_config():
@@ -52,3 +52,21 @@ def test_dump_config():
         config.dump_config(cfg, file.name, overwrite=True)
         read_cfg = config.read_configuration_file(file.name)
         assert read_cfg['myconf'] == 1
+
+
+def test_includes_image_modification_no_modif():
+    cfg = {}
+    assert not includes_image_modification(cfg)
+    cfg = {"image_modifier": {}}
+    assert not includes_image_modification(cfg)
+
+
+def test_includes_image_modification_with_modif():
+    cfg = {"image_modifier": {"increase_psf": True, "increase_nsb": False}}
+    assert includes_image_modification(cfg)
+    cfg = {"image_modifier": {"increase_nsb": True, "increase_psf": False}}
+    assert includes_image_modification(cfg)
+    cfg = {"image_modifier": {"increase_psf": True, "increase_nsb": True}}
+    assert includes_image_modification(cfg)
+    cfg = {"image_modifier": {"increase_psf": False, "increase_nsb": False}}
+    assert not includes_image_modification(cfg)

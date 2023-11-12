@@ -10,6 +10,9 @@ import pandas as pd
 import tables
 from tables import open_file
 from tqdm import tqdm
+import json
+from traitlets.config.loader import DeferredConfigString, LazyConfigValue
+from pathlib import PosixPath
 
 import astropy.units as u
 from astropy.table import Table, vstack, QTable
@@ -30,6 +33,7 @@ from .lstcontainers import (
     MetaData,
     ThrownEventsHistogram,
 )
+
 
 log = logging.getLogger(__name__)
 
@@ -74,6 +78,7 @@ __all__ = [
     'write_subarray_tables',
 ]
 
+
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
@@ -85,8 +90,9 @@ dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/L
 dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
 dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
+
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
+    complevel=1,  # enable compression, after some tests on DL1 data (images and parameters), complevel>1 does not improve compression very much but slows down IO significantly
     complib='blosc:zstd',  # compression using blosc/zstd
     fletcher32=True,  # attach a checksum to each chunk for error correction
     bitshuffle=False,  # for BLOSC, shuffle bits for better compression
@@ -657,6 +663,50 @@ def add_global_metadata(container, metadata):
         container.meta[k] = item
 
 
+
+
+def serialize_config(obj):
+    """
+    Serialize an object to a JSON-serializable format.
+
+    Parameters
+    ----------
+    obj : object
+        The object to serialize.
+
+    Returns
+    -------
+    object
+        The serialized object.
+
+    Raises
+    ------
+    TypeError
+        If the object is not serializable.
+
+    Notes
+    -----
+    This function serializes an object to a JSON-serializable format. It supports the following types:
+    - LazyConfigValue
+    - DeferredConfigString
+    - PosixPath
+    - numpy.ndarray
+
+    If the object is not one of the above types, a TypeError is raised.
+
+    """
+    if isinstance(obj, LazyConfigValue):
+        return obj.to_dict()
+    elif isinstance(obj, DeferredConfigString):
+        return str(obj)
+    elif isinstance(obj, PosixPath):
+        return obj.as_posix()
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        raise TypeError(f"Type {type(obj).__name__} not serializable")
+
+
 def add_config_metadata(container, configuration):
     """
     Add configuration parameters to a container in container.meta.config
@@ -666,18 +716,7 @@ def add_config_metadata(container, configuration):
     container: `ctapipe.containers.Container`
     configuration: config dict
     """
-    linted_config = str(configuration)
-    linted_config = linted_config.replace("<LazyConfigValue {}>", "None")
-    linted_config = re.sub(r"<LazyConfigValue\svalue=(.*?)>", "\\1", linted_config)
-    linted_config = re.sub(r"DeferredConfigString\((.*?)\)", "\\1", linted_config)
-    linted_config = re.sub(r"PosixPath\((.*?)\)", "\\1", linted_config)
-    linted_config = linted_config.replace("\'", "\"")
-    linted_config = linted_config.replace("None", "\"None\"")
-    linted_config = linted_config.replace("inf", "\"inf\"")
-    linted_config = linted_config.replace("True", "true")
-    linted_config = linted_config.replace("False", "false")
-
-    container.meta["config"] = linted_config
+    container.meta["config"] = json.dumps(configuration, default=serialize_config)
 
 
 def write_subarray_tables(writer, event, metadata=None):
@@ -698,18 +737,33 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None, filters=HDF5_ZSTD_FILTERS):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    table_path: str
-        path to the table to write in the HDF5 file
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    table_path : str
+        The path to the table to write in the HDF5 file.
+    mode: str
+        If given a path for ``h5file``, it will be opened in this mode.
+        See the docs of ``tables.open_file``.
+    index : bool, optional
+        Whether to include the index of the dataframe in the output. Default is False.
+    config : dict, optional
+        Configuration metadata to be stored as an attribute of the output table. Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        Global metadata to be stored as attributes of the output table. Default is None.
+    filters : tables.Filters, optional
+        Filters to apply when writing the output table. Default is tables.Filters(complevel=1, complib='zstd', shuffle=True).
+
+    Returns
+    -------
+    None
     """
     if not table_path.startswith("/"):
         table_path = "/" + table_path
@@ -722,6 +776,7 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, confi
             table_name,
             dataframe.to_records(index=index),
             createparents=True,
+            filters=filters,
         )
         if config:
             t.attrs["config"] = config
@@ -736,10 +791,16 @@ def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The DL2 dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    config : dict, optional
+        A dictionary containing used configuration.
+        Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        global metadata.
+        Default is None.
     """
     write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
 
@@ -1261,3 +1322,4 @@ def get_mc_fov_offset(filename):
     mean_offset = min_viewcone + 0.5 * (max_viewcone - min_viewcone)
 
     return mean_offset
+
