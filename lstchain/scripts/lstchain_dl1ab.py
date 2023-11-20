@@ -93,6 +93,12 @@ parser.add_argument(
     help='Disable pedestal cleaning. This is also done automatically for simulations.',
 )
 
+parser.add_argument(
+    '--light-scaling',
+    type=float,
+    dest='scale_factor',
+    help='Pass a float in order to scale by this value the charge in all pixels of all events.',
+)
 
 def main():
     args = parser.parse_args()
@@ -317,8 +323,14 @@ def main():
                     n_samples = config['LocalPeakWindowSum']['window_width']
                     pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
 
+                    # if we selected to scale the charge on the pixels by a factor 
+                    if args.scale_factor is not None:
+                        scale_factor_total_light = float(args.scale_factor)
+                    else:
+                        scale_factor_total_light = 1.
+                    
                     # calibrate charge
-                    image = (image - pedestal) * dc_to_pe
+                    image = (image - pedestal) * dc_to_pe * scale_factor_total_light
 
                     # put to zero charge unusable pixels in order not to select them in the cleaning
                     image[unusable_pixels] = 0
