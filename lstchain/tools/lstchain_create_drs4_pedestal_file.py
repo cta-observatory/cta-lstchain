@@ -14,7 +14,7 @@ from ctapipe.core.traits import (
     flag,
 )
 from ctapipe.io.hdf5tableio import HDF5TableWriter
-from ctapipe_io_lst import LSTEventSource
+from ctapipe_io_lst import LSTEventSource, EVBPreprocessing, TriggerBits
 from ctapipe_io_lst.calibration import get_spike_A_positions
 from ctapipe_io_lst.constants import (
     N_CAPACITORS_PIXEL,
@@ -259,6 +259,65 @@ class DRS4PedestalAndSpikeHeight(Tool):
 
         return spike_heights
 
+    def check_baseline_values(self, baseline_mean):
+        """
+        Check the values of the drs4 baseline for issues.
+
+        In case of no EVBv5 data or no pre-calibration by EVBv6,
+        we expect no negative and no small values.
+
+        In case of EVBv6 applied baseline corrections, values should
+        be close to 0, but negative values are ok.
+        """
+
+        check_large_values = False
+        check_negative = True
+        check_small = True
+        
+        if self.source.cta_r1:
+            preprocessing = self.source.evb_preprocessing[TriggerBits.MONO]
+            if EVBPreprocessing.BASELINE_SUBTRACTION in preprocessing:
+                check_large_values = True
+                check_negative = False
+                check_small = False
+
+
+        if check_negative:
+            negative = baseline_mean < 0
+            n_negative = np.count_nonzero(negative)
+            if n_negative > 0:
+                gain, pixel, capacitor = np.nonzero(negative)
+                self.log.critical(f'{n_negative} baseline values are smaller than 0')
+                self.log.info("Gain | Pixel | Capacitor | Baseline ")
+                for g, p, c in zip(gain, pixel, capacitor):
+                    self.log.info(
+                        f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}"
+                    )
+
+        if check_small:
+            small = baseline_mean < 25
+            n_small = np.count_nonzero(small)
+            if n_small > 0:
+                gain, pixel, capacitor = np.nonzero(small)
+                self.log.warning(f'{n_small} baseline values are smaller than 25')
+                self.log.info("Gain | Pixel | Capacitor | Baseline ")
+                for g, p, c in zip(gain, pixel, capacitor):
+                    self.log.info(
+                        f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}"
+                    )
+
+        if check_large_values:
+            large = np.abs(baseline_mean) > 25
+            n_large = np.count_nonzero(large)
+            if n_large > 0:
+                gain, pixel, capacitor = np.nonzero(large)
+                self.log.warning(f'{n_large} baseline values have an abs value >= 25')
+                self.log.info("Gain | Pixel | Capacitor | Baseline ")
+                for g, p, c in zip(gain, pixel, capacitor):
+                    self.log.info(
+                        f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}"
+                    )
+
     def finish(self):
         tel_id = self.source.tel_id
         self.log.info('Writing output to %s', self.output_path)
@@ -269,22 +328,7 @@ class DRS4PedestalAndSpikeHeight(Tool):
         baseline_std = self.baseline_stats.std.reshape(shape)
         baseline_counts = self.baseline_stats.counts.reshape(shape).astype(np.uint16)
 
-        n_negative = np.count_nonzero(baseline_mean < 0)
-        if n_negative > 0:
-            gain, pixel, capacitor = np.nonzero(baseline_mean < 0)
-            self.log.critical(f'{n_negative} baseline values are smaller than 0')
-            self.log.info("Gain | Pixel | Capacitor | Baseline ")
-            for g, p, c in zip(gain, pixel, capacitor):
-                self.log.info(f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}")
-
-        n_small = np.count_nonzero(baseline_mean < 25)
-        if n_small > 0:
-            gain, pixel, capacitor = np.nonzero(baseline_mean < 25)
-            self.log.warning(f'{n_small} baseline values are smaller than 25')
-            self.log.info("Gain | Pixel | Capacitor | Baseline ")
-            for g, p, c in zip(gain, pixel, capacitor):
-                self.log.info(f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}")
-
+        self.check_baseline_values(baseline_mean)
 
         # Convert baseline mean and spike heights to uint16, handle missing
         # values and values smaller 0, larger maxint
