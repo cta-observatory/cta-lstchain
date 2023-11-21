@@ -31,13 +31,13 @@ class DRS4CalibrationContainer(Container):
     baseline_mean = Field(
         None,
         "Mean baseline of each capacitor, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
-        dtype=np.uint16,
+        dtype=np.int16,
         ndim=3,
     )
     baseline_std = Field(
         None,
         "Std Dev. of the baseline calculation, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
-        dtype=np.uint16,
+        dtype=np.int16,
         ndim=3,
     )
     baseline_counts = Field(
@@ -51,14 +51,16 @@ class DRS4CalibrationContainer(Container):
         None,
         "Mean spike height for each pixel, shape (N_GAINS, N_PIXELS, 3)",
         ndim=3,
-        dtype=np.uint16,
+        dtype=np.int16,
     )
 
 
-def convert_to_uint16(array):
-    '''Convert an array to uint16, rounding and clipping before to avoid under/overflow'''
-    array = np.clip(np.round(array), 0, np.iinfo(np.uint16).max)
-    return array.astype(np.uint16)
+def convert_to_int16(array):
+    '''Convert an array to int16, rounding and clipping before to avoid under/overflow'''
+    dtype = np.int16
+    info = np.iinfo(dtype)
+    array = np.clip(np.round(array), info.min, info.max)
+    return array.astype(dtype)
 
 
 @numba.njit(cache=True, inline='always')
@@ -286,9 +288,9 @@ class DRS4PedestalAndSpikeHeight(Tool):
 
         # Convert baseline mean and spike heights to uint16, handle missing
         # values and values smaller 0, larger maxint
-        baseline_mean = convert_to_uint16(baseline_mean)
-        baseline_std = convert_to_uint16(baseline_std)
-        spike_height = convert_to_uint16(self.mean_spike_height())
+        baseline_mean = convert_to_int16(baseline_mean)
+        baseline_std = convert_to_int16(baseline_std)
+        spike_height = convert_to_int16(self.mean_spike_height())
 
         with HDF5TableWriter(self.output_path) as writer:
             Provenance().add_output_file(str(self.output_path))
