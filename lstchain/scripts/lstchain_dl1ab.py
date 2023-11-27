@@ -53,6 +53,7 @@ from lstchain.io.io import (
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 from lstchain.reco.r0_to_dl1 import parametrize_image
+from ctapipe_io_lst import LSTEventSource
 
 log = logging.getLogger(__name__)
 
@@ -215,7 +216,12 @@ def main():
     if "delta_time" in config[clean_method_name]:
         delta_time = config[clean_method_name]["delta_time"]
 
-    subarray_info = SubarrayDescription.from_hdf(args.input_file)
+    # adding this exception for the analyis of lstchain v0.9 generated files
+    try:
+        subarray_info = SubarrayDescription.from_hdf(args.input_file)
+    except OSError:
+        subarray_info = LSTEventSource.create_subarray(tel_id=1)
+
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
     optics = subarray_info.tel[tel_id].optics
     camera_geom = subarray_info.tel[tel_id].camera.geometry
