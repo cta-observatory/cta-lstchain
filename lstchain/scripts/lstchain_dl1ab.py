@@ -329,6 +329,7 @@ def main():
                     n_samples = config['LocalPeakWindowSum']['window_width']
                     pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
 
+                    # calibrate charge
                     image = (image - pedestal) * dc_to_pe
 
                     # put to zero charge unusable pixels in order not to select them in the cleaning
@@ -364,9 +365,9 @@ def main():
                                                isolated_pixels,
                                                min_n_neighbors,
                                                )
-                    
+
                 n_pixels = np.count_nonzero(signal_pixels)
-                                 
+
                 if n_pixels > 0:
 
                     # if delta_time has been set, we require at least one
