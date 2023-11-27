@@ -334,8 +334,7 @@ def interpolate_gh_cuts(
     method="linear",
 ):
     """
-    Interpolates a grid of GH_CUTS tables to a target-point. Same as pyirf's
-    interpolate_rad_max function.
+    Interpolates a grid of GH_CUTS tables to a target-point.
 
     Wrapper around scipy.interpolate.griddata [1].
 
@@ -377,8 +376,7 @@ def interpolate_al_cuts(
     method="linear",
 ):
     """
-    Interpolates a grid of AL_CUTS tables to a target-point. Same as pyirf's
-    interpolate_rad_max function.
+    Interpolates a grid of AL_CUTS tables to a target-point.
 
     Wrapper around scipy.interpolate.griddata [1].
 
@@ -515,6 +513,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         aeff_estimator = EffectiveAreaEstimator(
             grid_points=irf_pars_sel,
             effective_area=effarea_list,
+            interpolator_kwargs={"method": interp_method},
         )
         aeff_interp = aeff_estimator(interp_pars_sel)
 
@@ -605,6 +604,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         rad_max_estimator = RadMaxEstimator(
             grid_points=irf_pars_sel,
             rad_max=radmax_list,
+            interpolator_kwargs={"method": interp_method},
         )
         rad_max_interp = rad_max_estimator(interp_pars_sel)
 
