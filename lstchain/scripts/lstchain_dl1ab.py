@@ -303,7 +303,13 @@ def main():
 
                 dl1_container.reset()
 
-                image = row['image']
+                # if we selected to scale the charge on the pixels by a factor 
+                if args.scale_factor is not None:
+                    scale_factor_total_light = float(args.scale_factor)
+                else:
+                    scale_factor_total_light = 1.
+                    
+                image = row['image'] * scale_factor_total_light
                 peak_time = row['peak_time']
 
                 if catB_calib:
@@ -323,14 +329,7 @@ def main():
                     n_samples = config['LocalPeakWindowSum']['window_width']
                     pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
 
-                    # if we selected to scale the charge on the pixels by a factor 
-                    if args.scale_factor is not None:
-                        scale_factor_total_light = float(args.scale_factor)
-                    else:
-                        scale_factor_total_light = 1.
-                    
-                    # calibrate charge
-                    image = (image - pedestal) * dc_to_pe * scale_factor_total_light
+                    image = (image - pedestal) * dc_to_pe
 
                     # put to zero charge unusable pixels in order not to select them in the cleaning
                     image[unusable_pixels] = 0
@@ -365,9 +364,9 @@ def main():
                                                isolated_pixels,
                                                min_n_neighbors,
                                                )
-
+                    
                 n_pixels = np.count_nonzero(signal_pixels)
-
+                                 
                 if n_pixels > 0:
 
                     # if delta_time has been set, we require at least one
