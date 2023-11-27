@@ -34,6 +34,7 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+
 def interp_params(params_list, data):
     """
     From a given list of angular parameters, to be used for interpolation,
@@ -361,7 +362,9 @@ def interpolate_gh_cuts(
     ----------
     .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
     """
-    interp = GridDataInterpolator(grid_points=grid_points, params=gh_cuts, method=method)
+    interp = GridDataInterpolator(
+        grid_points=grid_points, params=gh_cuts, method=method
+    )
     gh_cuts_interp = interp(target_point)
 
     return gh_cuts_interp
@@ -402,7 +405,9 @@ def interpolate_al_cuts(
     ----------
     .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
     """
-    interp = GridDataInterpolator(grid_points=grid_points, params=al_cuts, method=method)
+    interp = GridDataInterpolator(
+        grid_points=grid_points, params=al_cuts, method=method
+    )
     al_cuts_interp = interp(target_point)
 
     return al_cuts_interp
@@ -508,7 +513,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
         aeff_estimator = EffectiveAreaEstimator(
-            grid_points=irf_pars_sel, 
+            grid_points=irf_pars_sel,
             effective_area=effarea_list,
         )
         aeff_interp = aeff_estimator(interp_pars_sel)
@@ -573,7 +578,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
             gh_cuts=gh_cuts_list,
             grid_points=irf_pars_sel,
             target_point=interp_pars_sel,
-            method=interp_method
+            method=interp_method,
         )
 
         gh_header = fits.Header()
@@ -602,7 +607,6 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
             rad_max=radmax_list,
         )
         rad_max_interp = rad_max_estimator(interp_pars_sel)
-
 
         temp_irf["RAD_MAX"] = rad_max_interp[0].T[np.newaxis, ...] * u.deg
 
@@ -659,13 +663,13 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
             src_bins = np.append(temp_irf["RAD_LO"][0], temp_irf["RAD_HI"][0][-1])
             fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
-            psf_interp = interpolate_psf_table(
-                source_offset_bins=src_bins,
-                psfs=psf_list,
+            psf_estimator = PSFTableEstimator(
                 grid_points=irf_pars_sel,
-                target_point=interp_pars_sel,
-                quantile_resolution=1e-3,
+                source_offset_bins=src_bins,
+                psf=psf_list,
             )
+            psf_interp = psf_estimator(interp_pars_sel)
+
             psf_hdu_interp = create_psf_table_hdu(
                 psf=psf_interp[0],
                 true_energy=e_true,
