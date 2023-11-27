@@ -448,9 +448,13 @@ def r0_to_dl1(
 
     # initialize the writer of the interleaved events 
     interleaved_writer = None
-    if 'write_interleaved_events' in config:
+    if 'write_interleaved_events' in config and not is_simu:
         interleaved_writer_config = Config(config['write_interleaved_events'])
         dir, name = os.path.split(output_filename)
+
+        # create output dir in the data-tree if necessary
+        dir = f"{dir}/interleaved"
+        os.makedirs(dir, exist_ok=True)
         if 'dl1' in name: 
             name = name.replace('dl1', 'interleaved').replace('LST-1.1', 'LST-1')
         else:
@@ -507,6 +511,7 @@ def r0_to_dl1(
                         add_config_metadata(container, config)
 
                     # write the first calibration event (initialized from calibration h5 file)
+                    # TODO: these data are supposed to change table_path with "dl1/monitoring/telescope/CatA" in short future
                     write_calibration_data(writer,
                                            calibration_index,
                                            event.mon.tel[tel_id],
@@ -520,6 +525,7 @@ def r0_to_dl1(
                     new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
 
                     # write monitoring containers if updated
+                    # these data a supposed to be replaced by the Cat_B data in a short future
                     if new_ped_event or new_ff_event:
                         write_calibration_data(writer,
                                            calibration_index,
@@ -761,6 +767,7 @@ def r0_to_dl1(
             # at the end of event loop ask calculation of remaining interleaved statistics
             new_ped, new_ff = calibration_calculator.output_interleaved_results(event)
             # write monitoring events
+            # these data a supposed to be replaced by the Cat_B data in a short future
             write_calibration_data(writer,
                                    calibration_index,
                                    event.mon.tel[tel_id],

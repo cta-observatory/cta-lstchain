@@ -106,11 +106,13 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     datacheck_file1 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0000.h5"
     dvr_file1 = temp_dir_observed_files / "DVR_settings_LST-1.Run02008.h5"
     pixmasks_file1 = temp_dir_observed_files / "Pixel_selection_LST-1.Run02008.0000.h5"
-
+    interleaved_file1 = temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02008.0000.h5"
+ 
     # Second set of files
     dl1_output_path2 = temp_dir_observed_files / "dl1_LST-1.Run02008.0100.h5"
     muons_file2 = temp_dir_observed_files / "muons_LST-1.Run02008.0100.fits"
     datacheck_file2 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0100.h5"
+    interleaved_file2 = temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02008.0100.h5"
 
     run_program(
         "lstchain_data_r0_to_dl1",
@@ -198,10 +200,40 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         'datacheck1': datacheck_file1,
         'dvr_file1': dvr_file1,
         'pixmasks_file1': pixmasks_file1,
+        'interleaved_file1': interleaved_file1,
         'dl1_file2': dl1_output_path2,
         'muons2': muons_file2,
-        'datacheck2': datacheck_file2
+        'datacheck2': datacheck_file2,
+        'interleaved_file2': interleaved_file2
     }
+
+
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def interleaved_r1_file(temp_dir_observed_files, run_summary_path):
+    test_pedcal_run = test_data / 'real/R0/20200218/LST-1.1.Run02006.0000_first50.fits.fz'
+
+    run_program(
+        "lstchain_data_r0_to_dl1",
+        "-f",
+        test_pedcal_run,
+        "-o",
+        temp_dir_observed_files,
+        "--pedestal-file",
+        test_drs4_pedestal_path,
+        "--calibration-file",
+        test_calib_path,
+        "--time-calibration-file",
+        test_time_calib_path,
+        "--pointing-file",
+        test_drive_report,
+        '--run-summary-path',
+        run_summary_path,
+        "--default-trigger-type=tib"
+    )
+
+    return temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02006.0000.h5"
 
 
 @pytest.fixture(scope="session")

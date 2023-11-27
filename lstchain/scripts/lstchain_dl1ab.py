@@ -44,6 +44,9 @@ from lstchain.io.config import (
 from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
+    dl1_mon_tel_CatB_cal_key,
+    dl1_mon_tel_CatB_ped_key,
+    dl1_mon_tel_CatB_flat_key,
     global_metadata,
     write_metadata,
 )
@@ -74,6 +77,13 @@ parser.add_argument(
     '--catB-calibration-file',
     type=Path,
     help='path to the Cat-B calibration file ',
+)
+
+parser.add_argument(
+    '--max-unusable-pixels',
+    type=int,
+    default=70,
+    help='Maximum accepted number of unusable pixels. Default: 70 (= 10 modules)',
 )
 
 parser.add_argument(
@@ -132,6 +142,10 @@ def main():
 
         catB_time_correction = np.array(catB_calib["time_correction"])
         catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
+
+        # add good time interval column (gti)
+        catB_calib['gti'] = np.max(np.sum(catB_unusable_pixels, axis=2),axis=1) < args.max_unusable_pixels
+
         pixel_index = np.arange(constants.N_PIXELS)
 
 
@@ -235,7 +249,7 @@ def main():
     }
 
     if catB_calib:
-        parameters_to_update["calibration_id"] = np.int32 
+        parameters_to_update["calibration_id"] = np.int32
 
     nodes_keys = get_dataset_keys(args.input_file)
     if args.no_image:
@@ -324,7 +338,7 @@ def main():
                     image[unusable_pixels] = 0
 
                     # time flafielding
-                    peak_time = peak_time - time_correction
+                    peak_time = peak_time + time_correction
 
                     # store it to save it later
                     image_table['image'][ii] = image
@@ -440,9 +454,9 @@ def main():
 
             # write a cat-B calibrations in DL1b
             if catB_calib:
-                write_table(catB_calib, outfile, "/dl1/event/telescope/monitoring/catB/calibration")
-                write_table(catB_pedestal, outfile, "/dl1/event/telescope/monitoring/catB/pedestal")
-                write_table(catB_flatfield, outfile, "/dl1/event/telescope/monitoring/catB/flatfield")
+                write_table(catB_calib, outfile, dl1_mon_tel_CatB_cal_key)
+                write_table(catB_pedestal, outfile, dl1_mon_tel_CatB_ped_key)
+                write_table(catB_flatfield, outfile, dl1_mon_tel_CatB_flat_key)
 
         write_metadata(metadata, args.output_file)
 
