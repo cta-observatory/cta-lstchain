@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>train_energy &mdash; lstchain 0.10.5.dev133+ge82bd68c documentation</title>
+  <title>get_events_in_GTI &mdash; lstchain 0.10.5.dev133+ge82bd68c documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
@@ -28,8 +28,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="train_reco" href="lstchain.reco.dl1_to_dl2.train_reco.html" />
-    <link rel="prev" title="train_disp_vector" href="lstchain.reco.dl1_to_dl2.train_disp_vector.html" /> 
+    <link rel="next" title="apply_volume_reduction" href="lstchain.reco.volume_reducer.apply_volume_reduction.html" />
+    <link rel="prev" title="source_side" href="lstchain.reco.utils.source_side.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -76,9 +76,9 @@
 <li class="toctree-l3"><a class="reference internal" href="../lstchain_api/reco/index.html#introduction">Introduction</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/reco/index.html#reference-api">Reference/API</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.disp">lstchain.reco.disp Module</a></li>
-<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.dl1_to_dl2">lstchain.reco.dl1_to_dl2 Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.dl1_to_dl2">lstchain.reco.dl1_to_dl2 Module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.r0_to_dl1">lstchain.reco.r0_to_dl1 Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.utils">lstchain.reco.utils Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.utils">lstchain.reco.utils Module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.volume_reducer">lstchain.reco.volume_reducer Module</a></li>
 </ul>
 </li>
@@ -108,9 +108,9 @@
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
-      <li class="breadcrumb-item active">train_energy</li>
+      <li class="breadcrumb-item active">get_events_in_GTI</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/lstchain.reco.dl1_to_dl2.train_energy.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api/lstchain.reco.utils.get_events_in_GTI.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -118,24 +118,24 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="train-energy">
-<h1>train_energy<a class="headerlink" href="#train-energy" title="Permalink to this headline">¶</a></h1>
+  <section id="get-events-in-gti">
+<h1>get_events_in_GTI<a class="headerlink" href="#get-events-in-gti" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="lstchain.reco.dl1_to_dl2.train_energy">
-<span class="sig-prename descclassname"><span class="pre">lstchain.reco.dl1_to_dl2.</span></span><span class="sig-name descname"><span class="pre">train_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.reco.dl1_to_dl2.train_energy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Train a Random Forest Regressor for the regression of the energy
-TODO: introduce the possibility to use another model</p>
+<dt class="sig sig-object py" id="lstchain.reco.utils.get_events_in_GTI">
+<span class="sig-prename descclassname"><span class="pre">lstchain.reco.utils.</span></span><span class="sig-name descname"><span class="pre">get_events_in_GTI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">CatB_cal_table</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.reco.utils.get_events_in_GTI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select events in good time intervals (GTI) on the base
+of the GTI defined the catB calibration table (dl1_mon_tel_CatB_cal_key)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>train: `pandas.DataFrame`</strong></dt><dd></dd>
-<dt><strong>custom_config: dictionnary</strong></dt><dd><p>Modified configuration to update the standard one</p>
+<dt><strong>events</strong><span class="classifier">pandas DataFrame or astropy.table.QTable</span></dt><dd><p>Data frame or table of DL1 or DL2 events.</p>
 </dd>
+<dt><strong>CatB_cal_table: table of CatB calibration applied to the events (dl1_mon_tel_CatB_cal_key)</strong></dt><dd></dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>The trained model</dt><dd></dd>
+<dt>sel_events: selected events</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -147,8 +147,8 @@ TODO: introduce the possibility to use another model</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="lstchain.reco.dl1_to_dl2.train_disp_vector.html" class="btn btn-neutral float-left" title="train_disp_vector" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="lstchain.reco.dl1_to_dl2.train_reco.html" class="btn btn-neutral float-right" title="train_reco" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="lstchain.reco.utils.source_side.html" class="btn btn-neutral float-left" title="source_side" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.reco.volume_reducer.apply_volume_reduction.html" class="btn btn-neutral float-right" title="apply_volume_reduction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

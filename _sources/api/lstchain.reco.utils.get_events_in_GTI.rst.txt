@@ -1,0 +1,6 @@
+get_events_in_GTI
+=================
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: get_events_in_GTI
