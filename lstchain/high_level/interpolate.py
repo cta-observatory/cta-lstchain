@@ -14,10 +14,10 @@ from pyirf.io.gadf import (
 )
 from pyirf.interpolation import (
     GridDataInterpolator,
-    interpolate_effective_area_per_energy_and_fov,
-    interpolate_energy_dispersion,
-    interpolate_psf_table,
-    interpolate_rad_max,
+    EnergyDispersionEstimator,
+    EffectiveAreaEstimator,
+    PSFTableEstimator,
+    RadMaxEstimator,
 )
 from scipy.spatial import Delaunay, distance, QhullError
 
@@ -361,8 +361,8 @@ def interpolate_gh_cuts(
     ----------
     .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
     """
-    interp = GridDataInterpolator(grid_points=grid_points, params=gh_cuts)
-    gh_cuts_interp = interp(target_point, method=method)
+    interp = GridDataInterpolator(grid_points=grid_points, params=gh_cuts, method=method)
+    gh_cuts_interp = interp(target_point)
 
     return gh_cuts_interp
 
@@ -402,8 +402,8 @@ def interpolate_al_cuts(
     ----------
     .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
     """
-    interp = GridDataInterpolator(grid_points=grid_points, params=al_cuts)
-    al_cuts_interp = interp(target_point, method=method)
+    interp = GridDataInterpolator(grid_points=grid_points, params=al_cuts, method=method)
+    al_cuts_interp = interp(target_point)
 
     return al_cuts_interp
 
@@ -507,12 +507,11 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
         fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
-        aeff_interp = interpolate_effective_area_per_energy_and_fov(
+        aeff_estimator = EffectiveAreaEstimator(
+            grid_points=irf_pars_sel, 
             effective_area=effarea_list,
-            grid_points=irf_pars_sel,
-            target_point=interp_pars_sel,
-            method=interp_method
         )
+        aeff_interp = aeff_estimator(interp_pars_sel)
 
         aeff_hdu_interp = create_aeff2d_hdu(
             effective_area=aeff_interp.T[0],
@@ -540,13 +539,12 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         e_migra = np.append(temp_irf["MIGRA_LO"][0], temp_irf["MIGRA_HI"][0][-1])
         fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
-        edisp_interp = interpolate_energy_dispersion(
-            migra_bins=e_migra,
-            edisps=edisp_list,
+        edisp_estimator = EnergyDispersionEstimator(
             grid_points=irf_pars_sel,
-            target_point=interp_pars_sel,
-            quantile_resolution=1e-3
+            migra_bins=e_migra,
+            energy_dispersion=edisp_list,
         )
+        edisp_interp = edisp_estimator(interp_pars_sel)
 
         edisp_hdu_interp = create_energy_dispersion_hdu(
             energy_dispersion=edisp_interp[0],
@@ -599,12 +597,12 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         radmax_list = load_irf_grid(irfs, extname="RAD_MAX", interp_col="RAD_MAX")
         temp_irf = QTable.read(irfs[0], hdu="RAD_MAX")
 
-        rad_max_interp = interpolate_rad_max(
-            rad_max=radmax_list,
+        rad_max_estimator = RadMaxEstimator(
             grid_points=irf_pars_sel,
-            target_point=interp_pars_sel,
-            method=interp_method
+            rad_max=radmax_list,
         )
+        rad_max_interp = rad_max_estimator(interp_pars_sel)
+
 
         temp_irf["RAD_MAX"] = rad_max_interp[0].T[np.newaxis, ...] * u.deg
 
