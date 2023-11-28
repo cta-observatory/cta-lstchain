@@ -98,6 +98,7 @@ parser.add_argument(
     '--light-scaling',
     type=float,
     dest='scale_factor',
+    default=1.,
     help='Pass a float in order to scale by this value the charge in all pixels of all events.',
 )
 
@@ -308,12 +309,6 @@ def main():
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
-
-                # if we selected to scale the charge on the pixels by a factor 
-                if args.scale_factor is not None:
-                    scale_factor_total_light = float(args.scale_factor)
-                else:
-                    scale_factor_total_light = 1.
                     
                 image = row['image'] * scale_factor_total_light
                 peak_time = row['peak_time']
