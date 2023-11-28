@@ -176,7 +176,6 @@ def test_find_systematics_correction_file():
         path = find_systematics_correction_file(pro=PRO, date='20200218', sys_date='20190101', base_dir=BASE_DIR)
 
 
-
 def test_rglob_symlinks(tmp_path):
     from lstchain.onsite import rglob_symlinks
 
@@ -218,3 +217,27 @@ def test_rglob_symlinks(tmp_path):
     matches = rglob_symlinks(r0, "run*.dat")
     # check we get an iterator and not a list
     assert len(list(matches)) == 6
+
+@pytest.mark.private_data
+def test_find_calibration_file():
+    from lstchain.onsite import find_calibration_file
+
+    # find by run_id
+    path = find_calibration_file(pro=PRO, calibration_run=9506, base_dir=BASE_DIR)
+    assert path.name == 'calibration_filters_52.Run09506.0000.h5'
+
+    # find by night
+    path = find_calibration_file(pro=PRO, date='20200218', base_dir=BASE_DIR)
+    assert path.name == 'calibration_filters_52.Run02006.0000.h5'
+
+    # if both are given, run takes precedence
+    path = find_calibration_file(pro=PRO, calibration_run=2006, date='20191124', base_dir=BASE_DIR)
+    assert path.name == 'calibration_filters_52.Run02006.0000.h5'
+
+    with pytest.raises(IOError):
+        # if many calibration runs in one date
+        find_calibration_file(pro=PRO, date='20221001', base_dir=BASE_DIR)
+   
+    with pytest.raises(IOError):
+        # wrong run
+        find_calibration_file(pro=PRO, calibration_run=2010, base_dir=BASE_DIR)

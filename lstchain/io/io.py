@@ -904,6 +904,7 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     mon_event.flatfield.prefix = ''
     mon_event.calibration.prefix = ''
     mon_index.prefix = ''
+    monitoring_table='telescope/monitoring'
 
     # update index
     if new_ped:
@@ -916,20 +917,20 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     if new_ped:
         # write ped container
         writer.write(
-            table_name="telescope/monitoring/pedestal",
+            table_name=f"{monitoring_table}/pedestal",
             containers=[mon_index, mon_event.pedestal],
         )
 
     if new_ff:
         # write calibration container
         writer.write(
-            table_name="telescope/monitoring/flatfield",
+            table_name=f"{monitoring_table}/flatfield",
             containers=[mon_index, mon_event.flatfield],
         )
 
         # write ff container
         writer.write(
-            table_name="telescope/monitoring/calibration",
+            table_name=f"{monitoring_table}/calibration",
             containers=[mon_index, mon_event.calibration],
         )
 

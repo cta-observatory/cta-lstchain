@@ -46,7 +46,8 @@ __all__ = [
     "rotate",
     "sky_to_camera",
     "source_dx_dy",
-    "source_side"
+    "source_side",
+    "get_events_in_GTI"
 ]
 
 # position of the LST1
@@ -829,3 +830,25 @@ def apply_src_r_cut(events, src_r_min, src_r_max):
     ]
 
     return events
+
+def get_events_in_GTI(events, CatB_cal_table):
+    """
+    Select events in good time intervals (GTI) on the base
+    of the GTI defined the catB calibration table (dl1_mon_tel_CatB_cal_key)
+
+    Parameters
+    ----------
+    events : pandas DataFrame or astropy.table.QTable 
+        Data frame or table of DL1 or DL2 events.
+    CatB_cal_table: table of CatB calibration applied to the events (dl1_mon_tel_CatB_cal_key)
+
+    Returns
+    -------
+    sel_events: selected events
+    """
+
+    gti = CatB_cal_table['gti']
+
+    gti_mask = gti[events['calibration_id']]
+
+    return events[gti_mask]

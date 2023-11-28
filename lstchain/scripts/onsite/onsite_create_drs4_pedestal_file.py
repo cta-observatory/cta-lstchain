@@ -17,7 +17,7 @@ import lstchain.visualization.plot_drs4 as drs4
 from lstchain.io.data_management import query_yes_no
 from lstchain.onsite import (
     DEFAULT_BASE_PATH,
-    LEVEL_A_PIXEL_DIR,
+    CAT_A_PIXEL_DIR,
     create_pro_symlink,
     find_r0_subrun,
 )
@@ -70,7 +70,7 @@ def main():
     date = input_file.parent.name
 
     # verify and make output dir
-    calib_dir = base_dir / LEVEL_A_PIXEL_DIR
+    calib_dir = base_dir / CAT_A_PIXEL_DIR
     output_dir = calib_dir / "drs4_baseline" / date / prod_id
     if not output_dir.exists():
         print(f"--> Create directory {output_dir}")
