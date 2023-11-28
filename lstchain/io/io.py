@@ -337,10 +337,7 @@ def auto_merge_h5files(
     else:
         keys = set(nodes_keys)
 
-    copy_keys = {}
-    if keys_to_copy:
-        keys_to_copy = {k for k in keys_to_copy if k in keys}
-        copy_keys = set(keys_to_copy)
+    keys_to_copy = set() if keys_to_copy is None else set(keys_to_copy).intersection(keys)
 
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
@@ -353,12 +350,12 @@ def auto_merge_h5files(
             common_keys = keys.intersection(get_dataset_keys(filename))
 
             # do not merge specific nodes with equal data in all files
-            common_keys=common_keys.difference(copy_keys)
+            common_keys=common_keys.difference(keys_to_copy)
 
             with open_file(filename) as file:
 
                 # check value of Table.nrow for keys copied from the first file
-                for k in copy_keys:
+                for k in keys_to_copy:
                     first_node = merge_file.root[k]
                     present_node = file.root[k]
                     if first_node.nrows != present_node.nrows:
