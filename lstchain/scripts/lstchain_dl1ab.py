@@ -309,7 +309,13 @@ def main():
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
-                    
+
+                 # if we selected to scale the charge on the pixels by a factor
+                if args.scale_factor is not None:
+                    scale_factor_total_light = float(args.scale_factor)
+                else:
+                    scale_factor_total_light = 1. 
+
                 image = row['image'] * scale_factor_total_light
                 peak_time = row['peak_time']
 
