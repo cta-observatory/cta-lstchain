@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>auto_merge_h5files &mdash; lstchain 0.10.5.dev133+ge82bd68c documentation</title>
+  <title>auto_merge_h5files &mdash; lstchain 0.10.5.dev141+g38da653d documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
@@ -44,7 +44,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.5.dev133+ge82bd68c
+                0.10.5.dev141+g38da653d
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -122,7 +122,7 @@
 <h1>auto_merge_h5files<a class="headerlink" href="#auto-merge-h5files" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="lstchain.io.io.auto_merge_h5files">
-<span class="sig-prename descclassname"><span class="pre">lstchain.io.io.</span></span><span class="sig-name descname"><span class="pre">auto_merge_h5files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'merged.h5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_arrays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Filters(complevel=1,</span> <span class="pre">complib='blosc:zstd',</span> <span class="pre">shuffle=True,</span> <span class="pre">bitshuffle=False,</span> <span class="pre">fletcher32=True,</span> <span class="pre">least_significant_digit=None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.io.auto_merge_h5files" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">lstchain.io.io.</span></span><span class="sig-name descname"><span class="pre">auto_merge_h5files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'merged.h5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_to_copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_arrays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Filters(complevel=1,</span> <span class="pre">complib='blosc:zstd',</span> <span class="pre">shuffle=True,</span> <span class="pre">bitshuffle=False,</span> <span class="pre">fletcher32=True,</span> <span class="pre">least_significant_digit=None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.io.auto_merge_h5files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Automatic merge of HDF5 files.
 A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
 It may be also used to create a new file output_filename from content stored in another file.</p>
@@ -132,6 +132,7 @@ It may be also used to create a new file output_filename from content stored in 
 <dt><strong>file_list: list of path</strong></dt><dd></dd>
 <dt><strong>output_filename: path</strong></dt><dd></dd>
 <dt><strong>nodes_keys: list of path</strong></dt><dd></dd>
+<dt><strong>keys_to_copy: list of nodes that must be copied and not merged (because the same in all files)</strong></dt><dd></dd>
 <dt><strong>merge_arrays: bool</strong></dt><dd></dd>
 <dt><strong>filters</strong></dt><dd></dd>
 <dt><strong>progress_bar: bool</strong></dt><dd><p>Enabling the display of the progress bar during event processing.</p>
@@ -156,7 +157,7 @@ It may be also used to create a new file output_filename from content stored in 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 27 Nov 2023 10:35.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 30 Nov 2023 10:11.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

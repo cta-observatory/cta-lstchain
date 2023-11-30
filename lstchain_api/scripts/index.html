@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Command line Scripts (scripts) &mdash; lstchain 0.10.5.dev133+ge82bd68c documentation</title>
+  <title>Command line Scripts (scripts) &mdash; lstchain 0.10.5.dev141+g38da653d documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
@@ -44,7 +44,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.5.dev133+ge82bd68c
+                0.10.5.dev141+g38da653d
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -914,6 +914,7 @@ readable with pandas.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_merge_hdf5_files</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">d</span> <span class="n">INPUT_DIR</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT_FILE</span><span class="p">]</span>
                                  <span class="p">[</span><span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">image</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">r</span> <span class="n">RUN_NUMBER</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">p</span> <span class="n">PATTERN</span><span class="p">]</span>
                                  <span class="p">[</span><span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">progress</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">skip</span><span class="o">-</span><span class="n">checks</span><span class="p">]</span>
+                                 <span class="p">[</span><span class="o">--</span><span class="n">keys</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">copy</span> <span class="p">[</span><span class="n">KEYS_TO_COPY</span> <span class="o">...</span><span class="p">]]</span>
 </pre></div>
 </div>
 <section id="named-arguments">
@@ -944,6 +945,10 @@ readable with pandas.</p>
 <dt><kbd>--skip-checks</kbd></dt>
 <dd><p>Skip checks when merging files</p>
 <p>Default: False</p>
+</dd>
+<dt><kbd>--keys-to-copy</kbd></dt>
+<dd><p>List of duplicated keys to be copied and not to be merged</p>
+<p>Default: []</p>
 </dd>
 </dl>
 </section>
@@ -1081,7 +1086,7 @@ DL1ab stage) to the level of NSB in a given data file</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 27 Nov 2023 10:35.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 30 Nov 2023 10:11.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
