@@ -116,7 +116,7 @@ def find_pedestal_file(pro, pedestal_run=None, date=None, base_dir=DEFAULT_BASE_
 
     if pedestal_run is not None:
         # search a specific pedestal run
-        file_list = sorted(ped_dir.rglob(f'{pro}/drs4_pedestal.Run{pedestal_run:05d}.0000.h5'))
+        file_list = sorted(ped_dir.rglob(f'*/{pro}/drs4_pedestal.Run{pedestal_run:05d}.0000.h5'))
 
         if len(file_list) == 0:
             raise IOError(f"Pedestal file from run {pedestal_run} not found\n")
