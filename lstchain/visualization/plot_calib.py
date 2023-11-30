@@ -1,9 +1,14 @@
 import numpy as np
+from astropy import units as u
+import logging
+import sys
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.visualization import CameraDisplay
 from ctapipe_io_lst import load_camera_geometry
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+
+log = logging.getLogger(__name__)
 
 __all__ = [
     "plot_calibration_results",
@@ -14,7 +19,7 @@ channel = ["HG", "LG"]
 plot_dir = "none"
 
 
-def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=None):
+def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=None, calib_type="Cat-A"):
     """
     plot camera calibration quantities
 
@@ -31,6 +36,17 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
     plot_file: name of the output PDF file. No file is produced if name is not provided
 
     """
+    
+    if calib_type == "Cat-A":
+        charge_unit = "[ADC]"
+        gain_unit = "[ADC/pe]"
+    elif calib_type == "Cat-B":
+        charge_unit = "[pe]" 
+        gain_unit = "[cat-B/cat-A]" 
+    else:  
+        log.critical(f'Wrong calib_type: {calib_type}. It must be Cat-A or Cat-B')
+        sys.exit(1)
+
     # read geometry
     camera = load_camera_geometry()
     camera = camera.transform_to(EngineeringCameraFrame())
@@ -44,7 +60,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
             # first figure
             fig = plt.figure(1, figsize=(12, 24))
             plt.tight_layout()
-            fig.suptitle(f"Run {run}", fontsize=25)
+            fig.suptitle(f"Run {run}, {calib_type} calibration", fontsize=25)
             pad = 420
             image = ff_data.charge_median
             mask = ff_data.charge_median_outliers
@@ -56,13 +72,13 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 select = np.logical_not(mask[chan])
                 disp = CameraDisplay(camera)
                 mymin = np.median(image[chan][select]) - 2 * np.std(image[chan][select])
-                mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])
-                disp.set_limits_minmax(mymin, mymax)
+                mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])            
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 disp.image = image[chan]
                 disp.cmap = plt.cm.coolwarm
-                # disp.axes.text(lposx, 0, f'{channel[chan]} signal charge (ADC)', rotation=90)
-                plt.title(f"{channel[chan]} signal charge [ADC]")
+                disp.set_limits_minmax(mymin, mymax)
+                
+                plt.title(f"{channel[chan]} signal charge {charge_unit}")
                 disp.add_colorbar()
 
             image = ff_data.charge_std
@@ -75,12 +91,12 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 disp = CameraDisplay(camera)
                 mymin = np.median(image[chan][select]) - 2 * np.std(image[chan][select])
                 mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])
-                disp.set_limits_minmax(mymin, mymax)
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 disp.image = image[chan]
+                disp.set_limits_minmax(mymin, mymax)
                 disp.cmap = plt.cm.coolwarm
                 # disp.axes.text(lposx, 0, f'{channel[chan]} signal std [ADC]', rotation=90)
-                plt.title(f"{channel[chan]} signal std [ADC]")
+                plt.title(f"{channel[chan]} signal std {charge_unit}")
                 disp.add_colorbar()
 
             image = ped_data.charge_median
@@ -93,12 +109,12 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 disp = CameraDisplay(camera)
                 mymin = np.median(image[chan][select]) - 2 * np.std(image[chan][select])
                 mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])
-                disp.set_limits_minmax(mymin, mymax)
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 disp.image = image[chan]
+                disp.set_limits_minmax(mymin, mymax)
                 disp.cmap = plt.cm.coolwarm
                 # disp.axes.text(lposx, 0, f'{channel[chan]} pedestal [ADC]', rotation=90)
-                plt.title(f"{channel[chan]} pedestal [ADC]")
+                plt.title(f"{channel[chan]} pedestal {charge_unit}")
                 disp.add_colorbar()
 
             image = ped_data.charge_std
@@ -111,12 +127,13 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 disp = CameraDisplay(camera)
                 mymin = np.median(image[chan][select]) - 2 * np.std(image[chan][select])
                 mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])
-                disp.set_limits_minmax(mymin, mymax)
+                
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 disp.image = image[chan]
+                disp.set_limits_minmax(mymin, mymax)
                 disp.cmap = plt.cm.coolwarm
                 # disp.axes.text(lposx, 0, f'{channel[chan]} pedestal std [ADC]', rotation=90)
-                plt.title(f"{channel[chan]} pedestal std [ADC]")
+                plt.title(f"{channel[chan]} pedestal std {charge_unit}")
                 disp.add_colorbar()
 
             plt.subplots_adjust(top=0.92)
@@ -139,7 +156,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 plt.tight_layout()
                 disp = CameraDisplay(camera)
                 disp.highlight_pixels(mask[chan], linewidth=2)
-                disp.image = image[chan]
+                disp.image = image[chan].to_value(u.ns) 
                 disp.cmap = plt.cm.coolwarm
                 # disp.axes.text(lposx, 0, f'{channel[chan]} time', rotation=90)
                 plt.title(f"{channel[chan]} time")
@@ -155,8 +172,8 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 mymin = np.median(image[chan]) - 2 * np.std(image[chan])
                 mymax = np.median(image[chan]) + 2 * np.std(image[chan])
-                disp.set_limits_minmax(mymin, mymax)
                 disp.image = image[chan]
+                disp.set_limits_minmax(mymin, mymax)
                 disp.cmap = plt.cm.coolwarm
                 disp.set_limits_minmax(0.7, 1.3)
                 plt.title(f"{channel[chan]} relative signal")
@@ -178,7 +195,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 mymax = np.median(image[chan]) + 2 * np.std(image[chan])
                 disp.set_limits_minmax(mymin, mymax)
                 disp.cmap = plt.cm.coolwarm
-                plt.title(f"{channel[chan]} photon-electrons")
+                plt.title(f"{channel[chan]} pe, {np.sum(mask[chan])} unusable pixels")
                 # disp.axes.text(lposx, 0, f'{channel[chan]} photon-electrons', rotation=90)
                 disp.add_colorbar()
 
@@ -284,7 +301,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 plt.tight_layout()
                 plt.title(f"pedestal sample of {n_ped} events")
                 plt.ylabel("pixels", fontsize=20)
-                plt.xlabel("pedestal", fontsize=20)
+                plt.xlabel(f"pedestal {charge_unit}", fontsize=20)
                 median = np.median(median_ped[select])
                 rms = np.std(median_ped[select])
                 label = f"Median {median:3.2f}, std {rms:3.2f}"
@@ -294,7 +311,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 # pedestal std
                 plt.subplot(424)
                 plt.ylabel("pixels", fontsize=20)
-                plt.xlabel("pedestal std", fontsize=20)
+                plt.xlabel(f"pedestal std {charge_unit}", fontsize=20)
                 median = np.median(ped_std[select])
                 rms = np.std(ped_std[select])
                 label = f"Median {median:3.2f}, std {rms:3.2f}"
@@ -355,14 +372,14 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
                 disp.image = gain
                 disp.cmap = plt.cm.coolwarm
                 
-                plt.title("flat-fielded gain [ADC/pe]")             
+                plt.title(f"flat-fielded gain {gain_unit}")             
                 disp.add_colorbar()
                 plt.subplots_adjust(top=0.92)
                 # gain
                 plt.subplot(428)
                 plt.tight_layout()
                 plt.ylabel("pixels", fontsize=20)
-                plt.xlabel("flat-fielded gain [ADC/pe]", fontsize=20)
+                plt.xlabel(f"flat-fielded gain {gain_unit}", fontsize=20)
                 median = np.median(gain)
                 rms = np.std(gain)
                 label = f"Median {median:3.2f}, std {rms:3.2f}"

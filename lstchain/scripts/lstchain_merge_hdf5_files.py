@@ -22,6 +22,22 @@ from glob import glob
 
 from lstchain.io import auto_merge_h5files
 from lstchain.io import get_dataset_keys
+from lstchain.io.io import (
+    dl1_params_tel_mon_ped_key,
+    dl1_params_tel_mon_cal_key,
+    dl1_params_tel_mon_flat_key,
+    dl1_mon_tel_CatB_cal_key,
+    dl1_mon_tel_CatB_ped_key,
+    dl1_mon_tel_CatB_flat_key
+)
+
+default_keys_to_copy = [dl1_params_tel_mon_ped_key, 
+                       dl1_params_tel_mon_cal_key,
+                       dl1_params_tel_mon_flat_key,
+                       dl1_mon_tel_CatB_cal_key,
+                       dl1_mon_tel_CatB_ped_key,
+                       dl1_mon_tel_CatB_flat_key
+]
 
 parser = argparse.ArgumentParser(description='Merge HDF5 files')
 
@@ -72,6 +88,11 @@ parser.add_argument(
     help='Skip checks when merging files'
 )
 
+parser.add_argument(
+    '--keys-to-copy',
+    nargs="*", default=[],
+    help='List of duplicated keys to be copied and not to be merged'
+)
 
 def main():
     args = parser.parse_args()
@@ -91,10 +112,13 @@ def main():
     else:
         keys = None
 
+    keys_to_copy = default_keys_to_copy + args.keys_to_copy
+    
     auto_merge_h5files(
         file_list,
         args.output_file,
         nodes_keys=keys,
+        keys_to_copy=keys_to_copy,
         progress_bar=not args.no_progress,
         run_checks=not args.skip_checks
     )

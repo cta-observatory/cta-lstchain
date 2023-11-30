@@ -10,6 +10,9 @@ import pandas as pd
 import tables
 from tables import open_file
 from tqdm import tqdm
+import json
+from traitlets.config.loader import DeferredConfigString, LazyConfigValue
+from pathlib import PosixPath
 
 import astropy.units as u
 from astropy.table import Table, vstack, QTable
@@ -30,6 +33,7 @@ from .lstcontainers import (
     MetaData,
     ThrownEventsHistogram,
 )
+
 
 log = logging.getLogger(__name__)
 
@@ -74,12 +78,13 @@ __all__ = [
     'write_subarray_tables',
 ]
 
+
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
-dl1_mon_tel_catB_ped_key = "/dl1/monitoring/telescope/CatB/pedestal"
-dl1_mon_tel_catB_cal_key = "/dl1/monitoring/telescope/CatB/calibration"
-dl1_mon_tel_catB_flat_key = "/dl1/monitoring/telescope/CatB/flatfield"
+dl1_mon_tel_CatB_ped_key = "/dl1/monitoring/telescope/catB/pedestal"
+dl1_mon_tel_CatB_cal_key = "/dl1/monitoring/telescope/catB/calibration"
+dl1_mon_tel_CatB_flat_key = "/dl1/monitoring/telescope/catB/flatfield"
 dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
 dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
@@ -88,8 +93,9 @@ dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/L
 dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
 dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
+
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
+    complevel=1,  # enable compression, after some tests on DL1 data (images and parameters), complevel>1 does not improve compression very much but slows down IO significantly
     complib='blosc:zstd',  # compression using blosc/zstd
     fletcher32=True,  # attach a checksum to each chunk for error correction
     bitshuffle=False,  # for BLOSC, shuffle bits for better compression
@@ -297,6 +303,7 @@ def auto_merge_h5files(
         file_list,
         output_filename="merged.h5",
         nodes_keys=None,
+        keys_to_copy=None,
         merge_arrays=False,
         filters=HDF5_ZSTD_FILTERS,
         progress_bar=True,
@@ -312,6 +319,7 @@ def auto_merge_h5files(
     file_list: list of path
     output_filename: path
     nodes_keys: list of path
+    keys_to_copy: list of nodes that must be copied and not merged (because the same in all files)
     merge_arrays: bool
     filters
     progress_bar: bool
@@ -329,6 +337,8 @@ def auto_merge_h5files(
     else:
         keys = set(nodes_keys)
 
+    keys_to_copy = set() if keys_to_copy is None else set(keys_to_copy).intersection(keys)
+
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
@@ -336,8 +346,21 @@ def auto_merge_h5files(
 
         bar.update(1)
         for filename in file_list[1:]:
+
             common_keys = keys.intersection(get_dataset_keys(filename))
+
+            # do not merge specific nodes with equal data in all files
+            common_keys=common_keys.difference(keys_to_copy)
+
             with open_file(filename) as file:
+
+                # check value of Table.nrow for keys copied from the first file
+                for k in keys_to_copy:
+                    first_node = merge_file.root[k]
+                    present_node = file.root[k]
+                    if first_node.nrows != present_node.nrows:
+                        raise ValueError("Length of key {} from file {} different than in file {}".format(k, filename, file_list[0]))
+
                 for k in common_keys:
                     in_node = file.root[k]
                     out_node = merge_file.root[k]
@@ -660,6 +683,50 @@ def add_global_metadata(container, metadata):
         container.meta[k] = item
 
 
+
+
+def serialize_config(obj):
+    """
+    Serialize an object to a JSON-serializable format.
+
+    Parameters
+    ----------
+    obj : object
+        The object to serialize.
+
+    Returns
+    -------
+    object
+        The serialized object.
+
+    Raises
+    ------
+    TypeError
+        If the object is not serializable.
+
+    Notes
+    -----
+    This function serializes an object to a JSON-serializable format. It supports the following types:
+    - LazyConfigValue
+    - DeferredConfigString
+    - PosixPath
+    - numpy.ndarray
+
+    If the object is not one of the above types, a TypeError is raised.
+
+    """
+    if isinstance(obj, LazyConfigValue):
+        return obj.to_dict()
+    elif isinstance(obj, DeferredConfigString):
+        return str(obj)
+    elif isinstance(obj, PosixPath):
+        return obj.as_posix()
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        raise TypeError(f"Type {type(obj).__name__} not serializable")
+
+
 def add_config_metadata(container, configuration):
     """
     Add configuration parameters to a container in container.meta.config
@@ -669,18 +736,7 @@ def add_config_metadata(container, configuration):
     container: `ctapipe.containers.Container`
     configuration: config dict
     """
-    linted_config = str(configuration)
-    linted_config = linted_config.replace("<LazyConfigValue {}>", "None")
-    linted_config = re.sub(r"<LazyConfigValue\svalue=(.*?)>", "\\1", linted_config)
-    linted_config = re.sub(r"DeferredConfigString\((.*?)\)", "\\1", linted_config)
-    linted_config = re.sub(r"PosixPath\((.*?)\)", "\\1", linted_config)
-    linted_config = linted_config.replace("\'", "\"")
-    linted_config = linted_config.replace("None", "\"None\"")
-    linted_config = linted_config.replace("inf", "\"inf\"")
-    linted_config = linted_config.replace("True", "true")
-    linted_config = linted_config.replace("False", "false")
-
-    container.meta["config"] = linted_config
+    container.meta["config"] = json.dumps(configuration, default=serialize_config)
 
 
 def write_subarray_tables(writer, event, metadata=None):
@@ -701,18 +757,33 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None, filters=HDF5_ZSTD_FILTERS):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    table_path: str
-        path to the table to write in the HDF5 file
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    table_path : str
+        The path to the table to write in the HDF5 file.
+    mode: str
+        If given a path for ``h5file``, it will be opened in this mode.
+        See the docs of ``tables.open_file``.
+    index : bool, optional
+        Whether to include the index of the dataframe in the output. Default is False.
+    config : dict, optional
+        Configuration metadata to be stored as an attribute of the output table. Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        Global metadata to be stored as attributes of the output table. Default is None.
+    filters : tables.Filters, optional
+        Filters to apply when writing the output table. Default is tables.Filters(complevel=1, complib='zstd', shuffle=True).
+
+    Returns
+    -------
+    None
     """
     if not table_path.startswith("/"):
         table_path = "/" + table_path
@@ -725,6 +796,7 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, confi
             table_name,
             dataframe.to_records(index=index),
             createparents=True,
+            filters=filters,
         )
         if config:
             t.attrs["config"] = config
@@ -739,10 +811,16 @@ def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The DL2 dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    config : dict, optional
+        A dictionary containing used configuration.
+        Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        global metadata.
+        Default is None.
     """
     write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
 
@@ -823,6 +901,7 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     mon_event.flatfield.prefix = ''
     mon_event.calibration.prefix = ''
     mon_index.prefix = ''
+    monitoring_table='telescope/monitoring'
 
     # update index
     if new_ped:
@@ -835,20 +914,20 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     if new_ped:
         # write ped container
         writer.write(
-            table_name="telescope/monitoring/pedestal",
+            table_name=f"{monitoring_table}/pedestal",
             containers=[mon_index, mon_event.pedestal],
         )
 
     if new_ff:
         # write calibration container
         writer.write(
-            table_name="telescope/monitoring/flatfield",
+            table_name=f"{monitoring_table}/flatfield",
             containers=[mon_index, mon_event.flatfield],
         )
 
         # write ff container
         writer.write(
-            table_name="telescope/monitoring/calibration",
+            table_name=f"{monitoring_table}/calibration",
             containers=[mon_index, mon_event.calibration],
         )
 
@@ -919,7 +998,8 @@ def read_mc_dl2_to_QTable(filename):
         energy_max=simu_info.energy_range_max,
         max_impact=simu_info.max_scatter_range,
         spectral_index=simu_info.spectral_index,
-        viewcone=simu_info.max_viewcone_radius
+        viewcone_min=simu_info.min_viewcone_radius,
+        viewcone_max=simu_info.max_viewcone_radius
     )
 
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
@@ -1264,3 +1344,4 @@ def get_mc_fov_offset(filename):
     mean_offset = min_viewcone + 0.5 * (max_viewcone - min_viewcone)
 
     return mean_offset
+

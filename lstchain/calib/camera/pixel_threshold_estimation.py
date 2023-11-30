@@ -5,7 +5,6 @@ from lstchain.io.io import dl1_params_tel_mon_ped_key, dl1_params_tel_mon_cal_ke
 
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.config import get_cleaning_parameters
 
 ORIGINAL_CALIBRATION_ID = 0
 INTERLEAVED_CALIBRATION_ID = 1
@@ -140,7 +139,6 @@ def find_safe_threshold_from_dl1_file(dl1_path, config_file=None,
         config = std_config
 
     cleaning_method = 'tailcuts_clean_with_pedestal_threshold'
-    picture_th, _, _, _ = get_cleaning_parameters(config, cleaning_method)
     sigma = config[cleaning_method]['sigma']
 
     # Obtain the picture thresholds of pixels based on the "clean with

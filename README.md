@@ -1,4 +1,4 @@
-# cta-lstchain [![Build Status](https://github.com/cta-observatory/cta-lstchain/workflows/CI/badge.svg?branch=main)](https://github.com/cta-observatory/cta-lstchain/actions?query=workflow%3ACI+branch%3Amain) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6344673.svg)](https://doi.org/10.5281/zenodo.6344673) [![PyPI version](https://badge.fury.io/py/lstchain.svg)](https://badge.fury.io/py/lstchain)
+# cta-lstchain [![Build Status](https://github.com/cta-observatory/cta-lstchain/workflows/CI/badge.svg?branch=main)](https://github.com/cta-observatory/cta-lstchain/actions?query=workflow%3ACI+branch%3Amain) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6344673.svg)](https://doi.org/10.5281/zenodo.6344673) [![PyPI version](https://badge.fury.io/py/lstchain.svg)](https://badge.fury.io/py/lstchain) [![Conda version](https://anaconda.org/conda-forge/lstchain/badges/version.svg)](https://anaconda.org/conda-forge/lstchain)
 
 Repository for the high level analysis of the LST.
 The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
@@ -12,19 +12,26 @@ are unit tested and should be working as long as the build status is passing.
 
 ## Install
 
-- You will need to install [miniconda](https://docs.conda.io/en/latest/miniconda.html) (recommended) or [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
+You will need to install [micromamba/mamba](https://mamba.readthedocs.io/en/latest/installation.html) (recommended), [miniconda](https://docs.conda.io/en/latest/miniconda.html) or [anaconda](https://www.anaconda.com/distribution/#download-section) first.
 
 
 ### As user
 
+You can create an environment and install `lstchain` from conda-forge as:
 ```
-LSTCHAIN_VER=0.10.0  (or the version you want to install - usually the latest release)
+mamba create -c conda-forge -n lstchain-v0.10.3 python=3.11 lstchain=0.10.3
+```
+
+Alternatively, you can also install `lstchain` from PyPi with `pip`:
+```
+LSTCHAIN_VER=0.10.3  (or the version you want to install - usually the latest release)
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
 pip install lstchain==$LSTCHAIN_VER
 rm environment.yml
 ```
+
 
 ### As developer
 
@@ -41,7 +48,7 @@ conda activate lst-dev
 conda env config vars set PYTHONNOUSERSITE=1 -n <environment_name>
 ```
 
-To update the environment (e.g. when depenencies got updated), use:
+To update the environment (e.g. when dependencies got updated), use:
 ```
 conda env update -n lst-dev -f environment.yml
 ```
@@ -79,8 +86,7 @@ pytest -m 'private_data or not private_data' -v lstchain
 
 All contribution are welcomed.
 
-Guidelines are the same as [ctapipe's ones](https://cta-observatory.github.io/ctapipe/development/index.html)    
-See [here](https://cta-observatory.github.io/ctapipe/development/pullrequests.html) for the general guidelines on how to make a pull request to contribute to the repository. Since the addition of the private data, the CI tests for Pull Requests from forks are not working, therefore we would like to ask to push your modified branches directly to the main cta-lstchain repo. If you do not have writing permissions in the repo, please contact one of the main developers. 
+Guidelines are the same as [ctapipe's ones](https://ctapipe.readthedocs.io/en/latest/developer-guide/index.html). See [here](https://ctapipe.readthedocs.io/en/latest/developer-guide/pullrequests.html) for the general guidelines on how to make a pull request to contribute to the repository. Since the addition of the private data, the CI tests for Pull Requests from forks are not working, therefore we would like to ask to push your modified branches directly to the main cta-lstchain repo. If you do not have writing permissions in the repo, please contact one of the main developers. 
 
 
 ## Report issue / Ask a question

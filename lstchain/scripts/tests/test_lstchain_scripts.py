@@ -1,30 +1,27 @@
+import json
+import os
 import shutil
 import subprocess as sp
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pkg_resources
 import pytest
 import tables
+from importlib.resources import files
 from astropy import units as u
+from astropy.table import Table
 from astropy.time import Time
 from ctapipe.instrument import SubarrayDescription
-
 from ctapipe.io import read_table
 
-from lstchain.io.io import (
-    dl1_params_lstcam_key,
-    dl2_params_lstcam_key,
-    dl1_images_lstcam_key,
-    get_dataset_keys,
-    get_srcdep_params,
-    dl1_params_tel_mon_ped_key,
-    dl1_params_tel_mon_cal_key,
-    dl1_params_tel_mon_flat_key,
-)
-
-from lstchain.io.config import get_standard_config, get_srcdep_config
-import json
+from lstchain.io.config import get_srcdep_config, get_standard_config
+from lstchain.io.io import (dl1_images_lstcam_key, dl1_params_lstcam_key,
+                            dl1_params_tel_mon_cal_key,
+                            dl1_params_tel_mon_flat_key,
+                            dl1_params_tel_mon_ped_key, dl2_params_lstcam_key,
+                            get_dataset_keys, get_srcdep_params)
 
 
 def find_entry_points(package_name):
@@ -92,9 +89,11 @@ def test_lstchain_data_r0_to_dl1(observed_dl1_files):
     assert observed_dl1_files["dl1_file1"].is_file()
     assert observed_dl1_files["muons1"].is_file()
     assert observed_dl1_files["datacheck1"].is_file()
+    assert observed_dl1_files["interleaved_file1"].is_file()
     assert observed_dl1_files["dl1_file2"].is_file()
     assert observed_dl1_files["muons2"].is_file()
     assert observed_dl1_files["datacheck2"].is_file()
+    assert observed_dl1_files["interleaved_file2"].is_file()
 
 
 @pytest.mark.private_data
@@ -430,6 +429,29 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
             assert (new_parameters['length'] != old_parameters['length']).any()
 
 
+def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
+    config_path = tmp_path / 'config_image_modifier.json'
+    output_file = tmp_path / 'dl1ab_on_modified_images.h5'
+    reprocess_output_file = tmp_path / 'dl1ab_on_modified_images_reprocess.h5'
+    config_path = files("lstchain.data").joinpath("lstchain_dl1ab_tune_MC_to_Crab_config.json")
+
+    run_program(
+        'lstchain_dl1ab',
+        '-f', simulated_dl1ab,
+        '-o', output_file,
+        '-c', config_path,
+    )
+
+    # second process should fail as we are trying to re-modify already modified images
+    with pytest.raises(ValueError):
+        run_program(
+            'lstchain_dl1ab',
+            '-f', output_file,
+            '-o', reprocess_output_file,
+            '-c', config_path,
+        )
+
+
 @pytest.mark.private_data
 def test_observed_dl1ab(tmp_path, observed_dl1_files):
     output_dl1ab = tmp_path / "dl1ab.h5"
@@ -469,8 +491,9 @@ def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
 
 
 def test_read_mc_dl2_to_QTable(simulated_dl2_file):
-    from lstchain.io.io import read_mc_dl2_to_QTable
     import astropy.units as u
+
+    from lstchain.io.io import read_mc_dl2_to_QTable
 
     events, sim_info, simu_geomag = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
@@ -492,8 +515,9 @@ def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
 
 @pytest.mark.private_data
 def test_run_summary(run_summary_path):
-    from astropy.table import Table
     from datetime import datetime
+
+    from astropy.table import Table
 
     date = "20200218"
 
@@ -514,4 +538,19 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_counter" in run_summary_table.columns
     assert "dragon_reference_source" in run_summary_table.columns
 
-    assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
+    assert (run_summary_table["run_type"] == ["DATA", "PEDCALIB", "DATA"]).all()
+
+
+@pytest.mark.private_data
+def test_merge_run_summaries(tmp_path):
+    test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+    monitoring_path = test_data / "real/monitoring"
+    merged_file = tmp_path / "merged_summaries.ecsv"
+    run_program(
+        "lstchain_merge_run_summaries", "-m", monitoring_path, merged_file
+    )
+    assert merged_file.exists()
+    table = Table.read(merged_file)
+    # Since no drive log is present in the test sample, only the runs
+    # of the first summary appear
+    assert 2005 in table["run_id"]
