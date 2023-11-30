@@ -998,7 +998,8 @@ def read_mc_dl2_to_QTable(filename):
         energy_max=simu_info.energy_range_max,
         max_impact=simu_info.max_scatter_range,
         spectral_index=simu_info.spectral_index,
-        viewcone=simu_info.max_viewcone_radius
+        viewcone_min=simu_info.min_viewcone_radius,
+        viewcone_max=simu_info.max_viewcone_radius
     )
 
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
