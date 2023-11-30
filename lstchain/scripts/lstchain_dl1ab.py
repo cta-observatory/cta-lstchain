@@ -44,11 +44,11 @@ from lstchain.io.config import (
 from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
-    dl1_mon_tel_CatB_cal_key,
-    dl1_mon_tel_CatB_ped_key,
-    dl1_mon_tel_CatB_flat_key,
     global_metadata,
     write_metadata,
+    dl1_mon_tel_catB_ped_key,
+    dl1_mon_tel_catB_flat_key,
+    dl1_mon_tel_catB_cal_key
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
@@ -138,6 +138,7 @@ def main():
 
         catB_calib_time = np.array(catB_calib["time_min"])
         catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
+
         catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
 
         catB_time_correction = np.array(catB_calib["time_correction"])
@@ -184,11 +185,18 @@ def main():
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
-        log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
+        log.info(f"Fraction of Cat_A pixel cleaning thresholds above Cat_A picture thr.:"
                  f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
+        
+        if args.catB_calibration_file is not None:
+            catB_pedestal_mean = np.array(catB_pedestal["charge_mean"])
+            catB_pedestal_std= np.array(catB_pedestal["charge_std"])
+            catB_threshold_clean_pe = catB_pedestal_mean + sigma * catB_pedestal_std
+
+
     else:
         clean_method_name = 'tailcut'
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
@@ -344,6 +352,13 @@ def main():
                     image_table['image'][ii] = image
                     image_table['peak_time'][ii] = peak_time
 
+                    # use CatB pedestals to estimate the picture threshold 
+                    # as defined in the config file
+                    if args.pedestal_cleaning:
+                        threshold_clean_pe = catB_threshold_clean_pe[calib_idx][selected_gain, pixel_index]
+                        threshold_clean_pe[unusable_pixels] = pic_th
+                        picture_th = np.clip(threshold_clean_pe, pic_th, None)
+
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
                     # TO BE DONE: in case of "pedestal cleaning" (not used now
@@ -454,9 +469,9 @@ def main():
 
             # write a cat-B calibrations in DL1b
             if catB_calib:
-                write_table(catB_calib, outfile, dl1_mon_tel_CatB_cal_key)
-                write_table(catB_pedestal, outfile, dl1_mon_tel_CatB_ped_key)
-                write_table(catB_flatfield, outfile, dl1_mon_tel_CatB_flat_key)
+                write_table(catB_calib, outfile, dl1_mon_tel_catB_cal_key)
+                write_table(catB_pedestal, outfile, dl1_mon_tel_catB_ped_key)
+                write_table(catB_flatfield, outfile, dl1_mon_tel_catB_flat_key)
 
         write_metadata(metadata, args.output_file)
 
