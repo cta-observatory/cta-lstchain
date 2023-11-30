@@ -26,17 +26,17 @@ from lstchain.io.io import (
     dl1_params_tel_mon_ped_key,
     dl1_params_tel_mon_cal_key,
     dl1_params_tel_mon_flat_key,
-    dl1_mon_tel_CatB_cal_key,
-    dl1_mon_tel_CatB_ped_key,
-    dl1_mon_tel_CatB_flat_key
+    dl1_mon_tel_catB_cal_key,
+    dl1_mon_tel_catB_ped_key,
+    dl1_mon_tel_catB_flat_key
 )
 
 default_keys_to_copy = [dl1_params_tel_mon_ped_key, 
                        dl1_params_tel_mon_cal_key,
                        dl1_params_tel_mon_flat_key,
-                       dl1_mon_tel_CatB_cal_key,
-                       dl1_mon_tel_CatB_ped_key,
-                       dl1_mon_tel_CatB_flat_key
+                       dl1_mon_tel_catB_cal_key,
+                       dl1_mon_tel_catB_ped_key,
+                       dl1_mon_tel_catB_flat_key
 ]
 
 parser = argparse.ArgumentParser(description='Merge HDF5 files')
