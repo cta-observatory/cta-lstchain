@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 
 import glob
-import sys
 import tables
 import gc
 import numpy as np
-import time
 import pandas as pd
 import argparse
 from datetime import datetime
-from astropy.coordinates import AltAz, SkyCoord, angular_separation
 from scipy.signal import argrelextrema
 from scipy.optimize import curve_fit
-from scipy.stats import binned_statistic, chi2
-from scipy.interpolate import CubicSpline
+from scipy.stats import chi2
 
 parser = argparse.ArgumentParser(description="compute Cherenkov transparency")
 
