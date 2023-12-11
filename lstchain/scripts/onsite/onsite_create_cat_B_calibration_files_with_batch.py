@@ -21,6 +21,7 @@ from lstchain.onsite import (
     DEFAULT_BASE_PATH,
     CAT_B_PIXEL_DIR,
     find_interleaved_subruns,
+    find_r0_subrun,
     DEFAULT_CONFIG_CAT_B_CALIB,
 )
 
@@ -45,8 +46,8 @@ optional.add_argument('-s', '--statistics',
                       default=2500)
 optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
                       default=DEFAULT_BASE_PATH)
-optional.add_argument('--dl1-dir', help="Root dir for the input r tree. By default, <base_dir>/DL1 will be used",
-                      type=Path)
+optional.add_argument('--interleaved-dir', help="Root dir for the input interleaved files. By default, <base_dir>/DL1/date/version/interleaved will be used",
+                       type=Path)
 optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
                       type=Path)
 
@@ -90,8 +91,6 @@ def main():
     yes = args.yes
     queue = args.queue
     r0_dir = args.r0_dir or args.base_dir / 'R0'
-    dl1_dir = args.dl1_dir or Path(args.base_dir) / 'DL1'
-
     calib_dir = base_dir / CAT_B_PIXEL_DIR
 
     if shutil.which('srun') is None:
@@ -117,16 +116,21 @@ def main():
         if filters_list is not None:
             filters = filters_list[i]
 
-        input_files = find_interleaved_subruns(run, r0_dir, dl1_dir)    
+        # look in R0 to find the date
+        r0_list = find_r0_subrun(run,0,r0_dir)
+        date = r0_list.parent.name
 
-        date = input_files[0].parent.name
-        input_path = input_files[0].parent
+        # find input path
+        ver=version.rsplit(".")
+        input_path = args.interleaved_dir or args.base_dir / 'DL1'/ f"{date}/v{ver[0]}.{ver[1]}/interleaved" 
+
+        input_files = find_interleaved_subruns(run, input_path)
+
         print(f"--> Found {len(input_files)} interleaved subruns in {input_path}")
         if n_subruns:
             print(f"--> Process {n_subruns} subruns")
 
         # verify output dir
-        date = input_files[0].parents[1].name
         calib_dir = args.base_dir / CAT_B_PIXEL_DIR
         output_dir = calib_dir / "calibration" / date / prod_id
         if not output_dir.exists():
@@ -158,7 +162,7 @@ def main():
                 "onsite_create_cat_B_calibration_file",
                 f"-r {run}",
                 f"-v {prod_id}",
-                f"--dl1-dir {dl1_dir}",
+                f"--interleaved-dir {input_path}",
                 f"--r0-dir {r0_dir}",
                 f"-b {base_dir}",
                 f"-s {stat_events}",
