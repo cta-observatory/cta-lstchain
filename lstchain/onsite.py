@@ -243,7 +243,7 @@ def find_DL1_subrun(run, sub_run, dl1_dir=DEFAULT_DL1_PATH):
 
 def find_interleaved_subruns(run, interleaved_dir):
     '''
-    Find the given subrun of interleaved files
+    Return the list of interleaved files for a given run
     '''
 
     file_list = sorted(interleaved_dir.rglob(f'interleaved_LST-1.Run{run:05d}.*.h5'))
