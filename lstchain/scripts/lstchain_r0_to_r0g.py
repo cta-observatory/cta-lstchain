@@ -2,20 +2,14 @@
 
 import logging
 import protozfits
-
 import argparse
-
-from protozfits.CTA_R1_pb2 import CameraConfiguration
-from protozfits.Debug_R1_pb2 import DebugEvent, DebugCameraConfiguration
 
 from ctapipe.io import EventSource
 from ctapipe.containers import EventType
 from lstchain.io import standard_config
 from traitlets.config import Config
 
-from astropy.time import Time
 import numpy as np
-import matplotlib.pyplot as plt
 from contextlib import ExitStack
 
 parser = argparse.ArgumentParser(description="Gain selector program (R0 to "
@@ -133,7 +127,6 @@ def main():
 
     num_pixels = input_streams[0].CameraConfig[0].num_pixels
     num_samples = input_streams[0].CameraConfig[0].num_samples
-    num_bytes = 2
 
     with ExitStack() as stack:
         for i, name in enumerate(output_stream_names):
