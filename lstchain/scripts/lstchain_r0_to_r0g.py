@@ -23,91 +23,27 @@ parser.add_argument('-o', '--output-dir', dest='output_dir',
 parser.add_argument('-yyyymmdd', dest='yyyymmdd', type=str,
                     help='date (YYYYMMDD)')
 
+# Range of waveform to be checked (for gain selection & heuristic FF
+# identification)
+SAMPLE_START = 3
+SAMPLE_END = 39
+# Baseline offset:
+OFFSET = 400
+
 def main():
     args = parser.parse_args()
 
-    # Range of waveform to be checked (for gain selection & heuristic FF
-    # identification)
-    SAMPLE_START = 3
-    SAMPLE_END = 39
-
-    # Baseline offset:
-    OFFSET = 400
     # Level of high gain (HG) required for switching to low gain (LG)
     THRESHOLD = 3500 + OFFSET
-
-    # For heuristic flat field identification (values refer to
-    # baseline-subtracted HG integrated waveforms):
-
-    MIN_FLATFIELD_ADC = 3000
-    MAX_FLATFIELD_ADC = 12000
-    MIN_FLATFIELD_PIXEL_FRACTION = 0.8
 
     input_file = args.input_file
     output_dir = args.output_dir
 
-    # Look for the auxiliary files in their standard locations:
-    drive_file = f'/fefs/onsite/monitoring/driveLST1/DrivePositioning' \
-                 f'/DrivePosition_log_{args.yyyymmdd}.txt'
-    run_summary = f'/fefs/aswg/data/real/monitoring/RunSummary' \
-                  f'/RunSummary_{args.yyyymmdd}.ecsv'
-
-    standard_config['source_config']['LSTEventSource'][
-        'EventTimeCalculator']['run_summary_path'] = run_summary
-    standard_config['source_config']['LSTEventSource']['PointingSource'][
-        'drive_report_path'] = drive_file
-    standard_config['source_config']['LSTEventSource'][
-        'apply_drs4_corrections'] = False
-    #
-    # Loop just to identify properly interleaved pedestals (in case there are
-    # ucts jumps) and FF events (heuristically)
-    #
-    event_type = []
-    event_id = []
-
-    with EventSource(input_url=input_file,
-                     config=Config(standard_config['source_config'])) as source:
-        source.pointing_information = False
-        source.trigger_information = True
-        source.log.setLevel(logging.WARNING)
-        try:
-            for ievent, event in enumerate(source):
-                if event.r0.tel[1].waveform is None:
-                    logging.error('The data seem to contain R0 waveforms. Is '
-                                  'this already gain-selected data?')
-                    exit(1)
-
-                # Check if this may be a FF event
-                # Subtract baseline offset (convert to signed integer to
-                # allow for negative fluctuations!)
-                wf_hg = event.r0.tel[1].waveform[0][:,
-                        SAMPLE_START:SAMPLE_END].astype('int16') - OFFSET
-                # pixel-wise integral:
-                wf_hg_sum = np.sum(wf_hg, axis=1)
-                ff_pix = ((wf_hg_sum > MIN_FLATFIELD_ADC) &
-                          (wf_hg_sum < MAX_FLATFIELD_ADC))
-                event_type.append(event.trigger.event_type)
-
-                # Check fraction of pixels with HG in "FF-like range"
-                if ff_pix.sum() / event.r0.tel[1].waveform.shape[1] > \
-                        MIN_FLATFIELD_PIXEL_FRACTION:
-                    # Looks like a FF event:
-                    event_type[-1] = EventType.FLATFIELD
-                elif event_type[-1] == EventType.FLATFIELD:
-                    # If originally tagged as FF, but not looking like FF:
-                    event_type[-1] = EventType.UNKNOWN
-
-                event_id.append(event.index.event_id)
-            print('Finished first loop over input files - all ok!')
-
-        except Exception as err:
-            print(err)
-            print('Something went wrong!')
-            exit(1)
+    # First identify properly interleaved pedestals (also in case there are
+    # ucts jumps) and FF events (heuristically):
+    event_id, event_type = get_event_types(input_file, args.yyyymmdd)
 
     event_id = np.array(event_id)
-
-    # Numerical values of event types:
     event_type_val = np.array([x.value for x in event_type])
 
     logging.info('Identified event types and number of events:')
@@ -154,7 +90,7 @@ def main():
                 evtype = event_type_val[event_id==event.event_id][0]
 
                 if ((evtype == EventType.SUBARRAY.value) |
-                        (evtype == EventType.UNKNOWN.value)):
+                    (evtype == EventType.UNKNOWN.value)):
                     # Find pixels with HG above gain switch threshold:
                     wf = protozfits.any_array_to_numpy(event.waveform)
                     num_gains = int(wf.size / num_pixels / num_samples)
@@ -175,22 +111,88 @@ def main():
 
                     pixel_status = protozfits.any_array_to_numpy(event.pixel_status)
                     # Set to 0 the status bit of the removed gain:
-                    new_status = np.where(use_lg, pixel_status & 0b1011,
+                    new_status = np.where(use_lg,
+                                          pixel_status & 0b1011,
                                           pixel_status & 0b0111)
                     event.pixel_status.data = new_status.tobytes()
 
                 count += 1
-                # if count>1000:
-                #     break
 
                 stream.write_message(event)
 
             stream.close()
             input_streams[i].close()
 
-
     logging.info('R0 to R0G conversion finished successfully!')
     return(0)
+
+
+def get_event_types(input_file, yyyymmdd):
+
+    # For heuristic flat field identification (values refer to
+    # baseline-subtracted HG integrated waveforms):
+    MIN_FLATFIELD_ADC = 3000
+    MAX_FLATFIELD_ADC = 12000
+    MIN_FLATFIELD_PIXEL_FRACTION = 0.8
+
+    # Look for the auxiliary files in their standard locations:
+    drive_file = f'/fefs/onsite/monitoring/driveLST1/DrivePositioning' \
+                 f'/DrivePosition_log_{yyyymmdd}.txt'
+    run_summary = f'/fefs/aswg/data/real/monitoring/RunSummary' \
+                  f'/RunSummary_{yyyymmdd}.ecsv'
+
+    standard_config['source_config']['LSTEventSource'][
+        'EventTimeCalculator']['run_summary_path'] = run_summary
+    standard_config['source_config']['LSTEventSource']['PointingSource'][
+        'drive_report_path'] = drive_file
+    standard_config['source_config']['LSTEventSource'][
+        'apply_drs4_corrections'] = False
+
+    event_type = []
+    event_id = []
+    with EventSource(input_url=input_file,
+                     config=Config(standard_config['source_config'])) as source:
+        source.pointing_information = False
+        source.trigger_information = True
+        source.log.setLevel(logging.WARNING)
+        try:
+            for ievent, event in enumerate(source):
+                if event.r0.tel[1].waveform is None:
+                    logging.error('The data seem to contain no R0 waveforms. '
+                                  'Is this already gain-selected data?')
+                    exit(1)
+
+                # Check if this may be a FF event
+                # Subtract baseline offset (convert to signed integer to
+                # allow for negative fluctuations!)
+                wf_hg = event.r0.tel[1].waveform[0][:,
+                        SAMPLE_START:SAMPLE_END].astype('int16') - OFFSET
+                # pixel-wise integral:
+                wf_hg_sum = np.sum(wf_hg, axis=1)
+                ff_pix = ((wf_hg_sum > MIN_FLATFIELD_ADC) &
+                          (wf_hg_sum < MAX_FLATFIELD_ADC))
+                event_type.append(event.trigger.event_type)
+
+                # Check fraction of pixels with HG in "FF-like range"
+                if ff_pix.sum() / event.r0.tel[1].waveform.shape[1] > \
+                        MIN_FLATFIELD_PIXEL_FRACTION:
+                    # Looks like a FF event:
+                    event_type[-1] = EventType.FLATFIELD
+                elif event_type[-1] == EventType.FLATFIELD:
+                    # If originally tagged as FF, but not looking like FF:
+                    event_type[-1] = EventType.UNKNOWN
+
+                event_id.append(event.index.event_id)
+            print('Finished first loop over input files - all ok!')
+
+        except Exception as err:
+            print(err)
+            print('Something went wrong!')
+            exit(1)
+
+    return event_id, event_type
+
+
 
 if __name__ == '__main__':
     main()
