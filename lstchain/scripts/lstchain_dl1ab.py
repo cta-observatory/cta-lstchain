@@ -296,7 +296,7 @@ def main():
         new_params = set(parameters_to_update.keys()) - set(params.colnames)
         for p in new_params:
             params[p] = np.empty(len(params), dtype=parameters_to_update[p])
-
+        
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
@@ -306,6 +306,14 @@ def main():
                 outfile.root[dl1_params_lstcam_key].attrs[k] = item
             outfile.root[dl1_params_lstcam_key].attrs["config"] = str(config)
 
+            # lims_intensity = [316, 562]
+            # delta_extending_region = 1.6526124630784766 + 1.2
+            # lims_intensity_ext = [60, lims_intensity[1] * 1]
+            
+            # mask = (params["intensity"] >= lims_intensity_ext[0]) & (params["intensity"] <= lims_intensity_ext[1])
+            # image_table = image_table[mask][:]
+            # params = params[mask][:]
+            
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()

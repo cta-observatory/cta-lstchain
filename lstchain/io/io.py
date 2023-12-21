@@ -34,6 +34,7 @@ from .lstcontainers import (
     ThrownEventsHistogram,
 )
 
+from ctapipe_io_lst import LSTEventSource
 
 log = logging.getLogger(__name__)
 
@@ -403,7 +404,13 @@ def merging_check(file_list):
     mergeable_list = file_list.copy()
 
     first_file = mergeable_list[0]
-    subarray_info0 = SubarrayDescription.from_hdf(first_file)
+    
+    # adding this exception for the analyis of lstchain v0.9 generated files
+    try:
+        subarray_info0 = SubarrayDescription.from_hdf(first_file)
+    except OSError:
+        subarray_info0 = LSTEventSource.create_subarray(tel_id=1)
+
     metadata0 = read_metadata(first_file)
 
     if subarray_info0.name == "MonteCarloArray":
@@ -414,8 +421,14 @@ def merging_check(file_list):
         try:
             metadata = read_metadata(filename)
             check_metadata(metadata0, metadata)
-            subarray_info = SubarrayDescription.from_hdf(filename)
+            
+            # adding this exception for the analyis of lstchain v0.9 generated files
+            try:
+                subarray_info = SubarrayDescription.from_hdf(filename)
+            except OSError:
+                subarray_info = LSTEventSource.create_subarray(tel_id=1)
 
+        
             if subarray_info0.name == "MonteCarloArray":
                 mcheader = read_simu_info_hdf5(filename)
                 thrown_events_hist = read_simtel_energy_histogram(filename)
