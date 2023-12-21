@@ -61,8 +61,15 @@ def main():
     for name in input_stream_names:
         input_streams.append(protozfits.File(name, pure_protobuf=True))
 
-    num_pixels = input_streams[0].CameraConfig[0].num_pixels
-    num_samples = input_streams[0].CameraConfig[0].num_samples
+    is_evb6_data = False
+    try:
+        num_pixels = input_streams[0].CameraConfig[0].num_pixels
+        num_samples = input_streams[0].CameraConfig[0].num_samples
+    except:
+        is_evb6_data = True
+        num_pixels = input_streams[0].CameraConfiguration[0].num_pixels
+        num_samples = input_streams[0].CameraConfiguration[
+            0].num_samples_nominal
 
     with ExitStack() as stack:
         for i, name in enumerate(output_stream_names):
@@ -78,14 +85,21 @@ def main():
                     compression_block_size_kb=64*1024,
                     defaul_compression="lst"))
             stream.open(name)
-            stream.move_to_new_table("CameraConfig")
-            stream.write_message(input_streams[i].CameraConfig[0])
+            if is_evb6_data:
+                stream.move_to_new_table("CameraConfiguration")
+                stream.write_message(input_streams[i].CameraConfiguration[0])
+                stream.move_to_new_table("DataStream")
+                stream.write_message(input_streams[i].DataStream[0])
+            else:
+                stream.move_to_new_table("CameraConfig")
+                stream.write_message(input_streams[i].CameraConfig[0])
 
             stream.move_to_new_table("Events")
 
-            count = 0
             for event in input_streams[i].Events:
-
+                # skip corrupted events:
+                if event.event_id == 0:
+                    continue
                 # Get the event type, from the first loop over the files:
                 evtype = event_type_val[event_id==event.event_id][0]
 
@@ -106,8 +120,10 @@ def main():
                     use_lg = (np.max(hg[:, SAMPLE_START:SAMPLE_END], axis=1)
                               > THRESHOLD)
                     new_wf = np.where(use_lg[:, None], lg, hg) # gain-selected
-
                     event.waveform.data = new_wf.tobytes()
+
+                    if is_evb6_data:
+                        event.num_channels = 1  # Just one gain stored!
 
                     pixel_status = protozfits.any_array_to_numpy(event.pixel_status)
                     # Set to 0 the status bit of the removed gain:
@@ -115,8 +131,6 @@ def main():
                                           pixel_status & 0b1011,
                                           pixel_status & 0b0111)
                     event.pixel_status.data = new_status.tobytes()
-
-                count += 1
 
                 stream.write_message(event)
 
