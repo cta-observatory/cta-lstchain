@@ -13,7 +13,7 @@ from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_ima
 from lstchain.reco.utils import filter_events
 from lstchain.reco.dl1_to_dl2 import build_models
 
-test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data')).absolute()
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
@@ -24,6 +24,8 @@ test_calib_path = calib_path / f'calibration/20200218/{calib_version}/calibratio
 test_drs4_pedestal_path = calib_path / f'drs4_baseline/20200218/{calib_version}/drs4_pedestal.Run02005.0000.h5'
 test_time_calib_path = calib_path / f'drs4_time_sampling_from_FF/20191124/{calib_version}/time_calibration.Run01625.0000.h5'
 test_drive_report = test_data / 'real/monitoring/DrivePositioning/DrivePosition_log_20200218.txt'
+test_run_summary_path = test_data / 'real/monitoring/RunSummary/RunSummary_20200218.ecsv'
+test_systematics_path = test_data / 'real/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/ctapipe-v0.17/ffactor_systematics_20200725.h5'
 
 
 def test_r0_to_dl1(tmp_path, mc_gamma_testfile):
@@ -235,6 +237,10 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
     np.testing.assert_allclose(
         src_dep_df_wobble['off_180']['expected_src_y'], 0., atol=1e-2
     )
+
+@pytest.mark.private_data
+def test_get_interleaved_r1_file(interleaved_r1_file):
+    assert interleaved_r1_file.is_file()
 
 
 def test_build_models(simulated_dl1_file, rf_models):

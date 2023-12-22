@@ -54,7 +54,7 @@ setup(
         'numpy',
         'pandas',
         'protobuf~=3.20.0',
-        'pyirf~=0.8.0',
+        'pyirf~=0.10.0',
         'scipy>=1.8',
         'seaborn',
         'scikit-learn~=1.2',

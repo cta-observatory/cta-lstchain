@@ -76,7 +76,8 @@ class CalibrationCalculator(Component):
 
     hg_lg_ratio = traits.Float(
         1.,
-        help='HG/LG ratio applied if use_scaled_low_gain is True. In case of calibrated data the ratio should be 1.'
+        help='HG/LG ratio applied if use_scaled_low_gain is True. The ratio is ~1 for calibrated data, ~17.4 for uncalibrated data.' 
+
     ).tag(config=True)
 
     classes = (
@@ -214,8 +215,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # define unusables on number of estimated pe
         npe_deviation =  calib_data.n_pe - npe_median[:,np.newaxis]
 
-        # cut on the base of pe statistical uncertainty (adding a 7% spread due to different detection QE among PMs) 
-        tot_std = np.sqrt(npe_median + (self.relative_qe_dispersion * npe_median)**2)
+        # cut on the base of the pe statistical uncertainty over the camera
+        tot_std = self.expected_npe_std(npe_median, ff_data.n_events)
 
         npe_outliers = (
             np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * tot_std[:,np.newaxis],
@@ -296,3 +297,41 @@ class LSTCalibrationCalculator(CalibrationCalculator):
                 new_ff = True
 
         return new_ped, new_ff
+    
+    def expected_npe_std(self, npe_median, n_events):
+
+        """
+        The expected standard deviation of the estimated npe over the camera is given in principle by
+
+        std_pe_mean=std_npe/sqrt((n_events)+ (relative_qe_dispersion*npe)**2)
+
+        where the relative_qe_dispersion is mainly due to different detection QE among PMs.
+
+        However, due to the systematics correction associated to the B term, a linear and quadratic 
+        noise component  must be added, these components depend on the sample statistics per pixel (n_events).
+        The parameters in this function (linear_noise_params and quadratic_noise_params) have been obtained with 
+        a fit of the std of filter scan taken in date 2023/05/10 and considering 
+        n_events = [1000,2500,5000,7500,10000,30000]
+
+        """
+        basic_variance = npe_median/n_events + (self.relative_qe_dispersion * npe_median)**2
+
+        # [par0_HG, par0_LG],[par1_HG, par1_LG]
+        linear_noise_params=np.array(([1.79717813 ,1.72458305e+00],[0.0231544, -1.62036639e-03]))
+
+        # [par0_HG, par0_LG],[par1_HG, par1_LG]
+        quadratic_noise_params=np.array(([4.99670969e-04, 0.00142218],[ 2.49034290e-05,0.0001207]))
+
+        # function to estimate the added noise components as function of the sample statistcs
+        def noise_term(n_events, par):
+            return par[0]/(np.sqrt(n_events))+par[1]
+
+        linear_term = noise_term(n_events, linear_noise_params)
+        quadratic_term = noise_term(n_events, quadratic_noise_params)
+
+        added_variance = (linear_term * npe_median)**2 + (quadratic_term * npe_median**2)**2 
+
+        std = np.sqrt(basic_variance + added_variance)
+
+        return std
+

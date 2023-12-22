@@ -46,6 +46,9 @@ from lstchain.io.io import (
     dl1_params_lstcam_key,
     global_metadata,
     write_metadata,
+    dl1_mon_tel_catB_ped_key,
+    dl1_mon_tel_catB_flat_key,
+    dl1_mon_tel_catB_cal_key
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
@@ -75,6 +78,13 @@ parser.add_argument(
     '--catB-calibration-file',
     type=Path,
     help='path to the Cat-B calibration file ',
+)
+
+parser.add_argument(
+    '--max-unusable-pixels',
+    type=int,
+    default=70,
+    help='Maximum accepted number of unusable pixels. Default: 70 (= 10 modules)',
 )
 
 parser.add_argument(
@@ -136,10 +146,15 @@ def main():
 
         catB_calib_time = np.array(catB_calib["time_min"])
         catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
+
         catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
 
         catB_time_correction = np.array(catB_calib["time_correction"])
         catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
+
+        # add good time interval column (gti)
+        catB_calib['gti'] = np.max(np.sum(catB_unusable_pixels, axis=2),axis=1) < args.max_unusable_pixels
+
         pixel_index = np.arange(constants.N_PIXELS)
 
 
@@ -178,11 +193,18 @@ def main():
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
-        log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
+        log.info(f"Fraction of Cat_A pixel cleaning thresholds above Cat_A picture thr.:"
                  f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
+        
+        if args.catB_calibration_file is not None:
+            catB_pedestal_mean = np.array(catB_pedestal["charge_mean"])
+            catB_pedestal_std= np.array(catB_pedestal["charge_std"])
+            catB_threshold_clean_pe = catB_pedestal_mean + sigma * catB_pedestal_std
+
+
     else:
         clean_method_name = 'tailcut'
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
@@ -248,7 +270,7 @@ def main():
     }
 
     if catB_calib:
-        parameters_to_update["calibration_id"] = np.int32 
+        parameters_to_update["calibration_id"] = np.int32
 
     nodes_keys = get_dataset_keys(args.input_file)
     if args.no_image:
@@ -351,11 +373,18 @@ def main():
                     image[unusable_pixels] = 0
 
                     # time flafielding
-                    peak_time = peak_time - time_correction
+                    peak_time = peak_time + time_correction
 
                     # store it to save it later
                     image_table['image'][ii] = image
                     image_table['peak_time'][ii] = peak_time
+
+                    # use CatB pedestals to estimate the picture threshold 
+                    # as defined in the config file
+                    if args.pedestal_cleaning:
+                        threshold_clean_pe = catB_threshold_clean_pe[calib_idx][selected_gain, pixel_index]
+                        threshold_clean_pe[unusable_pixels] = pic_th
+                        picture_th = np.clip(threshold_clean_pe, pic_th, None)
 
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
@@ -467,9 +496,9 @@ def main():
 
             # write a cat-B calibrations in DL1b
             if catB_calib:
-                write_table(catB_calib, outfile, "/dl1/event/telescope/monitoring/catB/calibration")
-                write_table(catB_pedestal, outfile, "/dl1/event/telescope/monitoring/catB/pedestal")
-                write_table(catB_flatfield, outfile, "/dl1/event/telescope/monitoring/catB/flatfield")
+                write_table(catB_calib, outfile, dl1_mon_tel_catB_cal_key)
+                write_table(catB_pedestal, outfile, dl1_mon_tel_catB_ped_key)
+                write_table(catB_flatfield, outfile, dl1_mon_tel_catB_flat_key)
 
         write_metadata(metadata, args.output_file)
 

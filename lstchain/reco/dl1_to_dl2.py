@@ -622,7 +622,11 @@ def apply_models(dl1,
                                             + config['particle_classification_features']
                                             + config['disp_classification_features'],
                               )
-
+    # if no events in dl2, e.g. for bad time interval from Cat-B calibration
+    if len(dl2) == 0:
+        logger.warning("No events in dl2.")
+        return dl2
+    
     # Update parameters related to target direction on camera frame for MC data
     # taking into account of the abrration effect using effective focal length
     is_simu = 'disp_norm' in dl2.columns

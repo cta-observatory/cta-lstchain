@@ -155,6 +155,9 @@ def main():
     output_dir = args.output_dir.absolute()
     output_dir.mkdir(exist_ok=True, parents=True)
 
+    interleaved_dir = output_dir/"interleaved"
+    interleaved_dir.mkdir(exist_ok=True, parents=True)
+
     if not args.input_file.is_file():
         log.error('Input file does not exist or is not a file')
         sys.exit(1)

@@ -33,5 +33,5 @@ dependencies:
   - seaborn
   - ctapipe_io_lst=0.22
   - pytest
-  - pyirf=0.8
+  - pyirf~=0.10.0
 

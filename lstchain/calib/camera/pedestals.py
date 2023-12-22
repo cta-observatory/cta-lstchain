@@ -106,6 +106,7 @@ class PedestalIntegrator(PedestalCalculator):
         self.extractor = ImageExtractor.from_name(
             self.charge_product, parent=self, subarray=subarray
         )
+       
 
     def _extract_charge(self, event):
         """
@@ -117,7 +118,7 @@ class PedestalIntegrator(PedestalCalculator):
         event : general event container
 
         """
-
+        
         # copy the waveform be cause we do not want to change it for the moment
         waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
 
@@ -155,9 +156,10 @@ class PedestalIntegrator(PedestalCalculator):
         Returns: True if the mon.tel[tel_id].pedestal is updated, False otherwise
 
         """
+        
         # initialize the np array at each cycle
         waveform = event.r1.tel[self.tel_id].waveform
-
+    
         # re-initialize counter
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
@@ -165,7 +167,7 @@ class PedestalIntegrator(PedestalCalculator):
         pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
 
         self.trigger_time = event.trigger.time
-
+        
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
             self.setup_sample_buffers(waveform, self.sample_size)
@@ -231,7 +233,7 @@ class PedestalIntegrator(PedestalCalculator):
 
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
-
+       
         n_channels = waveform.shape[0]
         n_pix = waveform.shape[1]
         shape = (sample_size, n_channels, n_pix)
@@ -257,7 +259,7 @@ class PedestalIntegrator(PedestalCalculator):
             trace_integral,
             mask=masked_pixels_of_sample
         )
-
+        
         # mean and std over the sample per pixel
         max_sigma = self.sigma_clipping_max_sigma
         pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
