@@ -445,6 +445,11 @@ def r0_to_dl1(
     if 'lh_fit_config' in config.keys():
         lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
         lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
+        if lhfit_fitter_config['TimeWaveformFitter']['use_interleaved'] and not is_simu:
+            tmp_source = EventSource(input_url=input_filename,
+                                      config=Config(config["source_config"]))
+            lhfit_fitter.get_ped_from_interleaved(tmp_source)
+            del tmp_source
 
     # initialize the writer of the interleaved events 
     interleaved_writer = None

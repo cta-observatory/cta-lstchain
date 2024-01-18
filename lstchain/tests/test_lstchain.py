@@ -114,6 +114,7 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
         "n_peaks": 20,
         "no_asymmetry": False,
         "use_weight": False,
+        "use_interleaved": False,
         "verbose": 4
     }
     os.makedirs('./event', exist_ok=True)
@@ -159,6 +160,8 @@ def test_r0_to_dl1_lhfit_observed(tmp_path):
         "n_peaks": 0,
         "no_asymmetry": False,
         "use_weight": False,
+        # test data doesn't contain interleaved events
+        "use_interleaved": False,
         "verbose": 0
     }
     r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
