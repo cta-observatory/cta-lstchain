@@ -34,8 +34,6 @@ class TimeWaveformFitter(TelescopeComponent):
     time_after_shower = FloatTelescopeParameter(default_value=20,
                                                 help='Additional time at the end of the fit temporal window.',
                                                 allow_none=False).tag(config=True)
-    use_weight = Bool(False, help='If True, the brightest sample is twice as important as the dimmest pixel in the '
-                                  'likelihood. If false all samples are equivalent.', allow_none=False).tag(config=True)
     no_asymmetry = Bool(False, help='If true, the asymmetry of the spatial model is fixed to 0.',
                         allow_none=False).tag(config=True)
     use_interleaved = Bool(None, help='If true, the std deviation of pedestals and dimmed pixels are estimated on '
@@ -276,7 +274,7 @@ class TimeWaveformFitter(TelescopeComponent):
                       template.t0, template.amplitude_LG,
                       template.amplitude_HG, self.n_peaks,
                       self.transition_charges[telescope_id],
-                      self.use_weight, self.factorial]
+                      self.factorial]
 
         self.start_parameters = start_parameters
         self.names_parameters = start_parameters.keys()

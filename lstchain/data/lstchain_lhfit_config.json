@@ -303,7 +303,6 @@
             ],
     "n_peaks": 0,
     "no_asymmetry": false,
-    "use_weight": false,
     "use_interleaved": true,
     "verbose": 0
   }
