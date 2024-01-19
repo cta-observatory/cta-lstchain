@@ -1,6 +1,4 @@
 import sys
-from ctapipe.containers import EventType
-
 from tqdm.auto import tqdm
 
 from ..image import LSTImageProcessor, LSTImageCleaner
@@ -9,6 +7,7 @@ from ..calib.camera import LSTInterleavedProcessor
 from ..reco import LHFitProcessor
 
 from ctapipe.calib import CameraCalibrator, GainSelector
+from ctapipe.containers import EventType
 from ctapipe.core import QualityQuery, Tool
 from ctapipe.core.traits import Bool, classes_with_traits, flag
 from ctapipe.image import ImageModifier
@@ -55,10 +54,13 @@ class LSTProcessorTool(Tool):
     > lstchain_process --input events.simtel.gz --output events.dl1.h5 --progress
 
     Or use an external configuration file, where you can specify all options:
-    > lstchain_process --config stage1_config.json --progress
+    > lstchain_process --config lstchain_cat_A_config.json --progress
 
-    The config file should be in JSON or python format (see traitlets docs). For an
-    example, see ctapipe/examples/stage1_config.json in the main code repo.
+    For recalibrating or applying Cat-B calibrations on already processed DL1b data:
+    > lstchain_process --input events_cat_A.dl1.h5 
+      --config lstchain_cat_A_config lstchain_cat_B_config --output events_cat_B.dl1.h5
+
+    The config file should be in JSON or python format (see traitlets docs).
     """
 
     progress_bar = Bool(
@@ -146,10 +148,6 @@ class LSTProcessorTool(Tool):
             "store DL1/Event/Telescope muon parameters in output",
             "don't store DL1/Event/Telescope muon parameters in output",
         ),
-        "camera-frame": (
-            {"ImageProcessor": {"use_telescope_frame": True}},
-            "Use camera frame for image parameters instead of telescope frame",
-        ),
     }
 
     classes = (
@@ -193,12 +191,12 @@ class LSTProcessorTool(Tool):
             parent=self, subarray=subarray
         )
         self.calibrate = CameraCalibrator(parent=self, subarray=subarray)
-        self.process_images = LSTImageProcessor(subarray=subarray, parent=self)
-        self.process_muons = LSTMuonProcessor(subarray=subarray, parent=self)
+        self.process_images = LSTImageProcessor(parent=self, subarray=subarray)
+        self.process_muons = LSTMuonProcessor(parent=self, subarray=subarray)
         self.process_lhfit = LHFitProcessor(parent=self, subarray=subarray)
-        self.process_shower = ShowerProcessor(subarray=subarray, parent=self)
+        self.process_shower = ShowerProcessor(parent=self, subarray=subarray)
         self.write = self.enter_context(
-            DataWriter(event_source=self.event_source, parent=self)
+            DataWriter(parent=self, event_source=self.event_source)
         )
 
         # warn if max_events prevents writing the histograms
