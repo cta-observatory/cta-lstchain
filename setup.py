@@ -25,7 +25,7 @@ entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
 tests_require = ["pytest"]
 docs_require = [
-    "sphinx~=4.2",
+    "sphinx",
     "sphinx-automodapi",
     "sphinx_argparse",
     "sphinx_rtd_theme",
@@ -55,7 +55,7 @@ setup(
         'pandas',
         'protobuf~=3.20.0',
         'pyirf~=0.10.0',
-        'scipy>=1.8',
+        'scipy>=1.8,<1.12',
         'seaborn',
         'scikit-learn~=1.2',
         'tables',
