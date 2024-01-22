@@ -1,6 +1,9 @@
 import numpy as np
 
-__all__ = ['apply_dynamic_cleaning']
+from ctapipe.containers import ArrayEventContainer
+from ctapipe.image import ImageCleaner
+
+__all__ = ["apply_dynamic_cleaning", "LSTImageCleaner"]
 
 
 def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
@@ -36,3 +39,12 @@ def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     mask_dynamic_cleaning = (image >= dynamic_threshold) & signal_pixels
 
     return mask_dynamic_cleaning
+
+
+class LSTImageCleaner(ImageCleaner):
+    """
+    LST specific ImageCleaner class.
+    """
+
+    def __call__(self, event: ArrayEventContainer) -> np.ndarray:
+        pass

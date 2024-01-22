@@ -1,10 +1,11 @@
 import sys
 from tqdm.auto import tqdm
 
-from ..image import LSTImageProcessor, LSTImageCleaner
-from ..image.muon import LSTMuonProcessor
-from ..calib.camera import LSTInterleavedProcessor
-from ..reco import LHFitProcessor
+from lstchain.image.image_processor import LSTImageProcessor
+from lstchain.image.cleaning import LSTImageCleaner
+from lstchain.image.muon.muon_processor import LSTMuonProcessor
+from lstchain.calib.camera.interleaved_processor import LSTInterleavedProcessor
+from lstchain.reco.lhfit_processor import LHFitProcessor
 
 from ctapipe.calib import CameraCalibrator, GainSelector
 from ctapipe.containers import EventType
@@ -54,7 +55,7 @@ class LSTProcessorTool(Tool):
     > lstchain_process --input events.simtel.gz --output events.dl1.h5 --progress
 
     Or use an external configuration file, where you can specify all options:
-    > lstchain_process --config lstchain_cat_A_config.json --progress
+    > lstchain_process -i events.simtel.gz --config lstchain_cat_A_config.json --progress
 
     For recalibrating or applying Cat-B calibrations on already processed DL1b data:
     > lstchain_process --input events_cat_A.dl1.h5 
