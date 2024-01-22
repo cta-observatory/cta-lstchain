@@ -25,7 +25,7 @@ entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
 tests_require = ["pytest"]
 docs_require = [
-    "sphinx~=4.2",
+    "sphinx",
     "sphinx-automodapi",
     "sphinx_argparse",
     "sphinx_rtd_theme",
