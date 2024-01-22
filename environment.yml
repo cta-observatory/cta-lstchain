@@ -19,6 +19,7 @@ dependencies:
   - toml
   - protobuf=3.20
   - pyparsing
+  - scipy~=1.11.4
   - scikit-learn=1.2
   - sphinx=4
   - sphinx-automodapi
@@ -34,4 +35,3 @@ dependencies:
   - ctapipe_io_lst=0.22
   - pytest
   - pyirf~=0.10.0
-
