@@ -1,29 +1,31 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Command line Scripts (scripts) &mdash; lstchain 0.10.6.dev4+g089891dc documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  <title>Command line Scripts (scripts) &mdash; lstchain 0.10.7.dev3+g97efe2d3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/documentation_options.js?v=8fbc0368"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
         <script>let toggleHintHide = 'Click to hide';</script>
         <script>let toggleOpenOnPrint = 'true';</script>
-        <script src="../../_static/togglebutton.js"></script>
+        <script src="../../_static/togglebutton.js?v=4a39c7ea"></script>
         <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
         <script src="../../_static/custom.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -44,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.6.dev4+g089891dc
+                0.10.7.dev3+g97efe2d3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -181,7 +183,7 @@
            <div itemprop="articleBody">
              
   <section id="command-line-scripts-scripts">
-<span id="scripts"></span><h1>Command line Scripts (<cite>scripts</cite>)<a class="headerlink" href="#command-line-scripts-scripts" title="Permalink to this headline">¶</a></h1>
+<span id="scripts"></span><h1>Command line Scripts (<cite>scripts</cite>)<a class="headerlink" href="#command-line-scripts-scripts" title="Link to this heading">¶</a></h1>
 <p>The scripts to be executed from the command line are described below:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -209,8 +211,8 @@ Please see also <a class="reference internal" href="../tools/index.html#tools"><
 <li><p><a class="reference internal" href="#lstchain-tune-nsb">lstchain_tune_nsb</a></p></li>
 </ul>
 <section id="lstchain-check-dl1">
-<span id="id1"></span><h2>lstchain_check_dl1<a class="headerlink" href="#lstchain-check-dl1" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_check_dl1"></span><p>Script to check the contents of LST DL1 files and associated muon ring files
+<span id="id1"></span><h2>lstchain_check_dl1<a class="headerlink" href="#lstchain-check-dl1" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_check_dl1">Script to check the contents of LST DL1 files and associated muon ring files
 To run it, type e.g.:
 python lstchain_check_dl1.py
 –input-file dl1_LST-1.1.Run01881.0000.h5</p>
@@ -227,14 +229,14 @@ only the plotting part is executed.</p>
 must be available in the same directory as the input files (of whatever
 type).</p>
 <section id="usage">
-<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_check_dl1</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span> <span class="n">INPUT_FILE</span>
                           <span class="p">[</span><span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="n">OUTPUT_DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">muons</span><span class="o">-</span><span class="nb">dir</span> <span class="n">MUONS_DIR</span><span class="p">]</span>
                           <span class="p">[</span><span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">cores</span> <span class="n">MAX_CORES</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">omit</span><span class="o">-</span><span class="n">pdf</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch</span><span class="p">]</span>
 </pre></div>
 </div>
 <section id="required-arguments">
-<h4>required arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>required arguments<a class="headerlink" href="#required-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file</kbd></dt>
 <dd><p>Path to DL1 data file(s) (containing pixel-wise charge information and image parameters) OR to datacheck_dl1_*.h5 files (only plotting part is executed in that case)</p>
@@ -242,7 +244,7 @@ type).</p>
 </dl>
 </section>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--output-dir</kbd></dt>
 <dd><p>Directory where the output files will be written</p>
@@ -268,12 +270,12 @@ type).</p>
 </section>
 </section>
 <section id="lstchain-create-run-summary">
-<span id="id2"></span><h2>lstchain_create_run_summary<a class="headerlink" href="#lstchain-create-run-summary" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_create_run_summary"></span><p>Create a run summary for a given date containing the number of subruns,
+<span id="id2"></span><h2>lstchain_create_run_summary<a class="headerlink" href="#lstchain-create-run-summary" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_create_run_summary">Create a run summary for a given date containing the number of subruns,
 the start time of the run, type pf the run: DATA, DRS4, CALI, and
 the reference timestamp and counter of the run.</p>
 <section id="id3">
-<h3>Usage<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
 <p><p>Create run summary file</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_create_run_summary</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">d</span> <span class="n">DATE</span> <span class="p">[</span><span class="o">--</span><span class="n">r0</span><span class="o">-</span><span class="n">path</span> <span class="n">R0_PATH</span><span class="p">]</span>
@@ -282,7 +284,7 @@ the reference timestamp and counter of the run.</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>-d, --date</kbd></dt>
 <dd><p>Date for the creation of the run summary in format YYYYMMDD</p>
@@ -308,8 +310,8 @@ the reference timestamp and counter of the run.</p>
 </section>
 </section>
 <section id="lstchain-data-create-time-calibration-file">
-<span id="id4"></span><h2>lstchain_data_create_time_calibration_file<a class="headerlink" href="#lstchain-data-create-time-calibration-file" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_data_create_time_calibration_file"></span><p>Script to create drs4 time correction coefficients</p>
+<span id="id4"></span><h2>lstchain_data_create_time_calibration_file<a class="headerlink" href="#lstchain-data-create-time-calibration-file" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_data_create_time_calibration_file">Script to create drs4 time correction coefficients</p>
 <ul class="simple">
 <li><p>Input: fits.fz file</p></li>
 <li><p>Output: time_calibration.hdf5 file</p></li>
@@ -319,7 +321,7 @@ $&gt; python lstchain_data_create_time_calibration_file.py
 –input-file LST-1.1.Run01625.0000.fits.fz or input-file LST-1.1.Run01625.000*.fits.fz
 –output-file time_calibration.Run1625.0000.hdf5</p>
 <section id="id5">
-<h3>Usage<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_data_create_time_calibration_file</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span> <span class="n">INPUT_FILE</span>
                                                   <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">file</span> <span class="n">OUTPUT_FILE</span>
                                                   <span class="p">[</span><span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">events</span> <span class="n">MAX_EVENTS</span><span class="p">]</span>
@@ -334,7 +336,7 @@ $&gt; python lstchain_data_create_time_calibration_file.py
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file</kbd></dt>
 <dd><p>Path to fits.fz file used to create the time calibration file.                     Allowed to use regular expression in given path to process subruns</p>
@@ -370,8 +372,8 @@ $&gt; python lstchain_data_create_time_calibration_file.py
 </section>
 </section>
 <section id="lstchain-data-r0-to-dl1">
-<span id="id6"></span><h2>lstchain_data_r0_to_dl1<a class="headerlink" href="#lstchain-data-r0-to-dl1" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_data_r0_to_dl1"></span><p>Pipeline to calibrate and compute image parameters at single telescope
+<span id="id6"></span><h2>lstchain_data_r0_to_dl1<a class="headerlink" href="#lstchain-data-r0-to-dl1" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_data_r0_to_dl1">Pipeline to calibrate and compute image parameters at single telescope
 level for real data.
 - Inputs are a protozfits input file and a drs4 pedestal/calibration/time
 calibration files
@@ -384,7 +386,7 @@ calibration files
 –calibration-file calibration.Run2029.0000.hdf5
 –time-calibration-file time_calibration.Run2029.0000.hdf5</p>
 <section id="id7">
-<h3>Usage<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
 <p><p>R0 to DL1</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_data_r0_to_dl1</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">f</span> <span class="n">INPUT_FILE</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT_DIR</span><span class="p">]</span>
@@ -405,7 +407,7 @@ calibration files
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>-f, --input-file</kbd></dt>
 <dd><p>Path to the .fits.fz file with the raw events</p>
@@ -464,8 +466,8 @@ calibration files
 </section>
 </section>
 <section id="lstchain-dl1-muon-analysis">
-<span id="id8"></span><h2>lstchain_dl1_muon_analysis<a class="headerlink" href="#lstchain-dl1-muon-analysis" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_dl1_muon_analysis"></span><p>Script to perform the analysis of muon events.</p>
+<span id="id8"></span><h2>lstchain_dl1_muon_analysis<a class="headerlink" href="#lstchain-dl1-muon-analysis" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_dl1_muon_analysis">Script to perform the analysis of muon events.</p>
 <ul class="simple">
 <li><p>Inputs are a DL1a data file (pixel information is needed) and a calibration file</p></li>
 <li><p>Output is a table with muon parameters (to be updated to a dataframe!)</p></li>
@@ -476,7 +478,7 @@ calibration files
 –output-file Data_table.fits
 –calibration-file calibration.Run2029.0000.hdf5</p>
 <section id="id9">
-<h3>Usage<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_dl1_muon_analysis</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span> <span class="n">INPUT_FILE</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">file</span>
                                   <span class="n">OUTPUT_FILE</span> <span class="p">[</span><span class="o">--</span><span class="n">calibration</span><span class="o">-</span><span class="n">file</span> <span class="n">CALIB_FILE</span><span class="p">]</span>
                                   <span class="p">[</span><span class="o">--</span><span class="n">plot</span><span class="o">-</span><span class="n">rings</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">plots</span><span class="o">-</span><span class="n">path</span> <span class="n">PLOTS_PATH</span><span class="p">]</span>
@@ -484,7 +486,7 @@ calibration files
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file, -f</kbd></dt>
 <dd><p>Path to DL1a data file (containing charge information).</p>
@@ -510,13 +512,13 @@ calibration files
 </section>
 </section>
 <section id="lstchain-dl1-to-dl2">
-<span id="id10"></span><h2>lstchain_dl1_to_dl2<a class="headerlink" href="#lstchain-dl1-to-dl2" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_dl1_to_dl2"></span><p>Run the DL1 to DL2 step: Pipeline for the reconstruction of Energy, disp and gamma/hadron
+<span id="id10"></span><h2>lstchain_dl1_to_dl2<a class="headerlink" href="#lstchain-dl1-to-dl2" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_dl1_to_dl2">Run the DL1 to DL2 step: Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a DL1 file. It takes DL1 file(s) and trained Random Forests as input 
 and outputs DL2 data file(s).
 Run lstchain_dl1_to_dl2 –help to see the options.</p>
 <section id="id11">
-<h3>Usage<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
 <p><p>Run the DL1 to DL2 step: Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a DL1 file. It takes DL1 file(s) and trained Random Forests as input 
 and outputs DL2 data file(s).
@@ -528,7 +530,7 @@ Run lstchain_dl1_to_dl2 –help to see the options.</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-files, -f</kbd></dt>
 <dd><p>Path (or list of paths) to a DL1 HDF5 file</p>
@@ -549,8 +551,8 @@ Run lstchain_dl1_to_dl2 –help to see the options.</p>
 </section>
 </section>
 <section id="lstchain-dl1ab">
-<span id="id12"></span><h2>lstchain_dl1ab<a class="headerlink" href="#lstchain-dl1ab" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_dl1ab"></span><p>Read a HDF5 DL1 file, recompute parameters based on calibrated images and
+<span id="id12"></span><h2>lstchain_dl1ab<a class="headerlink" href="#lstchain-dl1ab" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_dl1ab">Read a HDF5 DL1 file, recompute parameters based on calibrated images and
 pulse times and a config file and write a new HDF5 file
 Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands,
 intercept, time_gradient
@@ -560,7 +562,7 @@ Usage:
 $&gt; python lstchain_dl1ab.py
 –input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz</p>
 <section id="id13">
-<h3>Usage<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
 <p><p>Recompute DL1b parameters from a DL1a file</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_dl1ab</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">f</span> <span class="n">INPUT_FILE</span> <span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT_FILE</span>
@@ -570,7 +572,7 @@ $&gt; python lstchain_dl1ab.py
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>-f, --input-file</kbd></dt>
 <dd><p>path to the DL1a file</p>
@@ -601,20 +603,20 @@ $&gt; python lstchain_dl1ab.py
 </section>
 </section>
 <section id="lstchain-find-pedestals">
-<span id="id14"></span><h2>lstchain_find_pedestals<a class="headerlink" href="#lstchain-find-pedestals" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_find_pedestals"></span><p>This script reads all DL1 subrun files (i.e. not merged) in the input
+<span id="id14"></span><h2>lstchain_find_pedestals<a class="headerlink" href="#lstchain-find-pedestals" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_find_pedestals">This script reads all DL1 subrun files (i.e. not merged) in the input
 directory, and finds the event_id’s of interleaved pedestals. It writes them
 out into one hdf5 file for each sub-run, called pedestal_ids_RunXXXXX.YYYY.h5,
 which contains a single table with one column, ‘event_id’</p>
 <section id="id15">
-<h3>Usage<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
 <p><p>Interleaved Pedestal Finder</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_find_pedestals</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">d</span> <span class="n">SRCDIR</span><span class="p">]</span> <span class="n">output</span><span class="o">-</span><span class="nb">dir</span>
 </pre></div>
 </div>
 <section id="positional-arguments">
-<h4>Positional Arguments<a class="headerlink" href="#positional-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Positional Arguments<a class="headerlink" href="#positional-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>output-dir</kbd></dt>
 <dd><p>Path where to store the output hdf5 files</p>
@@ -622,7 +624,7 @@ which contains a single table with one column, ‘event_id’</p>
 </dl>
 </section>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>-d, --input-dir</kbd></dt>
 <dd><p>path to the directory of the DL1 files</p>
@@ -633,8 +635,8 @@ which contains a single table with one column, ‘event_id’</p>
 </section>
 </section>
 <section id="lstchain-longterm-dl1-check">
-<span id="id16"></span><h2>lstchain_longterm_dl1_check<a class="headerlink" href="#lstchain-longterm-dl1-check" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_longterm_dl1_check"></span><p>This script reads in LST1 DL1 datacheck files, of those containing info for a
+<span id="id16"></span><h2>lstchain_longterm_dl1_check<a class="headerlink" href="#lstchain-longterm-dl1-check" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_longterm_dl1_check">This script reads in LST1 DL1 datacheck files, of those containing info for a
 whole run, with name pattern datacheck_dl1_LST-1.Run?????.h5. It takes all
 files in the input directory. It also reads, in the directory indicated (
 muons-dir), the corresponding muons*fits files if available.</p>
@@ -647,7 +649,7 @@ opened by the default browser at the end of execution.</p>
 <p>It also produces a longterm_dl1_check.log file with warnings about values
 which are beyond certain limits.</p>
 <section id="id17">
-<h3>Usage<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
 <p><p>DL1 multi-run data checker</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_longterm_dl1_check</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="nb">dir</span> <span class="n">INPUT_DIR</span><span class="p">]</span>
@@ -656,7 +658,7 @@ which are beyond certain limits.</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-dir, -d</kbd></dt>
 <dd><p>path to the datacheck_dl1_LST-1.RunXXXXX.h5 files</p>
@@ -679,8 +681,8 @@ which are beyond certain limits.</p>
 </section>
 </section>
 <section id="lstchain-mc-r0-to-dl1">
-<span id="id18"></span><h2>lstchain_mc_r0_to_dl1<a class="headerlink" href="#lstchain-mc-r0-to-dl1" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_mc_r0_to_dl1"></span><p>Pipeline to calibrate and compute image parameters at single telescope
+<span id="id18"></span><h2>lstchain_mc_r0_to_dl1<a class="headerlink" href="#lstchain-mc-r0-to-dl1" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_mc_r0_to_dl1">Pipeline to calibrate and compute image parameters at single telescope
 level for MC.
 - Inputs are simtelarray files.
 - Output is a dataframe with dl1 data.</p>
@@ -688,7 +690,7 @@ level for MC.
 <p>$&gt; python lstchain_mc_r0_to_dl1.py
 –input-file gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz</p>
 <section id="id19">
-<h3>Usage<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
 <p><p>R0 to DL1</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_mc_r0_to_dl1</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span> <span class="n">INPUT_FILE</span><span class="p">]</span>
@@ -696,7 +698,7 @@ level for MC.
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file, -f</kbd></dt>
 <dd><p>Path to the simtelarray file</p>
@@ -713,8 +715,8 @@ level for MC.
 </section>
 </section>
 <section id="lstchain-mc-r0-to-dl2">
-<span id="id20"></span><h2>lstchain_mc_r0_to_dl2<a class="headerlink" href="#lstchain-mc-r0-to-dl2" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_mc_r0_to_dl2"></span><p>Pipeline to calibrate and compute image parameters at single telescope 
+<span id="id20"></span><h2>lstchain_mc_r0_to_dl2<a class="headerlink" href="#lstchain-mc-r0-to-dl2" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_mc_r0_to_dl2">Pipeline to calibrate and compute image parameters at single telescope 
 level for MC.</p>
 <p>Inputs are simtelarray files and trained Random Forests.
 Output is a dataframe with DL2 data.</p>
@@ -723,7 +725,7 @@ Output is a dataframe with DL2 data.</p>
 –input-file gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
 –path-models ./trained_models</p>
 <section id="id21">
-<h3>Usage<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
 <p><p>MC Pipeline R0 to DL2.</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_mc_r0_to_dl2</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span> <span class="n">DATAFILE</span><span class="p">]</span>
@@ -732,7 +734,7 @@ Output is a dataframe with DL2 data.</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file, -f</kbd></dt>
 <dd><p>path to the file with simtelarray events</p>
@@ -757,8 +759,8 @@ Output is a dataframe with DL2 data.</p>
 </section>
 </section>
 <section id="lstchain-mc-rfperformance">
-<span id="id22"></span><h2>lstchain_mc_rfperformance<a class="headerlink" href="#lstchain-mc-rfperformance" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_mc_rfperformance"></span><p>Pipeline to test train three Random Forests destinated to Energy, disp
+<span id="id22"></span><h2>lstchain_mc_rfperformance<a class="headerlink" href="#lstchain-mc-rfperformance" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_mc_rfperformance">Pipeline to test train three Random Forests destinated to Energy, disp
 reconstruction and Gamma/Hadron separation and test the performance
 of Random Forests.</p>
 <p>Inputs are DL1 files
@@ -766,7 +768,7 @@ Outputs are the RF trained models</p>
 <p>Usage:</p>
 <p>$&gt;python lstchain_mc_rfperformance.py</p>
 <section id="id23">
-<h3>Usage<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h3>
 <p><p>Train and Apply Random Forests.</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_mc_rfperformance</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span><span class="o">-</span><span class="n">gamma</span><span class="o">-</span><span class="n">train</span> <span class="n">GAMMAFILE</span><span class="p">]</span>
@@ -779,7 +781,7 @@ Outputs are the RF trained models</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file-gamma-train, --g-train</kbd></dt>
 <dd><p>path to the dl1 file of gamma events for training</p>
@@ -813,8 +815,8 @@ Outputs are the RF trained models</p>
 </section>
 </section>
 <section id="lstchain-mc-sensitivity">
-<span id="id24"></span><h2>lstchain_mc_sensitivity<a class="headerlink" href="#lstchain-mc-sensitivity" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_mc_sensitivity"></span><p>Script to compute the LST sensitivity using MC.</p>
+<span id="id24"></span><h2>lstchain_mc_sensitivity<a class="headerlink" href="#lstchain-mc-sensitivity" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_mc_sensitivity">Script to compute the LST sensitivity using MC.</p>
 <p>Inputs are DL1/DL2 gamma and proton files</p>
 <p>Usage:</p>
 <p>$&gt; python lstchain_mc_sensitivity.py
@@ -822,7 +824,7 @@ Outputs are the RF trained models</p>
 –pdl2 dl2_protons.h5
 –o /output/path</p>
 <section id="id25">
-<h3>Usage<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h3>
 <p><p>Compute MC sensitivity curve.</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_mc_sensitivity</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span><span class="o">-</span><span class="n">gamma</span><span class="o">-</span><span class="n">dl2</span> <span class="n">DL2_FILE_G</span><span class="p">]</span>
@@ -832,7 +834,7 @@ Outputs are the RF trained models</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file-gamma-dl2, --gdl2</kbd></dt>
 <dd><p>path to reconstructed gammas dl2 file</p>
@@ -851,8 +853,8 @@ Outputs are the RF trained models</p>
 </section>
 </section>
 <section id="lstchain-mc-trainpipe">
-<span id="id26"></span><h2>lstchain_mc_trainpipe<a class="headerlink" href="#lstchain-mc-trainpipe" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_mc_trainpipe"></span><p>Pipeline to train three Random Forests destinated to Energy, disp
+<span id="id26"></span><h2>lstchain_mc_trainpipe<a class="headerlink" href="#lstchain-mc-trainpipe" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_mc_trainpipe">Pipeline to train three Random Forests destinated to Energy, disp
 reconstruction and Gamma/Hadron separation.
 The resulting RF models can be stored in files for later use on data.</p>
 <p>Inputs are DL1 gamma and proton files
@@ -862,7 +864,7 @@ Outputs are RF trained models</p>
 –input_file_gamma dl1_gamma_20deg_180deg_cta-prod3-demo-2147m-LaPalma-baseline-mono_off0.4_merge_test.h5
 –input-file-proton dl1_proton_20deg_180degcta-prod3-demo-2147m-LaPalma-baseline-mono_merge_test.h5</p>
 <section id="id27">
-<h3>Usage<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h3>
 <p><p>Train Random Forests.</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_mc_trainpipe</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span><span class="o">-</span><span class="n">gamma</span> <span class="n">GAMMAFILE</span>
@@ -871,7 +873,7 @@ Outputs are RF trained models</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file-gamma, --fg</kbd></dt>
 <dd><p>Path to the dl1 file of gamma events for training</p>
@@ -895,8 +897,8 @@ Outputs are RF trained models</p>
 </section>
 </section>
 <section id="lstchain-merge-hdf5-files">
-<span id="id28"></span><h2>lstchain_merge_hdf5_files<a class="headerlink" href="#lstchain-merge-hdf5-files" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_merge_hdf5_files"></span><p>Merge all HDF5 files resulting
+<span id="id28"></span><h2>lstchain_merge_hdf5_files<a class="headerlink" href="#lstchain-merge-hdf5-files" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_merge_hdf5_files">Merge all HDF5 files resulting
 from parallel reconstructions present in a
 directory. Every dataset in the files must be
 readable with pandas.</p>
@@ -908,7 +910,7 @@ readable with pandas.</p>
 <p>$&gt; python lstchain_merge_hdf5_files.py
 –input-dir ./</p>
 <section id="id29">
-<h3>Usage<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h3>
 <p><p>Merge HDF5 files</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_merge_hdf5_files</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">d</span> <span class="n">INPUT_DIR</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT_FILE</span><span class="p">]</span>
@@ -918,7 +920,7 @@ readable with pandas.</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>-d, --input-dir</kbd></dt>
 <dd><p>path to the source directory of files</p>
@@ -955,7 +957,7 @@ readable with pandas.</p>
 </section>
 </section>
 <section id="module-lstchain.scripts.lstchain_merge_muon_files">
-<span id="lstchain-merge-muon-files"></span><span id="lstchain-lstchain-merge-muon-files"></span><h2>lstchain_merge_muon_files<a class="headerlink" href="#module-lstchain.scripts.lstchain_merge_muon_files" title="Permalink to this headline">¶</a></h2>
+<span id="lstchain-merge-muon-files"></span><span id="lstchain-lstchain-merge-muon-files"></span><h2>lstchain_merge_muon_files<a class="headerlink" href="#module-lstchain.scripts.lstchain_merge_muon_files" title="Link to this heading">¶</a></h2>
 <p>Merge all fits files resulting 
 from parallel muon reconstructions present in a 
 directory.</p>
@@ -968,7 +970,7 @@ directory.</p>
 –input-dir ./
 –run-number 1881</p>
 <section id="id30">
-<h3>Usage<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h3>
 <p><p>Merge fits files</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_merge_muon_files</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="nb">dir</span> <span class="n">SRCDIR</span><span class="p">]</span>
@@ -977,7 +979,7 @@ directory.</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--input-dir, -d</kbd></dt>
 <dd><p>path to the source directory of files</p>
@@ -998,8 +1000,8 @@ directory.</p>
 </section>
 </section>
 <section id="lstchain-tune-nsb">
-<span id="id31"></span><h2>lstchain_tune_nsb<a class="headerlink" href="#lstchain-tune-nsb" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-lstchain.scripts.lstchain_tune_nsb"></span><p>Usage:</p>
+<span id="id31"></span><h2>lstchain_tune_nsb<a class="headerlink" href="#lstchain-tune-nsb" title="Link to this heading">¶</a></h2>
+<p id="module-lstchain.scripts.lstchain_tune_nsb">Usage:</p>
 <p>$&gt; python lstchain_tune_nsb.py
 –config  config_file.json     (must be the one used in the DL1 production)
 –input-mc  simtel_file.simtel.gz    simulation simtel file
@@ -1007,7 +1009,7 @@ directory.</p>
 <p>Calculates the parameters needed to tune the NSB in MC DL1 files (in the
 DL1ab stage) to the level of NSB in a given data file</p>
 <section id="id32">
-<h3>Usage<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h3>
 <p><p>Tune NSB</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_tune_nsb</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">--</span><span class="n">config</span> <span class="n">CONFIG</span> <span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">mc</span> <span class="n">INPUT_MC</span> <span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">data</span>
@@ -1015,7 +1017,7 @@ DL1ab stage) to the level of NSB in a given data file</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>--config</kbd></dt>
 <dd><p>Path to the configuration file for the production (must be the one used for calibration and DL1 creation)</p>
@@ -1038,9 +1040,9 @@ DL1ab stage) to the level of NSB in a given data file</p>
 </section>
 </section>
 <section id="module-lstchain.scripts.lstchain_dump_config">
-<span id="lstchain-dump-config"></span><h2>lstchain_dump_config<a class="headerlink" href="#module-lstchain.scripts.lstchain_dump_config" title="Permalink to this headline">¶</a></h2>
+<span id="lstchain-dump-config"></span><h2>lstchain_dump_config<a class="headerlink" href="#module-lstchain.scripts.lstchain_dump_config" title="Link to this heading">¶</a></h2>
 <section id="id33">
-<h3>Usage<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h3>
+<h3>Usage<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h3>
 <p><p>Dump lstchain config in a file.</p>
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_dump_config</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT_FILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">update</span><span class="o">-</span><span class="k">with</span> <span class="n">UPDATE_WITH</span><span class="p">]</span>
@@ -1048,7 +1050,7 @@ DL1ab stage) to the level of NSB in a given data file</p>
 </pre></div>
 </div>
 <section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Permalink to this headline">¶</a></h4>
+<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading">¶</a></h4>
 <dl class="option-list">
 <dt><kbd>-o, --output-file</kbd></dt>
 <dd><p>path to the output file containing the config</p>
@@ -1086,7 +1088,7 @@ DL1ab stage) to the level of NSB in a given data file</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 04 Dec 2023 11:42.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 22 Jan 2024 15:42.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
