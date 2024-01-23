@@ -1,5 +1,15 @@
 #!/usr/bin/env python
+"""
+Script to apply gain selection to the raw fits.fz produced by EvB6 in CTAR1
+format (aka R1v1). It also works for data created with EVBv5 + ADH-ZFW.
 
+Gain selection is only applied to shower events (not to interleaved pedestal
+and flatfield)
+
+It uses heuristic identification of the interleaved flatfield (FF) events (
+given the occasional problems we have with the FF event tagging)
+
+"""
 import logging
 import protozfits
 import argparse
@@ -170,7 +180,7 @@ def get_event_types(input_file, yyyymmdd):
         source.trigger_information = True
         source.log.setLevel(logging.WARNING)
         try:
-            for ievent, event in enumerate(source):
+            for event in source:
                 if event.r0.tel[1].waveform is None:
                     logging.error('The data seem to contain no R0 waveforms. '
                                   'Is this already gain-selected data?')
@@ -197,11 +207,12 @@ def get_event_types(input_file, yyyymmdd):
                     event_type[-1] = EventType.UNKNOWN
 
                 event_id.append(event.index.event_id)
-            print('Finished first loop over input files - all ok!')
+
+            logging.info('Finished first loop over input files - all ok!')
 
         except Exception as err:
-            print(err)
-            print('Something went wrong!')
+            logging.error(err)
+            logging.error('Something went wrong!')
             exit(1)
 
     return event_id, event_type
