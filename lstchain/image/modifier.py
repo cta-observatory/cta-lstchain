@@ -230,8 +230,8 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     # Identify noisy pixels, likely containing stars - we want to adjust MC to
     # the average diffuse NSB across the camera
-    data_median_std_ped_pe = np.median(data_HG_ped_std_pe)
-    data_std_std_ped_pe = np.std(data_HG_ped_std_pe)
+    data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe)
+    data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe)
     log.info(f'Real data: median across camera of good pixels\' pedestal std '
              f'{data_median_std_ped_pe:.3f} p.e.')
     brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
@@ -247,7 +247,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # Exclude too bright pixels, besides those with unusable calibration:
     good_pixels &= ~too_bright_pixels
     # recalculate the median of the pixels' std dev, with good_pixels:
-    data_median_std_ped_pe = np.median(data_HG_ped_std_pe[good_pixels])
+    data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe[good_pixels])
 
     log.info(f'Good and not too bright pixels: {good_pixels.sum()}')
 
