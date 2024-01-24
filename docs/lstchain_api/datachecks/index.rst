@@ -9,7 +9,10 @@ Datachecks (`datachecks`)
 Introduction
 ============
 
-Module containing functions producing the LST datachecks. Currently reaching DL1 level.
+Module containing functions producing the LST datachecks. Currently the checks are done at the DL1 level.
+
+Using the datacheck files for selecting good-quality data
+=========================================================
 
 Reference/API
 =============
