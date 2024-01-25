@@ -30,8 +30,12 @@ parser.add_argument('-f', '--R0-file', dest='input_file',
 parser.add_argument('-o', '--output-dir', dest='output_dir',
                     type=str, default='./',
                     help='Output directory')
-parser.add_argument('-yyyymmdd', dest='yyyymmdd', type=str,
-                    help='date (YYYYMMDD)')
+
+parser.add_argument('--drive-file', dest='drive_file', type=str,
+                    help='Drive log file')
+
+parser.add_argument('--run-summary', dest='run_summary', type=str,
+                    help='Run Summary file')
 
 # Range of waveform to be checked (for gain selection & heuristic FF
 # identification)
@@ -51,7 +55,8 @@ def main():
 
     # First identify properly interleaved pedestals (also in case there are
     # ucts jumps) and FF events (heuristically):
-    event_id, event_type = get_event_types(input_file, args.yyyymmdd)
+    event_id, event_type = get_event_types(input_file, 
+                                           args.drive_file, args.run_summary)
 
     event_id = np.array(event_id)
     event_type_val = np.array([x.value for x in event_type])
@@ -151,19 +156,13 @@ def main():
     return(0)
 
 
-def get_event_types(input_file, yyyymmdd):
+def get_event_types(input_file, drive_file, run_summary):
 
     # For heuristic flat field identification (values refer to
     # baseline-subtracted HG integrated waveforms):
     MIN_FLATFIELD_ADC = 3000
     MAX_FLATFIELD_ADC = 12000
     MIN_FLATFIELD_PIXEL_FRACTION = 0.8
-
-    # Look for the auxiliary files in their standard locations:
-    drive_file = f'/fefs/onsite/monitoring/driveLST1/DrivePositioning' \
-                 f'/DrivePosition_log_{yyyymmdd}.txt'
-    run_summary = f'/fefs/aswg/data/real/monitoring/RunSummary' \
-                  f'/RunSummary_{yyyymmdd}.ecsv'
 
     standard_config['source_config']['LSTEventSource'][
         'EventTimeCalculator']['run_summary_path'] = run_summary
