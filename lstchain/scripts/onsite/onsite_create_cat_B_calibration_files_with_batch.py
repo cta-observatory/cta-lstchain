@@ -36,10 +36,7 @@ required.add_argument('-r', '--run_list', help="Run numbers of intereleaved data
                       type=int, nargs="+")
 optional.add_argument('-f', '--filters_list', help="Filter list (same order as run list)",
                       type=int, nargs="+")
-version = lstchain.__version__
-optional.add_argument('-v', '--prod_version',
-                      help="Version of the production",
-                      default=f"v{version}")
+
 optional.add_argument('-s', '--statistics',
                       help="Number of events for the flat-field and pedestal statistics",
                       type=int,
@@ -81,7 +78,7 @@ def main():
     
     filters_list = args.filters_list
     
-    prod_id = args.prod_version
+    prod_id = f"v{lstchain.__version__}"
     stat_events = args.statistics
     base_dir = args.base_dir
 
@@ -121,8 +118,8 @@ def main():
         date = r0_list.parent.name
 
         # find input path
-        ver=version.rsplit(".")
-        input_path = args.interleaved_dir or args.base_dir / 'DL1'/ f"{date}/v{ver[0]}.{ver[1]}/interleaved" 
+        ver = prod_id.rsplit(".")
+        input_path = args.interleaved_dir or args.base_dir / 'DL1'/ f"{date}/{ver[0]}.{ver[1]}/interleaved" 
 
         input_files = find_interleaved_subruns(run, input_path)
 

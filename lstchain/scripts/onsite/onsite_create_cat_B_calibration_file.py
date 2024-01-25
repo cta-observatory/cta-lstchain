@@ -41,13 +41,10 @@ optional = parser.add_argument_group('optional arguments')
 required.add_argument('-r', '--run_number', help="Run number of interleaved data",
                       type=int, required=True)
 
-version = lstchain.__version__
-
 optional.add_argument('-c', '--catA_calibration_run',
                       help="Cat-A calibration run to be used. If None, it looks for the calibration run of the date of the interleaved data.",
                       type=int)
-optional.add_argument('-v', '--prod_version', help="Version of the production",
-                      default=f"v{version}")
+
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=2500)
 optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
@@ -89,7 +86,7 @@ def main():
     args, remaining_args = parser.parse_known_args()
     run = args.run_number
     n_subruns = args.n_subruns
-    prod_id = args.prod_version
+    prod_id = f"v{lstchain.__version__}"
     stat_events = args.statistics
     
     sys_date = args.sys_date
@@ -122,8 +119,8 @@ def main():
     date = r0_list.parent.name
 
     # find input path
-    ver=version.rsplit(".")
-    input_path = args.interleaved_dir or args.base_dir / 'DL1'/ f"{date}/v{ver[0]}.{ver[1]}/interleaved" 
+    ver = prod_id.rsplit(".")
+    input_path = args.interleaved_dir or args.base_dir / 'DL1'/ f"{date}/{ver[0]}.{ver[1]}/interleaved" 
 
     # verify input file
     input_files = find_interleaved_subruns(run, input_path)
