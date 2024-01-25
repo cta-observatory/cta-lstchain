@@ -1,7 +1,7 @@
 {
   "EventSelector": {
     "filters": {
-      "intensity": [0, Infinity],
+      "intensity": [50, Infinity],
       "width": [0, Infinity],
       "length": [0, Infinity],
       "r": [0, 1],
