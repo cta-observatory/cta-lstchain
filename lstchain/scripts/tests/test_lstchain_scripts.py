@@ -87,9 +87,12 @@ def test_lstchain_mc_r0_to_dl1(simulated_dl1_file):
 def test_lstchain_r0_to_r0g(tmp_path):
     test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
     input_file = test_data / "real/R0/20231218/LST-1.1.Run16231.0000_first50.fits.fz"
+    drive_file = test_data / "real/R0/20231218/DrivePosition_log_20231218.txt"
+    run_summary = test_data / "RunSummary_20231218.ecsv"
     output_dir = temp_dir_observed_files / "R0G"
     output_dir.mkdir()
-    run_program("lstchain_r0_to_r0g", "-f", input_file, "-o", output_dir)
+    run_program("lstchain_r0_to_r0g", "-f", input_file, "-o", output_dir,
+                "--drive-file", drive_file, "--run-summary", run_summary)
     output_file = output_dir / input_file.name
     assert output_file.is_file()
 
