@@ -84,7 +84,7 @@ def test_lstchain_mc_r0_to_dl1(simulated_dl1_file):
     assert simulated_dl1_file.is_file()
 
 @pytest.mark.private_data
-def test_lstchain_r0_to_r0g(tmp_path):
+def test_lstchain_r0_to_r0g(tmp_path, temp_dir_observed_files):
     test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
     input_file = test_data / "real/R0/20231218/LST-1.1.Run16231.0000_first50.fits.fz"
     drive_file = test_data / "real/R0/20231218/DrivePosition_log_20231218.txt"
