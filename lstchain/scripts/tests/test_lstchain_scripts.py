@@ -83,6 +83,15 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
 def test_lstchain_mc_r0_to_dl1(simulated_dl1_file):
     assert simulated_dl1_file.is_file()
 
+@pytest.mark.private_data
+def test_lstchain_r0_to_r0g(tmp_path):
+    test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+    input_file = test_data / "real/R0/20231218/LST-1.1.Run16231.0000_first50.fits.fz"
+    output_dir = temp_dir_observed_files / "R0G"
+    output_dir.mkdir()
+    run_program("lstchain_r0_to_r0g", "-f", input_file, "-o", output_dir)
+    output_file = output_dir / input_file.name
+    assert output_file.is_file()
 
 @pytest.mark.private_data
 def test_lstchain_data_r0_to_dl1(observed_dl1_files):
