@@ -74,7 +74,7 @@ def main():
         num_samples = input_streams[0].CameraConfiguration[
             0].num_samples_nominal
     except:
-        logging.error('CameraConfiguration not found! Is this CTAR1 data?')
+        logging.error('CameraConfiguration not found! Is this R1v1 data?')
         exit(1)
 
     with ExitStack() as stack:
