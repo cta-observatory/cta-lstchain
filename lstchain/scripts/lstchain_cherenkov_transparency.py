@@ -34,12 +34,11 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description="compute Cherenkov transparency")
 
-parser.add_argument('-u', '--update_datacheck_file', dest='file_to_update',
+parser.add_argument('-u', '--update-datacheck-file', dest='file_to_update',
                     type=str, required=True,
                     help='(a DL1_datacheck_YYYYMMDD.h5 file)')
 
-parser.add_argument('-d', '--input_dir', dest='input_dir', type=str,
-                    required=True,
+parser.add_argument('-d', '--input-dir', type=str, required=True,
                     help='Path to directory containing run-wise datacheck '
                          'files')
 
@@ -448,7 +447,7 @@ def main():
     #
     # The dependece with cos zenith of the peak cosmics rate, and intensity at
     # 50% of peak rate are more complicated and we need splines. Also computed
-    # determined from v0.9 analysis of runs 10800-12000 (good quality data):
+    # from the v0.9 analysis of runs 10800-12000 (good quality data):
     #
     czd = np.array(
             [0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32,
@@ -507,7 +506,7 @@ def main():
     # The "light yield" as calculated below (relative to the intensity_mean,
     # i.e. 422 p.e.) is a factor that tells us how much shower light is
     # collected (i.e. is 1 for data which have a value that matches the mean
-    # value of the good-quality period 0221118 - 20230214)
+    # value of the good-quality period 20221118 - 20230214)
     # The value can be used to re-calibrate data, i.e. scaling all pixel
     # charges by 1/light_yield before the image cleaning and re-doing the
     # analysis. The correction with the power-law index is needed because of
