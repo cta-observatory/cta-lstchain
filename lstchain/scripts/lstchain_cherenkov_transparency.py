@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description="compute Cherenkov transparency")
 # The night's datacheck summary file is the output_file, because it will be
 # updated by this script
 #
-parser.add_argument('-u', '--update_datacheck_file', dest='output_file',
+parser.add_argument('-u', '--update_datacheck_file', dest='file_to_update',
                     type=str, default='',
                     help='DL1_datacheck_YYYYMMDD.h5 file')
 
@@ -41,7 +41,7 @@ parser.add_argument('-d', '--input_dir', dest='input_dir', type=str,
 
 def main():
     args = parser.parse_args()
-    output_file = args.output_file
+    output_file = args.file_to_update
     date = int(output_file[-11:-3])
 
     input_dir = args.input_dir
