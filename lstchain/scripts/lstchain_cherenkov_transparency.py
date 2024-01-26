@@ -34,10 +34,9 @@ parser.add_argument('-u', '--update_datacheck_file', dest='output_file',
                     type=str, default='',
                     help='DL1_datacheck_YYYYMMDD.h5 file')
 
-parser.add_argument('-d', '--input_dir', dest='input_dir',
-                    type=str, default='v0.10/tailcut84/datacheck',
-                    help='relative path of run-wise datacheck directory under '
-                         'DL1/YYYYMMDD')
+parser.add_argument('-d', '--input_dir', dest='input_dir', type=str,
+                    help='Path to directory containing run-wise datacheck '
+                         'files')
 
 
 def main():
@@ -45,7 +44,7 @@ def main():
     output_file = args.output_file
     date = int(output_file[-11:-3])
 
-    input_dir = f'/fefs/aswg/data/real/DL1/{date}/{args.input_dir}'
+    input_dir = args.input_dir
     files = glob.glob(input_dir+'/datacheck_dl1_LST-1.Run?????.h5')
     files.sort()
 
