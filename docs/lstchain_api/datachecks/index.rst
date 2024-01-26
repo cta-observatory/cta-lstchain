@@ -9,7 +9,12 @@ Datachecks (`datachecks`)
 Introduction
 ============
 
-Module containing functions producing the LST datachecks. Currently the checks are done at the DL1 level.
+Module containing functions for checking the quality of the LST data.
+
+DL1 data checks
+===============
+
+Currently the checks are done at the DL1 level.
 The DL1 datacheck files are produced by running the following scripts sequentially:
 
 * :py:obj:`lstchain.scripts.lstchain_check_dl1`
@@ -29,40 +34,43 @@ The DL1 datacheck files are produced by running the following scripts sequential
 * :py:obj:`lstchain.scripts.lstchain_check_dl1`
 
   The same script is run again, but now providing as input the subrun-wise datacheck files produced above (all those of
-  a given run must be provided). It also needs to know where the subrun-wise .fits files (produced in the R0 to DL1
-  analysis step) which contain the muon ring information are stored ("MUONS_DIR"):
+  a given run must be provided). It also needs to know where the subrun-wise ``muons_LST-1.*.fits files`` (produced in
+  the R0 to DL1 analysis step) which contain the muon ring information are stored ("MUONS_DIR"):
 
   .. code-block:: bash
 
     lstchain_check_dl1 --input-file "datacheck_dl1_LST-1.Run14619.*.h5" --output-dir OUTPUT_DIR --muons-dir MUONS_DIR
 
 
-  The output is now a run-wise file, ``datacheck_dl1_LST-1.Run14619.h5`` which contains all the information from the
-  subrun-wise files. It also produces a .pdf file ``datacheck_dl1_LST-1.Run14619.pdf`` with various plots of the
-  quantities stored in the DL1DataCheckContainer objects, plus others obtained from the muon ring analysis. Note that
-  the muon ring information is not copied to the run-wise datacheck files, it is just used for the plotting.
+  The output is now a data check file for the whole run, ``datacheck_dl1_LST-1.Run14619.h5`` which contains all the
+  information from the subrun-wise files. It also produces a .pdf file ``datacheck_dl1_LST-1.Run14619.pdf`` with
+  various plots of the quantities stored in the DL1DataCheckContainer objects, plus others obtained from the muon ring
+  analysis. Note that the muon ring information is not propagated to the run-wise datacheck files, it is just used for
+  the plotting.
 
 |
 
 * :py:obj:`lstchain.scripts.lstchain_longterm_dl1_check`
 
   This merges the run-wise datacheck files of (typically) one night, stored in INPUT_DIR, and produces a single .h5 file
-  as output (e.g. ``DL1_datacheck_20230920.h5``). The file contains a (run-wise) summarized version of the information in the
-  input files, including the muon ring .fits files.
+  for the whole night as output (e.g. ``DL1_datacheck_20230920.h5``). The "longterm" in the script name is a bit of an
+  overstatement - in principle it can be run over data from many nights, but the output html (see below) becomes too
+  heavy and some of the interactive features work poorly.
 
   .. code-block:: bash
 
     lstchain_longterm_dl1_check --input-dir INPUT_DIR --muons-dir MUONS_DIR --output-file DL1_datacheck_20230920.h5 --batch
 
-  It also creates an .html file (with the same name, except for the extension, as the .h5 file) which can be
-  opened with any web browser and which contains various interactive plots which allow to make a quick check of the data
-  of a night.
+  The output .h5 file contains a (run-wise) summarized version of the information in the input files, including the muon
+  ring .fits files. It also creates an .html file (e.g. ``DL1_datacheck_20230920.html``) which can be opened with any
+  web browser and which contains various interactive plots which allow to make a quick check of the data of a night. See
+  an example `here <https://www.lst1.iac.es/datacheck/dl1/v0.10/20230920/DL1_datacheck_20230920.html>`_ (password protected).
 
 |
 
 * :py:obj:`lstchain.scripts.lstchain_cherenkov_transparency`
 
-  This script analyzes image intensity histograms in the run-wise datacheck files (which must be stored under the
+  This script analyzes image intensity histograms in the **run-wise** datacheck files (which must be stored under the
   standard location ``/fefs/aswg/data/real/DL1/YYYYMMDD/INPUT_DIR``, where INPUT_DIR is a path provided as a command-line
   argument).
 
@@ -70,9 +78,9 @@ The DL1 datacheck files are produced by running the following scripts sequential
 
     lstchain_cherenkov_transparency --update_datacheck_file DL1_datacheck_20230920.h5 --input_dir v0.10/tailcut84/datacheck
 
-  The script updates the night-wise datacheck .h5 file ``DL1_datacheck_20230920.h5`` with a new table containing parameters
-  related to the image intensity spectra for cosmic ray events (i.e., a Cherenkov-transparency - like approach, see e.g.
-  https://arxiv.org/abs/1310.1639).
+  The script updates the **night-wise** datacheck .h5 file ``DL1_datacheck_20230920.h5`` with a new table containing
+  parameters related to the image intensity spectra for cosmic ray events (i.e., a Cherenkov-transparency - like
+  approach, see e.g. https://arxiv.org/abs/1310.1639).
 
 
 
