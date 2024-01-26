@@ -91,8 +91,7 @@ def test_lstchain_r0_to_r0g(tmp_path, temp_dir_observed_files):
     run_summary = test_data / "RunSummary_20231218.ecsv"
     output_dir = temp_dir_observed_files / "R0G"
     output_dir.mkdir()
-    run_program("lstchain_r0_to_r0g", "-f", input_file, "-o", output_dir,
-                "--drive-file", drive_file, "--run-summary", run_summary)
+    run_program("lstchain_r0_to_r0g", "-f", input_file, "-o", output_dir)
     output_file = output_dir / input_file.name
     assert output_file.is_file()
 

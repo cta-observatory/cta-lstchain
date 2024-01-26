@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Script to apply gain selection to the raw fits.fz produced by EvB6 in CTAR1
-format (aka R1v1). It also works for data created with EVBv5 + ADH-ZFW.
+format (aka R1v1).
 
 Gain selection is only applied to shower events (not to interleaved pedestal
 and flatfield)
@@ -31,12 +31,6 @@ parser.add_argument('-o', '--output-dir', dest='output_dir',
                     type=str, default='./',
                     help='Output directory')
 
-parser.add_argument('--drive-file', dest='drive_file', type=str,
-                    help='Drive log file')
-
-parser.add_argument('--run-summary', dest='run_summary', type=str,
-                    help='Run Summary file')
-
 # Range of waveform to be checked (for gain selection & heuristic FF
 # identification)
 SAMPLE_START = 3
@@ -55,8 +49,7 @@ def main():
 
     # First identify properly interleaved pedestals (also in case there are
     # ucts jumps) and FF events (heuristically):
-    event_id, event_type = get_event_types(input_file, 
-                                           args.drive_file, args.run_summary)
+    event_id, event_type = get_event_types(input_file)
 
     event_id = np.array(event_id)
     event_type_val = np.array([x.value for x in event_type])
@@ -76,15 +69,13 @@ def main():
     for name in input_stream_names:
         input_streams.append(protozfits.File(name, pure_protobuf=True))
 
-    is_evb6_data = False
     try:
-        num_pixels = input_streams[0].CameraConfig[0].num_pixels
-        num_samples = input_streams[0].CameraConfig[0].num_samples
-    except:
-        is_evb6_data = True
         num_pixels = input_streams[0].CameraConfiguration[0].num_pixels
         num_samples = input_streams[0].CameraConfiguration[
             0].num_samples_nominal
+    except:
+        logging.error('CameraConfiguration not found! Is this CTAR1 data?')
+        exit(1)
 
     with ExitStack() as stack:
         for i, name in enumerate(output_stream_names):
@@ -100,14 +91,11 @@ def main():
                     compression_block_size_kb=64*1024,
                     defaul_compression="lst"))
             stream.open(name)
-            if is_evb6_data:
-                stream.move_to_new_table("CameraConfiguration")
-                stream.write_message(input_streams[i].CameraConfiguration[0])
-                stream.move_to_new_table("DataStream")
-                stream.write_message(input_streams[i].DataStream[0])
-            else:
-                stream.move_to_new_table("CameraConfig")
-                stream.write_message(input_streams[i].CameraConfig[0])
+
+            stream.move_to_new_table("CameraConfiguration")
+            stream.write_message(input_streams[i].CameraConfiguration[0])
+            stream.move_to_new_table("DataStream")
+            stream.write_message(input_streams[i].DataStream[0])
 
             stream.move_to_new_table("Events")
 
@@ -136,9 +124,7 @@ def main():
                               > THRESHOLD)
                     new_wf = np.where(use_lg[:, None], lg, hg) # gain-selected
                     event.waveform.data = new_wf.tobytes()
-
-                    if is_evb6_data:
-                        event.num_channels = 1  # Just one gain stored!
+                    event.num_channels = 1  # Just one gain stored!
 
                     pixel_status = protozfits.any_array_to_numpy(event.pixel_status)
                     # Set to 0 the status bit of the removed gain:
@@ -156,7 +142,7 @@ def main():
     return(0)
 
 
-def get_event_types(input_file, drive_file, run_summary):
+def get_event_types(input_file):
 
     # For heuristic flat field identification (values refer to
     # baseline-subtracted HG integrated waveforms):
@@ -165,11 +151,9 @@ def get_event_types(input_file, drive_file, run_summary):
     MIN_FLATFIELD_PIXEL_FRACTION = 0.8
 
     standard_config['source_config']['LSTEventSource'][
-        'EventTimeCalculator']['run_summary_path'] = run_summary
-    standard_config['source_config']['LSTEventSource']['PointingSource'][
-        'drive_report_path'] = drive_file
-    standard_config['source_config']['LSTEventSource'][
         'apply_drs4_corrections'] = False
+    standard_config['source_config']['LSTEventSource'][
+        'pointing_information'] = False
 
     event_type = []
     event_id = []
