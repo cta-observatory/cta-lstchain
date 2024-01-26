@@ -43,7 +43,6 @@ parser.add_argument('-d', '--input_dir', dest='input_dir', type=str,
 def main():
     args = parser.parse_args()
     output_file = args.file_to_update
-    date = int(output_file[-11:-3])
 
     input_dir = args.input_dir
     files = glob.glob(input_dir+'/datacheck_dl1_LST-1.Run?????.h5')
