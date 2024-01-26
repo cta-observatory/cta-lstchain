@@ -278,24 +278,19 @@ def main():
     all_fit_errors = []
     all_p_value = []
 
-    num_processed = 0
     num_total = len(run)
 
     intensity_bin_widths = np.diff(hist_intensity_binning)
 
     # Loop over runs:
     for ncosm, ncosm2, nped, nff, x, t, t2, dth, alt, az, ra, dec, r, sr, dt, \
-        nsap, dnsbm, dnsbs in zip(
+        nsap, dnsbm, dnsbs in tqdm(zip(
             num_cosmics, num_cleaned_cosmics, num_pedestals, num_flatfield,
             intensity_hist, elapsed_time, corrected_elapsed_time, delta_t_hist,
             mean_alt_tel, mean_az_tel,
             tel_ra, tel_dec, run, subrun_index, dragon_time,
-            num_star_affected_pixels, diffuse_nsb_mean, diffuse_nsb_std):
-
-        num_processed += 1
-
-        if num_processed % 10 == 0:
-            print(num_processed, '/', num_total)
+            num_star_affected_pixels, diffuse_nsb_mean, diffuse_nsb_std),
+        total=num_total):
 
         all_elapsed_time.extend(t)
         all_corrected_elapsed_time.extend(t2)
