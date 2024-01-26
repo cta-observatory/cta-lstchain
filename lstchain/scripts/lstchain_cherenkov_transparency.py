@@ -1,8 +1,28 @@
 #!/usr/bin/env python
 
+"""
+
+This script reads in the DL1 datacheck files for all runs which correspond
+to a given night summary DL1 datacheck file, i.e. DL1_datacheck_YYYYMMDD.h5,
+calculates some subrun-wise parameters related to the intensity spectrum of
+cosmic rays (dR/dI, differential rate per unit of intensity), and writes
+them in a new "cosmics_intensity_spectrum" table in the night summary file.
+
+These parameters are very useful to assess the quality of data, and also
+may eventually be used to apply corrections to the absolute light
+calibration for nights with smaller-than-optimal atmospheric transmissivity
+
+Input files will be the run-wise datacheck files in the path provided
+through the input_dir command-line argument
+
+"""
+
 import glob
+import logging
+
 import tables
 import gc
+import sys
 import numpy as np
 import pandas as pd
 import argparse
@@ -10,26 +30,10 @@ from datetime import datetime
 from scipy.signal import argrelextrema
 from scipy.optimize import curve_fit
 from scipy.stats import chi2
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description="compute Cherenkov transparency")
 
-#
-# This script reads in the DL1 datacheck files for all runs which correspond
-# to a given night summary DL1 datacheck file, i.e. DL1_datacheck_YYYYMMDD.h5,
-# calculates some subrun-wise parameters related to the intensity spectrum of
-# cosmic rays (dR/dI, differential rate per unit of intensity), and writes
-# them in a new "cosmics_intensity_spectrum" table in the night summary file.
-#
-# These parameters are very useful to assess the quality of data, and also
-# may eventually be used to apply corrections to the absolute light
-# calibration for nights with smaller-than-optimal atmospheric transmissivity
-#
-# Input files will be the run-wise datacheck files in the path provided
-# through the input_dir command-line argument
-#
-# The night's datacheck summary file is the output_file, because it will be
-# updated by this script
-#
 parser.add_argument('-u', '--update_datacheck_file', dest='file_to_update',
                     type=str, required=True,
                     help='(a DL1_datacheck_YYYYMMDD.h5 file)')
@@ -49,8 +53,8 @@ def main():
     files.sort()
 
     if len(files) == 0:
-        print(f'No run-wise datacheck files found in {input_dir}!')
-        exit(-1)
+        logging.error(f'No run-wise datacheck files found in {input_dir}!')
+        sys.exit(-1)
 
     a = tables.open_file(files[0])
 
@@ -88,8 +92,7 @@ def main():
     intensity_hist = []
     delta_t_hist = []
 
-    for i, file in enumerate(files):
-        print(i + 1, '/', len(files), file)
+    for file in tqdm(files):
         a = tables.open_file(file)
 
         if 'pedestals' in a.root.dl1datacheck:
@@ -138,7 +141,8 @@ def main():
                                          np.nan),  axis=1)
         # Replace too big tdiffs by the mean tdiff in the subrun:
         elapsed_time_correction = np.sum(np.where(tdiff > hiccup_threshold,
-                                                  tdiff_mean[:, None] - tdiff, 0),
+                                                  tdiff_mean[:, None] - tdiff,
+                                                  0),
                                          axis=1)
         newtime = (a.root.dl1datacheck.cosmics.col('elapsed_time') +
                    elapsed_time_correction)
@@ -389,14 +393,14 @@ def main():
     all_dt_exp_index = np.array(all_dt_exp_index)
     all_cosmic_rates = np.array(all_cosmic_rates)
     all_cosmic_cleaned_rates = np.array(all_cosmic_cleaned_rates)
-    all_pedestal_rates = np.array(all_pedestal_rates)
-    all_flatfield_rates = np.array(all_flatfield_rates)
+    # all_pedestal_rates = np.array(all_pedestal_rates)
+    # all_flatfield_rates = np.array(all_flatfield_rates)
     all_alt_tel = np.array(all_alt_tel)
     all_runs = np.array(all_runs)
     all_subruns = np.array(all_subruns)
     all_star_affected_pixels = np.array(all_star_affected_pixels)
     all_dragon_time = np.array(all_dragon_time)
-    all_diffuse_nsb_mean = np.array(all_diffuse_nsb_mean)
+    # all_diffuse_nsb_mean = np.array(all_diffuse_nsb_mean)
     all_diffuse_nsb_std = np.array(all_diffuse_nsb_std)
     all_intensity_50 = np.array(all_intensity_50)
     all_peak_intensity = np.array(all_peak_intensity)
