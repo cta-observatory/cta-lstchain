@@ -31,10 +31,11 @@ parser = argparse.ArgumentParser(description="compute Cherenkov transparency")
 # updated by this script
 #
 parser.add_argument('-u', '--update_datacheck_file', dest='file_to_update',
-                    type=str, default='',
-                    help='DL1_datacheck_YYYYMMDD.h5 file')
+                    type=str, required=True,
+                    help='(a DL1_datacheck_YYYYMMDD.h5 file)')
 
 parser.add_argument('-d', '--input_dir', dest='input_dir', type=str,
+                    required=True,
                     help='Path to directory containing run-wise datacheck '
                          'files')
 
