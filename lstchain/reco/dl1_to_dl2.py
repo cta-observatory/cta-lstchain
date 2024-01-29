@@ -349,7 +349,7 @@ def build_models(filegammas, fileprotons,
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     # Update parameters related to target direction on camera frame for gamma MC
-    # taking into account of the abrration effect using effective focal length
+    # taking into account of the aberration effect using effective focal length
     try:
         subarray_info = SubarrayDescription.from_hdf(filegammas)
         tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
@@ -359,7 +359,7 @@ def build_models(filegammas, fileprotons,
         logger.warning("The effective focal length for the standard LST optics will be used.")
         effective_focal_length = OPTICS.effective_focal_length
 
-    df_gamma = update_disp_with_effective_focal_length(df_gamma, effective_focal_length = effective_focal_length)
+    df_gamma = update_disp_with_effective_focal_length(df_gamma, effective_focal_length=effective_focal_length)
 
     if config['source_dependent']:
         # if source-dependent parameters are already in dl1 data, just read those data
@@ -402,6 +402,16 @@ def build_models(filegammas, fileprotons,
         lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
         df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
 
+    # Normalize all azimuth angles to the range [0, 360) degrees
+    df_gamma.az_tel = Angle(df_gamma.az_tel, u.rad).wrap_at(360 * u.deg).rad
+    df_proton.az_tel = Angle(df_proton.az_tel, u.rad).wrap_at(360 * u.deg).rad
+
+    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
+    if 'sin_az_tel' not in df_gamma.columns:
+        df_gamma['sin_az_tel'] = np.sin(df_gamma.az_tel)
+    if 'sin_az_tel' not in df_proton.columns:
+        df_proton['sin_az_tel'] = np.sin(df_proton.az_tel)
+
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
                                    finite_params=config['energy_regression_features']
@@ -417,16 +427,6 @@ def build_models(filegammas, fileprotons,
                                                   + config['particle_classification_features']
                                                   + config['disp_classification_features'],
                                     )
-
-    # Normalize all azimuth angles to the range [0, 360) degrees
-    df_gamma.az_tel = Angle(df_gamma.az_tel, u.rad).wrap_at(360 * u.deg).rad
-    df_proton.az_tel = Angle(df_proton.az_tel, u.rad).wrap_at(360 * u.deg).rad
-
-    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
-    if 'sin_az_tel' not in df_gamma.columns:
-        df_gamma['sin_az_tel'] = np.sin(df_gamma.az_tel)
-    if 'sin_az_tel' not in df_proton.columns:
-        df_proton['sin_az_tel'] = np.sin(df_proton.az_tel)
 
     # Training MC gammas in reduced viewcone
     src_r_min = config['train_gamma_src_r_deg'][0]
@@ -548,9 +548,13 @@ def build_models(filegammas, fileprotons,
         train['reco_disp_sign_correctness'][select] = 1 - train['reco_disp_sign_correctness'][select]
 
         train['reco_disp_norm_diff'] = np.abs(train['dist'] - train['reco_disp_norm'])
-    
-    # Train the Classifier
 
+    # Check that any new features used in particle classification are finite
+    train = utils.filter_events(train,
+                                filters=events_filters,
+                                finite_params=config['particle_classification_features']
+                                )
+    # Train the Classifier
     cls_gh = train_sep(train, custom_config=config)
 
     if save_models:
