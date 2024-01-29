@@ -247,7 +247,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe)
     log.info(f'Real data:')
     log.info(f'   Median of FF pixel charge: '
-             f'{np.nanmedian(data_HG_FF_mean_pe)} p.e.')
+             f'{np.nanmedian(data_HG_FF_mean_pe[good_pixels]):.3f} p.e.')
     log.info(f'   Median across camera of good pixels\' pedestal std '
              f'{data_median_std_ped_pe:.3f} p.e.')
     brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
