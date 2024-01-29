@@ -214,6 +214,18 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     # HG adc to pe conversion factors from interleaved calibrations:
     data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][:, 0, :]
+
+    # Mean HG charge in interleaved FF events, to spot possible issues:
+    data_HG_FF_mean = data_dl1_flatfield['charge_mean'][1:, 0, :]
+    dummy = []
+    # indices which connect each FF calculation to a given calibration:
+    calibration_id = data_dl1_flatfield['calibration_id'][1:]
+    for i, x in enumerate(data_HG_FF_mean[:, ]):
+        dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
+    dummy = np.array(dummy)
+    # Average for all interleaved calibrations (in case there are more than one)
+    data_HG_FF_mean_pe = np.mean(dummy, axis=0) # one value per pixel
+
     # Pixel-wise pedestal standard deviation (for an unbiased extractor),
     # in adc counts:
     data_HG_ped_std = data_dl1_pedestal['charge_std'][1:, 0, :]
@@ -224,7 +236,6 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     for i, x in enumerate(data_HG_ped_std[:, ]):
         dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
     dummy = np.array(dummy)
-
     # Average for all interleaved calibrations (in case there are more than one)
     data_HG_ped_std_pe = np.mean(dummy, axis=0) # one value per pixel
 
@@ -232,12 +243,16 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # the average diffuse NSB across the camera
     data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe)
     data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe)
-    log.info(f'Real data: median across camera of good pixels\' pedestal std '
+    log.info(f'Real data:')
+    log.info(f'   Median of FF pixel charge: '
+             f'{np.nanmedian(data_HG_FF_mean_pe)} p.e.')
+    log.info(f'   Median across camera of good pixels\' pedestal std '
              f'{data_median_std_ped_pe:.3f} p.e.')
     brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
     too_bright_pixels = (data_HG_ped_std_pe > brightness_limit)
-    log.info(f'Number of pixels beyond 3 std dev of median: '
-             f'{too_bright_pixels.sum()}, (above {brightness_limit:.2f} p.e.)')
+    log.info(f'   Number of pixels beyond 3 std dev of median: '
+             f'   {too_bright_pixels.sum()}, (above {brightness_limit:.2f} '
+             f'p.e.)')
 
     ped_mask = data_dl1_parameters['event_type'] == 2
     # The charges in the images below are obtained with the extractor for
