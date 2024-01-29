@@ -79,6 +79,9 @@ def main():
 
     a, b, c = calculate_noise_parameters(args.input_mc, args.input_data,
                                          args.config)
+    if np.isnan(a):
+        logging.error('Could not compute NSB tuning parameters. Exiting!')
+        sys.exit(1)
 
     dict_nsb = {"increase_nsb": True,
                 "extra_noise_in_dim_pixels": round(a, 3),

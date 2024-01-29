@@ -219,12 +219,12 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][:, 0, :]
 
     if data_dl1_flatfield['charge_mean'].shape[0] < 2:
-        logging.error('Could not find interleaved FF calibrations in '
+        logging.error('\nCould not find interleaved FF calibrations in '
                       'monitoring table!')
         return np.nan, np.nan, np.nan
 
     if data_dl1_pedestal['charge_std'].shape[0] < 2 :
-        logging.error('Could not find interleaved pedestal info in '
+        logging.error('\nCould not find interleaved pedestal info in '
                       'monitoring table!')
         return np.nan, np.nan, np.nan
 
