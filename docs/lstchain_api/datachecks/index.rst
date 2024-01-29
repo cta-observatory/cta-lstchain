@@ -69,7 +69,10 @@ The DL1 datacheck files are produced by running the following scripts sequential
 
 |
 
-* :py:obj:`lstchain.scripts.lstchain_cherenkov_transparency`
+.. Heading below be replaced by this once script is merged!  :py:obj:`lstchain.scripts.lstchain_cherenkov_transparency`
+
+* ``lstchain_cherenkov_transparency``
+
 
   This script analyzes the image intensity histograms (one per subrun) stored in the **run-wise** datacheck files (which
   must exist in INPUT_DIR)
