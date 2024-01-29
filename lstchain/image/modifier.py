@@ -218,11 +218,22 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # HG adc to pe conversion factors from interleaved calibrations:
     data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][:, 0, :]
 
+    if data_dl1_flatfield['charge_mean'].shape[0] < 2:
+        logging.error('Could not find interleaved FF calibrations in '
+                      'monitoring table!')
+        return np.nan, np.nan, np.nan
+
+    if data_dl1_pedestal['charge_std'].shape[0] < 2 :
+        logging.error('Could not find interleaved pedestal info in '
+                      'monitoring table!')
+        return np.nan, np.nan, np.nan
+
     # Mean HG charge in interleaved FF events, to spot possible issues:
     data_HG_FF_mean = data_dl1_flatfield['charge_mean'][1:, 0, :]
     dummy = []
     # indices which connect each FF calculation to a given calibration:
     calibration_id = data_dl1_flatfield['calibration_id'][1:]
+
     for i, x in enumerate(data_HG_FF_mean[:, ]):
         dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
     dummy = np.array(dummy)
