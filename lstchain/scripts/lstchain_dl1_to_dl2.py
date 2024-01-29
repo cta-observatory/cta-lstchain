@@ -178,7 +178,7 @@ def apply_to_file(filename, models_dict, output_dir, config):
     output_file = output_dir.joinpath(filename.name.replace('dl1', 'dl2', 1))
 
     if output_file.exists():
-        raise IOError(output_file + ' exists, exiting.')
+        raise IOError(str(output_file) + ' exists, exiting.')
 
     dl1_keys = get_dataset_keys(filename)
 
