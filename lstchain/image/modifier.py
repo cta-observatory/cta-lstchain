@@ -243,8 +243,8 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     # Identify noisy pixels, likely containing stars - we want to adjust MC to
     # the average diffuse NSB across the camera
-    data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe)
-    data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe)
+    data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe[good_pixels])
+    data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe[good_pixels])
     log.info(f'Real data:')
     log.info(f'   Median of FF pixel charge: '
              f'{np.nanmedian(data_HG_FF_mean_pe[good_pixels]):.3f} p.e.')
