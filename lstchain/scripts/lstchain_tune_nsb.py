@@ -93,7 +93,11 @@ def main():
 
     if args.output_file:
         cfg = read_configuration_file(args.config)
-        cfg['image_modifier'].update(dict_nsb)
+        if 'image_modifier' in cfg:
+            cfg['image_modifier'].update(dict_nsb)
+        else:
+            cfg['image_modifier'] = dict_nsb
+
         dump_config(cfg, args.output_file, overwrite=args.overwrite)
 
 

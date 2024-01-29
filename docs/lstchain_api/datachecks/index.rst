@@ -33,8 +33,8 @@ The DL1 datacheck files are produced by running the following scripts sequential
 
 * :py:obj:`lstchain.scripts.lstchain_check_dl1`
 
-  The same script is run again, but now providing as input the subrun-wise datacheck files produced above (all those of
-  a given run must be provided). It also needs to know where the subrun-wise ``muons_LST-1.*.fits files`` (produced in
+  The same script is run again, but now providing as input the **subrun-wise datacheck files** produced earlier (all subruns
+  of a given run must be provided). It also needs to know where the subrun-wise ``muons_LST-1.*.fits files`` (produced in
   the R0 to DL1 analysis step) which contain the muon ring information are stored ("MUONS_DIR"):
 
   .. code-block:: bash
@@ -43,7 +43,7 @@ The DL1 datacheck files are produced by running the following scripts sequential
 
 
   The output is now a data check file for the whole run, ``datacheck_dl1_LST-1.Run14619.h5`` which contains all the
-  information from the subrun-wise files. It also produces a .pdf file ``datacheck_dl1_LST-1.Run14619.pdf`` with
+  information from the subrun-wise files. The script also produces a .pdf file ``datacheck_dl1_LST-1.Run14619.pdf`` with
   various plots of the quantities stored in the DL1DataCheckContainer objects, plus others obtained from the muon ring
   analysis. Note that the muon ring information is not propagated to the run-wise datacheck files, it is just used for
   the plotting.
@@ -52,10 +52,10 @@ The DL1 datacheck files are produced by running the following scripts sequential
 
 * :py:obj:`lstchain.scripts.lstchain_longterm_dl1_check`
 
-  This merges the run-wise datacheck files of (typically) one night, stored in INPUT_DIR, and produces a single .h5 file
-  for the whole night as output (e.g. ``DL1_datacheck_20230920.h5``). The "longterm" in the script name is a bit of an
-  overstatement - in principle it can be run over data from many nights, but the output html (see below) becomes too
-  heavy and some of the interactive features work poorly.
+  This script merges the run-wise datacheck files of (typically) one night, stored in INPUT_DIR, and produces **a
+  single .h5 file for the whole night** as output (e.g. ``DL1_datacheck_20230920.h5``). The "longterm" in the script
+  name is a bit of an overstatement - in principle it can be run over data from many nights, but the output html (see
+  below) becomes too heavy and some of the interactive features work poorly.
 
   .. code-block:: bash
 
@@ -64,29 +64,35 @@ The DL1 datacheck files are produced by running the following scripts sequential
   The output .h5 file contains a (run-wise) summarized version of the information in the input files, including the muon
   ring .fits files. It also creates an .html file (e.g. ``DL1_datacheck_20230920.html``) which can be opened with any
   web browser and which contains various interactive plots which allow to make a quick check of the data of a night. See
-  an example `here <https://www.lst1.iac.es/datacheck/dl1/v0.10/20230920/DL1_datacheck_20230920.html>`_ (password protected).
+  an example of the .html file `here <https://www.lst1.iac.es/datacheck/dl1/v0.10/20230920/DL1_datacheck_20230920.html>`_
+  (password protected).
 
 |
 
 * :py:obj:`lstchain.scripts.lstchain_cherenkov_transparency`
 
-  This script analyzes image intensity histograms in the **run-wise** datacheck files (which must be stored under the
-  standard location ``/fefs/aswg/data/real/DL1/YYYYMMDD/INPUT_DIR``, where INPUT_DIR is a path provided as a command-line
-  argument).
+  This script analyzes the image intensity histograms (one per subrun) stored in the **run-wise** datacheck files (which
+  must exist in INPUT_DIR)
 
   .. code-block:: bash
 
-    lstchain_cherenkov_transparency --update_datacheck_file DL1_datacheck_20230920.h5 --input_dir v0.10/tailcut84/datacheck
+    lstchain_cherenkov_transparency --update-datacheck-file DL1_datacheck_20230920.h5 --input-dir INPUT_DIR
 
-  The script updates the **night-wise** datacheck .h5 file ``DL1_datacheck_20230920.h5`` with a new table containing
-  parameters related to the image intensity spectra for cosmic ray events (i.e., a Cherenkov-transparency - like
-  approach, see e.g. https://arxiv.org/abs/1310.1639).
+  The script updates the **night-wise** datacheck .h5 file ``DL1_datacheck_20230920.h5`` with a new table (with one entry
+  per subrun) containing parameters related to the image intensity spectra for cosmic ray events (i.e., a
+  Cherenkov-transparency - like approach, see e.g. https://arxiv.org/abs/1310.1639).
 
 
 
 
 Using the datacheck files for selecting good-quality data
 =========================================================
+
+The night-wise datacheck .h5 files, ``DL1_datacheck_YYYYMMDD.h5`` can be used to select a subsample of good quality data
+from a large sample of observations. The files are relatively light, 6 MB per night in average. A large sample of them
+can be processed with the notebook ``cta_lstchain/notebooks/data_quality.ipynb`` (instructions can be found inside the
+notebook)
+
 
 Reference/API
 =============

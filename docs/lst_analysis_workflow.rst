@@ -51,6 +51,17 @@ Files and configuration
 The DL1 files to use obviously depend on the source you want to analyse.
 Unless you have a good reason, the latest version of the DL1 files should be used.
 
+Selection of DL1 files
+----------------------
+
+The selection of the DL1 files (run-wise, i.e. those produced by lstosa by merging the subrun-wise DL1 files) for a
+specific analysis (i.e., a given source and time period) can be performed using the notebook
+``cta_lstchain/notebooks/data_quality.ipynb``. The selection also takes into account the quality of the data, mostly in
+terms of atmospheric conditions - evaluated using the rate of cosmic-ray showers as a proxy. Data taken under poor
+conditions will not be included in the list of selected runs. Instructions and further details can be found inside the
+notebook.
+
+
 RF models
 ---------
 
@@ -65,11 +76,24 @@ The RF models are stored in the following directory:
 Tuning of DL1 files and RF models
 ---------------------------------
 
-In case of high NSB in the data, it is possible to tune the DL1 files and the RF models to improve the performance of the analysis.      
-This is done by changing the `config` file of the RF models and producing new DL1 files and training new RF models.
-To produce a config tuned to the data you want to analyse, you may run ``lstchain_tune_nsb`` function that will produce a ``tuned_nsb_config.json`` file.
+The default MC production is generated with a level of noise in the images which corresponds to the level of diffuse
+night-sky background ("NSB") in a "dark" field of view (i.e. for observations with moon below the horizon, at not-too-low
+galactic latitudes and not affected by other sources of noise, like the zodiacal light). In general, observations of
+**extragalactic** sources in dark conditions can be properly analyzed with the default MC (i.e. with the standard RF models).
 
-To request a new production of RF models, you can open a pull-request on the lstmcpipe repository, producing a complete MC config, using:
+The median of the standard deviation of the pixel charges recorded in interleaved pedestal events (in which  a camera
+image is recorded in absence of a physics trigger) is a good measure of the NSB level in a given data run. This is computed
+by the data selection notebook ``cta_lstchain/notebooks/data_quality.ipynb`` (see above). For data with an NSB level
+significantly higher than the "dark field" one, it is possible to tune (increase) the noise in the MC files, and produce
+from them RF models (and "test MC" for computing instrument response functions) which improve the performance of the
+analysis (relative to using the default, low-NSB MC).
+
+This is done by changing the `config` file of the RF models and producing new DL1 files and training new RF models.
+To produce a config tuned to the data you want to analyse, you have to run the script
+``cta_lstchain/scripts/lstchain_tune_nsb.py`` (link: :py:obj:`~lstchain.scripts.lstchain_tune_nsb`) that will produce a
+``tuned_nsb_config.json`` file.
+
+To request a **new production of RF models**, you can open a pull-request on the lstmcpipe repository, producing a complete MC config, using:
 
 .. code-block::
 
