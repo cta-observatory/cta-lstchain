@@ -257,7 +257,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # the average diffuse NSB across the camera
     data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe[good_pixels])
     data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe[good_pixels])
-    log.info(f'\nReal data:')
+    log.info('\nReal data:')
     log.info(f'   Number of bad pixels (from calibration): {bad_pixels.sum()}')
     log.info(f'   Median of FF pixel charge: '
              f'{np.nanmedian(data_HG_FF_mean_pe[good_pixels]):.3f} p.e.')
