@@ -51,8 +51,8 @@ Files and configuration
 The DL1 files to use obviously depend on the source you want to analyse.
 Unless you have a good reason, the latest version of the DL1 files should be used.
 
-Selection of DL1 files
-----------------------
+Selection of the real-data DL1 files
+------------------------------------
 
 The selection of the DL1 files (run-wise, i.e. those produced by lstosa by merging the subrun-wise DL1 files) for a
 specific analysis (i.e., a given source and time period) can be performed using the notebook
