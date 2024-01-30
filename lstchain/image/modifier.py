@@ -221,12 +221,12 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     if data_dl1_flatfield['charge_mean'].shape[0] < 2:
         logging.error('\nCould not find interleaved FF calibrations in '
                       'monitoring table!')
-        return np.nan, np.nan, np.nan
+        return None, None, None
 
     if data_dl1_pedestal['charge_std'].shape[0] < 2 :
         logging.error('\nCould not find interleaved pedestal info in '
                       'monitoring table!')
-        return np.nan, np.nan, np.nan
+        return None, None, None
 
     # Mean HG charge in interleaved FF events, to spot possible issues:
     data_HG_FF_mean = data_dl1_flatfield['charge_mean'][1:, 0, :]
