@@ -95,7 +95,7 @@ This can be done with the script :py:obj:`~lstchain.scripts.lstchain_dump_config
 
 .. code-block::
 
-    lstchain-dump-config --mc --output-file standard_lstchain_config.json
+    lstchain_dump_config --mc --output-file standard_lstchain_config.json
 
 Now you have to update the file with the parameters needed to increase the NSB level. For this you need a simtel.gz MC
 file from the desired production (any will do, it can be either a gamma or a proton file), and a "typical" subrun DL1 file
