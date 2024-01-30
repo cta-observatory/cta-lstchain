@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Datachecks (datachecks) &mdash; lstchain 0.10.7.dev7+gcd5f92fd documentation</title>
+  <title>Datachecks (datachecks) &mdash; lstchain 0.10.7.dev27+gfac56f2d documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
@@ -16,7 +16,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=a8056d1a"></script>
+        <script src="../../_static/documentation_options.js?v=4e301369"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.7.dev7+gcd5f92fd
+                0.10.7.dev27+gfac56f2d
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -71,6 +71,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../calib/index.html">Calibration (<cite>calib</cite>)</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Datachecks (<cite>datachecks</cite>)</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dl1-data-checks">DL1 data checks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-datacheck-files-for-selecting-good-quality-data">Using the datacheck files for selecting good-quality data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#reference-api">Reference/API</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#module-lstchain.datachecks.containers">lstchain.datachecks.containers Module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-lstchain.datachecks.dl1_checker">lstchain.datachecks.dl1_checker Module</a></li>
@@ -120,7 +122,81 @@
 <span id="datachecks"></span><h1>Datachecks (<cite>datachecks</cite>)<a class="headerlink" href="#datachecks-datachecks" title="Link to this heading">¶</a></h1>
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h2>
-<p>Module containing functions producing the LST datachecks. Currently reaching DL1 level.</p>
+<p>Module containing functions for checking the quality of the LST data.</p>
+</section>
+<section id="dl1-data-checks">
+<h2>DL1 data checks<a class="headerlink" href="#dl1-data-checks" title="Link to this heading">¶</a></h2>
+<p>Currently the checks are done at the DL1 level.
+The DL1 datacheck files are produced by running the following scripts sequentially:</p>
+<ul>
+<li><p><a class="reference internal" href="../scripts/index.html#module-lstchain.scripts.lstchain_check_dl1" title="lstchain.scripts.lstchain_check_dl1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_check_dl1</span></code></a></p>
+<p>This takes as input a DL1 file (including DL1a information, i.e. camera images &amp; times) from a data subrun, e.g.:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lstchain_check_dl1<span class="w"> </span>--input-file<span class="w"> </span>dl1_LST-1.1.Run14619.0000.h5<span class="w"> </span>--output-dir<span class="w"> </span>OUTPUT_DIR<span class="w"> </span>--omit-pdf
+</pre></div>
+</div>
+<p>The script produces a data check file for the subrun, <code class="docutils literal notranslate"><span class="pre">datacheck_dl1_LST-1.Run14619.0000.h5</span></code> which contains many
+quantities that can be used to judge the quality of the data (see class <a class="reference internal" href="../../api/lstchain.datachecks.containers.DL1DataCheckContainer.html#lstchain.datachecks.containers.DL1DataCheckContainer" title="lstchain.datachecks.containers.DL1DataCheckContainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DL1DataCheckContainer</span></code></a>)</p>
+</li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul>
+<li><p><a class="reference internal" href="../scripts/index.html#module-lstchain.scripts.lstchain_check_dl1" title="lstchain.scripts.lstchain_check_dl1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_check_dl1</span></code></a></p>
+<p>The same script is run again, but now providing as input the <strong>subrun-wise datacheck files</strong> produced earlier (all subruns
+of a given run must be provided). It also needs to know where the subrun-wise <code class="docutils literal notranslate"><span class="pre">muons_LST-1.*.fits</span> <span class="pre">files</span></code> (produced in
+the R0 to DL1 analysis step) which contain the muon ring information are stored (“MUONS_DIR”):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lstchain_check_dl1<span class="w"> </span>--input-file<span class="w"> </span><span class="s2">&quot;datacheck_dl1_LST-1.Run14619.*.h5&quot;</span><span class="w"> </span>--output-dir<span class="w"> </span>OUTPUT_DIR<span class="w"> </span>--muons-dir<span class="w"> </span>MUONS_DIR
+</pre></div>
+</div>
+<p>The output is now a data check file for the whole run, <code class="docutils literal notranslate"><span class="pre">datacheck_dl1_LST-1.Run14619.h5</span></code> which contains all the
+information from the subrun-wise files. The script also produces a .pdf file <code class="docutils literal notranslate"><span class="pre">datacheck_dl1_LST-1.Run14619.pdf</span></code> with
+various plots of the quantities stored in the DL1DataCheckContainer objects, plus others obtained from the muon ring
+analysis. Note that the muon ring information is not propagated to the run-wise datacheck files, it is just used for
+the plotting.</p>
+</li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul>
+<li><p><a class="reference internal" href="../scripts/index.html#module-lstchain.scripts.lstchain_longterm_dl1_check" title="lstchain.scripts.lstchain_longterm_dl1_check"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_longterm_dl1_check</span></code></a></p>
+<p>This script merges the run-wise datacheck files of (typically) one night, stored in INPUT_DIR, and produces <strong>a
+single .h5 file for the whole night</strong> as output (e.g. <code class="docutils literal notranslate"><span class="pre">DL1_datacheck_20230920.h5</span></code>). The “longterm” in the script
+name is a bit of an overstatement - in principle it can be run over data from many nights, but the output html (see
+below) becomes too heavy and some of the interactive features work poorly.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lstchain_longterm_dl1_check<span class="w"> </span>--input-dir<span class="w"> </span>INPUT_DIR<span class="w"> </span>--muons-dir<span class="w"> </span>MUONS_DIR<span class="w"> </span>--output-file<span class="w"> </span>DL1_datacheck_20230920.h5<span class="w"> </span>--batch
+</pre></div>
+</div>
+<p>The output .h5 file contains a (run-wise) summarized version of the information in the input files, including the muon
+ring .fits files. It also creates an .html file (e.g. <code class="docutils literal notranslate"><span class="pre">DL1_datacheck_20230920.html</span></code>) which can be opened with any
+web browser and which contains various interactive plots which allow to make a quick check of the data of a night. See
+an example of the .html file <a class="reference external" href="https://www.lst1.iac.es/datacheck/dl1/v0.10/20230920/DL1_datacheck_20230920.html">here</a>
+(password protected).</p>
+</li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">lstchain_cherenkov_transparency</span></code></p>
+<p>This script analyzes the image intensity histograms (one per subrun) stored in the <strong>run-wise</strong> datacheck files (which
+must exist in INPUT_DIR)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lstchain_cherenkov_transparency<span class="w"> </span>--update-datacheck-file<span class="w"> </span>DL1_datacheck_20230920.h5<span class="w"> </span>--input-dir<span class="w"> </span>INPUT_DIR
+</pre></div>
+</div>
+<p>The script updates the <strong>night-wise</strong> datacheck .h5 file <code class="docutils literal notranslate"><span class="pre">DL1_datacheck_20230920.h5</span></code> with a new table (with one entry
+per subrun) containing parameters related to the image intensity spectra for cosmic ray events (i.e., a
+Cherenkov-transparency - like approach, see e.g. <a class="reference external" href="https://arxiv.org/abs/1310.1639">https://arxiv.org/abs/1310.1639</a>).</p>
+</li>
+</ul>
+</section>
+<section id="using-the-datacheck-files-for-selecting-good-quality-data">
+<h2>Using the datacheck files for selecting good-quality data<a class="headerlink" href="#using-the-datacheck-files-for-selecting-good-quality-data" title="Link to this heading">¶</a></h2>
+<p>The night-wise datacheck .h5 files, <code class="docutils literal notranslate"><span class="pre">DL1_datacheck_YYYYMMDD.h5</span></code> can be used to select a subsample of good quality data
+from a large sample of observations. The files are relatively light, 6 MB per night in average. A large sample of them
+can be processed with the notebook <code class="docutils literal notranslate"><span class="pre">cta_lstchain/notebooks/data_quality.ipynb</span></code> (instructions can be found inside the
+notebook)</p>
 </section>
 <section id="reference-api">
 <h2>Reference/API<a class="headerlink" href="#reference-api" title="Link to this heading">¶</a></h2>
@@ -197,7 +273,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 25 Jan 2024 14:25.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 30 Jan 2024 17:21.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

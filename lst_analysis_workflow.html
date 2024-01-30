@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LST-1 data analysis workflow &mdash; lstchain 0.10.7.dev7+gcd5f92fd documentation</title>
+  <title>LST-1 data analysis workflow &mdash; lstchain 0.10.7.dev27+gfac56f2d documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
@@ -16,7 +16,7 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/documentation_options.js?v=a8056d1a"></script>
+        <script src="_static/documentation_options.js?v=4e301369"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.7.dev7+gcd5f92fd
+                0.10.7.dev27+gfac56f2d
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -68,9 +68,10 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#files-and-configuration">Files and configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#selection-of-the-real-data-dl1-files">Selection of the real-data DL1 files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rf-models">RF models</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#tuning-of-dl1-files-and-rf-models">Tuning of DL1 files and RF models</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#lstchain-config">lstchain config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tuning-of-mc-dl1-files-and-rf-models">Tuning of MC DL1 files and RF models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#keeping-track-of-lstchain-configurations">Keeping track of lstchain configurations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dl3-irf-config-files">DL3/IRF config files</a></li>
 </ul>
 </li>
@@ -143,6 +144,15 @@ Analysers should not need to use this package directly (it is maintained and han
 <h2>Files and configuration<a class="headerlink" href="#files-and-configuration" title="Link to this heading">¶</a></h2>
 <p>The DL1 files to use obviously depend on the source you want to analyse.
 Unless you have a good reason, the latest version of the DL1 files should be used.</p>
+<section id="selection-of-the-real-data-dl1-files">
+<h3>Selection of the real-data DL1 files<a class="headerlink" href="#selection-of-the-real-data-dl1-files" title="Link to this heading">¶</a></h3>
+<p>The selection of the DL1 files (run-wise, i.e. those produced by lstosa by merging the subrun-wise DL1 files) for a
+specific analysis (i.e., a given source and time period) can be performed using the notebook
+<code class="docutils literal notranslate"><span class="pre">cta_lstchain/notebooks/data_quality.ipynb</span></code>. The selection also takes into account the quality of the data, mostly in
+terms of atmospheric conditions - evaluated using the rate of cosmic-ray showers as a proxy. Data taken under poor
+conditions will not be included in the list of selected runs. Instructions and further details can be found inside the
+notebook.</p>
+</section>
 <section id="rf-models">
 <h3>RF models<a class="headerlink" href="#rf-models" title="Link to this heading">¶</a></h3>
 <p>The list of available trained RF models can be found in the lstmcpipe documentation and production list,
@@ -151,21 +161,47 @@ along with a description of each production:
 <p>The RF models are stored in the following directory:
 <code class="docutils literal notranslate"><span class="pre">/fefs/aswg/data/models/...</span></code></p>
 </section>
-<section id="tuning-of-dl1-files-and-rf-models">
-<h3>Tuning of DL1 files and RF models<a class="headerlink" href="#tuning-of-dl1-files-and-rf-models" title="Link to this heading">¶</a></h3>
-<p>In case of high NSB in the data, it is possible to tune the DL1 files and the RF models to improve the performance of the analysis.
-This is done by changing the <cite>config</cite> file of the RF models and producing new DL1 files and training new RF models.
-To produce a config tuned to the data you want to analyse, you may run <code class="docutils literal notranslate"><span class="pre">lstchain_tune_nsb</span></code> function that will produce a <code class="docutils literal notranslate"><span class="pre">tuned_nsb_config.json</span></code> file.</p>
-<p>To request a new production of RF models, you can open a pull-request on the lstmcpipe repository, producing a complete MC config, using:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">lstchain</span><span class="o">-</span><span class="n">dump</span><span class="o">-</span><span class="n">config</span> <span class="o">--</span><span class="n">mc</span> <span class="o">--</span><span class="n">update</span><span class="o">-</span><span class="k">with</span> <span class="n">tuned_nsb_config</span><span class="o">.</span><span class="n">json</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">file</span> <span class="n">PATH_TO_OUTPUT_FILE</span>
+<section id="tuning-of-mc-dl1-files-and-rf-models">
+<h3>Tuning of MC DL1 files and RF models<a class="headerlink" href="#tuning-of-mc-dl1-files-and-rf-models" title="Link to this heading">¶</a></h3>
+<p>The default MC production is generated with a level of noise in the images which corresponds to the level of diffuse
+night-sky background (“NSB”) in a “dark” field of view (i.e. for observations with moon below the horizon, at not-too-low
+galactic latitudes and not affected by other sources of noise, like the zodiacal light). In general, observations of
+<strong>extragalactic</strong> sources in dark conditions can be properly analyzed with the default MC (i.e. with the standard RF models).</p>
+<p>The median of the standard deviation of the pixel charges recorded in interleaved pedestal events (in which  a camera
+image is recorded in absence of a physics trigger) is a good measure of the NSB level in a given data run. This is computed
+by the data selection notebook <code class="docutils literal notranslate"><span class="pre">cta_lstchain/notebooks/data_quality.ipynb</span></code> (see above). For data with an NSB level
+significantly higher than the “dark field” one, it is possible to tune (increase) the noise in the MC files, and produce
+from them RF models (and “test MC” for computing instrument response functions) which improve the performance of the
+analysis (relative to using the default, low-NSB MC).</p>
+<p>This is done by changing the configuration file for the MC processing, producing new DL1(b) files, and training new RF models.
+To produce a config tuned to the data you want to analyse, you first have to obtain the standard analysis configuration
+file (for MC) for the desired version of lstchain (= the version with which the real DL1 files you will use were produced).
+This can be done with the script <a class="reference internal" href="lstchain_api/scripts/index.html#module-lstchain.scripts.lstchain_dump_config" title="lstchain.scripts.lstchain_dump_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lstchain_dump_config</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">lstchain_dump_config</span> <span class="o">--</span><span class="n">mc</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">file</span> <span class="n">standard_lstchain_config</span><span class="o">.</span><span class="n">json</span>
 </pre></div>
 </div>
+<p>Now you have to update the file with the parameters needed to increase the NSB level. For this you need a simtel.gz MC
+file from the desired production (any will do, it can be either a gamma or a proton file), and a “typical” subrun DL1 file
+from your <strong>real data</strong>  sample. “Typical” means one in which the NSB level is close to the median value for the sample
+to be analyzed. The data selection notebook <code class="docutils literal notranslate"><span class="pre">cta_lstchain/notebooks/data_quality.ipynb</span></code> (see above) provides a list of
+a few such subruns for your selected sample - you can use any of them. To update the config file you have to use the
+script <a class="reference internal" href="lstchain_api/scripts/index.html#module-lstchain.scripts.lstchain_tune_nsb" title="lstchain.scripts.lstchain_tune_nsb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lstchain_tune_nsb</span></code></a> , e.g. :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">lstchain_tune_nsb</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">config</span> <span class="n">standard_lstchain_config</span><span class="o">.</span><span class="n">json</span> \
+                     <span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">mc</span> <span class="o">.../</span><span class="n">simtel_corsika_theta_6</span><span class="mf">.000</span><span class="n">_az_180</span><span class="mf">.000</span><span class="n">_run10</span><span class="o">.</span><span class="n">simtel</span><span class="o">.</span><span class="n">gz</span> \
+                     <span class="o">--</span><span class="nb">input</span><span class="o">-</span><span class="n">data</span> <span class="o">.../</span><span class="n">dl1_LST</span><span class="o">-</span><span class="mf">1.</span><span class="n">Run10032</span><span class="mf">.0069</span><span class="o">.</span><span class="n">h5</span> \
+                     <span class="o">-</span><span class="n">o</span> <span class="n">tuned_nsb_lstchain_config</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p>To request a <strong>new production of RF models</strong>, you can open a pull-request on the lstmcpipe repository, providing
+the .json configuration file produced following the steps above.</p>
 </section>
-<section id="lstchain-config">
-<h3>lstchain config<a class="headerlink" href="#lstchain-config" title="Link to this heading">¶</a></h3>
-<p>The lstchain config used to produce the RF models of a production is provided in the lstmcpipe repository, as well as in the models directory.
-It is a good idea to use the same config for the data analysis.
-You can also produce a config using <cite>lstchain-dump-config</cite>.</p>
+<section id="keeping-track-of-lstchain-configurations">
+<h3>Keeping track of lstchain configurations<a class="headerlink" href="#keeping-track-of-lstchain-configurations" title="Link to this heading">¶</a></h3>
+<p>The lstchain configuration file used to process the  simulations and produce the RF models of a given MC production is
+provided in the lstmcpipe repository, as well as in the models directory.</p>
+<p>It is important that the software version, and the configuration used for processing real data and MC are the same. For a
+given lstchain version, this should be guaranteed by following the procedure above which makes use of
+<a class="reference internal" href="lstchain_api/scripts/index.html#module-lstchain.scripts.lstchain_dump_config" title="lstchain.scripts.lstchain_dump_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lstchain_dump_config</span></code></a>.</p>
 </section>
 <section id="dl3-irf-config-files">
 <h3>DL3/IRF config files<a class="headerlink" href="#dl3-irf-config-files" title="Link to this heading">¶</a></h3>
@@ -223,7 +259,7 @@ unset __conda_setup
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 25 Jan 2024 14:25.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 30 Jan 2024 17:21.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
