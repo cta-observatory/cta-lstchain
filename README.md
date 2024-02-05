@@ -19,12 +19,12 @@ You will need to install [micromamba/mamba](https://mamba.readthedocs.io/en/late
 
 You can create an environment and install `lstchain` from conda-forge as:
 ```
-mamba create -c conda-forge -n lstchain-v0.10.3 python=3.11 lstchain=0.10.3
+mamba create -c conda-forge -n lstchain-v0.10.7 python=3.11 lstchain=0.10.7
 ```
 
 Alternatively, you can also install `lstchain` from PyPi with `pip`:
 ```
-LSTCHAIN_VER=0.10.3  (or the version you want to install - usually the latest release)
+LSTCHAIN_VER=0.10.7  (or the version you want to install - usually the latest release)
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
