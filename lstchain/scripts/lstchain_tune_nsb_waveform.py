@@ -3,13 +3,13 @@
 """
 Usage:
 
-$> python lstchain_tune_nsb.py
+$> python lstchain_tune_nsb_waveform.py
 --config  config_file.json     (must be the one used in the DL1 production)
 --input-mc  simtel_file.simtel.gz    simulation simtel file
 --input-data dl1_data.h5         real data DL1 file
 
-Calculates the parameters needed to tune the NSB in MC DL1 files (in the
-DL1ab stage) to the level of NSB in a given data file
+Calculates the parameters needed to tune the NSB in the waveforms (in the
+R0 to DL1 stage) to the level of NSB in a given data file
 
 """
 
@@ -17,14 +17,16 @@ import argparse
 import json
 import logging
 import sys
+import numpy as np
 from pathlib import Path
 
-from lstchain.image.modifier import calculate_noise_parameters
+from lstchain.image.modifier import calculate_required_additional_nsb
 from lstchain.io.config import dump_config, read_configuration_file
+from traitlets.config import Config
 
 log = logging.getLogger(__name__)
 
-parser = argparse.ArgumentParser(description="Tune NSB")
+parser = argparse.ArgumentParser(description="Tune NSB in waveforms")
 
 # Required arguments
 parser.add_argument(
@@ -77,30 +79,27 @@ def main():
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
-    a, b, c = calculate_noise_parameters(args.input_mc, args.input_data,
-                                         args.config)
-    if a is None:
-        logging.error('Could not compute NSB tuning parameters. Exiting!')
-        sys.exit(1)
+    config = read_configuration_file(args.config)
 
-    dict_nsb = {"increase_nsb": True,
-                "extra_noise_in_dim_pixels": round(a, 3),
-                "extra_bias_in_dim_pixels": round(b, 3),
-                "transition_charge": 8,
-                "extra_noise_in_bright_pixels": round(c, 3)
-                }
+    nsb_correction_ratio, data_ped_variance, mc_ped_variance = \
+        calculate_required_additional_nsb(args.input_mc, args.input_data,
+                                          config=Config(config))
 
-    log.info('\n')
+    dict_nsb = {
+        "nsb_tuning": True,
+        "nsb_tuning_ratio": np.round(nsb_correction_ratio, decimals=2),
+        "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
+    }
+
+    log.info(f'\ndata_ped_stdev: {data_ped_variance**0.5:.3f} p.e.')
+    log.info(f'mc_ped_stdev: {mc_ped_variance**0.5:.3f} p.e.\n')
+
     log.info(json.dumps(dict_nsb, indent=2))
     log.info('\n')
 
     if args.output_file:
         cfg = read_configuration_file(args.config)
-        if 'image_modifier' in cfg:
-            cfg['image_modifier'].update(dict_nsb)
-        else:
-            cfg['image_modifier'] = dict_nsb
-
+        cfg['waveform_nsb_tuning'].update(dict_nsb)
         dump_config(cfg, args.output_file, overwrite=args.overwrite)
 
 

@@ -51,6 +51,17 @@ Files and configuration
 The DL1 files to use obviously depend on the source you want to analyse.
 Unless you have a good reason, the latest version of the DL1 files should be used.
 
+Selection of the real-data DL1 files
+------------------------------------
+
+The selection of the DL1 files (run-wise, i.e. those produced by lstosa by merging the subrun-wise DL1 files) for a
+specific analysis (i.e., a given source and time period) can be performed using the notebook
+``cta_lstchain/notebooks/data_quality.ipynb``. The selection also takes into account the quality of the data, mostly in
+terms of atmospheric conditions - evaluated using the rate of cosmic-ray showers as a proxy. Data taken under poor
+conditions will not be included in the list of selected runs. Instructions and further details can be found inside the
+notebook.
+
+
 RF models
 ---------
 
@@ -62,26 +73,58 @@ The RF models are stored in the following directory:
 ``/fefs/aswg/data/models/...``
 
 
-Tuning of DL1 files and RF models
----------------------------------
+Tuning of MC DL1 files and RF models
+------------------------------------
 
-In case of high NSB in the data, it is possible to tune the DL1 files and the RF models to improve the performance of the analysis.      
-This is done by changing the `config` file of the RF models and producing new DL1 files and training new RF models.
-To produce a config tuned to the data you want to analyse, you may run ``lstchain_tune_nsb`` function that will produce a ``tuned_nsb_config.json`` file.
+The default MC production is generated with a level of noise in the images which corresponds to the level of diffuse
+night-sky background ("NSB") in a "dark" field of view (i.e. for observations with moon below the horizon, at not-too-low
+galactic latitudes and not affected by other sources of noise, like the zodiacal light). In general, observations of
+**extragalactic** sources in dark conditions can be properly analyzed with the default MC (i.e. with the standard RF models).
 
-To request a new production of RF models, you can open a pull-request on the lstmcpipe repository, producing a complete MC config, using:
+The median of the standard deviation of the pixel charges recorded in interleaved pedestal events (in which  a camera
+image is recorded in absence of a physics trigger) is a good measure of the NSB level in a given data run. This is computed
+by the data selection notebook ``cta_lstchain/notebooks/data_quality.ipynb`` (see above). For data with an NSB level
+significantly higher than the "dark field" one, it is possible to tune (increase) the noise in the MC files, and produce
+from them RF models (and "test MC" for computing instrument response functions) which improve the performance of the
+analysis (relative to using the default, low-NSB MC).
+
+This is done by changing the configuration file for the MC processing, producing new DL1(b) files, and training new RF models.
+To produce a config tuned to the data you want to analyse, you first have to obtain the standard analysis configuration
+file (for MC) for the desired version of lstchain (= the version with which the real DL1 files you will use were produced).
+This can be done with the script :py:obj:`~lstchain.scripts.lstchain_dump_config`:
 
 .. code-block::
 
-    lstchain-dump-config --mc --update-with tuned_nsb_config.json --output-file PATH_TO_OUTPUT_FILE
+    lstchain_dump_config --mc --output-file standard_lstchain_config.json
+
+Now you have to update the file with the parameters needed to increase the NSB level. For this you need a simtel.gz MC
+file from the desired production (any will do, it can be either a gamma or a proton file), and a "typical" subrun DL1 file
+from your **real data**  sample. "Typical" means one in which the NSB level is close to the median value for the sample
+to be analyzed. The data selection notebook ``cta_lstchain/notebooks/data_quality.ipynb`` (see above) provides a list of
+a few such subruns for your selected sample - you can use any of them. To update the config file you have to use the
+script :py:obj:`~lstchain.scripts.lstchain_tune_nsb` , e.g. :
+
+.. code-block::
+
+    lstchain_tune_nsb.py --config standard_lstchain_config.json \
+                         --input-mc .../simtel_corsika_theta_6.000_az_180.000_run10.simtel.gz \
+                         --input-data .../dl1_LST-1.Run10032.0069.h5 \
+                         -o tuned_nsb_lstchain_config.json
+
+To request a **new production of RF models**, you can open a pull-request on the lstmcpipe repository, providing
+the .json configuration file produced following the steps above.
 
 
-lstchain config
----------------
+Keeping track of lstchain configurations
+----------------------------------------
 
-The lstchain config used to produce the RF models of a production is provided in the lstmcpipe repository, as well as in the models directory.
-It is a good idea to use the same config for the data analysis.
-You can also produce a config using `lstchain-dump-config`.
+The lstchain configuration file used to process the  simulations and produce the RF models of a given MC production is
+provided in the lstmcpipe repository, as well as in the models directory.
+
+It is important that the software version, and the configuration used for processing real data and MC are the same. For a
+given lstchain version, this should be guaranteed by following the procedure above which makes use of
+:py:obj:`~lstchain.scripts.lstchain_dump_config`.
+
 
 DL3/IRF config files
 --------------------
