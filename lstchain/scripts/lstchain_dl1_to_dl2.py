@@ -104,8 +104,8 @@ def apply_to_file(filename, models_dict, output_dir, config):
         tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
         effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
     except OSError:
-        print("subarray table is not readable because of the version incompatibility.")
-        print("The effective focal length for the standard LST optics will be used.")
+        logger.info("subarray table is not readable because of the version incompatibility.")
+        logger.info("The effective focal length for the standard LST optics will be used.")
         effective_focal_length = OPTICS.effective_focal_length
         
     # Normalize all azimuth angles to the range [0, 360) degrees 

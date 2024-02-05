@@ -104,12 +104,24 @@ parser.add_argument(
     help='Disable pedestal cleaning. This is also done automatically for simulations.',
 )
 
+####################################################################
+# Adding this option to scale the charge in all pixels of all events
 parser.add_argument(
     '--light-scaling',
     type=float,
     dest='scale_factor',
     default=1.,
     help='Pass a float in order to scale by this value the charge in all pixels of all events.',
+)
+
+#############################################################
+# Adding an option to reduce subset to a range of intensities
+parser.add_argument(
+    '--intensity-range',
+    type=str,
+    dest='intensity_range',
+    default=None,
+    help='Pass a range of intensities to select events with intensity in that range.',
 )
 
 def main():
@@ -186,11 +198,18 @@ def main():
 
     args.pedestal_cleaning = False if is_simulation else args.pedestal_cleaning
 
+    ###############################################################
+    # if we selected to scale the charge on the pixels by a factor
+    if args.scale_factor is not None:
+        scale_factor_total_light = float(args.scale_factor)
+    else:
+        scale_factor_total_light = 1. 
+                    
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
         sigma = config[clean_method_name]['sigma']
-        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
+        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma) * scale_factor_total_light
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Fraction of Cat_A pixel cleaning thresholds above Cat_A picture thr.:"
@@ -231,6 +250,7 @@ def main():
     if "delta_time" in config[clean_method_name]:
         delta_time = config[clean_method_name]["delta_time"]
 
+    ########################################################################
     # adding this exception for the analyis of lstchain v0.9 generated files
     try:
         subarray_info = SubarrayDescription.from_hdf(args.input_file)
@@ -328,23 +348,24 @@ def main():
                 outfile.root[dl1_params_lstcam_key].attrs[k] = item
             outfile.root[dl1_params_lstcam_key].attrs["config"] = str(config)
 
-            # lims_intensity = [316, 562]
-            # delta_extending_region = 1.6526124630784766 + 1.2
-            # lims_intensity_ext = [60, lims_intensity[1] * 1]
-            
-            # mask = (params["intensity"] >= lims_intensity_ext[0]) & (params["intensity"] <= lims_intensity_ext[1])
-            # image_table = image_table[mask][:]
-            # params = params[mask][:]
-            
+            #################################
+            # Data selection
+
+            # select events with intensity in a given range
+            if args.intensity_range is not None:
+
+                rang = [float(args.intensity_range.split(",")[0]), float(args.intensity_range.split(",")[1])]
+
+                intensity_mask = (params["intensity"] >= rang[0]) & (params["intensity"] <= rang[1])    
+            else:
+                intensity_mask = np.ones(len(params), dtype=bool)
+
+            # Select events with intensity in a given range
+            image_table = image_table[intensity_mask]
+            params = params[intensity_mask]
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
-
-                 # if we selected to scale the charge on the pixels by a factor
-                if args.scale_factor is not None:
-                    scale_factor_total_light = float(args.scale_factor)
-                else:
-                    scale_factor_total_light = 1. 
 
                 image = row['image'] * scale_factor_total_light
                 peak_time = row['peak_time']
@@ -366,8 +387,11 @@ def main():
                     n_samples = config['LocalPeakWindowSum']['window_width']
                     pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
 
+                    ###########################
+                    # Scaling also the pedestal
+
                     # calibrate charge
-                    image = (image - pedestal) * dc_to_pe
+                    image = (image - pedestal * scale_factor_total_light) * dc_to_pe
 
                     # put to zero charge unusable pixels in order not to select them in the cleaning
                     image[unusable_pixels] = 0
