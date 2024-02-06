@@ -14,20 +14,20 @@ env:
   PYTEST_ADDOPTS: --color=yes
 
 jobs:
-  # pyflakes:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
+  pyflakes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-  #     - name: Set up Python ${{ matrix.python-version }}
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: 3.9
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
 
-  #     - name: pyflakes
-  #       run: |
-  #         pip install pyflakes
-  #         pyflakes lstchain
+      # - name: pyflakes
+      #   run: |
+      #     pip install pyflakes
+      #     pyflakes lstchain
 
   # tests:
   #   needs: pyflakes
