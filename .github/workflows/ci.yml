@@ -96,7 +96,7 @@ jobs:
   #         functionalities: gcov
 
   docs:
-    # needs: pyflakes
+    needs: pyflakes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
