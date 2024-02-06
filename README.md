@@ -1,14 +1,14 @@
 # cta-lstchain [![Build Status](https://github.com/cta-observatory/cta-lstchain/workflows/CI/badge.svg?branch=main)](https://github.com/cta-observatory/cta-lstchain/actions?query=workflow%3ACI+branch%3Amain) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6344673.svg)](https://doi.org/10.5281/zenodo.6344673) [![PyPI version](https://badge.fury.io/py/lstchain.svg)](https://badge.fury.io/py/lstchain) [![Conda version](https://anaconda.org/conda-forge/lstchain/badges/version.svg)](https://anaconda.org/conda-forge/lstchain)
 
-Repository for the high level analysis of the LST.
-The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
+Repository for the low-level analysis of the LST up to DL3 level.
+The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction. Higher-level analysis starting from DL3 can be performed with [Gammapy](https://gammapy.org/).
 
 - **Source code:** https://github.com/cta-observatory/cta-lstchain
 - **Documentation:** https://cta-observatory.github.io/cta-lstchain/
 
 Note that notebooks are currently not tested and not guaranteed to be up-to-date.   
-In doubt, refer to tested code and scripts: basic functions of lstchain (reduction steps R0-->DL1 and DL1-->DL2) 
-are unit tested and should be working as long as the build status is passing.
+In doubt, refer to tested code and scripts: basic functions of lstchain (reduction steps R0-->DL1, DL1-->DL2 and DL2-->DL3) 
+are unit-tested and should be working as long as the build status is passing.
 
 ## Install
 
@@ -84,7 +84,7 @@ pytest -m 'private_data or not private_data' -v lstchain
 
 ## Contributing
 
-All contribution are welcomed.
+All contributions are welcomed.
 
 Guidelines are the same as [ctapipe's ones](https://ctapipe.readthedocs.io/en/latest/developer-guide/index.html). See [here](https://ctapipe.readthedocs.io/en/latest/developer-guide/pullrequests.html) for the general guidelines on how to make a pull request to contribute to the repository. Since the addition of the private data, the CI tests for Pull Requests from forks are not working, therefore we would like to ask to push your modified branches directly to the main cta-lstchain repo. If you do not have writing permissions in the repo, please contact one of the main developers. 
 
