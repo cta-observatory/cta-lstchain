@@ -5,6 +5,7 @@ from lstchain.image.image_processor import LSTImageProcessor
 from lstchain.image.cleaning import LSTImageCleaner
 from lstchain.image.muon.muon_processor import LSTMuonProcessor
 from lstchain.calib.camera.interleaved_processor import LSTInterleavedProcessor
+from lstchain.mc.nsb_waveform_tuner import WaveformNSBTuner
 from lstchain.reco.lhfit_processor import LHFitProcessor
 
 from ctapipe.calib import CameraCalibrator, GainSelector
@@ -80,6 +81,11 @@ class LSTProcessorTool(Tool):
 
     compute_lhfit_parameters = Bool(
         help="Compute and store LHFit Parameters",
+        default_value=False,
+    ).tag(config=True)
+
+    apply_waveform_tuning = Bool(
+        help="Adds NSB in waveforms",
         default_value=False,
     ).tag(config=True)
 
@@ -170,6 +176,7 @@ class LSTProcessorTool(Tool):
         + classes_with_traits(QualityQuery)
         + classes_with_traits(ImageModifier)
         + classes_with_traits(Reconstructor)
+        + classes_with_traits(WaveformNSBTuner)
     )
 
     def setup(self):
@@ -191,6 +198,7 @@ class LSTProcessorTool(Tool):
         self.process_interleaved = LSTInterleavedProcessor(
             parent=self, subarray=subarray
         )
+        self.tune_waveforms = WaveformNSBTuner(parent=self, subarray=subarray)
         self.calibrate = CameraCalibrator(parent=self, subarray=subarray)
         self.process_images = LSTImageProcessor(parent=self, subarray=subarray)
         self.process_muons = LSTMuonProcessor(parent=self, subarray=subarray)
@@ -249,6 +257,14 @@ class LSTProcessorTool(Tool):
 
         if self.should_compute_dl1:
             return DataLevel.DL1_IMAGES not in self.event_source.datalevels
+
+        return False
+
+    @property
+    def should_tune_waveforms(self):
+        """returns true if we should add NSB in waveforms"""
+        if self.apply_waveform_tuning:
+            return True
 
         return False
 
@@ -320,6 +336,9 @@ class LSTProcessorTool(Tool):
                 EventType.SKY_PEDESTAL,
             }:
                 self.process_interleaved(event)
+
+            if self.should_tune_waveforms:
+                self.tune_waveforms(event)
 
             if self.should_calibrate:
                 self.calibrate(event)
