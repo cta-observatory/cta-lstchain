@@ -310,17 +310,23 @@ def add_icrs_position_params(data, source_pos, time_utc):
 def fill_reco_altaz_w_expected_pos(data):
     """
     Fill the reconstructed alt, az positions with the expected source positions,
-    for source-dependent analysis.
+    for source-dependent analysis. 
 
     Note: This is just a trick to easily extract ON/OFF events in gammapy
-    analysis.
+    analysis. For source-dependent analysis, gammaness and alpha cut are 
+    already applied when creating DL3 file and there is no need to apply additional
+    cuts in higher analysis (e.g. on/background region cut in gammapy).
+    This function fills the same reconstructed position (AltAz, ICRS frame,
+    derived from the first event) for all events. It is recommended to use 
+    `WobbleRegionsFinder` in gammapy to define the source and background region.
     """
-    obstime = Time(data["dragon_time"], scale="utc", format="unix")
-    expected_src_x = data["expected_src_x"] * u.m
-    expected_src_y = data["expected_src_y"] * u.m
+    # Compute the expected source position for the first event 
+    obstime = Time(data["dragon_time"][0], scale="utc", format="unix")
+    expected_src_x = data["expected_src_x"][0] * u.m
+    expected_src_y = data["expected_src_y"][0] * u.m
     focal = 28 * u.m
-    pointing_alt = data["pointing_alt"]
-    pointing_az = data["pointing_az"]
+    pointing_alt = data["pointing_alt"][0]
+    pointing_az = data["pointing_az"][0]
 
     expected_src_altaz = camera_to_altaz(
         expected_src_x,
@@ -333,6 +339,18 @@ def fill_reco_altaz_w_expected_pos(data):
 
     data["reco_alt"] = expected_src_altaz.alt
     data["reco_az"] = expected_src_altaz.az
+
+    reco_altaz = SkyCoord(
+        alt=data["reco_alt"][0], az=data["reco_az"][0],
+        frame=AltAz(obstime=obstime, location=location)
+    )
+
+    with erfa_astrom.set(ErfaAstromInterpolator(300 * u.s)):
+        reco_icrs = reco_altaz.transform_to(frame="icrs")
+
+    # Fill the same expected source position (ICRS frame) for all events
+    data["RA"] = reco_icrs.ra.to(u.deg)
+    data["Dec"] = reco_icrs.dec.to(u.deg)
 
     return data
 
@@ -369,8 +387,9 @@ def create_event_list(
     tel_list = np.unique(data["tel_id"])
 
     time_params, time_utc = get_timing_params(data)
-
-    data = add_icrs_position_params(data, source_pos, time_utc)
+    
+    if not 'RA' in data.colnames:
+        data = add_icrs_position_params(data, source_pos, time_utc)
     reco_icrs = SkyCoord(ra=data["RA"], dec=data["Dec"], unit="deg")
     pnt_icrs = get_pointing_params(data, source_pos, time_utc)
 
