@@ -8,6 +8,7 @@ Run lstchain_dl1_to_dl2 --help to see the options.
 
 import argparse
 from pathlib import Path
+import joblib
 import logging
 import numpy as np
 import pandas as pd
@@ -74,7 +75,7 @@ parser.add_argument('--config', '-c',
                     required=False)
 
 
-def apply_to_file(filename, models_path_dict, output_dir, config):
+def apply_to_file(filename, models_dict, output_dir, config):
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
@@ -129,17 +130,17 @@ def apply_to_file(filename, models_path_dict, output_dir, config):
 
         if config['disp_method'] == 'disp_vector':
             dl2 = dl1_to_dl2.apply_models(data,
-                                          models_path_dict['cls_gh'],
-                                          models_path_dict['reg_energy'],
-                                          reg_disp_vector=models_path_dict['disp_vector'],
+                                          models_dict['cls_gh'],
+                                          models_dict['reg_energy'],
+                                          reg_disp_vector=models_dict['reg_disp_vector'],
                                           effective_focal_length=effective_focal_length,
                                           custom_config=config)
         elif config['disp_method'] == 'disp_norm_sign':
             dl2 = dl1_to_dl2.apply_models(data,
-                                          models_path_dict['cls_gh'],
-                                          models_path_dict['reg_energy'],
-                                          reg_disp_norm=models_path_dict['disp_norm'],
-                                          cls_disp_sign=models_path_dict['disp_sign'],
+                                          models_dict['cls_gh'],
+                                          models_dict['reg_energy'],
+                                          reg_disp_norm=models_dict['reg_disp_norm'],
+                                          cls_disp_sign=models_dict['cls_disp_sign'],
                                           effective_focal_length=effective_focal_length,
                                           custom_config=config)
 
@@ -170,17 +171,17 @@ def apply_to_file(filename, models_path_dict, output_dir, config):
 
             if config['disp_method'] == 'disp_vector':
                 dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
-                                                 models_path_dict['cls_gh'],
-                                                 models_path_dict['reg_energy'],
-                                                 reg_disp_vector=models_path_dict['disp_vector'],
+                                                 models_dict['cls_gh'],
+                                                 models_dict['reg_energy'],
+                                                 reg_disp_vector=models_dict['reg_disp_vector'],
                                                  effective_focal_length=effective_focal_length,
                                                  custom_config=config)
             elif config['disp_method'] == 'disp_norm_sign':
                 dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
-                                                 models_path_dict['cls_gh'],
-                                                 models_path_dict['reg_energy'],
-                                                 reg_disp_norm=models_path_dict['disp_norm'],
-                                                 cls_disp_sign=models_path_dict['disp_sign'],
+                                                 models_dict['cls_gh'],
+                                                 models_dict['reg_energy'],
+                                                 reg_disp_norm=models_dict['reg_disp_norm'],
+                                                 cls_disp_sign=models_dict['cls_disp_sign'],
                                                  effective_focal_length=effective_focal_length,
                                                  custom_config=config)
 
@@ -265,16 +266,26 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    models_path_dict = {'reg_energy': Path(args.path_models, 'reg_energy.sav')}
-    models_path_dict['cls_gh'] = Path(args.path_models, 'cls_gh.sav')
+    models_keys = ['reg_energy', 'cls_gh']
+
     if config['disp_method'] == 'disp_vector':
-        models_path_dict['disp_vector'] = Path(args.path_models, 'reg_disp_vector.sav')
+        models_keys.append('reg_disp_vector')
     elif config['disp_method'] == 'disp_norm_sign':
-        models_path_dict['disp_norm'] = Path(args.path_models, 'reg_disp_norm.sav')
-        models_path_dict['disp_sign'] = Path(args.path_models, 'cls_disp_sign.sav')
+        models_keys.extend(['reg_disp_norm', 'cls_disp_sign'])
+
+    models_dict = {}
+    for models_key in models_keys:
+        models_path = Path(args.path_models, f'{models_key}.sav')
+
+        # For a single input file, each model is loaded just before it is used
+        if len(args.input_files)==1:
+            models_dict[models_key] = models_path
+        # For multiple input files, all the models are loaded only once here 
+        else:
+            models_dict[models_key] = joblib.load(models_path)
 
     for filename in args.input_files:
-        apply_to_file(filename, models_path_dict, args.output_dir, config)
+        apply_to_file(filename, models_dict, args.output_dir, config)
 
 
 
