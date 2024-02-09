@@ -1,0 +1,47 @@
+DataWriter:
+  Contact:
+    name: YOUR-NAME-HERE
+    email: YOUREMAIL@EXAMPLE.ORG
+    organization: YOUR-ORGANIZATION
+
+  overwrite: false # do not overwrite existing files
+  write_images: false # store DL1 images
+  write_parameters: false # store DL1 parameters
+  write_showers: false # store DL2 stereo geometry
+  write_raw_waveforms: false # write R0 waveforms
+  write_waveforms: false # write R1 waveforms
+  write_muon_parameters: false # analyze and write muon parameters
+
+LSTInterleavedProcessor:
+  ImageExtractor:
+  DataWriter:
+
+WaveformNSBTuner:
+
+CameraCalibrator:
+  image_extractor_type:
+    - ["type", "*", "LocalPeakWindowSum"]
+  LocalPeakWindowSum:
+    window_shift: 4
+    window_width: 8
+    apply_integration_correction: false
+  apply_waveform_time_shift: false
+
+LSTImageProcessor:
+  LSTImageCleaner:
+    picture_threshold_pe: 8
+    boundary_threshold_pe: 4
+    min_picture_neighbors: 2
+    keep_isolated_pixels: false
+    delta_time: 2
+    use_dynamic_cleanine: true
+    fraction_dynamic: 0.03
+    threshold_dynamic: 267
+    use_only_largest_island: false
+    use_pedestal_cleaning: true
+    sigma: 2.5
+
+  ImageQualityQuery:
+    quality_criteria:
+      - ["enough_pixels", "np.count_nonzero(image) > 2"]
+      - ["enough_charge", "image.sum() > 50"]

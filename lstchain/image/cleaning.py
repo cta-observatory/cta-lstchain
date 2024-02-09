@@ -46,5 +46,5 @@ class LSTImageCleaner(ImageCleaner):
     LST specific ImageCleaner class.
     """
 
-    def __call__(self, event: ArrayEventContainer) -> np.ndarray:
+    def __call__(self, tel_id: int, event: ArrayEventContainer) -> np.ndarray:
         pass

@@ -5,6 +5,7 @@ from lstchain.image.image_processor import LSTImageProcessor
 from lstchain.image.cleaning import LSTImageCleaner
 from lstchain.image.muon.muon_processor import LSTMuonProcessor
 from lstchain.calib.camera.interleaved_processor import LSTInterleavedProcessor
+from lstchain.calib.camera.cat_B_calibrator import CatBCalibrator
 from lstchain.mc.nsb_waveform_tuner import WaveformNSBTuner
 from lstchain.reco.lhfit_processor import LHFitProcessor
 
@@ -59,10 +60,9 @@ class LSTProcessorTool(Tool):
     > lstchain_process -i events.simtel.gz --config lstchain_cat_A_config.json --progress
 
     For recalibrating or applying Cat-B calibrations on already processed DL1b data:
-    > lstchain_process --input events_cat_A.dl1.h5 
+    > lstchain_process --input events_cat_A.dl1.h5 --cat-B-calibrations cat_B.h5
       --config lstchain_cat_A_config lstchain_cat_B_config --output events_cat_B.dl1.h5
 
-    The config file should be in JSON or python format (see traitlets docs).
     """
 
     progress_bar = Bool(
@@ -92,6 +92,7 @@ class LSTProcessorTool(Tool):
     aliases = {
         ("i", "input"): "EventSource.input_url",
         ("o", "output"): "DataWriter.output_path",
+        ("b", "cat-B-calibrations"): "CatBCalibrator.calibrations_path",
         ("t", "allowed-tels"): "EventSource.allowed_tels",
         ("m", "max-events"): "EventSource.max_events",
         "reconstructor": "ShowerProcessor.reconstructor_types",
@@ -160,6 +161,7 @@ class LSTProcessorTool(Tool):
     classes = (
         [
             CameraCalibrator,
+            CatBCalibrator,
             DataWriter,
             LSTInterleavedProcessor,
             LSTImageProcessor,
@@ -200,6 +202,7 @@ class LSTProcessorTool(Tool):
         )
         self.tune_waveforms = WaveformNSBTuner(parent=self, subarray=subarray)
         self.calibrate = CameraCalibrator(parent=self, subarray=subarray)
+        self.cat_B_calibrate = CatBCalibrator(parent=self, subarray=subarray)
         self.process_images = LSTImageProcessor(parent=self, subarray=subarray)
         self.process_muons = LSTMuonProcessor(parent=self, subarray=subarray)
         self.process_lhfit = LHFitProcessor(parent=self, subarray=subarray)
@@ -261,9 +264,17 @@ class LSTProcessorTool(Tool):
         return False
 
     @property
+    def should_cat_B_calibrate(self):
+        """returns true if we should apply cat-B calibrations"""
+        if self.cat_B_calibrate.calibrations_path is not None:
+            return True
+
+        return False
+
+    @property
     def should_tune_waveforms(self):
         """returns true if we should add NSB in waveforms"""
-        if self.apply_waveform_tuning:
+        if self.apply_waveform_tuning and self.event_source.is_simulation:
             return True
 
         return False
@@ -314,11 +325,16 @@ class LSTProcessorTool(Tool):
         """
         Process events
         """
+        self.log.info("tuning NSB on waveforms: %s", self.tune_waveforms)
         self.log.info("applying calibration: %s", self.should_calibrate)
+        self.log.info("applying cat-B calibration: %s", self.should_cat_B_calibrate)
         self.log.info("(re)compute DL1: %s", self.should_compute_dl1)
         self.log.info("(re)compute DL2: %s", self.should_compute_dl2)
         self.log.info(
             "compute muon parameters: %s", self.should_compute_muon_parameters
+        )
+        self.log.info(
+            "compute lhfit parameters: %s", self.should_compute_lhfit_parameters
         )
         self.event_source.subarray.info(printer=self.log.info)
 
@@ -342,6 +358,9 @@ class LSTProcessorTool(Tool):
 
             if self.should_calibrate:
                 self.calibrate(event)
+
+            if self.should_cat_B_calibrate:
+                self.cat_B_calibrate(event)
 
             if self.should_compute_dl1:
                 self.process_images(event)
