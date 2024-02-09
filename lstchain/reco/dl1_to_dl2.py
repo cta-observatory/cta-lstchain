@@ -720,9 +720,7 @@ def apply_models(dl1,
     
     if isinstance(classifier, (str, bytes, Path)):
         classifier = joblib.load(classifier)
-    dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])
-    del classifier
 
     # This check is valid as long as we train on only two classes (gammas and protons)
     if probs.shape[1] > 2:
@@ -732,6 +730,9 @@ def apply_models(dl1,
 
     # gammaness is the prediction probability for the first class (0)
     dl2['gammaness'] = probs[:, 0]
+    col = list(classifier.classes_).index(0)
+    dl2['reco_type'] = np.where(probs[:, col] > 0.5, 0, 101)
+    del classifier
 
     return dl2
 
