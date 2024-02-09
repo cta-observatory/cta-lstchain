@@ -649,15 +649,16 @@ def apply_models(dl1,
     elif config['disp_method'] == 'disp_norm_sign':
         if isinstance(reg_disp_norm, (str, bytes, Path)):
             reg_disp_norm = joblib.load(reg_disp_norm)
+        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
+        del reg_disp_norm
+
         if isinstance(cls_disp_sign, (str, bytes, Path)):
             cls_disp_sign = joblib.load(cls_disp_sign)
-        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
         disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
         col = list(cls_disp_sign.classes_).index(1)
         disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
-
-        del reg_disp_norm
         del cls_disp_sign
+
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
         dl2['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
