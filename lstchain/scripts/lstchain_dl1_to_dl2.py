@@ -8,7 +8,6 @@ Run lstchain_dl1_to_dl2 --help to see the options.
 
 import argparse
 from pathlib import Path
-import joblib
 import logging
 import numpy as np
 import pandas as pd
