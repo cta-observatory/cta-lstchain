@@ -450,10 +450,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         ]
     )
 
-    # Read select IRFs, for which interpolation is supported into lists and
-    # extract the necessary columns
-    hdus_interp = fits.open(irfs[0])
-
+    # Prepare a list of expected columns depending on IRF types
     hdu_names = ["EFFECTIVE AREA", "ENERGY DISPERSION"]
     if not point_like:
         hdu_names.extend(["BACKGROUND", "PSF"])
