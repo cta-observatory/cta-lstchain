@@ -198,25 +198,32 @@ def create_hdu_index_hdu(file_list, hdu_index_file, overwrite=False):
         hdu_names = [
             "EFFECTIVE AREA",
             "ENERGY DISPERSION",
-            "BACKGROUND",
-            "PSF",
-            "RAD_MAX",
         ]
 
-        for irf in hdu_names:
+        # 0:PRIMARY, 1:EVENTS, 2:GTI, 3:POINTING, 4-:IRF 
+        if hdu_list[4].header["HDUCLAS3"] == "FULL-ENCLOSURE":
+            hdu_names.extend(["BACKGROUND", "PSF"])
+        if "TH_CONT" in hdu_list[4].header:
+            hdu_names.extend("RAD_MAX")
+
+        for hdu_name in hdu_names:
             try:
-                t_irf = t_events.copy()
-                irf_hdu = hdu_list[irf].header["HDUCLAS4"]
-
-                t_irf["HDU_CLASS"] = irf_hdu.lower()
-                t_irf["HDU_TYPE"] = irf_hdu.lower().strip(
-                    "_" + irf_hdu.lower().split("_")[-1]
-                )
-                t_irf["HDU_NAME"] = irf
-                hdu_index_tables.append(t_irf)
+                irf_hdu = hdu_list[hdu_name].header["HDUCLAS4"]
             except KeyError:
-                log.error(f"Run {t_events['OBS_ID']} does not contain HDU {irf}")
+                if hdu_name == "BACKGROUND":
+                    log.warning(f"Run {t_events['OBS_ID']} does not contain HDU {hdu_name}")
+                    continue
+                else:
+                    log.error(f"Run {t_events['OBS_ID']} does not contain HDU {hdu_name}")
 
+            t_irf = t_events.copy()
+            t_irf["HDU_CLASS"] = irf_hdu.lower()
+            t_irf["HDU_TYPE"] = irf_hdu.lower().strip(
+                "_" + irf_hdu.lower().split("_")[-1]
+            )
+            t_irf["HDU_NAME"] = hdu_name
+            hdu_index_tables.append(t_irf)
+            
     hdu_index_table = Table(hdu_index_tables)
 
     hdu_index_header = DEFAULT_HEADER.copy()

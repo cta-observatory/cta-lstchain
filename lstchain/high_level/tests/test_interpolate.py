@@ -351,6 +351,7 @@ def test_compare_irfs(
         "--output-irf-file",
         irf_file_2,
         "--global-gh-cut=0.7",
+        "--point-like"
     )
     # IRFs with same and different efficiency values for energy-dependent cuts,
     # and same direction pointing values.

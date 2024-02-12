@@ -417,7 +417,8 @@ def simulated_irf_file(simulated_dl2_file):
         "--input-electron-dl2",
         simulated_dl2_file,
         "--output-irf-file",
-        irf_file
+        irf_file,
+        "--point-like"
     )
     return irf_file
 
