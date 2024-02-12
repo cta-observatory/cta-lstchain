@@ -266,7 +266,7 @@ def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
 
-    config_file = os.path.join(os.getcwd(), "docs/examples/dl3_tool_config.json")
+    config_file = os.path.join(os.getcwd(), "docs/examples/irf_tool_config.json")
 
     assert (
         run_tool(
