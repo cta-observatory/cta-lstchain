@@ -211,7 +211,10 @@ def create_hdu_index_hdu(file_list, hdu_index_file, overwrite=False):
                 irf_hdu = hdu_list[hdu_name].header["HDUCLAS4"]
             except KeyError:
                 if hdu_name == "BACKGROUND":
-                    log.warning(f"Run {t_events['OBS_ID']} does not contain HDU {hdu_name}")
+                    log.warning(
+                        f"Run {t_events['OBS_ID']} does not contain HDU BACKGROUND in full-enclosure IRF\
+                          If you want to perform 2D/3D analysis, you need to add BACKGROUND column manually."
+                    )
                     continue
                 else:
                     log.error(f"Run {t_events['OBS_ID']} does not contain HDU {hdu_name}")

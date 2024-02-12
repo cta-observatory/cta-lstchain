@@ -26,8 +26,7 @@ __all__ = [
     "compare_irfs",
     "get_nearest_az_node",
     "interp_params",
-    "interpolate_al_cuts",
-    "interpolate_gh_cuts",
+    "interpolate_cuts",
     "interpolate_irf",
     "load_irf_grid",
 ]
@@ -327,21 +326,21 @@ def load_irf_grid(irfs, extname, interp_col, gadf_irf=True):
     return np.stack(irf_list)
 
 
-def interpolate_gh_cuts(
-    gh_cuts,
+def interpolate_cuts(
+    cuts,
     grid_points,
     target_point,
     method="linear",
 ):
     """
-    Interpolates a grid of GH_CUTS tables to a target-point.
+    Interpolates a grid of GH_CUTS or AL_CUTS tables to a target-point.
 
     Wrapper around scipy.interpolate.griddata [1].
 
     Parameters
     ----------
-    gh_cuts: numpy.ndarray, shape=(N, M, ...)
-        Gammaness-cuts for all combinations of grid-points, like energy.
+    cuts: numpy.ndarray, shape=(N, M, ...)
+        Gammaness-cuts or Alpha-cuts for all combinations of grid-points, like energy.
         Shape (N:n_grid_points, M:n_energy_bins)
     grid_points: numpy.ndarray, shape=(N, O)
         Array of the N O-dimensional morphing parameter values corresponding
@@ -354,61 +353,19 @@ def interpolate_gh_cuts(
 
     Returns
     -------
-    gh_cuts_interp: numpy.ndarray, shape=(1, M, ...)
-        Gammaness-cuts for the target grid-point, shape (1, M:n_energy_bins)
+    cuts_interp: numpy.ndarray, shape=(1, M, ...)
+        Gammaness-cuts or Alpha-cuts for the target grid-point, shape (1, M:n_energy_bins)
 
     References
     ----------
     .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
     """
     interp = GridDataInterpolator(
-        grid_points=grid_points, params=gh_cuts, method=method
+        grid_points=grid_points, params=cuts, method=method
     )
-    gh_cuts_interp = interp(target_point)
+    cuts_interp = interp(target_point)
 
-    return gh_cuts_interp
-
-
-def interpolate_al_cuts(
-    al_cuts,
-    grid_points,
-    target_point,
-    method="linear",
-):
-    """
-    Interpolates a grid of AL_CUTS tables to a target-point.
-
-    Wrapper around scipy.interpolate.griddata [1].
-
-    Parameters
-    ----------
-    al_cuts: numpy.ndarray, shape=(N, M, ...)
-        Alpha-cuts for all combinations of grid-points, like energy.
-        Shape (N:n_grid_points, M:n_energy_bins)
-    grid_points: numpy.ndarray, shape=(N, O)
-        Array of the N O-dimensional morphing parameter values corresponding
-        to the N input templates.
-    target_point: numpy.ndarray, shape=(O)
-        Value for which the interpolation is performed (target point)
-    method: 'linear', 'nearest', 'cubic'
-        Interpolation method for scipy.interpolate.griddata [1].
-        Defaults to 'linear'.
-
-    Returns
-    -------
-    al_cuts_interp: numpy.ndarray, shape=(1, M, ...)
-        Alpha-cuts for the target grid-point, shape (1, M:n_energy_bins)
-
-    References
-    ----------
-    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
-    """
-    interp = GridDataInterpolator(
-        grid_points=grid_points, params=al_cuts, method=method
-    )
-    al_cuts_interp = interp(target_point)
-
-    return al_cuts_interp
+    return cuts_interp
 
 
 def interpolate_irf(irfs, data_pars, interp_method="linear"):
@@ -579,16 +536,16 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
             elif hdu_name == "PSF":
                 src_bins = np.append(temp_irf["RAD_LO"][0], temp_irf["RAD_HI"][0][-1])
-                psf_interp = interpolate_psf_table(
-                    source_offset_bins=src_bins,
-                    psfs=irf_list,
+                psf_estimator = PSFTableEstimator(
                     grid_points=irf_pars_sel,
-                    target_point=interp_pars_sel,
-                    quantile_resolution=1e-3,
+                    source_offset_bins=src_bins,
+                    psf=irf_list,
                 )
+                psf_interp = psf_estimator(interp_pars_sel)
+
                 psf_hdu_interp = create_psf_table_hdu(
                     psf=psf_interp[0],
-                    true_energy=e_true,
+                    true_energy_bins=e_true,
                     source_offset_bins=src_bins,
                     fov_offset_bins=fov_off,
                     extname=hdu_name,
@@ -606,14 +563,17 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
             for k, v in extra_headers.items():
                 cut_header[k] = v
 
-            if hdu_name == "GH_CUTS":
-                gh_cut_interp = interpolate_gh_cuts(
-                    gh_cuts=irf_list,
+            if hdu_name in ["GH_CUTS", "AL_CUTS"]:
+                cut_interp = interpolate_cuts(
+                    cuts=irf_list,
                     grid_points=irf_pars_sel,
                     target_point=interp_pars_sel,
                     method=interp_method,
                 )
-                temp_irf["cut"] = gh_cut_interp
+                if hdu_name == "GH_CUTS":
+                    temp_irf["cut"] = cut_interp
+                elif hdu_name == "AL_CUTS":
+                    temp_irf["cut"] = cut_interp * u.deg
 
             elif hdu_name == "RAD_MAX":
                 rad_max_estimator = RadMaxEstimator(
@@ -623,15 +583,6 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
                 )
                 rad_max_interp = rad_max_estimator(interp_pars_sel)
                 temp_irf["RAD_MAX"] = rad_max_interp[0].T[np.newaxis, ...] * u.deg
-
-            elif hdu_name == "AL_CUTS":
-                al_cut_interp = interpolate_al_cuts(
-                    al_cuts=irf_list,
-                    grid_points=irf_pars_sel,
-                    target_point=interp_pars_sel,
-                )
-                temp_irf["cut"] = al_cut_interp * u.deg
-
 
             cut_hdu_interp = fits.BinTableHDU(
                 temp_irf, header=cut_header, name=hdu_name
