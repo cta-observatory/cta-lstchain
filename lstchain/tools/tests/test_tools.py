@@ -69,7 +69,7 @@ def test_create_irf_full_enclosure_with_config(
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
     irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
-    config_file = os.path.join(os.getcwd(), "./docs/examples/irf_tool_config.json")
+    config_file = os.path.join(os.getcwd(), "./docs/examples/irf_dl3_tool_config.json")
 
     assert (
         run_tool(
