@@ -112,7 +112,7 @@ Here is an example configuration file for the IRF creation step.
 
 .. toggle:: 
 
-    .. include:: examples/irf_tool_config.json
+    .. include:: examples/irf_dl3_tool_config.json
         :code: json
 
 
