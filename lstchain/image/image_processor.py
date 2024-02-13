@@ -1,5 +1,4 @@
 from ctapipe.image import ImageProcessor
-from ctapipe.core.traits import BoolTelescopeParameter
 from ctapipe.containers import ArrayEventContainer, ImageParametersContainer
 from ctapipe.instrument import SubarrayDescription
 
@@ -16,10 +15,6 @@ class LSTImageProcessor(ImageProcessor):
     the images into DL1/parameters. It inherits from ctapipes `ImageProcessor` and adapts
     the cleaner to the LSTImageCleaner with a different API (`ArrayEventContainer` as input).
     """
-
-    apply_image_modifier = BoolTelescopeParameter(
-        default_value=False, help="If true, apply ImageModifier to dl1 images"
-    ).tag(config=True)
 
     def __init__(
         self, subarray: SubarrayDescription, config=None, parent=None, **kwargs
@@ -51,7 +46,7 @@ class LSTImageProcessor(ImageProcessor):
             if self.apply_image_modifier.tel[tel_id]:
                 dl1_camera.image = self.modify(tel_id=tel_id, image=dl1_camera.image)
 
-            dl1_camera.image_mask = self.clean(tel_id=tel_id, event)
+            dl1_camera.image_mask = self.clean(event, tel_id)
 
             dl1_camera.parameters = self._parameterize_image(
                 tel_id=tel_id,

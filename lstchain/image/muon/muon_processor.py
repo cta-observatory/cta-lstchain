@@ -13,8 +13,18 @@ class LSTMuonProcessor(MuonProcessor):
         default_value=False,
     ).tag(config=True)
 
-    def __init__(self, subarray, **kwargs):
-        super().__init__(subarray, **kwargs)
+    output_path = Path(
+        default_value=None,
+        allow_none=True,
+        exists=False,
+        directory_ok=False,
+        help="Path to output file.",
+    ).tag(config=True)
+
+    def __init__(self, subarray, parent=None, config=None, **kwargs):
+        super().__init__(subarray=subarray, parent=parent, config=config, **kwargs)
+
+        self.subarray = subarray
 
     def __call__(self, event: ArrayEventContainer) -> None:
         pass

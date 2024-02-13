@@ -35,6 +35,18 @@ EventSource:
       drs4_time_calibration_path: null
 
 LSTInterleavedProcessor:
+  write_interleaved: False
+  output_path: null
+  DataWriter:
+    overwrite: true
+    write_images: false
+    write_parameters: false
+    write_waveforms: true
+    transform_waveform: true
+    waveform_dtype: "uint16"
+    waveform_offset: 400
+    waveform_scale: 80
+
   LSTCalibrationCalculator:
     systematic_correction_path: null
     npe_median_cut_outliers: [-5, 5]
@@ -70,11 +82,16 @@ LSTInterleavedProcessor:
         window_width: 12
         apply_integration_correction: false
 
-  DataWriter:
-
 WaveformNSBTuner:
+  apply_waveform_tuning: False
+  nsb_tuning_ratio: 0.52
+  spe_location: "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
+  target_data: null
 
-CameraCalibrator:
+LSTCameraCalibrator:
+  data_volume_reducer_type: "NullDataVolumeReducer"
+  apply_Cat_B_calibrations: False
+  cat_b_calibrations_path: null
   image_extractor_type:
     - ["type", "*", "LocalPeakWindowSum"]
   LocalPeakWindowSum:
@@ -82,11 +99,19 @@ CameraCalibrator:
     window_width: 8
     apply_integration_correction: false
   apply_waveform_time_shift: false
-
-CatBCalibrator:
+  apply_peak_time_shift: true
 
 LSTImageProcessor:
-  apply_Cat_B_calibrations: false
+  apply_image_modifier: false
+  ImageModifier:
+    psf_smear_factor: 0.0
+    noise_transition_charge: 8
+    noise_bias_dim_pixels: 0.655
+    noise_level_dim_pixels: 0.0
+    noise_level_bright_pixels: 0.0
+    noise_correct_bias: 0.0
+    rng_seed: 1337
+
   LSTImageCleaner:
     picture_threshold_pe: 8
     boundary_threshold_pe: 4
@@ -106,6 +131,17 @@ LSTImageProcessor:
       - ["enough_charge", "image.sum() > 50"]
 
 LSTMuonProcessor:
+  write_muon_events: false
+  output_path: null
+  DataWriter:
+    overwrite: true
+    write_images: true
+    write_parameters: true
+    write_showers: false
+    write_raw_waveforms: false
+    write_waveforms: false
+    write_muon_parameters: true
+
   CameraCalibrator:
     image_extractor_type:
       - ["type", "*", "GlobalPeakWindowSum"]
@@ -113,7 +149,6 @@ LSTMuonProcessor:
       window_shift: 4
       window_width: 8
       apply_integration_correction: false
-  DataWriter:
   ImageParameterQuery:
     quality_criteria:
       - ["min_pixels", "dl1_params.morphology.n_pixels > 100"]

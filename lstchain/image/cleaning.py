@@ -1,6 +1,11 @@
 import numpy as np
 
 from ctapipe.containers import ArrayEventContainer
+from ctapipe.core.traits import (
+    FloatTelescopeParameter,
+    IntTelescopeParameter,
+    BoolTelescopeParameter,
+)
 from ctapipe.image import ImageCleaner
 
 __all__ = ["apply_dynamic_cleaning", "LSTImageCleaner"]
@@ -41,10 +46,78 @@ def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     return mask_dynamic_cleaning
 
 
+def lst_image_cleaning():
+    pass
+
+
 class LSTImageCleaner(ImageCleaner):
     """
-    LST specific ImageCleaner class.
+    Clean images basically in 3 steps:
+    1) Get picture threshold for `tailcuts_clean` in step 2) from interleaved
+    pedestal events if `use_pedestal_cleaning` is set to `true`
+    2) Apply tailcuts image cleaning algorithm - `ctapipe.image.tailcuts_clean`
+    3) Apply `lst_image_cleaning` - `lstchain.image.cleaning.lst_image_cleaning`
     """
 
-    def __call__(self, tel_id: int, event: ArrayEventContainer) -> np.ndarray:
+    picture_threshold_pe = FloatTelescopeParameter(
+        default_value=8.0,
+        help="top-level threshold in photoelectrons for `tailcuts_clean`",
+    ).tag(config=True)
+
+    boundary_threshold_pe = FloatTelescopeParameter(
+        default_value=4.0,
+        help="second-level threshold in photoelectrons for `tailcuts_clean`",
+    ).tag(config=True)
+
+    min_picture_neighbors = IntTelescopeParameter(
+        default_value=2,
+        help="Minimum number of neighbors above threshold to "
+        "consider for `tailcuts_clean`",
+    ).tag(config=True)
+
+    keep_isolated_pixels = BoolTelescopeParameter(
+        default_value=False,
+        help="If False, pixels with less neighbors than ``min_picture_neighbors`` are"
+        "removed for `tailcuts_clean`.",
+    ).tag(config=True)
+
+    delta_time = FloatTelescopeParameter(
+        default_value=2,
+        help="Time limit for the `time_delta_cleaning`. Set to None if no"
+        "`time_delta_cleaning` should be applied",
+    ).tag(config=True)
+
+    use_dynamic_cleaning = BoolTelescopeParameter(
+        default_value=True, help="Set to true if dynamic cleaning should be applied"
+    ).tag(config=True)
+
+    fraction_dynamic = FloatTelescopeParameter(
+        default_value=0.03, help="`fraction` parameter for `apply_dynamic_cleaning`"
+    ).tag(config=True)
+
+    threshold_dynamic = FloatTelescopeParameter(
+        default_value=267,
+        help="`threshold` parameter for `apply_dynamic_cleaning`",
+    ).tag(config=True)
+
+    use_only_largest_island = BoolTelescopeParameter(
+        default_value=False, help="Set to true to get only main island"
+    ).tag(config=True)
+
+    use_pedestal_cleaning = BoolTelescopeParameter(
+        default_value=False,
+        help="Set to true to apply pedestal cleaning. Just works if mean and std values "
+        "for interleaved pedestal events are available",
+    ).tag(config=True)
+
+    sigma = FloatTelescopeParameter(
+        default_value=2.5,
+        help="`sigma` parameter for interleaved pedestal cleaning",
+    ).tag(config=True)
+
+    def __call__(self, event: ArrayEventContainer, tel_id: int) -> np.ndarray:
+        # get pedestal thresholds
+        # tailcuts_clean
+        # lst_cleaning
+        # fill container
         pass
