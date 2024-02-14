@@ -119,5 +119,5 @@ class LSTImageCleaner(ImageCleaner):
         # get pedestal thresholds
         # tailcuts_clean
         # lst_cleaning
-        # fill container
+        # return mask
         pass

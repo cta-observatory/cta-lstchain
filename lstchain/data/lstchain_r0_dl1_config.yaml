@@ -133,14 +133,17 @@ LSTImageProcessor:
 LSTMuonProcessor:
   write_muon_events: false
   output_path: null
+  completeness_threshold: 30.0
+  ratio_width: 1.5
+  pedestal: 1.1
   DataWriter:
-    overwrite: true
-    write_images: true
+    overwrite: false
+    write_images: false
     write_parameters: true
     write_showers: false
     write_raw_waveforms: false
     write_waveforms: false
-    write_muon_parameters: true
+    write_muon_parameters: false
 
   CameraCalibrator:
     image_extractor_type:
@@ -149,6 +152,7 @@ LSTMuonProcessor:
       window_shift: 4
       window_width: 8
       apply_integration_correction: false
+
   ImageParameterQuery:
     quality_criteria:
       - ["min_pixels", "dl1_params.morphology.n_pixels > 100"]
@@ -161,6 +165,21 @@ LSTMuonProcessor:
       - ["ring_containment", "parameters.containment > 0.5"]
 
 LHFitProcessor:
+  compute_lhfit_parameters: false
+  sigma_s:
+    - ["type", "LST_LST_LSTCam", 0.3282]
+  crosstalk:
+    - ["type", "LST_LST_LSTCam", 0.0]
+  sigma_space: 3
+  sigma_time: 4
+  time_before_shower:
+    - ["type", "LST_LST_LSTCam", 0.0]
+  time_after_shower:
+    - ["type", "LST_LST_LSTCam", 20.0]
+  n_peaks: 0
+  no_asymmetry: false
+  use_weight: false
+  verbose: 0
 
 ShowerProcessor:
   reconstructor_types:

@@ -79,7 +79,7 @@ class LSTProcessorTool(Tool):
         default_value=False,
     ).tag(config=True)
 
-    write_interleaved_only_mode = Bool(
+    write_interleaved_only = Bool(
         help="Only process and write interleaved events for calculating cat B "
         "calibration coefficients.",
         default_value=False,
@@ -186,21 +186,25 @@ class LSTProcessorTool(Tool):
             sys.exit(1)
 
         subarray = self.event_source.subarray
+        self.write = self.enter_context(
+            DataWriter(parent=self, event_source=self.event_source)
+        )
         self.process_interleaved = LSTInterleavedProcessor(
             event_source=self.event_source,
             parent=self,
             subarray=subarray,
-            write_only_mode=self.write_interleaved_only_mode,
+            write_only_mode=self.write_interleaved_only,
         )
         self.tune_waveforms = WaveformNSBTuner(parent=self, subarray=subarray)
         self.calibrate = LSTCameraCalibrator(parent=self, subarray=subarray)
         self.process_images = LSTImageProcessor(parent=self, subarray=subarray)
-        self.process_muons = LSTMuonProcessor(parent=self, subarray=subarray)
-        self.process_lhfit = LHFitProcessor(parent=self, subarray=subarray)
-        self.process_shower = ShowerProcessor(parent=self, subarray=subarray)
-        self.write = self.enter_context(
-            DataWriter(parent=self, event_source=self.event_source)
+        self.process_muons = LSTMuonProcessor(
+            event_source=self.event_source, parent=self, subarray=subarray
         )
+        self.process_lhfit = LHFitProcessor(
+            writer=self.write, parent=self, subarray=subarray
+        )
+        self.process_shower = ShowerProcessor(parent=self, subarray=subarray)
 
         # warn if max_events prevents writing the histograms
         if (
@@ -217,7 +221,7 @@ class LSTProcessorTool(Tool):
     @property
     def should_compute_dl2(self):
         """returns true if we should compute DL2 info"""
-        if self.write_interleaved_only_mode:
+        if self.write_interleaved_only:
             return False
 
         if self.force_recompute_dl2:
@@ -228,7 +232,7 @@ class LSTProcessorTool(Tool):
     @property
     def should_compute_dl1(self):
         """returns true if we should compute DL1 info"""
-        if self.write_interleaved_only_mode:
+        if self.write_interleaved_only:
             return False
 
         if self.force_recompute_dl1:
@@ -246,7 +250,7 @@ class LSTProcessorTool(Tool):
     @property
     def should_calibrate(self):
         """returns true if data should be calibrated"""
-        if self.write_interleaved_only_mode:
+        if self.write_interleaved_only:
             return False
 
         if self.force_recompute_dl1:
@@ -266,7 +270,7 @@ class LSTProcessorTool(Tool):
     @property
     def should_tune_waveforms(self):
         """returns true if we should add NSB in waveforms"""
-        if self.write_interleaved_only_mode:
+        if self.write_interleaved_only:
             return False
 
         if (
@@ -280,7 +284,7 @@ class LSTProcessorTool(Tool):
     @property
     def should_compute_muon_parameters(self):
         """returns true if we should compute muon parameters info"""
-        if self.write_interleaved_only_mode:
+        if self.write_interleaved_only:
             return False
 
         if self.write.write_muon_parameters:
@@ -291,7 +295,7 @@ class LSTProcessorTool(Tool):
     @property
     def should_compute_lhfit_parameters(self):
         """returns true if we should compute LHFit parameters"""
-        if self.write_interleaved_only_mode:
+        if self.write_interleaved_only:
             return False
 
         if self.process_lhfit.compute_lhfit_parameters:
@@ -302,7 +306,7 @@ class LSTProcessorTool(Tool):
     def _write_processing_statistics(self):
         """write out the event selection stats, etc."""
         # NOTE: don't remove this, not part of DataWriter
-        if self.write_interleaved_only_mode:
+        if self.write_interleaved_only:
             return False
 
         if self.should_compute_dl1:
@@ -331,9 +335,7 @@ class LSTProcessorTool(Tool):
         """
         Process events
         """
-        self.log.info(
-            "Only write interleaved events: %s", self.write_interleaved_only_mode
-        )
+        self.log.info("Only write interleaved events: %s", self.write_interleaved_only)
         self.log.info("tuning NSB on waveforms: %s", self.tune_waveforms)
         self.log.info("applying calibration: %s", self.should_calibrate)
         self.log.info("(re)compute DL1: %s", self.should_compute_dl1)
@@ -379,14 +381,14 @@ class LSTProcessorTool(Tool):
             if self.should_compute_dl2:
                 self.process_shower(event)
 
-            if not self.write_interleaved_only_mode:
+            if not self.write_interleaved_only:
                 self.write(event)
 
     def finish(self):
         """
         Last steps after processing events.
         """
-        if not self.write_interleaved_only_mode:
+        if not self.write_interleaved_only:
             self.write.write_simulation_histograms(self.event_source)
             self._write_processing_statistics()
 
