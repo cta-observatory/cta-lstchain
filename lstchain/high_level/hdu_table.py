@@ -195,10 +195,6 @@ def create_hdu_index_hdu(file_list, hdu_index_file, overwrite=False):
         t_pnt["HDU_NAME"] = "POINTING"
 
         hdu_index_tables.append(t_pnt)
-        hdu_names = [
-            "EFFECTIVE AREA",
-            "ENERGY DISPERSION",
-        ]
 
         # 0:PRIMARY, 1:EVENTS, 2:GTI, 3:POINTING, 4-:IRF 
         for hdu in hdu_list[4:]:
