@@ -201,30 +201,15 @@ def create_hdu_index_hdu(file_list, hdu_index_file, overwrite=False):
         ]
 
         # 0:PRIMARY, 1:EVENTS, 2:GTI, 3:POINTING, 4-:IRF 
-        if hdu_list[4].header["HDUCLAS3"] == "FULL-ENCLOSURE":
-            hdu_names.extend(["BACKGROUND", "PSF"])
-        if "TH_CONT" in hdu_list[4].header:
-            hdu_names.extend("RAD_MAX")
-
-        for hdu_name in hdu_names:
-            try:
-                irf_hdu = hdu_list[hdu_name].header["HDUCLAS4"]
-            except KeyError:
-                if hdu_name == "BACKGROUND":
-                    log.warning(
-                        f"Run {t_events['OBS_ID']} does not contain HDU BACKGROUND in full-enclosure IRF\
-                          If you want to perform 2D/3D analysis, you need to add BACKGROUND column manually."
-                    )
-                    continue
-                else:
-                    log.error(f"Run {t_events['OBS_ID']} does not contain HDU {hdu_name}")
-
+        for hdu in hdu_list[4:]:
+            irf_hdu = hdu.header["HDUCLAS4"]
+            
             t_irf = t_events.copy()
             t_irf["HDU_CLASS"] = irf_hdu.lower()
             t_irf["HDU_TYPE"] = irf_hdu.lower().strip(
                 "_" + irf_hdu.lower().split("_")[-1]
             )
-            t_irf["HDU_NAME"] = hdu_name
+            t_irf["HDU_NAME"] = hdu.name
             hdu_index_tables.append(t_irf)
             
     hdu_index_table = Table(hdu_index_tables)
