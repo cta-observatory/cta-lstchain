@@ -11,6 +11,7 @@ import os
 import logging
 
 import astropy.units as u
+import glob
 import joblib
 import numpy as np
 import pandas as pd
@@ -732,6 +733,307 @@ def apply_models(dl1,
     # gammaness is the prediction probability for the first class (0)
     dl2['gammaness'] = probs[:, 0]
 
+    return dl2
+
+
+class Rf:
+    """
+    This class stores a set of paths to random forests trained at single telescope pointing with the pointing
+    information.
+    """
+    def __init__(self, nodes):
+        self.paths = nodes
+        self.dict = {
+            'az': None,
+            'zd': None,
+        }
+        self.num = len(nodes)
+
+    def sort(self):
+        """
+        Sort all paths and related pointing based on the (signed) zenith.
+        """
+        self.dict['zd'], self.dict['az'], self.paths = zip(*sorted(zip(self.zd, self.az, self.paths)))
+
+    def __getattr__(self, name):
+        try:
+            return self.dict[name]
+        except KeyError:
+            raise AttributeError('No attribute named %s.' % name)
+
+    def print(self):
+        print(self.dict)
+
+
+def get_available_node_from_name(input_dir_rfs):
+    """
+    Helper function extracting all single node RF paths and pointing information from the sub-folder name.
+    Requires the input_dir_rfs to contain sub-folder for each RF with names following:
+        - starts with "node_"
+        - contains the azimuth value in degrees between the last and second to last "_" symbol
+        - contains the zenith declination value in degrees between the third and fourth to last "_" symbol
+    Example : sub-folder name node_corsika_theta_49.374_az_328.425_
+    Parameters
+    ----------
+    input_dir_rfs:
+        Path to the folder containing all RF sub-folders
+    Returns
+    -------
+    rfs: `lstchain.reco.dl1_to_dl2.Rf`
+        Object compiling all available RF nodes paths and pointings
+    """
+    nodes = glob.glob(str(input_dir_rfs)+'/node_*')
+    rfs = Rf(nodes)
+    zd = []
+    az = []
+    for node in nodes:
+        tmp = node.split(sep='_')
+        az.append(float(tmp[-2]))
+        zd.append(np.sign(float(tmp[-2])-180)*float(tmp[-4]))
+    rfs.dict['zd'] = zd
+    rfs.dict['az'] = az
+    rfs.sort()
+    return rfs
+
+
+def signed_zd(event_data):
+    """
+    Create a signed zenith declination based on the value of azimuth to remove degeneracy for the telescope pointing
+    for each event
+    Parameters
+    ----------
+    event_data: `pandas.DataFrame`
+    Returns
+    -------
+    A numpy array containing the signed Zd
+    """
+    return np.sign(np.rad2deg(event_data['az_tel'])-180) * (90-np.rad2deg(event_data['alt_tel']))
+
+
+def apply_models_node_interpolation(dl1,
+                                    model_node_loc,
+                                    effective_focal_length=29.30565 * u.m,
+                                    custom_config=None,
+                                    ):
+    """
+    Apply previously trained Random Forests to a set of data
+    depending on a set of features.
+    The right set of disp models must be passed depending on the config.
+    This version interpolate the results of Random forest trained at single telescope pointings.
+
+    Parameters
+    ----------
+    dl1: `pandas.DataFrame`
+    model_node_loc: string | Path | bytes
+        Path to the folder containg the single node sub-folder for all the RFs
+    effective_focal_length: `astropy.unit`
+    custom_config: dictionary
+        Modified configuration to update the standard one
+
+    Returns
+    -------
+    `pandas.DataFrame`
+        dataframe including reconstructed dl2 features
+    """
+    custom_config = {} if custom_config is None else custom_config
+    config = replace_config(standard_config, custom_config)
+    energy_regression_features = config["energy_regression_features"]
+    disp_regression_features = config["disp_regression_features"]
+    disp_classification_features = config["disp_classification_features"]
+    classification_features = config["particle_classification_features"]
+    events_filters = config["events_filters"]
+
+    dl2 = utils.filter_events(dl1,
+                              filters=events_filters,
+                              finite_params=config['disp_regression_features']
+                                            + config['energy_regression_features']
+                                            + config['particle_classification_features']
+                                            + config['disp_classification_features'],
+                              )
+    available_nodes = get_available_node_from_name(model_node_loc)
+    event_signed_zd = signed_zd(dl2)
+
+    # Update parameters related to target direction on camera frame for MC data
+    # taking into account of the abrration effect using effective focal length
+    is_simu = 'disp_norm' in dl2.columns
+    if is_simu:
+        dl2 = update_disp_with_effective_focal_length(dl2, effective_focal_length=effective_focal_length)
+
+    # Create the columns to be filled by applying the RFs
+    dl2['log_reco_energy'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['log_reco_energy1'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['log_reco_energy2'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['reco_disp_norm'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['reco_disp_sign'] = np.nan * np.ones(len(dl2['intensity']), dtype=int)
+    dl2['reco_disp_norm1'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['reco_disp_sign1'] = np.nan * np.ones(len(dl2['intensity']), dtype=int)
+    dl2['reco_disp_norm2'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['reco_disp_sign2'] = np.nan * np.ones(len(dl2['intensity']), dtype=int)
+    dl2['reco_disp_sign_proba'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['reco_disp_dx'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['reco_disp_dy'] = np.nan * np.ones(len(dl2['intensity']))
+    dl2['reco_type'] = np.nan * np.ones(len(dl2['intensity']), dtype=int)
+    dl2['gammaness'] = np.nan * np.ones(len(dl2['intensity']))
+
+    # Reconstruction of Energy and disp_norm distance
+    for i in range(available_nodes.num-1):
+        min_zd = available_nodes.zd[i]
+        max_zd = available_nodes.zd[i+1]
+        mask = ((event_signed_zd > min_zd) &
+                (event_signed_zd <= max_zd)
+                )
+        logger.info('Events for Zd (%.2f, %.2f) = %d/%d' % (min_zd, max_zd, int(np.sum(mask)), len(mask)))
+        if np.any(mask):
+            t = (event_signed_zd[mask]-min_zd) / (max_zd - min_zd)
+            energy_regressor_1 = joblib.load(f"{available_nodes.paths[i]}/reg_energy.sav")
+            # Apply the RFs
+            reco_params_1 = energy_regressor_1.predict(dl2[energy_regression_features][mask])
+            del energy_regressor_1
+            energy_regressor_2 = joblib.load(f"{available_nodes.paths[i+1]}/reg_energy.sav")
+            # Apply the RFs
+            reco_params_2 = energy_regressor_2.predict(dl2[energy_regression_features][mask])
+            del energy_regressor_2
+            dl2.loc[mask, 'log_reco_energy1'] = reco_params_1
+            dl2.loc[mask, 'log_reco_energy2'] = reco_params_2
+            dl2.loc[mask, 'log_reco_energy'] = reco_params_1 * (1-t) + reco_params_2 * t
+            del reco_params_1, reco_params_2
+
+            if config['disp_method'] == 'disp_vector':
+                reg_disp_vector_1 = joblib.load(f"{available_nodes.paths[i]}/reg_disp_vector.sav")
+                # Apply the RFs
+                disp_vector_1 = reg_disp_vector_1.predict(dl2[disp_regression_features][mask])
+                del reg_disp_vector_1
+                reg_disp_vector_2 = joblib.load(f"{available_nodes.paths[i+1]}/reg_disp_vector.sav")
+                # Apply the RFs
+                disp_vector_2 = reg_disp_vector_2.predict(dl2[disp_regression_features][mask])
+                del reg_disp_vector_2
+                disp_vector = disp_vector_1 * (1-t) + disp_vector_2 * t
+                del disp_vector_1, disp_vector_2
+                dl2.loc[mask, 'reco_disp_dx'] = disp_vector[:, 0]
+                dl2.loc[mask, 'reco_disp_dy'] = disp_vector[:, 1]
+            elif config['disp_method'] == 'disp_norm_sign':
+                reg_disp_norm_1 = joblib.load(f"{available_nodes.paths[i]}/reg_disp_norm.sav")
+                cls_disp_sign_1 = joblib.load(f"{available_nodes.paths[i]}/cls_disp_sign.sav")
+                disp_norm_1 = reg_disp_norm_1.predict(dl2[disp_regression_features][mask])
+                disp_sign_proba_1 = cls_disp_sign_1.predict_proba(dl2[disp_classification_features][mask])
+                col = list(cls_disp_sign_1.classes_).index(1)
+                del reg_disp_norm_1, cls_disp_sign_1
+                reg_disp_norm_2 = joblib.load(f"{available_nodes.paths[i+1]}/reg_disp_norm.sav")
+                cls_disp_sign_2 = joblib.load(f"{available_nodes.paths[i+1]}/cls_disp_sign.sav")
+                disp_norm_2 = reg_disp_norm_2.predict(dl2[disp_regression_features][mask])
+                disp_sign_proba_2 = cls_disp_sign_2.predict_proba(dl2[disp_classification_features][mask])
+                del reg_disp_norm_2, cls_disp_sign_2
+                disp_sign_proba = disp_sign_proba_1[:, col] * (1-t) + disp_sign_proba_2[:, col] * t
+                disp_sign = np.where(disp_sign_proba > 0.5, 1, -1)
+                dl2.loc[mask, 'reco_disp_norm'] = disp_norm_1 * (1-t) + disp_norm_2 * t
+                dl2.loc[mask, 'reco_disp_sign'] = disp_sign
+                disp_sign1 = np.where(disp_sign_proba_1[:, col] > 0.5, 1, -1)
+                dl2.loc[mask, 'reco_disp_norm1'] = disp_norm_1
+                dl2.loc[mask, 'reco_disp_sign1'] = disp_sign1
+                disp_sign2 = np.where(disp_sign_proba_2[:, col] > 0.5, 1, -1)
+                dl2.loc[mask, 'reco_disp_norm2'] = disp_norm_2
+                dl2.loc[mask, 'reco_disp_sign2'] = disp_sign2
+                dl2.loc[mask, 'reco_disp_sign_proba'] = disp_sign_proba_1[:, 0] * (1-t) + disp_sign_proba_2[:, 0] * t
+
+    if config['disp_method'] == 'disp_norm_sign':
+        disp_vector = disp.disp_vector(dl2['reco_disp_norm'], dl2['psi'], dl2['reco_disp_sign'])
+        dl2['reco_disp_dx'] = disp_vector[:, 0]
+        dl2['reco_disp_dy'] = disp_vector[:, 1]
+    dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
+
+    # Construction of Source position in camera coordinates from disp_norm distance.
+    dl2['reco_src_x'], dl2['reco_src_y'] = disp.disp_to_pos(dl2.reco_disp_dx,
+                                                            dl2.reco_disp_dy,
+                                                            dl2.x,
+                                                            dl2.y,
+                                                            )
+
+    longi, _ = camera_to_shower_coordinates(dl2['reco_src_x'], dl2['reco_src_y'],
+                                            dl2['x'], dl2['y'], dl2['psi'])
+
+    # Obtain the time gradient with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
+    # Defined positive if light arrival times increase with distance to it. Negative otherwise:
+    dl2['signed_time_gradient'] = -1 * np.sign(longi) * dl2['time_gradient']
+
+    # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
+    # Defined on the major image axis; sign is such that it is typically positive for gammas:
+    dl2['signed_skewness'] = -1 * np.sign(longi) * dl2['skewness']
+
+    if 'mc_alt_tel' in dl2.columns:
+        alt_tel = dl2['mc_alt_tel'].values
+        az_tel = dl2['mc_az_tel'].values
+    elif 'alt_tel' in dl2.columns:
+        alt_tel = dl2['alt_tel'].values
+        az_tel = dl2['az_tel'].values
+    else:
+        alt_tel = - np.pi / 2. * np.ones(len(dl2))
+        az_tel = - np.pi / 2. * np.ones(len(dl2))
+
+    src_pos_reco = utils.reco_source_position_sky(dl2.x.values * u.m,
+                                                  dl2.y.values * u.m,
+                                                  dl2.reco_disp_dx.values * u.m,
+                                                  dl2.reco_disp_dy.values * u.m,
+                                                  effective_focal_length,
+                                                  alt_tel * u.rad,
+                                                  az_tel * u.rad)
+
+    dl2['reco_alt'] = src_pos_reco.alt.rad
+    dl2['reco_az'] = src_pos_reco.az.rad
+
+    # source-dep & indep combined parameters
+    if config['source_dependent']:
+        dl2['reco_disp_sign_correctness'] = dl2['reco_disp_sign_proba']
+        select = np.sign(dl2['skewness']) * np.sign(dl2['skewness_from_source']) == -1
+        dl2['reco_disp_sign_correctness'][select] = 1 - dl2['reco_disp_sign_correctness'][select]
+
+        dl2['reco_disp_norm_diff'] = np.abs(dl2['dist'] - dl2['reco_disp_norm'])
+
+    dl2_interp_log_reco_energy = dl2['log_reco_energy']
+    dl2_interp_reco_disp_norm = dl2['reco_disp_norm']
+    dl2_interp_reco_disp_sign = dl2['reco_disp_sign']
+
+    for i in range(available_nodes.num-1):
+        min_zd = available_nodes.zd[i]
+        max_zd = available_nodes.zd[i+1]
+        mask = ((event_signed_zd > min_zd) &
+                (event_signed_zd <= max_zd)
+                )
+        if np.any(mask):
+            t = (event_signed_zd[mask]-min_zd) / (max_zd - min_zd)
+            classifier_1 = joblib.load(f"{available_nodes.paths[i]}/cls_gh.sav")
+            classifier_2 = joblib.load(f"{available_nodes.paths[i+1]}/cls_gh.sav")
+            # Temporary replacement of the interpolated quantities to apply the gh-classifiers
+            dl2['log_reco_energy'] = dl2['log_reco_energy1']
+            dl2['reco_disp_norm'] = dl2['reco_disp_norm1']
+            dl2['reco_disp_sign'] = dl2['reco_disp_sign1']
+            cls1 = classifier_1.predict(dl2[classification_features][mask]).astype(int)
+            probs_1 = classifier_1.predict_proba(dl2[classification_features][mask])
+            dl2['log_reco_energy'] = dl2['log_reco_energy2']
+            dl2['reco_disp_norm'] = dl2['reco_disp_norm2']
+            dl2['reco_disp_sign'] = dl2['reco_disp_sign2']
+            cls2 = classifier_2.predict(dl2[classification_features][mask]).astype(int)
+            probs_2 = classifier_2.predict_proba(dl2[classification_features][mask])
+            dl2.loc[mask, 'reco_type'] = (cls1 * (1-t) +
+                                          cls2 * t)
+            del classifier_1, classifier_2
+
+            # This check is valid as long as we train on only two classes (gammas and protons)
+            if probs_1.shape[1] > 2:
+                raise ValueError("The classifier is predicting more than two classes, "
+                                 "the predicted probabilty to assign as gammaness is unclear."
+                                 "Please check training data")
+
+            # gammaness is the prediction probability for the first class (0)
+            dl2.loc[mask, 'gammaness'] = probs_1[:, 0] * (1-t) + probs_2[:, 0] * t
+
+    # Restore interpolated quantities
+    dl2["log_reco_energy"] = dl2_interp_log_reco_energy
+    dl2["reco_disp_norm"] = dl2_interp_reco_disp_norm
+    dl2["reco_disp_sign"] = dl2_interp_reco_disp_sign
+    # drop single RF columns
+    dl2.drop(columns=['log_reco_energy1', 'log_reco_energy2',
+                      'reco_disp_norm1', 'reco_disp_norm2',
+                      'reco_disp_sign1', 'reco_disp_sign2'])
     return dl2
 
 
