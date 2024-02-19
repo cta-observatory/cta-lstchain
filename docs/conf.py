@@ -153,14 +153,25 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # NbSphinx
 nbsphinx_allow_errors = True
-nbsphinx_notebooks = "../notebooks"
-nbsphinx_builders = ['html']
-nbsphinx_output_dir = 'examples/notebooks'
-nbsphinx_toctree = {
-    'maxdepth': 2,
-    'caption': 'Notebooks',
-    'glob': '*.html',
-}
+example_notebooks_input = "../notebooks/"
+# the same path is used in index.rst
+example_notebooks_output = "example_notebooks"
+
+import shutil
+if os.path.exists(example_notebooks_output):
+    shutil.rmtree(example_notebooks_output)
+shutil.copytree(example_notebooks_input, example_notebooks_output)
+
+# Always build notebooks
+nbsphinx_execute = "auto"  # "never" | "always" | "auto" (build a notebook if its cell outputs are empty)
+notebooks = [f for f in os.listdir(example_notebooks_output) if f.endswith('.ipynb')]
+with open('notebooks.rst', 'w') as rst_file:
+    rst_file.write('Example notebooks\n=================\n\n')
+    rst_file.write('.. toctree::\n')
+    rst_file.write('   :maxdepth: 1\n')
+    rst_file.write('   :caption: Example notebooks\n\n')
+    for nb in notebooks:
+        rst_file.write(f"   {example_notebooks_output}/{nb}\n")
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
