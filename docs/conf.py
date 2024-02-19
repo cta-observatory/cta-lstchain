@@ -169,7 +169,6 @@ with open('notebooks.rst', 'w') as rst_file:
     rst_file.write('Example notebooks\n=================\n\n')
     rst_file.write('.. toctree::\n')
     rst_file.write('   :maxdepth: 1\n')
-    rst_file.write('   :caption: Example notebooks\n\n')
     for nb in notebooks:
         rst_file.write(f"   {example_notebooks_output}/{nb}\n")
 
