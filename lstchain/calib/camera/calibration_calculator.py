@@ -1,15 +1,13 @@
 """
 Component for the estimation of the calibration coefficients  events
 """
-
 import numpy as np
 import h5py
-from lstchain.ctapipe_compat import Component
-from ctapipe.core import traits
-from ctapipe.core.traits import  Float, Path
+from ctapipe.core import Component, traits
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from ctapipe.containers import EventType
+from ctapipe_io_lst import constants
 
 __all__ = [
     'CalibrationCalculator',
@@ -37,16 +35,21 @@ class CalibrationCalculator(Component):
 
     """
 
-    systematic_correction_path = Path(
+    systematic_correction_path = traits.Path(
         default_value=None,
         allow_none=True,
         exists=True, directory_ok=False,
         help='Path to systematic correction file ',
     ).tag(config=True)
 
-    squared_excess_noise_factor = Float(
+    squared_excess_noise_factor = traits.Float(
         1.222,
         help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
+    ).tag(config=True)
+
+    relative_qe_dispersion = traits.Float(
+        0.07,
+        help='Relative (effective) quantum efficiency dispersion of PMs over the camera'
     ).tag(config=True)
 
     pedestal_product = traits.create_class_enum_trait(
@@ -58,6 +61,24 @@ class CalibrationCalculator(Component):
         FlatFieldCalculator,
         default_value='FlasherFlatFieldCalculator'
     )
+
+    npe_median_cut_outliers = traits.List(
+        [-5, 5],
+        help='Interval (number of std) of accepted number of pe in FF events around camera median value'
+    ).tag(config=True)
+
+    use_scaled_low_gain = traits.Bool(
+        default_value=False,
+        help=(
+            'If true, low gain calibration coefficients are scaled from high gain coefficients'
+        )
+    ).tag(config=True)
+
+    hg_lg_ratio = traits.Float(
+        1.,
+        help='HG/LG ratio applied if use_scaled_low_gain is True. The ratio is ~1 for calibrated data, ~17.4 for uncalibrated data.' 
+
+    ).tag(config=True)
 
     classes = (
         [FlatFieldCalculator, PedestalCalculator]
@@ -149,14 +170,10 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         status_data = event.mon.tel[self.tel_id].pixel_status
         calib_data = event.mon.tel[self.tel_id].calibration
 
-        # mask from pedestal and flat-field data
-        monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
-                                                   status_data.flatfield_failing_pixels)
-
-        # calibration unusable pixels are an OR of all masks
-        calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
-                                                   status_data.hardware_failing_pixels)
-
+        # find unusable pixel from pedestal and flat-field data
+        unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
+                                        status_data.flatfield_failing_pixels)
+        
         signal = ff_data.charge_median - ped_data.charge_median
 
         # Extract calibration coefficients with F-factor method
@@ -182,11 +199,11 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         calib_data.n_pe = n_pe
 
         # find signal median of good pixels over the camera (FF factor=<npe>/npe)
-        masked_npe = np.ma.array(n_pe, mask=calib_data.unusable_pixels)
-        npe_signal_median = np.ma.median(masked_npe, axis=1)
+        masked_npe = np.ma.array(n_pe, mask=unusable_pixels)
+        npe_median = np.ma.median(masked_npe, axis=1)
 
         # flat-fielded calibration coefficients
-        numerator = npe_signal_median[:,np.newaxis]
+        numerator = npe_median[:,np.newaxis]
         denominator = signal
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
 
@@ -195,10 +212,41 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width.tel[self.tel_id]
 
-        # put to zero unusable pixels
-        calib_data.dc_to_pe[calib_data.unusable_pixels] = 0
-        calib_data.pedestal_per_sample[calib_data.unusable_pixels] = 0
+        # define unusables on number of estimated pe
+        npe_deviation =  calib_data.n_pe - npe_median[:,np.newaxis]
 
+        # cut on the base of the pe statistical uncertainty over the camera
+        tot_std = self.expected_npe_std(npe_median, ff_data.n_events)
+
+        npe_outliers = (
+            np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * tot_std[:,np.newaxis],
+                          npe_deviation > self.npe_median_cut_outliers[1] * tot_std[:,np.newaxis]))
+
+        # calibration unusable pixels are an OR of all masks
+        calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers).filled(True)
+        
+        # give to the unusable pixels the median camera value for the dc_to_pe and pedestal
+        # (these are the starting data for the Cat-B calibration)        
+        dc_to_pe_masked = np.ma.array(calib_data.dc_to_pe, mask=calib_data.unusable_pixels)
+        median_dc_to_pe = np.ma.median(dc_to_pe_masked, axis=1)[:,np.newaxis]
+        fill_array = np.ones((constants.N_GAINS, constants.N_PIXELS)) * median_dc_to_pe
+        calib_data.dc_to_pe = np.ma.filled(dc_to_pe_masked, fill_array)
+        
+        pedestal_per_sample_masked = np.ma.array(calib_data.pedestal_per_sample, mask=calib_data.unusable_pixels)
+        median_pedestal_per_sample = np.ma.median(pedestal_per_sample_masked, axis=1)[:,np.newaxis]
+        fill_array = np.ones((constants.N_GAINS, constants.N_PIXELS)) * median_pedestal_per_sample
+        calib_data.pedestal_per_sample = np.ma.filled(pedestal_per_sample_masked, fill_array)
+        
+        # set to zero time corrections of unusable pixels
+        time_correction_masked =  np.ma.array(calib_data.time_correction, mask=calib_data.unusable_pixels)
+        calib_data.time_correction = time_correction_masked.filled(0)
+
+        # in the case FF intensity is not sufficiently high, better to scale low gain calibration from high gain results
+        if self.use_scaled_low_gain:
+            calib_data.unusable_pixels[constants.LOW_GAIN] = calib_data.unusable_pixels[constants.HIGH_GAIN]
+            calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.hg_lg_ratio
+            calib_data.time_correction[constants.LOW_GAIN] = calib_data.time_correction[constants.HIGH_GAIN]
+            
         # eliminate inf values id any (still necessary?)
         calib_data.dc_to_pe[np.isinf(calib_data.dc_to_pe)] = 0
 
@@ -225,6 +273,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
             if new_ff:
                 self.calculate_calibration_coefficients(event)
 
+
         return new_ped, new_ff
 
     def output_interleaved_results(self, event):
@@ -248,3 +297,41 @@ class LSTCalibrationCalculator(CalibrationCalculator):
                 new_ff = True
 
         return new_ped, new_ff
+    
+    def expected_npe_std(self, npe_median, n_events):
+
+        """
+        The expected standard deviation of the estimated npe over the camera is given in principle by
+
+        std_pe_mean=std_npe/sqrt((n_events)+ (relative_qe_dispersion*npe)**2)
+
+        where the relative_qe_dispersion is mainly due to different detection QE among PMs.
+
+        However, due to the systematics correction associated to the B term, a linear and quadratic 
+        noise component  must be added, these components depend on the sample statistics per pixel (n_events).
+        The parameters in this function (linear_noise_params and quadratic_noise_params) have been obtained with 
+        a fit of the std of filter scan taken in date 2023/05/10 and considering 
+        n_events = [1000,2500,5000,7500,10000,30000]
+
+        """
+        basic_variance = npe_median/n_events + (self.relative_qe_dispersion * npe_median)**2
+
+        # [par0_HG, par0_LG],[par1_HG, par1_LG]
+        linear_noise_params=np.array(([1.79717813 ,1.72458305e+00],[0.0231544, -1.62036639e-03]))
+
+        # [par0_HG, par0_LG],[par1_HG, par1_LG]
+        quadratic_noise_params=np.array(([4.99670969e-04, 0.00142218],[ 2.49034290e-05,0.0001207]))
+
+        # function to estimate the added noise components as function of the sample statistcs
+        def noise_term(n_events, par):
+            return par[0]/(np.sqrt(n_events))+par[1]
+
+        linear_term = noise_term(n_events, linear_noise_params)
+        quadratic_term = noise_term(n_events, quadratic_noise_params)
+
+        added_variance = (linear_term * npe_median)**2 + (quadratic_term * npe_median**2)**2 
+
+        std = np.sqrt(basic_variance + added_variance)
+
+        return std
+

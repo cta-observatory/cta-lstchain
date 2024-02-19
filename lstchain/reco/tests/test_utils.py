@@ -214,3 +214,16 @@ def test_get_geomagnetic_delta():
 
     inc = get_geomagnetic_delta(zen=50 * u.deg, az=20 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
     assert u.isclose(inc, 1.73389012 * u.rad)
+
+
+def test_apply_src_r_cut(simulated_dl1_file):
+    from lstchain.io.io import dl1_params_lstcam_key
+    from lstchain.reco.utils import apply_src_r_cut
+    from lstchain.io.config import get_srcdep_config
+
+    params = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
+    srcdep_config = get_srcdep_config()
+    src_r_min = srcdep_config['train_gamma_src_r_deg'][0]
+    src_r_max = srcdep_config['train_gamma_src_r_deg'][1]
+    params = apply_src_r_cut(params, src_r_min, src_r_max)
+    assert (params.event_id.values == np.arange(100, 110, 1)).all()

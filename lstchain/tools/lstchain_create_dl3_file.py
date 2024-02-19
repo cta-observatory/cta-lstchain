@@ -9,9 +9,10 @@ and also given in some example configs in docs/examples/
 For using IRF interpolation methods, to get IRF with sky pointing the same or
 closer (in the interpolation parameter space) to that of the data provided,
 one has to provide,
-1. the path to the IRFs,
-2. glob search pattern for selecting the IRFs to be used, and
-3. a final interpolated IRF file name.
+
+- the path to the IRFs,
+- glob search pattern for selecting the IRFs to be used, and
+- a final interpolated IRF file name.
 
 If instead of using IRF interpolation, one needs to add only the nearest IRF
 node to the given data, in the interpolation space, then one needs to pass the
@@ -51,14 +52,14 @@ from lstchain.io import (
     DL3Cuts,
     get_srcdep_assumed_positions,
     read_data_dl2_to_QTable,
+    remove_duplicated_events,
 )
 from lstchain.high_level import (
-    add_icrs_position_params,
     check_in_delaunay_triangle,
     compare_irfs,
     create_event_list,
+    fill_reco_altaz_w_expected_pos,
     interpolate_irf,
-    set_expected_pos_to_reco_altaz,
 )
 from lstchain.paths import (
     dl2_to_dl3_filename,
@@ -203,6 +204,11 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    keep_duplicated_events = traits.Bool(
+        help="If True, duplicated events after alpha and gammaness cut are not removed.",
+        default_value=False,
+    ).tag(config=True)
+
     use_nearest_irf_node = traits.Bool(
         help="If True, only look for the nearest IRF node to the data. No interpolation",
         default_value=False,
@@ -235,6 +241,10 @@ class DataReductionFITSWriter(Tool):
         "source-dep": (
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
+        ),
+        "keep-duplicated-events": (
+            {"DataReductionFITSWriter": {"keep_duplicated_events": True}},
+            "duplicated events are not removed if True",
         ),
         "use-nearest-irf-node": (
             {"DataReductionFITSWriter": {"use_nearest_irf_node": True}},
@@ -442,13 +452,33 @@ class DataReductionFITSWriter(Tool):
                     self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
                 data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
-            # set expected source positions as reco positions
-            set_expected_pos_to_reco_altaz(data_temp)
+            # Fill the reco alt/az positions with expected source positions
+            data_temp = fill_reco_altaz_w_expected_pos(data_temp)
 
             if i == 0:
                 self.data = data_temp
             else:
                 self.data = vstack([self.data, data_temp])
+
+        if not self.keep_duplicated_events:
+            if len(srcdep_assumed_positions) > 2:
+                self.log.warning(
+                    "If multiple off positions are assumed, the process to "
+                    "remove duplicated events can introduce a bias"
+                )
+            n_events_before = len(self.data)
+
+            remove_duplicated_events(self.data)
+            n_events_after = len(self.data)
+
+            duplicated_events_ratio = (n_events_before - n_events_after)/n_events_after
+            self.log.info(
+                "Remove duplicated events: a ratio of duplicated events is "
+                f"{duplicated_events_ratio}"
+            )
+        
+        # Sort the data frame based on event_id
+        self.data.sort('event_id')
 
     def start(self):
 
@@ -473,8 +503,6 @@ class DataReductionFITSWriter(Tool):
             self.apply_srcindep_gh_cut()
         else:
             self.apply_srcdep_gh_alpha_cut()
-
-        self.data = add_icrs_position_params(self.data, self.source_pos)
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
@@ -502,12 +530,6 @@ class DataReductionFITSWriter(Tool):
         for p in self.data_params.keys():
             self.mc_params[p] = u.Quantity(h[p], "deg")
 
-        mc_gamma_offset = u.Quantity(
-            h["G_OFFSET"],
-            "deg"
-        )
-
-        self.log.info(f"Gamma offset for MC is {mc_gamma_offset:.3f}")
         self.log.info(
             f"Zenith pointing of MC at {self.mc_params['ZEN_PNT']:.3f}"
         )

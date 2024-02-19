@@ -17,12 +17,14 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from ctapipe.coordinates import CameraFrame
+from ctapipe_io_lst import OPTICS
 
 from . import disp
 
 __all__ = [
     "add_delta_t_key",
     "alt_to_theta",
+    "apply_src_r_cut",
     "az_to_phi",
     "camera_to_altaz",
     "cartesian_to_polar",
@@ -44,7 +46,8 @@ __all__ = [
     "rotate",
     "sky_to_camera",
     "source_dx_dy",
-    "source_side"
+    "source_side",
+    "get_events_in_GTI"
 ]
 
 # position of the LST1
@@ -667,12 +670,15 @@ def get_effective_time(events):
 
     # elapsed time: sum of those time differences, excluding large ones which
     # might indicate the DAQ was stopped (e.g. if the table contains more
-    # than one run). We set 0.1 s as limit to decide a "break" occurred:
-    t_elapsed = np.sum(time_diff[time_diff < 0.1 * u.s])
-
+    # than one run). We set 0.01 s as limit to decide a "break" occurred:
+    t_elapsed = np.sum(time_diff[time_diff < 0.01 * u.s])
+    
     # delta_t is the time elapsed since the previous triggered event.
     # We exclude the null values that might be set for the first even in a file.
-    delta_t = delta_t[delta_t > 0.0 * u.s]
+    # Same as the elapsed time, we exclude events with delta_t larger than 0.01 s.
+    delta_t = delta_t[
+        (delta_t > 0.0 * u.s) & (delta_t < 0.01 * u.s)
+    ]
 
     # dead time per event (minimum observed delta_t, ):
     dead_time = np.amin(delta_t)
@@ -798,3 +804,51 @@ def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inpla
 
     if not inplace:
         return events
+
+
+def apply_src_r_cut(events, src_r_min, src_r_max):
+    """
+    apply src_r cut to filter out large off-axis MC events
+
+    Parameters
+    ----------
+    events: `pandas.DataFrame`
+    src_r_min: float
+    src_r_max: fload
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+
+    src_r_m = np.sqrt(events['src_x'] ** 2 + events['src_y'] ** 2)
+    foclen = OPTICS.equivalent_focal_length.value
+    src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
+    events = events[
+        (src_r_deg >= src_r_min) &
+        (src_r_deg <= src_r_max)
+    ]
+
+    return events
+
+def get_events_in_GTI(events, CatB_cal_table):
+    """
+    Select events in good time intervals (GTI) on the base
+    of the GTI defined the catB calibration table (dl1_mon_tel_CatB_cal_key)
+
+    Parameters
+    ----------
+    events : pandas DataFrame or astropy.table.QTable 
+        Data frame or table of DL1 or DL2 events.
+    CatB_cal_table: table of CatB calibration applied to the events (dl1_mon_tel_CatB_cal_key)
+
+    Returns
+    -------
+    sel_events: selected events
+    """
+
+    gti = CatB_cal_table['gti']
+
+    gti_mask = gti[events['calibration_id']]
+
+    return events[gti_mask]

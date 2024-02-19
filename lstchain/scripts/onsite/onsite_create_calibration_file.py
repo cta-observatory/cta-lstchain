@@ -13,22 +13,22 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from astropy.time import Time
-import pymongo
 
 import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
+from lstchain.io import read_calibration_file
 from lstchain.onsite import (
     DEFAULT_BASE_PATH,
     DEFAULT_CONFIG,
-    LEVEL_A_PIXEL_DIR,
+    CAT_A_PIXEL_DIR,
     create_pro_symlink,
     find_r0_subrun,
     find_pedestal_file,
     find_run_summary,
     find_systematics_correction_file,
     find_time_calibration_file,
+    find_filter_wheels,
 )
 
 # parse arguments
@@ -79,7 +79,7 @@ optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, de
 
 optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG, type=Path)
 
-optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.101:27017/")
+optional.add_argument('--mongodb', help="Mongo data-base (CACO DB) connection.", default="mongodb://10.200.10.161:27018/")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
@@ -117,7 +117,7 @@ def main():
 
     # looks for the filter values in the database if not given
     if args.filters is None:
-        filters = search_filter(run, args.mongodb)
+        filters = find_filter_wheels(run, args.mongodb)
     else:
         filters = args.filters
 
@@ -145,7 +145,7 @@ def main():
     print(f"\n--> Input file: {input_file}")
 
     # verify output dir
-    calib_dir = args.base_dir / LEVEL_A_PIXEL_DIR
+    calib_dir = args.base_dir / CAT_A_PIXEL_DIR
     output_dir = calib_dir / "calibration" / date / prod_id
     if not output_dir.exists():
         print(f"--> Create directory {output_dir}")
@@ -231,11 +231,11 @@ def main():
         f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
         f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file}",
         f"--LSTEventSource.use_flatfield_heuristic={args.use_flatfield_heuristic}",
-        f"--FlatFieldCalculator.sample_size={stat_events}",
-        f"--PedestalCalculator.sample_size={stat_events}",
+        f"--FlasherFlatFieldCalculator.sample_size={stat_events}",
+        f"--PedestalIntegrator.sample_size={stat_events}",
         f"--config={config_file}",
         f"--log-file={log_file}",
-        "--log-file-level=DEBUG",
+        "--log-file-level=INFO",
         *remaining_args,
     ]
 
@@ -246,45 +246,10 @@ def main():
     plot_file = f"{output_dir}/log/{output_name}.pdf"
 
     print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-    calib.read_file(output_file, tel_id)
-    calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
+    mon = read_calibration_file(output_file, tel_id)
+    calib.plot_calibration_results(mon.pedestal, mon.flatfield, mon.calibration, run, plot_file,"Cat-A")
 
     print("\n--> END")
-
-
-def search_filter(run, database_url):
-    """read the employed filters form mongodb"""
-
-    # there was a change of Mongo DB data names on 5/12/2022
-    NEW_DB_NAMES_DATE = Time("2022-12-04T00:00:00")
-
-    filters = None
-    try:
-
-        myclient = pymongo.MongoClient(database_url)
-
-        mydb = myclient["CACO"]
-        mycol = mydb["RUN_INFORMATION"]
-        mydoc = mycol.find({"run_number": {"$eq": run}})
-        for x in mydoc:
-            date =  Time(x["start_time"])
-            if date < NEW_DB_NAMES_DATE:
-                w1 = int(x["cbox"]["wheel1 position"])
-                w2 = int(x["cbox"]["wheel2 position"])
-            else:
-                w1 = int(x["cbox"]["CBOX_WheelPosition1"])
-                w2 = int(x["cbox"]["CBOX_WheelPosition2"])
-
-            filters = f"{w1:1d}{w2:1d}"
-
-    except Exception as e:
-        print(f"\n >>> Exception: {e}")
-        raise IOError(
-            "--> No mongo DB filter information."
-            " You must pass the filters by argument: -f [filters]"
-        )
-
-    return filters
 
 
 def define_FF_selection_range(filters):

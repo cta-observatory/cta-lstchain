@@ -183,7 +183,7 @@ def linval(a, b, x):
 
 
 @njit(cache=True)
-def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
+def template_interpolation(gain, times, t0, dt, a_hg, a_lg):
     """
     Fast template interpolator using uniformly sampled base with known origin and step.
     The algorithm finds the indexes between which the template is needed and performs a linear interpolation.
@@ -192,7 +192,7 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
     ----------
     gain: boolean 1D array
         Gain channel used per pixel
-    times: float64 1D array
+    times: float64 2D array
         Times of each waveform samples
     t0: float64
         Time of the first value of the pulse templates
@@ -202,8 +202,6 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
         Template values for the high gain channel
     a_lg: float64 1D array
         Template values for the low gain channel
-    size: int64
-        Number of element in a_hg and a_lg
 
     Returns
     -------
@@ -212,20 +210,87 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
 
     """
     n, m = times.shape
+    size = a_hg.shape[0]
     out = np.empty((n, m))
     for i in range(n):
         for j in range(m):
             # Find the index before the requested time
             a = (times[i, j]-t0)/dt
             t = int(a)
-            if a < size:
+            if 0 < t+1 < size:
                 # Select the gain and interpolate the pulse template at the requested time
                 out[i, j] = a_hg[t] * (1. - a + t) + a_hg[t+1] * (a-t) if gain[i] else \
                     a_lg[t] * (1. - a + t) + a_lg[t+1] * (a-t)
             else:
-                # Assume 0 if outside of the recorded range
+                # Assume 0 if outside the recorded range
                 out[i, j] = 0.0
     return out
+
+
+@njit(cache=True)
+def nsb_only_waveforms(time, is_high_gain, additional_nsb, amplitude, t_0,
+                        t0_template, dt_template, a_hg_template, a_lg_template):
+    """
+    Generate waveforms of pure NSB. NSB photons injected through a fast interpolator using a
+    uniformly sampled normalised template with known time of first value and time step.
+    The method requires as input the number of NSB events to inject per pixel,
+    the times of injection and the events normalisations.
+
+    Interpolation code duplicated from function template_interpolation.
+
+    Parameters
+    ----------
+    time: float64 1D array
+        Times of each waveform samples
+    is_high_gain: boolean 1D array
+        Gain channel used per pixel: True=hg, False=lg
+    additional_nsb: float64 1D array
+        Number of NSB photons to inject per pixel
+    amplitude: float 2D array
+        Normalisation factor to apply to the template per photon in each pixel
+    t_0: float 2D array
+        Shift in the origin of time per photon in each pixel
+    t0_template: float64
+        Time of the first value of the pulse template
+    dt_template: float 64
+        Time step between template values
+    a_hg_template: float64 1D array
+        Template values for the high gain channel
+    a_lg_template: float64 1D array
+        Template values for the low gain channel
+
+    Returns
+    -------
+    nsb_waveform: float64 2D array
+        Charge (p.e. / ns) in each pixel and sampled time of the injected NSB photons
+    """
+    n_pixels = additional_nsb.shape[0]
+    m = time.shape[0]
+    nsb_waveform = np.zeros((n_pixels, m), dtype=np.float64)
+    size = a_hg_template.shape[0]
+    single_spe_waveform = np.empty(m)
+
+    times = time / dt_template
+    t0 = (t_0 + t0_template) / dt_template
+    for i in range(n_pixels):
+        for j in range(additional_nsb[i]):
+            # Find the index before the requested time
+            a = times - t0[i, j]
+
+            for k in range(m):
+                t = int(a[k])
+
+                if 0 < t + 1 < size:
+                    # Select the gain and interpolate the pulse template at the requested time
+                    single_spe_waveform[k] = a_hg_template[t] * (1. - a[k] + t) + a_hg_template[t + 1] * (a[k] - t) if is_high_gain[i] else\
+                        a_lg_template[t] * (1. - a[k] + t) + a_lg_template[t + 1] * (a[k] - t)
+                else:
+                    # Assume 0 if outside the recorded range
+                    single_spe_waveform[k] = 0.0
+
+            nsb_waveform[i] += amplitude[i, j] * single_spe_waveform
+
+    return nsb_waveform
 
 
 @njit(cache=True)
@@ -298,9 +363,8 @@ def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
     for i in range(n_pixels):
         for j in range(n_samples):
             t[i, j] = times[j] - t_model[i] - time_shift[i]
-    size_template = template_hg.shape[0]
     templates = template_interpolation(is_high_gain, t, template_t0, template_dt,
-                                       template_hg, template_lg, size_template)
+                                       template_hg, template_lg)
     rl = 1 + rl if rl >= 0 else 1 / (1 - rl)
     mu = asygaussian2d(charge * pix_area,
                        p_x,

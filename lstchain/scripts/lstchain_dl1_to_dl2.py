@@ -9,10 +9,13 @@ Run lstchain_dl1_to_dl2 --help to see the options.
 import argparse
 from pathlib import Path
 import joblib
-
+import logging
 import numpy as np
 import pandas as pd
+import astropy.units as u
+from astropy.coordinates import Angle
 from ctapipe.instrument import SubarrayDescription
+from ctapipe_io_lst import OPTICS
 from tables import open_file
 
 from lstchain.io import (
@@ -37,7 +40,7 @@ from lstchain.io.io import (
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 
-
+logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description=__doc__)
 
 # Required arguments
@@ -73,6 +76,7 @@ parser.add_argument('--config', '-c',
 
 
 def apply_to_file(filename, models_dict, output_dir, config):
+
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
     if 'lh_fit_config' in config.keys():
@@ -95,9 +99,22 @@ def apply_to_file(filename, models_dict, output_dir, config):
             data.alt_tel = - np.pi / 2.
             data.az_tel = - np.pi / 2.
 
-    subarray_info = SubarrayDescription.from_hdf(filename)
-    tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+    try:
+        subarray_info = SubarrayDescription.from_hdf(filename)
+        tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+        effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
+    except OSError:
+        print("subarray table is not readable because of the version incompatibility.")
+        print("The effective focal length for the standard LST optics will be used.")
+        effective_focal_length = OPTICS.effective_focal_length
+        
+    # Normalize all azimuth angles to the range [0, 360) degrees 
+    data.az_tel = Angle(data.az_tel, u.rad).wrap_at(360 * u.deg).rad
+
+    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
+    if 'sin_az_tel' not in data.columns:
+        data['sin_az_tel'] = np.sin(data.az_tel)
+
 
     # Apply the models to the data
 
@@ -116,7 +133,7 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                           models_dict['cls_gh'],
                                           models_dict['reg_energy'],
                                           reg_disp_vector=models_dict['disp_vector'],
-                                          focal_length=focal_length,
+                                          effective_focal_length=effective_focal_length,
                                           custom_config=config)
         elif config['disp_method'] == 'disp_norm_sign':
             dl2 = dl1_to_dl2.apply_models(data,
@@ -124,7 +141,7 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                           models_dict['reg_energy'],
                                           reg_disp_norm=models_dict['disp_norm'],
                                           cls_disp_sign=models_dict['disp_sign'],
-                                          focal_length=focal_length,
+                                          effective_focal_length=effective_focal_length,
                                           custom_config=config)
 
     # Source-dependent analysis
@@ -136,7 +153,7 @@ def apply_to_file(filename, models_dict, output_dir, config):
         # if not, source-dependent parameters are added now
         else:
             data_srcdep = pd.concat(dl1_to_dl2.get_source_dependent_parameters(
-                data, config, focal_length=focal_length), axis=1)
+                data, config, effective_focal_length=effective_focal_length), axis=1)
 
         dl2_srcdep_dict = {}
         srcindep_keys = data.keys()
@@ -153,26 +170,31 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                                    )
 
             if config['disp_method'] == 'disp_vector':
-                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param,
+                dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
                                                  models_dict['cls_gh'],
                                                  models_dict['reg_energy'],
                                                  reg_disp_vector=models_dict['disp_vector'],
-                                                 focal_length=focal_length,
+                                                 effective_focal_length=effective_focal_length,
                                                  custom_config=config)
             elif config['disp_method'] == 'disp_norm_sign':
-                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param,
+                dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
                                                  models_dict['cls_gh'],
                                                  models_dict['reg_energy'],
                                                  reg_disp_norm=models_dict['disp_norm'],
                                                  cls_disp_sign=models_dict['disp_sign'],
-                                                 focal_length=focal_length,
+                                                 effective_focal_length=effective_focal_length,
                                                  custom_config=config)
 
-            dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)
+            dl2_srcdep = dl2.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
 
             if i == 0:
-                dl2_srcindep = dl2_df[srcindep_keys]
+                dl2_srcindep = dl2[srcindep_keys]
+
+    # do not write file if empty
+    if len(dl2) == 0:
+        logger.warning("No dl2 output file written.")
+        return
 
     output_dir.mkdir(exist_ok=True)
     output_file = output_dir.joinpath(filename.name.replace('dl1', 'dl2', 1))

@@ -79,6 +79,9 @@ def main():
 
     a, b, c = calculate_noise_parameters(args.input_mc, args.input_data,
                                          args.config)
+    if a is None:
+        logging.error('Could not compute NSB tuning parameters. Exiting!')
+        sys.exit(1)
 
     dict_nsb = {"increase_nsb": True,
                 "extra_noise_in_dim_pixels": round(a, 3),
@@ -93,7 +96,11 @@ def main():
 
     if args.output_file:
         cfg = read_configuration_file(args.config)
-        cfg['image_modifier'].update(dict_nsb)
+        if 'image_modifier' in cfg:
+            cfg['image_modifier'].update(dict_nsb)
+        else:
+            cfg['image_modifier'] = dict_nsb
+
         dump_config(cfg, args.output_file, overwrite=args.overwrite)
 
 

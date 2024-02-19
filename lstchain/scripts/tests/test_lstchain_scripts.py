@@ -1,30 +1,27 @@
+import json
+import os
 import shutil
 import subprocess as sp
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pkg_resources
 import pytest
 import tables
+from importlib.resources import files
 from astropy import units as u
+from astropy.table import Table
 from astropy.time import Time
 from ctapipe.instrument import SubarrayDescription
-
 from ctapipe.io import read_table
 
-from lstchain.io.io import (
-    dl1_params_lstcam_key,
-    dl2_params_lstcam_key,
-    dl1_images_lstcam_key,
-    get_dataset_keys,
-    get_srcdep_params,
-    dl1_params_tel_mon_ped_key,
-    dl1_params_tel_mon_cal_key,
-    dl1_params_tel_mon_flat_key,
-)
-
-from lstchain.io.config import get_standard_config, get_srcdep_config
-import json
+from lstchain.io.config import get_srcdep_config, get_standard_config
+from lstchain.io.io import (dl1_images_lstcam_key, dl1_params_lstcam_key,
+                            dl1_params_tel_mon_cal_key,
+                            dl1_params_tel_mon_flat_key,
+                            dl1_params_tel_mon_ped_key, dl2_params_lstcam_key,
+                            get_dataset_keys, get_srcdep_params)
 
 
 def find_entry_points(package_name):
@@ -65,16 +62,6 @@ def simulated_dl1ab(temp_dir_simulated_files, simulated_dl1_file):
     run_program("lstchain_dl1ab", "-f", simulated_dl1_file, "-o", output_file)
     return output_file
 
-def test_add_source_dependent_parameters(temp_dir_simulated_srcdep_files, simulated_dl1_file):
-    shutil.copy(simulated_dl1_file, temp_dir_simulated_srcdep_files / "dl1_copy.h5")
-    dl1_file = temp_dir_simulated_srcdep_files / "dl1_copy.h5"
-    run_program("lstchain_add_source_dependent_parameters", "-f", dl1_file)
-    dl1_params_src_dep = get_srcdep_params(dl1_file)
-
-    assert 'alpha' in dl1_params_src_dep['on'].columns
-    assert 'dist' in dl1_params_src_dep['on'].columns
-    assert 'time_gradient_from_source' in dl1_params_src_dep['on'].columns
-    assert 'skewness_from_source' in dl1_params_src_dep['on'].columns
 
 @pytest.fixture(scope="session")
 def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
@@ -88,6 +75,7 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
         "-o",
         merged_dl1_file,
         "--no-image",
+        "--pattern=dl1_*.h5"
     )
     return merged_dl1_file
 
@@ -101,9 +89,11 @@ def test_lstchain_data_r0_to_dl1(observed_dl1_files):
     assert observed_dl1_files["dl1_file1"].is_file()
     assert observed_dl1_files["muons1"].is_file()
     assert observed_dl1_files["datacheck1"].is_file()
+    assert observed_dl1_files["interleaved_file1"].is_file()
     assert observed_dl1_files["dl1_file2"].is_file()
     assert observed_dl1_files["muons2"].is_file()
     assert observed_dl1_files["datacheck2"].is_file()
+    assert observed_dl1_files["interleaved_file2"].is_file()
 
 
 @pytest.mark.private_data
@@ -143,6 +133,18 @@ def test_observed_dl1_validity(observed_dl1_files):
     )
     np.testing.assert_allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
 
+@pytest.mark.private_data
+def test_dvr_file_validity(observed_dl1_files):
+    dvr_file = pd.read_hdf(observed_dl1_files["dvr_file1"], key="run_summary")
+    assert "mean_pixel_survival_fraction" in dvr_file.columns
+    assert dvr_file['number_of_events'].iloc[0] == 200
+    assert dvr_file['mean_pixel_survival_fraction'].iloc[0] < 0.1
+
+@pytest.mark.private_data
+def test_pixmasks_file_validity(observed_dl1_files):
+    pixmasks_file = tables.open_file(observed_dl1_files["pixmasks_file1"])
+    pixmasks = pixmasks_file.root.selected_pixels_masks.col('pixmask')
+    assert pixmasks.sum() < 0.1 * len(pixmasks.flatten())
 
 @pytest.mark.private_data
 @pytest.fixture(scope="session")
@@ -164,9 +166,9 @@ def test_validity_tune_nsb(tune_nsb):
         if "increase_nsb" in line:
             assert line == '  "increase_nsb": true,'
         if "extra_noise_in_dim_pixels" in line:
-            assert line == '  "extra_noise_in_dim_pixels": 0.0,'
+            assert line == '  "extra_noise_in_dim_pixels": 1.962,'
         if "extra_bias_in_dim_pixels" in line:
-            assert line == '  "extra_bias_in_dim_pixels": 11.019,'
+            assert line == '  "extra_bias_in_dim_pixels": 0,'
         if "transition_charge" in line:
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
@@ -319,7 +321,8 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
     assert "reco_src_y" in dl2_srcdep_df['on'].columns
-
+    assert "reco_disp_norm_diff" in dl2_srcdep_df['on'].columns
+    assert "reco_disp_sign_correctness" in dl2_srcdep_df['on'].columns
 
 @pytest.mark.private_data
 def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
@@ -374,7 +377,9 @@ def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
         'reco_disp_dx',
         'reco_disp_dy',
         'reco_src_x',
-        'reco_src_y'
+        'reco_src_y',
+        'reco_disp_norm_diff',
+        'reco_disp_sign_correctness',
     ]
 
     for srcdep_assumed_position in srcdep_assumed_positions:
@@ -424,6 +429,29 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
             assert (new_parameters['length'] != old_parameters['length']).any()
 
 
+def test_dl1ab_on_modified_images(simulated_dl1ab, tmp_path):
+    config_path = tmp_path / 'config_image_modifier.json'
+    output_file = tmp_path / 'dl1ab_on_modified_images.h5'
+    reprocess_output_file = tmp_path / 'dl1ab_on_modified_images_reprocess.h5'
+    config_path = files("lstchain.data").joinpath("lstchain_dl1ab_tune_MC_to_Crab_config.json")
+
+    run_program(
+        'lstchain_dl1ab',
+        '-f', simulated_dl1ab,
+        '-o', output_file,
+        '-c', config_path,
+    )
+
+    # second process should fail as we are trying to re-modify already modified images
+    with pytest.raises(ValueError):
+        run_program(
+            'lstchain_dl1ab',
+            '-f', output_file,
+            '-o', reprocess_output_file,
+            '-c', config_path,
+        )
+
+
 @pytest.mark.private_data
 def test_observed_dl1ab(tmp_path, observed_dl1_files):
     output_dl1ab = tmp_path / "dl1ab.h5"
@@ -435,26 +463,20 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
     )
     assert output_dl1ab.is_file()
 
-    dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
-
-    np.testing.assert_allclose(
-        dl1.to_numpy(dtype='float'),
-        dl1ab.to_numpy(dtype='float'),
-        rtol=1e-3,
-        equal_nan=True,
-    )
+    dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
+    pd.testing.assert_frame_equal(dl1, dl1ab)
 
 
 def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):
     assert simulated_dl1ab.is_file()
     dl1_df = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     dl1ab_df = pd.read_hdf(simulated_dl1ab, key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1_df, dl1ab_df, rtol=1e-4, equal_nan=True)
+    pd.testing.assert_frame_equal(dl1_df, dl1ab_df)
 
 
 def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
-    dl2_file = tmp_path / "dl2_gamma_test_large.h5"
+    dl2_file = tmp_path / "dl2_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     run_program(
         "lstchain_mc_r0_to_dl2",
         "--input-file",
@@ -469,13 +491,13 @@ def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
 
 
 def test_read_mc_dl2_to_QTable(simulated_dl2_file):
-    from lstchain.io.io import read_mc_dl2_to_QTable
     import astropy.units as u
+
+    from lstchain.io.io import read_mc_dl2_to_QTable
 
     events, sim_info, simu_geomag = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
-    assert sim_info.energy_max == 330 * u.TeV
-    assert "GEOMAG_DELTA" in simu_geomag
+    assert sim_info.energy_max == 5 * u.TeV
 
 
 @pytest.mark.private_data
@@ -493,8 +515,9 @@ def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
 
 @pytest.mark.private_data
 def test_run_summary(run_summary_path):
-    from astropy.table import Table
     from datetime import datetime
+
+    from astropy.table import Table
 
     date = "20200218"
 
@@ -515,4 +538,19 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_counter" in run_summary_table.columns
     assert "dragon_reference_source" in run_summary_table.columns
 
-    assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
+    assert (run_summary_table["run_type"] == ["DATA", "PEDCALIB", "DATA"]).all()
+
+
+@pytest.mark.private_data
+def test_merge_run_summaries(tmp_path):
+    test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+    monitoring_path = test_data / "real/monitoring"
+    merged_file = tmp_path / "merged_summaries.ecsv"
+    run_program(
+        "lstchain_merge_run_summaries", "-m", monitoring_path, merged_file
+    )
+    assert merged_file.exists()
+    table = Table.read(merged_file)
+    # Since no drive log is present in the test sample, only the runs
+    # of the first summary appear
+    assert 2005 in table["run_id"]

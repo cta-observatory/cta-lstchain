@@ -10,7 +10,7 @@ from astropy.stats import sigma_clipped_stats
 from ctapipe.core.traits import List, Path, Int
 from ctapipe.image.extractor import ImageExtractor
 
-from lstchain.ctapipe_compat import PedestalCalculator
+from ctapipe.calib.camera.pedestals import PedestalCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
 
@@ -106,6 +106,7 @@ class PedestalIntegrator(PedestalCalculator):
         self.extractor = ImageExtractor.from_name(
             self.charge_product, parent=self, subarray=subarray
         )
+       
 
     def _extract_charge(self, event):
         """
@@ -117,7 +118,7 @@ class PedestalIntegrator(PedestalCalculator):
         event : general event container
 
         """
-
+        
         # copy the waveform be cause we do not want to change it for the moment
         waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
 
@@ -131,12 +132,14 @@ class PedestalIntegrator(PedestalCalculator):
             waveforms *= (self.time_sampling_corrector.get_corrections(event, self.tel_id)
             [no_gain_selection, np.arange(n_pixels)])
 
-
         # Extract charge and time
         charge = 0
         peak_pos = 0
         if self.extractor:
-            charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
+            broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
+            dl1 = self.extractor(waveforms, self.tel_id, no_gain_selection, broken_pixels=broken_pixels)
+            charge = dl1.image
+            peak_pos = dl1.peak_time
 
         return charge, peak_pos
 
@@ -153,9 +156,10 @@ class PedestalIntegrator(PedestalCalculator):
         Returns: True if the mon.tel[tel_id].pedestal is updated, False otherwise
 
         """
+        
         # initialize the np array at each cycle
         waveform = event.r1.tel[self.tel_id].waveform
-
+    
         # re-initialize counter
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
@@ -163,8 +167,7 @@ class PedestalIntegrator(PedestalCalculator):
         pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
 
         self.trigger_time = event.trigger.time
-
-
+        
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
             self.setup_sample_buffers(waveform, self.sample_size)
@@ -172,7 +175,6 @@ class PedestalIntegrator(PedestalCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge = self._extract_charge(event)[0]
-
 
         self.collect_sample(charge, pixel_mask)
 
@@ -231,8 +233,7 @@ class PedestalIntegrator(PedestalCalculator):
 
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
-
-
+       
         n_channels = waveform.shape[0]
         n_pix = waveform.shape[1]
         shape = (sample_size, n_channels, n_pix)
@@ -240,7 +241,6 @@ class PedestalIntegrator(PedestalCalculator):
         self.charge_medians = np.zeros((sample_size, n_channels))
         self.charges = np.zeros(shape)
         self.sample_masked_pixels = np.zeros(shape)
-
 
     def collect_sample(self, charge, pixel_mask):
         """Collect the sample data"""
@@ -253,14 +253,13 @@ class PedestalIntegrator(PedestalCalculator):
         self.charge_medians[self.num_events_seen] = charge_median
         self.num_events_seen += 1
 
-
     def calculate_pedestal_results(self, trace_integral, masked_pixels_of_sample):
         """Calculate and return the sample statistics"""
         masked_trace_integral = np.ma.array(
             trace_integral,
             mask=masked_pixels_of_sample
         )
-
+        
         # mean and std over the sample per pixel
         max_sigma = self.sigma_clipping_max_sigma
         pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
@@ -271,13 +270,19 @@ class PedestalIntegrator(PedestalCalculator):
             axis=0,
         )
 
+        # mask pixels without defined statistical values (mainly due to hardware problems)
+        pixel_mean = np.ma.array(pixel_mean, mask=np.isnan(pixel_mean))
+        pixel_median = np.ma.array(pixel_median, mask=np.isnan(pixel_median))
+        pixel_std = np.ma.array(pixel_std, mask=np.isnan(pixel_std))
+
         unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
+
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
         check_outlier_mask(outliers, self.log, "pedestal")
 
-        # ignore outliers identified by sigma clipping also for following operations
-        masked_trace_integral.mask = unused_values
+        # add outliers identified by sigma clipping for following operations
+        masked_trace_integral.mask |= unused_values
 
         # median over the camera
         median_of_pixel_median = np.ma.median(pixel_median, axis=1)
@@ -304,18 +309,13 @@ class PedestalIntegrator(PedestalCalculator):
             deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
             deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis],
         )
-        
-        # mask pixels with NaN mean, due to missing statistics
-        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)
-        charge_median_outliers[pixels_without_stat] = True
-        charge_std_outliers[pixels_without_stat] = True
-        
+
         return {
-            'charge_median': np.ma.getdata(pixel_median),
-            'charge_mean': np.ma.getdata(pixel_mean),
-            'charge_std': np.ma.getdata(pixel_std),
-            'charge_std_outliers': np.ma.getdata(charge_std_outliers),
-            'charge_median_outliers': np.ma.getdata(charge_median_outliers)
+            'charge_median': pixel_median.filled(np.nan),
+            'charge_mean': pixel_mean.filled(np.nan),
+            'charge_std': pixel_std.filled(np.nan),
+            'charge_std_outliers': charge_std_outliers.filled(True),
+            'charge_median_outliers': charge_median_outliers.filled(True)
         }
 
 

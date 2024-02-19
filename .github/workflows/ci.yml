@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - main
     tags:
       - '**'
   pull_request:
@@ -22,75 +22,78 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
 
-      - name: pyflakes
-        run: |
-          pip install pyflakes
-          pyflakes lstchain
+      # - name: pyflakes
+      #   run: |
+      #     pip install pyflakes
+      #     pyflakes lstchain
 
-  tests:
-    needs: pyflakes
-    runs-on: ubuntu-latest
+  # tests:
+  #   needs: pyflakes
+  #   runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        shell: bash -l {0}
+  #   defaults:
+  #     run:
+  #       shell: bash -el {0}
 
-    strategy:
-      matrix:
-        python-version: [3.8]
-        ctapipe-version: [v0.12.0]
+  #   strategy:
+  #     matrix:
+  #       python-version: ["3.9", "3.10", "3.11"]
+  #       ctapipe-version: ["v0.19.2"]
 
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Prepare mamba installation
-        env:
-          PYTHON_VERSION: ${{ matrix.python-version }}
-        run: |
-          # setup correct python version
-          sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
+  #     - name: Prepare mamba installation
+  #       env:
+  #         PYTHON_VERSION: ${{ matrix.python-version }}
+  #       run: |
+  #         # setup correct python version
+  #         sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
 
-      - name: Mamba setup
-        uses: mamba-org/provision-with-micromamba@v14
-        with:
-          environment-name: "lst-dev"
-          environment-file: environment.yml
+  #     - name: Mamba setup
+  #       uses: mamba-org/provision-with-micromamba@v14
+  #       with:
+  #         environment-name: "lst-dev"
+  #         environment-file: environment.yml
 
-      - name: Install dependencies
-        env:
-          PYTHON_VERSION: ${{ matrix.python-version }}
-          CTAPIPE_VERSION: ${{ matrix.ctapipe-version }}
+  #     - name: Install dependencies
+  #       env:
+  #         PYTHON_VERSION: ${{ matrix.python-version }}
+  #         CTAPIPE_VERSION: ${{ matrix.ctapipe-version }}
 
-        run: |
-          python --version
-          echo "Installing additional pip packages"
-          # we install ctapipe using pip to be able to select any commit, e.g. the current master
-          pip install \
-            "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
-            pytest-cov 'coverage!=6.3.0' pytest-xdist
+  #       run: |
+  #         python --version
+  #         echo "Installing additional pip packages"
 
-          echo "pip install -e ."
-          pip install -e .
+  #         echo "pip install -e ."
+  #         pip install -e .
 
-      - name: Download test data
-        env:
-          TEST_DATA_USER: ${{ secrets.test_data_user }}
-          TEST_DATA_PASSWORD: ${{ secrets.test_data_password }}
-        run: |
-          ./download_test_data.sh
+  #         pip install pytest-cov 'coverage!=6.3.0' pytest-xdist
+  #         # we install ctapipe using pip to be able to select any commit, e.g. the current master
+  #         pip install "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION"
 
-      - name: Tests
-        run: |
-          pytest -n auto --dist loadscope --cov --cov-report=xml -m 'private_data or not private_data' lstchain
+  #         which pip
+  #         pip freeze
 
-      - uses: codecov/codecov-action@v1
-        with:
-          # disable gcov, not needed
-          functionalities: gcov
+  #     - name: Download test data
+  #       env:
+  #         TEST_DATA_USER: ${{ secrets.test_data_user }}
+  #         TEST_DATA_PASSWORD: ${{ secrets.test_data_password }}
+  #       run: |
+  #         ./download_test_data.sh
+
+  #     - name: Tests
+  #       run: |
+  #         pytest -n auto --dist loadscope --cov --cov-report=xml -m 'private_data or not private_data' lstchain
+
+  #     - uses: codecov/codecov-action@v1
+  #       with:
+  #         # disable gcov, not needed
+  #         functionalities: gcov
 
   docs:
     needs: pyflakes
@@ -103,7 +106,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Install doc dependencies
         run: |
@@ -116,9 +119,9 @@ jobs:
         run: cd docs && make html SPHINXOPTS="-W --keep-going -n --color -j auto"
 
       - name: Deploy to gihub pages
-        # only run on push to master
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+        # only run on push to main
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages

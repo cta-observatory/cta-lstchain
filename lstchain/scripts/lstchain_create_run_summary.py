@@ -8,7 +8,7 @@ import argparse
 import logging
 from collections import Counter
 from datetime import datetime
-from glob import glob
+from astropy.io import fits
 from pathlib import Path
 
 import numpy as np
@@ -24,6 +24,8 @@ from ctapipe_io_lst import (
 )
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from lstchain import __version__
 from lstchain.paths import parse_r0_filename
@@ -54,6 +56,21 @@ parser.add_argument(
     default="/fefs/aswg/data/real/monitoring/RunSummary",
 )
 
+parser.add_argument(
+    "--overwrite",
+    action="store_true",
+    help="Overwrite existing Run Summary file",
+    default=False,
+)
+
+parser.add_argument(
+    "-t",
+    "--tcu-server",
+    type=str,
+    help="TCU database server",
+    default="lst101-int",
+)
+
 dtypes = {
     "ucts_timestamp": np.int64,
     "run_start": np.int64,
@@ -63,6 +80,17 @@ dtypes = {
     "dragon_reference_counter": np.uint64,
     "dragon_reference_source": str,
 }
+
+
+COUNTER_DEFAULTS = dict(
+    ucts_timestamp=-1,
+    run_start=-1,
+    dragon_reference_time=-1,
+    dragon_reference_module_id=-1,
+    dragon_reference_module_index=-1,
+    dragon_reference_counter=-1,
+    dragon_reference_source=None,
+)
 
 
 def get_list_of_files(r0_path):
@@ -90,6 +118,7 @@ def get_list_of_runs(list_of_files):
     ----------
     list_of_files : pathlib.Path.glob
         List of files
+
     Returns
     -------
     list_of_run_objects
@@ -122,16 +151,15 @@ def get_runs_and_subruns(list_of_run_objects, stream=1):
     return run, number_of_files
 
 
-def type_of_run(date_path, run_number, counters, n_events=500):
+def guess_run_type(date_path, run_number, counters, n_events=500):
     """
-    Guessing empirically the type of run based on the percentage of
+    Guess empirically the type of run based on the percentage of
     pedestals/mono trigger types from the first n_events:
     DRS4 pedestal run (DRS4): 100% mono events (trigger_type == 1)
     cosmic data run (DATA): <10% pedestal events (trigger_type == 32)
     pedestal-calibration run (PEDCALIB): ~50% mono, ~50% pedestal events
     Otherwise (ERROR) the run is not expected to be processed.
     This method may not give always the correct type.
-    At some point this should be taken directly from TCU.
 
     Parameters
     ----------
@@ -149,7 +177,6 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     run_type: str
         Type of run (DRS4, PEDCALIB, DATA, ERROR)
     """
-
     pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
     list_of_files = sorted(date_path.glob(pattern))
     if len(list_of_files) == 0:
@@ -161,9 +188,11 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     config = Config()
     config.LSTEventSource.apply_drs4_corrections = False
     config.LSTEventSource.pointing_information = False
-    config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
-    config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
-    config.EventTimeCalculator.dragon_module_id = int(counters["dragon_reference_module_id"])
+
+    if counters["dragon_reference_source"] is not None:
+        config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
+        config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
+        config.EventTimeCalculator.dragon_module_id = int(counters["dragon_reference_module_id"])
 
     try:
         with LSTEventSource(filename, config=config, max_events=n_events) as source:
@@ -182,17 +211,92 @@ def type_of_run(date_path, run_number, counters, n_events=500):
         else:
             run_type = "ERROR"
 
-    except (AttributeError, ValueError, IOError, IndexError) as err:
-        log.error(f"File {filename} has error: {err!r}")
-
+    except Exception as err:
+        log.exception(f"File {filename} has error: {err!r}")
         run_type = "ERROR"
 
     return run_type
 
 
-def read_counters(date_path, run_number):
+def is_db_available(server: str) -> bool:
+    """Returns True if database server is available."""
+    client = MongoClient(server, serverSelectionTimeoutMS=3000, directConnection=True)
+    try:
+        client.admin.command('ping')
+    except (ConnectionFailure, ServerSelectionTimeoutError):
+        log.warning("Database server not available")
+        return False
+    else:
+        return True
+
+
+def get_run_type_from_TCU(run_number, tcu_server):
     """
-    Get initial valid timestamps from the first subrun.
+    Get the run type of a run from the TCU database.
+
+    Parameters
+    ----------
+    run_number : int
+        Run id
+    tcu_server : str
+        Host of the TCU database
+
+    Returns
+    -------
+    run_type: str
+        Type of run (DRS4, PEDCALIB, DATA)
+    """
+
+    client = MongoClient(tcu_server)
+    collection = client["lst1_obs_summary"]["camera"]
+    summary = collection.find_one({"run_number": int(run_number)})
+
+    if summary is not None:
+
+        run_type = summary["kind"].replace(
+            "calib_drs4", "DRS4"
+        ).replace(
+            "calib_ped_run", "PEDCALIB"
+        ).replace(
+            "data_taking", "DATA")
+
+        return run_type
+
+
+def type_of_run(date_path, run_number, tcu_server):
+    """
+    Get the run type of a run by first looking in the TCU
+    database, and if its run type is not available, guess it
+    based on the percentage of different event types.
+
+    Parameters
+    ----------
+    date_path : pathlib.Path
+        Path to the R0 files
+    run_number : int
+        Run id
+    tcu_server : str
+        Host of the TCU database
+
+    Returns
+    -------
+    run_type: str
+        Type of run (DRS4, PEDCALIB, DATA, ERROR)
+    """
+
+    run_type = get_run_type_from_TCU(run_number, tcu_server)
+
+    if run_type is None:
+        counters = read_counters_or_get_default(date_path, run_number)
+        run_type = guess_run_type(date_path, run_number, counters)
+
+    return run_type
+
+
+def read_counters(path):
+    """
+    Get initial valid timestamps from the first subrun for "old" data.
+
     Write down the reference Dragon module used, reference event_id.
 
     Parameters
@@ -206,13 +310,15 @@ def read_counters(date_path, run_number):
     -------
     dict: reference counters and timestamps
     """
-    pattern = date_path / f"LST-1.*.Run{run_number:05d}.0000*.fits.fz"
-    try:
-        f = MultiFiles(glob(str(pattern)))
+    with MultiFiles(path, all_streams=True, all_subruns=False) as f:
         first_event = next(f)
 
         if first_event.event_id != 1:
             raise ValueError("Must be used on first file streams (subrun)")
+
+        if f.cta_r1:
+            # we don't use dragon counters at all in case of new data
+            return COUNTER_DEFAULTS
 
         module_index = np.where(first_event.lstcam.module_status)[0][0]
         module_id = np.where(f.camera_config.lstcam.expected_modules_id == module_index)[0][0]
@@ -249,18 +355,42 @@ def read_counters(date_path, run_number):
             dragon_reference_source=dragon_reference_source,
         )
 
-    except Exception as err:
-        log.error(f"Files {pattern} have error: {err}")
 
-        return dict(
-            ucts_timestamp=-1,
-            run_start=-1,
-            dragon_reference_time=-1,
-            dragon_reference_module_id=-1,
-            dragon_reference_module_index=-1,
-            dragon_reference_counter=-1,
-            dragon_reference_source=None,
-        )
+
+def read_counters_or_get_default(date_path, run_number):
+    """
+    Calls read_counters and returns default values in case of an error.
+    """
+    pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
+    try:
+        path = next(date_path.glob(pattern))
+    except StopIteration:
+        log.error("No input file found for date %s, run number %d", date_path, run_number)
+        return COUNTER_DEFAULTS
+
+    try:
+        return read_counters(path)
+    except Exception:
+        log.exception("Error getting counter values for date %s, run number %d", date_path, run_number)
+        return COUNTER_DEFAULTS
+
+
+def get_data_format(date_path, run_number):
+    """Get data format (name of protobuf object) in data file"""
+    pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
+    try:
+        path = next(date_path.glob(pattern))
+    except StopIteration:
+        log.error("No input file found for date %s, run number %d", date_path, run_number)
+        return ""
+
+    try:
+        with fits.open(path) as hdul:
+            events = hdul["Events"]
+            return events.header["PBFHEAD"]
+    except Exception:
+        log.exception("Error getting data format for date %s, run number %d", date_path, run_number)
+        return ""
 
 
 def main():
@@ -285,13 +415,22 @@ def main():
     file_list = get_list_of_files(date_path)
     runs = get_list_of_runs(file_list)
     run_numbers, n_subruns = get_runs_and_subruns(runs)
+    data_format = [get_data_format(date_path, run) for run in run_numbers]
 
-    reference_counters = [read_counters(date_path, run) for run in run_numbers]
+    reference_counters = [read_counters_or_get_default(date_path, run) for run in run_numbers]
 
-    run_types = [
-        type_of_run(date_path, run, counters)
-        for run, counters in zip(run_numbers, reference_counters)
-    ]
+    if is_db_available(args.tcu_server):
+        run_types = [
+            type_of_run(date_path, run, args.tcu_server)
+            for run in run_numbers
+        ]
+
+    else:
+        run_types = [
+            guess_run_type(date_path, run, counters)
+            for (run, counters) in zip(run_numbers, reference_counters)
+        ]
+
 
     run_summary = Table(
         {
@@ -304,8 +443,12 @@ def main():
     run_summary.add_column(run_numbers, name="run_id", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(run_types, name="run_type", index=2)
+    run_summary.add_column(data_format, name="data_format", index=3)
     run_summary.write(
-        args.output_dir / f"RunSummary_{args.date}.ecsv", format="ascii.ecsv", delimiter=","
+        args.output_dir / f"RunSummary_{args.date}.ecsv",
+        format="ascii.ecsv",
+        delimiter=",",
+        overwrite=args.overwrite,
     )
 
 
