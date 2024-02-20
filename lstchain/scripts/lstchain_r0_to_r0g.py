@@ -70,14 +70,14 @@ def main():
                                      paths.run_to_r0_filename(run_info.tel_id, 
                                                               run_info.run,
                                                               run_info.subrun, 
-                                                              id_stream))
+                                                              id_stream+1))
                           for id_stream in range(4)]
     output_stream_names = [paths.Path(output_dir, paths.Path(inputsn).name) 
                            for inputsn in input_stream_names]
 
     input_streams = []
     for name in input_stream_names:
-        input_streams.append(protozfits.File(name, pure_protobuf=True))
+        input_streams.append(protozfits.File(str(name), pure_protobuf=True))
 
     try:
       camera_config = input_streams[0].CameraConfiguration[0]
@@ -100,7 +100,7 @@ def main():
                     rows_per_tile=rows_per_tile,
                     compression_block_size_kb=64*1024,
                     defaul_compression="lst"))
-            stream.open(name)
+            stream.open(str(name))
 
             stream.move_to_new_table("DataStream")
             stream.write_message(input_streams[i].DataStream[0])
@@ -172,7 +172,7 @@ def get_event_types(input_file):
                      config=Config(standard_config['source_config'])) as source:
         source.pointing_information = False
         source.trigger_information = True
-        source.log.setLevel(log.WARNING)
+        source.log.setLevel(logging.WARNING)
 
         offset = source.data_stream.waveform_offset 
         try:
