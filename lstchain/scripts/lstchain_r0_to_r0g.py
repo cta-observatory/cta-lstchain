@@ -35,14 +35,12 @@ parser.add_argument('-o', '--output-dir', dest='output_dir',
 # identification)
 SAMPLE_START = 3
 SAMPLE_END = 39
-# Baseline offset:
-OFFSET = 400
 
 def main():
     args = parser.parse_args()
 
     # Level of high gain (HG) required for switching to low gain (LG)
-    THRESHOLD = 3500 + OFFSET
+    THRESHOLD = 3900
 
     input_file = args.input_file
     output_dir = args.output_dir
@@ -162,6 +160,8 @@ def get_event_types(input_file):
         source.pointing_information = False
         source.trigger_information = True
         source.log.setLevel(logging.WARNING)
+
+        offset = source.data_stream.waveform_offset 
         try:
             for event in source:
                 if event.r0.tel[1].waveform is None:
@@ -173,7 +173,7 @@ def get_event_types(input_file):
                 # Subtract baseline offset (convert to signed integer to
                 # allow for negative fluctuations!)
                 wf_hg = event.r0.tel[1].waveform[0][:,
-                        SAMPLE_START:SAMPLE_END].astype('int16') - OFFSET
+                        SAMPLE_START:SAMPLE_END].astype('int16') - offset
                 # pixel-wise integral:
                 wf_hg_sum = np.sum(wf_hg, axis=1)
                 ff_pix = ((wf_hg_sum > MIN_FLATFIELD_ADC) &
