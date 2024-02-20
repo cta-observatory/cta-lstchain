@@ -476,6 +476,9 @@ class DataReductionFITSWriter(Tool):
                 "Remove duplicated events: a ratio of duplicated events is "
                 f"{duplicated_events_ratio}"
             )
+        
+        # Sort the data frame based on event_id
+        self.data.sort('event_id')
 
     def start(self):
 
