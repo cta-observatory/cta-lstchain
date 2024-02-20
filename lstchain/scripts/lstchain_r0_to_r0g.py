@@ -118,7 +118,8 @@ def main():
                 evtype = event_type[event.event_id]
               
                 if evtype in EVENT_TYPES_TO_REDUCE:
-                    if event.num_channels != 2:
+                    num_gains = event.num_channels
+                    if num_gains != 2:
                         log.error('You are attempting gain selection on '
                                       'data with only one gain!')
                         sys.exit(1)
