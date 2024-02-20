@@ -82,7 +82,7 @@ def main():
     try:
       camera_config = input_streams[0].CameraConfiguration[0]
     except (AttributeError, IndexError):
-      log.error("CameraConfiguration not found! Is this R1v1 data?')
+      log.error('CameraConfiguration not found! Is this R1v1 data?')
       sys.exit(1)
 
     num_pixels = camera_config.num_pixels
