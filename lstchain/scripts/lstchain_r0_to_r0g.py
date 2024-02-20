@@ -65,14 +65,14 @@ def main():
     # Now loop over the files (4 streams) again to perform the actual gain
     # selection:
     
-    run_info = pth.parse_r0_filename(input_file)
-    input_stream_names = [pth.Path(pth.Path(input_file).parent,
-                                   pth.run_to_r0_filename(run_info.tel_id, 
-                                                          run_info.run,
-                                                          run_info.subrun, 
-                                                          id_stream))
+    run_info = paths.parse_r0_filename(input_file)
+    input_stream_names = [paths.Path(paths.Path(input_file).parent,
+                                     paths.run_to_r0_filename(run_info.tel_id, 
+                                                              run_info.run,
+                                                              run_info.subrun, 
+                                                              id_stream))
                           for id_stream in range(4)]
-    output_stream_names = [pth.Path(output_dir, pth.Path(inputsn).name) 
+    output_stream_names = [paths.Path(output_dir, paths.Path(inputsn).name) 
                            for inputsn in input_stream_names]
 
     input_streams = []
