@@ -48,9 +48,10 @@ def main():
     input_file = args.input_file
     output_dir = args.output_dir
   
-    log = logging.getLogger("__name__")
+    log = logging.getLogger(__name__)
+    log.setLevel(logging.INFO)
     handler = logging.FileHandler("out.log", mode='w')
-    log.addHandler(handler)
+    logging.getLogger().addHandler(handler)
 
     use_heuristic = True
 
