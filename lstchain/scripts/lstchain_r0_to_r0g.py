@@ -14,11 +14,12 @@ import logging
 import protozfits
 import argparse
 import sys
+import re
 
+from pathlib import Path
 from ctapipe.io import EventSource
 from ctapipe.containers import EventType
 from lstchain.io import standard_config
-import lstchain.paths as paths
 from traitlets.config import Config
 
 import numpy as np
@@ -65,14 +66,13 @@ def main():
     # Now loop over the files (4 streams) again to perform the actual gain
     # selection:
     
-    run_info = paths.parse_r0_filename(input_file)
-    input_stream_names = [paths.Path(paths.Path(input_file).parent,
-                                     paths.run_to_r0_filename(run_info.tel_id, 
-                                                              run_info.run,
-                                                              run_info.subrun, 
-                                                              id_stream+1))
+    input_stream_names = [Path(Path(input_file).parent,
+                               re.sub("LST-1...Run", 
+                                      f"LST-1.{id_stream+1}.Run",
+                                      Path(input_file).name))
                           for id_stream in range(4)]
-    output_stream_names = [paths.Path(output_dir, paths.Path(inputsn).name) 
+  
+    output_stream_names = [Path(output_dir, Path(inputsn).name) 
                            for inputsn in input_stream_names]
 
     input_streams = []
