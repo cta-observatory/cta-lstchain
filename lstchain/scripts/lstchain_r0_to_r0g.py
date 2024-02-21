@@ -19,6 +19,7 @@ import re
 from pathlib import Path
 from ctapipe.containers import EventType
 
+import lstchain.paths as paths
 import numpy as np
 from contextlib import ExitStack
 
@@ -30,6 +31,17 @@ parser.add_argument('-f', '--R0-file', dest='input_file',
 parser.add_argument('-o', '--output-dir', dest='output_dir',
                     type=str, default='./',
                     help='Output directory')
+
+parser.add_argument('--log', dest='log_file',
+                    type=str, default=None,
+                    help='Log file name')
+
+parser.add_argument('--no-flatfield-heuristic', action='store_const', 
+                    const=False, 
+                    dest="use_flatfield_heuristic", default=True,
+                    help=("If given, do *not* identify flatfield events"
+                          " heuristically from the raw data. "
+                          "Trust event_type."))
 
 # Range of waveform to be checked (for gain selection & heuristic FF
 # identification)
@@ -47,13 +59,22 @@ def main():
   
     input_file = args.input_file
     output_dir = args.output_dir
-  
+    use_flatfield_heuristic =  args.use_flatfield_heuristic
+
     log = logging.getLogger(__name__)
     log.setLevel(logging.INFO)
-    handler = logging.FileHandler("out.log", mode='w')
-    logging.getLogger().addHandler(handler)
 
-    use_heuristic = True
+    log_file = args.log_file
+    runinfo = paths.parse_r0_filename(input_file)
+    if log_file is None:
+        log_file = f'R0_to_R0g_Run{runinfo.run:05d}.{runinfo.subrun:04d}.log'
+
+    formatter = logging.Formatter('%(asctime)s - '
+                                  '%(levelname)s - %(message)s',
+                                  '%Y-%m-%d %H:%M:%S')
+    handler = logging.FileHandler(log_file, mode='w')
+    handler.setFormatter(formatter)
+    logging.getLogger().addHandler(handler)
 
     # Loop over the files (4 streams) to perform the gain selection:
     
@@ -137,8 +158,7 @@ def main():
                 elif evtype_heuristic == EventType.FLATFIELD:
                     num_FF_like_with_no_FF_type += 1
 
-
-                if use_heuristic:
+                if use_flatfield_heuristic:
                     evtype = evtype_heuristic
 
                 if evtype in EVENT_TYPES_TO_REDUCE:
@@ -163,15 +183,31 @@ def main():
 
 
     log.info('Number of processed events: %d', num_events)
-    log.info('FF-like events tagged as FF: %d', 
-             num_FF_like_with_FF_type)
+    if num_FF_like_with_FF_type > 0:
+        log.info('FF-like events tagged as FF: %d', 
+                 num_FF_like_with_FF_type)
+    else:
+        log.warn('FF-like events tagged as FF: %d !!', 
+                 num_FF_like_with_FF_type)
+
     log.info('FF-like events not tagged as FF: %d', 
              num_FF_like_with_no_FF_type)
+
     log.info('FF-unlike events tagged as FF: %d', 
              num_FF_unlike_with_FF_type)
 
-    log.info('R0 to R0G conversion finished successfully!')
 
+    num_FF_like = num_FF_like_with_no_FF_type + num_FF_like_with_FF_type
+
+    # If a relevant fraction of FF-like events were not tagged as FF...:
+    max_frac = 0.1
+    if ((num_FF_like_with_no_FF_type / num_FF_like > max_frac) &
+        (use_flatfield_heuristic == False)):
+            log.warn('More than %d percent of FF-like events '
+                     'have wrong event_type!', int(100*max_frac))
+            log.warn('You should use heuristic identification of FF events!')
+    else:
+        log.info('R0 to R0G conversion finished successfully!')
 
 def get_event_type(wf_hg, offset, evtype):
 
