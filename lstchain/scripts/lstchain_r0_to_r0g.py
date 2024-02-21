@@ -17,10 +17,7 @@ import sys
 import re
 
 from pathlib import Path
-from ctapipe.io import EventSource
 from ctapipe.containers import EventType
-from lstchain.io import standard_config
-from traitlets.config import Config
 
 import numpy as np
 from contextlib import ExitStack
@@ -51,20 +48,13 @@ def main():
     input_file = args.input_file
     output_dir = args.output_dir
   
-    log = logging.getLogger("lstchain_r0_to_r0g")
-  
-    # First identify properly interleaved pedestals (also in case there are
-    # ucts jumps) and FF events (heuristically):
-    event_type = get_event_types(input_file)
-    event_type_val = np.array([x.value for x in event_type.values()])
+    log = logging.getLogger("__name__")
+    handler = logging.FileHandler("out.log", mode='w')
+    log.addHandler(handler)
 
-    log.info('Identified event types and number of events:')
-    evtype, counts = np.unique(event_type_val, return_counts=True)
-    for j, n in zip(evtype, counts):
-        log.info('%s: %d', EventType(j), n)
+    use_heuristic = True
 
-    # Now loop over the files (4 streams) again to perform the actual gain
-    # selection:
+    # Loop over the files (4 streams) to perform the gain selection:
     
     input_stream_names = [Path(Path(input_file).parent,
                                re.sub("LST-1...Run", 
@@ -88,6 +78,12 @@ def main():
     num_pixels = camera_config.num_pixels
     num_samples = camera_config.num_samples_nominal
 
+    # Counters to keep track of how many FF-like events are
+    # tagged as FF, and how many are not (and vice-versa):
+    num_FF_like_with_FF_type = 0
+    num_FF_like_with_no_FF_type = 0
+    num_FF_unlike_with_FF_type  = 0
+    num_events = 0
 
     with ExitStack() as stack:
         for i, name in enumerate(output_stream_names):
@@ -110,25 +106,42 @@ def main():
 
             stream.move_to_new_table("Events")
 
+            wf_offset = input_streams[i].DataStream[0].waveform_offset
+
             for event in input_streams[i].Events:
                 # skip corrupted events:
                 if event.event_id == 0:
                     continue
-                # Get the event type, from the first loop over the files:
-                evtype = event_type[event.event_id]
-              
-                if evtype in EVENT_TYPES_TO_REDUCE:
-                    num_gains = event.num_channels
-                    if num_gains != 2:
-                        log.error('You are attempting gain selection on '
-                                      'data with only one gain!')
-                        sys.exit(1)
+                num_events += 1
 
+                num_gains = event.num_channels
+                if num_gains != 2:
+                    log.error('You are attempting gain selection on '
+                              'data with only one gain!')
+                    sys.exit(1)
+
+                wf = protozfits.any_array_to_numpy(event.waveform)
+                wf = wf.reshape((num_gains, num_pixels, num_samples))
+                hg = wf[0]
+                lg = wf[1]
+
+                evtype = event.event_type
+                evtype_heuristic = get_event_type(hg, wf_offset, evtype)
+
+                if evtype == EventType.FLATFIELD:
+                    if evtype_heuristic == EventType.FLATFIELD:
+                        num_FF_like_with_FF_type += 1
+                    else:
+                        num_FF_unlike_with_FF_type += 1
+                elif evtype_heuristic == EventType.FLATFIELD:
+                    num_FF_like_with_no_FF_type += 1
+
+
+                if use_heuristic:
+                    evtype = evtype_heuristic
+
+                if evtype in EVENT_TYPES_TO_REDUCE:
                     # Find pixels with HG above gain switch threshold:
-                    wf = protozfits.any_array_to_numpy(event.waveform)
-                    wf = wf.reshape((num_gains, num_pixels, num_samples))
-                    hg = wf[0]
-                    lg = wf[1]
                     use_lg = (np.max(hg[:, SAMPLE_START:SAMPLE_END], axis=1)
                               > THRESHOLD)
                     new_wf = np.where(use_lg[:, None], lg, hg) # gain-selected
@@ -147,13 +160,19 @@ def main():
             stream.close()
             input_streams[i].close()
 
+
+    log.info('Number of processed events: %d', num_events)
+    log.info('FF-like events tagged as FF: %d', 
+             num_FF_like_with_FF_type)
+    log.info('FF-like events not tagged as FF: %d', 
+             num_FF_like_with_no_FF_type)
+    log.info('FF-unlike events tagged as FF: %d', 
+             num_FF_unlike_with_FF_type)
+
     log.info('R0 to R0G conversion finished successfully!')
-    
 
 
-def get_event_types(input_file):
-
-    log = logging.getLogger("lstchain_r0_to_r0g")
+def get_event_type(wf_hg, offset, evtype):
 
     # For heuristic flat field identification (values refer to
     # baseline-subtracted HG integrated waveforms):
@@ -161,59 +180,19 @@ def get_event_types(input_file):
     MAX_FLATFIELD_ADC = 12000
     MIN_FLATFIELD_PIXEL_FRACTION = 0.8
 
-    standard_config['source_config']['LSTEventSource'][
-        'apply_drs4_corrections'] = False
-    standard_config['source_config']['LSTEventSource'][
-        'pointing_information'] = False
+    evtype_heuristic = evtype
 
-    event_type = dict()
-  
-    with EventSource(input_url=input_file,
-                     config=Config(standard_config['source_config'])) as source:
-        source.pointing_information = False
-        source.trigger_information = True
-        source.log.setLevel(logging.WARNING)
+    # pixel-wise integral:
+    wf_hg_sum = np.sum(wf_hg - offset, axis=1)
+    ff_pix = ((wf_hg_sum > MIN_FLATFIELD_ADC) &
+              (wf_hg_sum < MAX_FLATFIELD_ADC))
 
-        offset = source.data_stream.waveform_offset 
-        try:
-            for event in source:
-                if event.r0.tel[1].waveform is None:
-                    log.error('The data seem to contain no R0 waveforms. '
-                                  'Is this already gain-selected data?')
-                    sys.exit(1)
+    # Check fraction of pixels with HG in "FF-like range"
+    if ff_pix.sum() / len(ff_pix) > MIN_FLATFIELD_PIXEL_FRACTION:
+        # Looks like a FF event:
+        evtype_heuristic = EventType.FLATFIELD
+    elif evtype == EventType.FLATFIELD:
+        # Does not look like a FF, but was tagged as such:
+        evtype_heuristic = EventType.UNKNOWN
 
-                # Check if this may be a FF event
-                # Subtract baseline offset (convert to signed integer to
-                # allow for negative fluctuations!)
-                wf_hg = event.r0.tel[1].waveform[0][:,
-                        SAMPLE_START:SAMPLE_END].astype('int16') - offset
-                # pixel-wise integral:
-                wf_hg_sum = np.sum(wf_hg, axis=1)
-                ff_pix = ((wf_hg_sum > MIN_FLATFIELD_ADC) &
-                          (wf_hg_sum < MAX_FLATFIELD_ADC))
-
-                evtype = event.trigger.event_type
-                # Check fraction of pixels with HG in "FF-like range"
-                if ff_pix.sum() / event.r0.tel[1].waveform.shape[1] > \
-                        MIN_FLATFIELD_PIXEL_FRACTION:
-                    # Looks like a FF event:
-                    evtype = EventType.FLATFIELD
-                elif evtype == EventType.FLATFIELD:
-                    # If originally tagged as FF, but not looking like FF:
-                    evtype = EventType.UNKNOWN
-
-                event_type[event.index.event_id] = evtype
-
-            log.info('Finished first loop over input files - all ok!')
-
-        except Exception as err:
-            log.error(err)
-            log.error('Something went wrong!')
-            sys.exit(1)
-
-    return event_type
-
-
-
-if __name__ == '__main__':
-    main()
+    return evtype_heuristic
