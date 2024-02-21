@@ -125,7 +125,7 @@ def main():
                 hg = wf[0]
                 lg = wf[1]
 
-                evtype = event.event_type
+                evtype = EventType(event.event_type)
                 evtype_heuristic = get_event_type(hg, wf_offset, evtype)
 
                 if evtype == EventType.FLATFIELD:
