@@ -93,10 +93,10 @@ def main():
         input_streams.append(protozfits.File(str(name), pure_protobuf=True))
 
     try:
-      camera_config = input_streams[0].CameraConfiguration[0]
+        camera_config = input_streams[0].CameraConfiguration[0]
     except (AttributeError, IndexError):
-      log.error('CameraConfiguration not found! Is this R1v1 data?')
-      sys.exit(1)
+        log.error('CameraConfiguration not found! Is this R1v1 data?')
+        sys.exit(1)
 
     num_pixels = camera_config.num_pixels
     num_samples = camera_config.num_samples_nominal
