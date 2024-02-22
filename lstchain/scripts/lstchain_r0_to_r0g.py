@@ -36,9 +36,8 @@ parser.add_argument('--log', dest='log_file',
                     type=str, default=None,
                     help='Log file name')
 
-parser.add_argument('--no-flatfield-heuristic', action='store_const', 
-                    const=False, 
-                    dest="use_flatfield_heuristic", default=True,
+parser.add_argument('--no-flatfield-heuristic', action='store_false', 
+                    dest="use_flatfield_heuristic",
                     help=("If given, do *not* identify flatfield events"
                           " heuristically from the raw data. "
                           "Trust event_type."))
