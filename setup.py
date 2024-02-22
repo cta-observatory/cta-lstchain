@@ -60,7 +60,7 @@ setup(
         'scikit-learn~=1.2',
         'tables',
         'toml',
-        'protozfits~=2.2',
+        'protozfits>=2.2,<3',
         'pymongo',
         'pyparsing',
         'setuptools_scm',
