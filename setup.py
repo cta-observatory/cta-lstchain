@@ -3,9 +3,10 @@ from setuptools import setup, find_packages
 import os
 
 
-def find_scripts(script_dir, prefix):
+def find_scripts(script_dir, prefix, suffix='.py'):
     script_list = [
-        os.path.splitext(f)[0] for f in os.listdir(script_dir) if f.startswith(prefix)
+        os.path.splitext(f)[0] for f in os.listdir(script_dir) 
+        if (f.startswith(prefix) and f.endswith(suffix))
     ]
     script_dir = script_dir.replace("/", ".")
     point_list = []
