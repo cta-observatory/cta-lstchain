@@ -66,8 +66,10 @@ def main():
 
     log_file = args.log_file
     runinfo = paths.parse_r0_filename(input_file)
+
     if log_file is None:
-        log_file = f'R0_to_R0g_Run{runinfo.run:05d}.{runinfo.subrun:04d}.log'
+        log_file = output_dir
+        log_file += f'/R0_to_R0g_Run{runinfo.run:05d}.{runinfo.subrun:04d}.log'
 
     formatter = logging.Formatter('%(asctime)s - '
                                   '%(levelname)s - %(message)s',
