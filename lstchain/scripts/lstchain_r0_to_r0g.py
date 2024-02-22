@@ -173,8 +173,8 @@ def main():
                     pixel_status = protozfits.any_array_to_numpy(event.pixel_status)
                     # Set to 0 the status bit of the removed gain:
                     new_status = np.where(use_lg,
-                                          pixel_status & 0b1011,
-                                          pixel_status & 0b0111)
+                                          pixel_status & 0b11111011,
+                                          pixel_status & 0b11110111)
                     event.pixel_status.data = new_status.tobytes()
 
                 stream.write_message(event)
