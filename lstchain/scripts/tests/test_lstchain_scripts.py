@@ -110,6 +110,19 @@ def test_lstchain_r0_to_r0g(tmp_path, temp_dir_observed_files):
         assert(event.r0.tel[1].waveform.shape[0] == ngains)  
 
 @pytest.mark.private_data
+def test_lstchain_r0g_to_r0v(tmp_path, temp_dir_observed_files):
+    test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+    input_file = temp_dir_observed_files / "R0G/20231214/LST-1.1.Run16102.0000_first50" \
+                                           ".fits.fz"
+    pixel_selection_file = test_data / "real/R0DVR/Pixel_selection_LST-1.Run16102.0000.h5"
+    output_dir = temp_dir_observed_files / "R0V"
+    output_dir.mkdir()
+    run_program("lstchain_r0g_to_r0v", "-f", input_file, "-o", output_dir,
+                "--pixselection-file", pixel_selection_file)
+    output_file = output_dir / input_file.name
+    assert output_file.is_file()
+
+@pytest.mark.private_data
 def test_lstchain_data_r0_to_dl1(observed_dl1_files):
     assert observed_dl1_files["dl1_file1"].is_file()
     assert observed_dl1_files["muons1"].is_file()
