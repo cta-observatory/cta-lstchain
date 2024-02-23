@@ -11,8 +11,10 @@ DispContainer
    .. autosummary::
 
       ~DispContainer.angle
+      ~DispContainer.default_prefix
       ~DispContainer.dx
       ~DispContainer.dy
+      ~DispContainer.fields
       ~DispContainer.meta
       ~DispContainer.miss
       ~DispContainer.norm
@@ -22,8 +24,10 @@ DispContainer
    .. rubric:: Attributes Documentation
 
    .. autoattribute:: angle
+   .. autoattribute:: default_prefix
    .. autoattribute:: dx
    .. autoattribute:: dy
+   .. autoattribute:: fields
    .. autoattribute:: meta
    .. autoattribute:: miss
    .. autoattribute:: norm

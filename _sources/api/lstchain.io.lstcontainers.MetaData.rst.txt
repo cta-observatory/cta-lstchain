@@ -14,6 +14,8 @@ MetaData
       ~MetaData.CTAPIPE_IO_LST_VERSION
       ~MetaData.CTAPIPE_VERSION
       ~MetaData.LSTCHAIN_VERSION
+      ~MetaData.default_prefix
+      ~MetaData.fields
       ~MetaData.meta
       ~MetaData.prefix
 
@@ -23,5 +25,7 @@ MetaData
    .. autoattribute:: CTAPIPE_IO_LST_VERSION
    .. autoattribute:: CTAPIPE_VERSION
    .. autoattribute:: LSTCHAIN_VERSION
+   .. autoattribute:: default_prefix
+   .. autoattribute:: fields
    .. autoattribute:: meta
    .. autoattribute:: prefix

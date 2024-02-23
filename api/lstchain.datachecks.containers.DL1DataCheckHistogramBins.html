@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DL1DataCheckHistogramBins &mdash; lstchain 0.10.8.dev37+g79e819f3 documentation</title>
+  <title>DL1DataCheckHistogramBins &mdash; lstchain 0.10.8.dev76+g5ea3010a documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
@@ -16,7 +16,7 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/documentation_options.js?v=180979e3"></script>
+        <script src="../_static/documentation_options.js?v=ebc4bf08"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.8.dev37+g79e819f3
+                0.10.8.dev76+g5ea3010a
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -187,6 +187,12 @@
 <p class="rubric">Attributes Summary</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckHistogramBins.default_prefix" title="lstchain.datachecks.containers.DL1DataCheckHistogramBins.default_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_prefix</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckHistogramBins.fields" title="lstchain.datachecks.containers.DL1DataCheckHistogramBins.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></p></td>
+<td><p></p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.datachecks.containers.DL1DataCheckHistogramBins.hist_delta_t" title="lstchain.datachecks.containers.DL1DataCheckHistogramBins.hist_delta_t"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_delta_t</span></code></a></p></td>
 <td><p></p></td>
 </tr>
@@ -241,6 +247,16 @@
 </tbody>
 </table>
 <p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckHistogramBins.default_prefix">
+<span class="sig-name descname"><span class="pre">default_prefix</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'dl1datacheckhistogrambins'</span></em><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckHistogramBins.default_prefix" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckHistogramBins.fields">
+<span class="sig-name descname"><span class="pre">fields</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'hist_delta_t':</span> <span class="pre">Field(default=[-1.000e-02</span>&#160; <span class="pre">1.005e-04</span> <span class="pre">...</span>&#160; <span class="pre">1.990e+00</span>&#160; <span class="pre">2.000e+00]),</span> <span class="pre">'hist_dist0':</span> <span class="pre">Field(default=[0.</span>&#160;&#160;&#160; <span class="pre">0.051</span> <span class="pre">...</span> <span class="pre">2.449</span> <span class="pre">2.5</span>&#160; <span class="pre">]),</span> <span class="pre">'hist_dist0_intensity_gt_200':</span> <span class="pre">Field(default=[0.</span>&#160;&#160;&#160; <span class="pre">0.051</span> <span class="pre">...</span> <span class="pre">2.449</span> <span class="pre">2.5</span>&#160; <span class="pre">]),</span> <span class="pre">'hist_intensity':</span> <span class="pre">Field(default=[1.000e+01</span> <span class="pre">1.122e+01</span> <span class="pre">...</span> <span class="pre">8.913e+05</span> <span class="pre">1.000e+06]),</span> <span class="pre">'hist_intercept':</span> <span class="pre">Field(default=[[</span> <span class="pre">5.012e+00</span>&#160; <span class="pre">5.623e+00</span> <span class="pre">...</span>&#160; <span class="pre">4.467e+05</span>&#160; <span class="pre">5.012e+05]</span>&#160; <span class="pre">[-3.000e+01</span> <span class="pre">-2.930e+01</span> <span class="pre">...</span>&#160; <span class="pre">3.930e+01</span>&#160; <span class="pre">4.000e+01]]),</span> <span class="pre">'hist_length':</span> <span class="pre">Field(default=[[5.012e+00</span> <span class="pre">5.623e+00</span> <span class="pre">...</span> <span class="pre">4.467e+05</span> <span class="pre">5.012e+05]</span>&#160; <span class="pre">[0.000e+00</span> <span class="pre">1.000e-02</span> <span class="pre">...</span> <span class="pre">9.900e-01</span> <span class="pre">1.000e+00]]),</span> <span class="pre">'hist_nislands':</span> <span class="pre">Field(default=[-0.5</span>&#160; <span class="pre">0.5</span> <span class="pre">...</span> <span class="pre">28.5</span> <span class="pre">29.5]),</span> <span class="pre">'hist_npixels':</span> <span class="pre">Field(default=[5.000e-01</span> <span class="pre">5.513e+00</span> <span class="pre">...</span> <span class="pre">1.995e+03</span> <span class="pre">2.000e+03]),</span> <span class="pre">'hist_pixelchargespectrum':</span> <span class="pre">Field(default=[1.000e-01</span> <span class="pre">1.116e-01</span> <span class="pre">...</span> <span class="pre">4.493e+04</span> <span class="pre">5.012e+04]),</span> <span class="pre">'hist_psi':</span> <span class="pre">Field(default=[-100.</span>&#160; <span class="pre">-98.</span> <span class="pre">...</span>&#160;&#160; <span class="pre">98.</span>&#160; <span class="pre">100.]),</span> <span class="pre">'hist_psi_intensity_gt_200':</span> <span class="pre">Field(default=[-100.</span>&#160; <span class="pre">-98.</span> <span class="pre">...</span>&#160;&#160; <span class="pre">98.</span>&#160; <span class="pre">100.]),</span> <span class="pre">'hist_skewness':</span> <span class="pre">Field(default=[[</span> <span class="pre">5.012e+00</span>&#160; <span class="pre">5.623e+00</span> <span class="pre">...</span>&#160; <span class="pre">4.467e+05</span>&#160; <span class="pre">5.012e+05]</span>&#160; <span class="pre">[-4.000e+00</span> <span class="pre">-3.920e+00</span> <span class="pre">...</span>&#160; <span class="pre">3.920e+00</span>&#160; <span class="pre">4.000e+00]]),</span> <span class="pre">'hist_tgrad_vs_length':</span> <span class="pre">Field(default=[[0.00e+00</span> <span class="pre">1.00e-02</span> <span class="pre">...</span> <span class="pre">9.90e-01</span> <span class="pre">1.00e+00]</span>&#160; <span class="pre">[0.00e+00</span> <span class="pre">2.00e+00</span> <span class="pre">...</span> <span class="pre">1.98e+02</span> <span class="pre">2.00e+02]]),</span> <span class="pre">'hist_tgrad_vs_length_intensity_gt_200':</span> <span class="pre">Field(default=[[0.00e+00</span> <span class="pre">1.00e-02</span> <span class="pre">...</span> <span class="pre">9.90e-01</span> <span class="pre">1.00e+00]</span>&#160; <span class="pre">[0.00e+00</span> <span class="pre">5.00e-01</span> <span class="pre">...</span> <span class="pre">4.95e+01</span> <span class="pre">5.00e+01]]),</span> <span class="pre">'hist_width':</span> <span class="pre">Field(default=[[5.012e+00</span> <span class="pre">5.623e+00</span> <span class="pre">...</span> <span class="pre">4.467e+05</span> <span class="pre">5.012e+05]</span>&#160; <span class="pre">[0.000e+00</span> <span class="pre">8.000e-03</span> <span class="pre">...</span> <span class="pre">7.920e-01</span> <span class="pre">8.000e-01]])}</span></em><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckHistogramBins.fields" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckHistogramBins.hist_delta_t">
 <span class="sig-name descname"><span class="pre">hist_delta_t</span></span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckHistogramBins.hist_delta_t" title="Link to this definition">¶</a></dt>
@@ -341,7 +357,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 22 Feb 2024 14:36.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 23 Feb 2024 08:30.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

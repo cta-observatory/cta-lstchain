@@ -10,12 +10,16 @@ ExtraMCInfo
 
    .. autosummary::
 
+      ~ExtraMCInfo.default_prefix
+      ~ExtraMCInfo.fields
       ~ExtraMCInfo.meta
       ~ExtraMCInfo.obs_id
       ~ExtraMCInfo.prefix
 
    .. rubric:: Attributes Documentation
 
+   .. autoattribute:: default_prefix
+   .. autoattribute:: fields
    .. autoattribute:: meta
    .. autoattribute:: obs_id
    .. autoattribute:: prefix

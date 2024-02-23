@@ -11,6 +11,8 @@ DL1MonitoringEventIndexContainer
    .. autosummary::
 
       ~DL1MonitoringEventIndexContainer.calibration_id
+      ~DL1MonitoringEventIndexContainer.default_prefix
+      ~DL1MonitoringEventIndexContainer.fields
       ~DL1MonitoringEventIndexContainer.flatfield_id
       ~DL1MonitoringEventIndexContainer.meta
       ~DL1MonitoringEventIndexContainer.pedestal_id
@@ -20,6 +22,8 @@ DL1MonitoringEventIndexContainer
    .. rubric:: Attributes Documentation
 
    .. autoattribute:: calibration_id
+   .. autoattribute:: default_prefix
+   .. autoattribute:: fields
    .. autoattribute:: flatfield_id
    .. autoattribute:: meta
    .. autoattribute:: pedestal_id

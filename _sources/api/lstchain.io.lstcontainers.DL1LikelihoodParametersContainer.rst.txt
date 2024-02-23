@@ -10,6 +10,8 @@ DL1LikelihoodParametersContainer
 
    .. autosummary::
 
+      ~DL1LikelihoodParametersContainer.default_prefix
+      ~DL1LikelihoodParametersContainer.fields
       ~DL1LikelihoodParametersContainer.lhfit_TS
       ~DL1LikelihoodParametersContainer.lhfit_area
       ~DL1LikelihoodParametersContainer.lhfit_call_status
@@ -41,6 +43,8 @@ DL1LikelihoodParametersContainer
 
    .. rubric:: Attributes Documentation
 
+   .. autoattribute:: default_prefix
+   .. autoattribute:: fields
    .. autoattribute:: lhfit_TS
    .. autoattribute:: lhfit_area
    .. autoattribute:: lhfit_call_status

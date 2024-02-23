@@ -10,6 +10,8 @@ DL1DataCheckHistogramBins
 
    .. autosummary::
 
+      ~DL1DataCheckHistogramBins.default_prefix
+      ~DL1DataCheckHistogramBins.fields
       ~DL1DataCheckHistogramBins.hist_delta_t
       ~DL1DataCheckHistogramBins.hist_dist0
       ~DL1DataCheckHistogramBins.hist_dist0_intensity_gt_200
@@ -30,6 +32,8 @@ DL1DataCheckHistogramBins
 
    .. rubric:: Attributes Documentation
 
+   .. autoattribute:: default_prefix
+   .. autoattribute:: fields
    .. autoattribute:: hist_delta_t
    .. autoattribute:: hist_dist0
    .. autoattribute:: hist_dist0_intensity_gt_200

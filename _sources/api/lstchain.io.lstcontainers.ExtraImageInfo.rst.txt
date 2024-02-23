@@ -10,6 +10,8 @@ ExtraImageInfo
 
    .. autosummary::
 
+      ~ExtraImageInfo.default_prefix
+      ~ExtraImageInfo.fields
       ~ExtraImageInfo.meta
       ~ExtraImageInfo.prefix
       ~ExtraImageInfo.selected_gain_channel
@@ -17,6 +19,8 @@ ExtraImageInfo
 
    .. rubric:: Attributes Documentation
 
+   .. autoattribute:: default_prefix
+   .. autoattribute:: fields
    .. autoattribute:: meta
    .. autoattribute:: prefix
    .. autoattribute:: selected_gain_channel

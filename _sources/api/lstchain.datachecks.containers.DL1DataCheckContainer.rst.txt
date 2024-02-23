@@ -14,8 +14,10 @@ DL1DataCheckContainer
       ~DL1DataCheckContainer.charge_stddev
       ~DL1DataCheckContainer.cog_within_pixel
       ~DL1DataCheckContainer.cog_within_pixel_intensity_gt_200
+      ~DL1DataCheckContainer.default_prefix
       ~DL1DataCheckContainer.dragon_time
       ~DL1DataCheckContainer.elapsed_time
+      ~DL1DataCheckContainer.fields
       ~DL1DataCheckContainer.hist_delta_t
       ~DL1DataCheckContainer.hist_dist0
       ~DL1DataCheckContainer.hist_dist0_intensity_gt_200
@@ -58,14 +60,23 @@ DL1DataCheckContainer
       ~DL1DataCheckContainer.ucts_time
       ~DL1DataCheckContainer.ucts_trigger_type
 
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~DL1DataCheckContainer.fill_event_wise_info
+      ~DL1DataCheckContainer.fill_pixel_wise_info
+
    .. rubric:: Attributes Documentation
 
    .. autoattribute:: charge_mean
    .. autoattribute:: charge_stddev
    .. autoattribute:: cog_within_pixel
    .. autoattribute:: cog_within_pixel_intensity_gt_200
+   .. autoattribute:: default_prefix
    .. autoattribute:: dragon_time
    .. autoattribute:: elapsed_time
+   .. autoattribute:: fields
    .. autoattribute:: hist_delta_t
    .. autoattribute:: hist_dist0
    .. autoattribute:: hist_dist0_intensity_gt_200
@@ -107,3 +118,8 @@ DL1DataCheckContainer
    .. autoattribute:: trigger_type
    .. autoattribute:: ucts_time
    .. autoattribute:: ucts_trigger_type
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: fill_event_wise_info
+   .. automethod:: fill_pixel_wise_info

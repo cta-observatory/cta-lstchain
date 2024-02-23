@@ -16,6 +16,7 @@ DL1ParametersContainer
       ~DL1ParametersContainer.concentration_cog
       ~DL1ParametersContainer.concentration_core
       ~DL1ParametersContainer.concentration_pixel
+      ~DL1ParametersContainer.default_prefix
       ~DL1ParametersContainer.disp_angle
       ~DL1ParametersContainer.disp_dx
       ~DL1ParametersContainer.disp_dy
@@ -25,6 +26,7 @@ DL1ParametersContainer
       ~DL1ParametersContainer.dragon_time
       ~DL1ParametersContainer.event_id
       ~DL1ParametersContainer.event_type
+      ~DL1ParametersContainer.fields
       ~DL1ParametersContainer.hadroness
       ~DL1ParametersContainer.intensity
       ~DL1ParametersContainer.intercept
@@ -77,6 +79,22 @@ DL1ParametersContainer
       ~DL1ParametersContainer.x
       ~DL1ParametersContainer.y
 
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~DL1ParametersContainer.fill_event_info
+      ~DL1ParametersContainer.fill_hillas
+      ~DL1ParametersContainer.fill_mc
+      ~DL1ParametersContainer.get_features
+      ~DL1ParametersContainer.set_concentration
+      ~DL1ParametersContainer.set_disp
+      ~DL1ParametersContainer.set_leakage
+      ~DL1ParametersContainer.set_n_islands
+      ~DL1ParametersContainer.set_source_camera_position
+      ~DL1ParametersContainer.set_telescope_info
+      ~DL1ParametersContainer.set_timing_features
+
    .. rubric:: Attributes Documentation
 
    .. autoattribute:: alt_tel
@@ -85,6 +103,7 @@ DL1ParametersContainer
    .. autoattribute:: concentration_cog
    .. autoattribute:: concentration_core
    .. autoattribute:: concentration_pixel
+   .. autoattribute:: default_prefix
    .. autoattribute:: disp_angle
    .. autoattribute:: disp_dx
    .. autoattribute:: disp_dy
@@ -94,6 +113,7 @@ DL1ParametersContainer
    .. autoattribute:: dragon_time
    .. autoattribute:: event_id
    .. autoattribute:: event_type
+   .. autoattribute:: fields
    .. autoattribute:: hadroness
    .. autoattribute:: intensity
    .. autoattribute:: intercept
@@ -145,3 +165,17 @@ DL1ParametersContainer
    .. autoattribute:: wl
    .. autoattribute:: x
    .. autoattribute:: y
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: fill_event_info
+   .. automethod:: fill_hillas
+   .. automethod:: fill_mc
+   .. automethod:: get_features
+   .. automethod:: set_concentration
+   .. automethod:: set_disp
+   .. automethod:: set_leakage
+   .. automethod:: set_n_islands
+   .. automethod:: set_source_camera_position
+   .. automethod:: set_telescope_info
+   .. automethod:: set_timing_features

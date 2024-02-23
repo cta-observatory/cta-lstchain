@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ThrownEventsHistogram &mdash; lstchain 0.10.8.dev37+g79e819f3 documentation</title>
+  <title>ThrownEventsHistogram &mdash; lstchain 0.10.8.dev76+g5ea3010a documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
@@ -16,7 +16,7 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/documentation_options.js?v=180979e3"></script>
+        <script src="../_static/documentation_options.js?v=ebc4bf08"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.8.dev37+g79e819f3
+                0.10.8.dev76+g5ea3010a
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -158,6 +158,12 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.bins_energy" title="lstchain.io.lstcontainers.ThrownEventsHistogram.bins_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bins_energy</span></code></a></p></td>
 <td><p></p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.default_prefix" title="lstchain.io.lstcontainers.ThrownEventsHistogram.default_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_prefix</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.fields" title="lstchain.io.lstcontainers.ThrownEventsHistogram.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></p></td>
+<td><p></p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.hist_id" title="lstchain.io.lstcontainers.ThrownEventsHistogram.hist_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist_id</span></code></a></p></td>
 <td><p></p></td>
 </tr>
@@ -178,6 +184,14 @@
 </tr>
 </tbody>
 </table>
+<p class="rubric">Methods Summary</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.fill_from_simtel" title="lstchain.io.lstcontainers.ThrownEventsHistogram.fill_from_simtel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_from_simtel</span></code></a>(hist)</p></td>
+<td><p>fill from a SimTel Histogram entry</p></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Attributes Documentation</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.ThrownEventsHistogram.bins_core_dist">
@@ -187,6 +201,16 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.ThrownEventsHistogram.bins_energy">
 <span class="sig-name descname"><span class="pre">bins_energy</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.bins_energy" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.ThrownEventsHistogram.default_prefix">
+<span class="sig-name descname"><span class="pre">default_prefix</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'throwneventshistogram'</span></em><a class="headerlink" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.default_prefix" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.ThrownEventsHistogram.fields">
+<span class="sig-name descname"><span class="pre">fields</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'bins_core_dist':</span> <span class="pre">Field(default=None),</span> <span class="pre">'bins_energy':</span> <span class="pre">Field(default=None),</span> <span class="pre">'hist_id':</span> <span class="pre">Field(default=-1),</span> <span class="pre">'histogram':</span> <span class="pre">Field(default=None),</span> <span class="pre">'num_entries':</span> <span class="pre">Field(default=-1),</span> <span class="pre">'obs_id':</span> <span class="pre">Field(default=-1)}</span></em><a class="headerlink" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.fields" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -219,6 +243,13 @@
 <span class="sig-name descname"><span class="pre">prefix</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.prefix" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<p class="rubric">Methods Documentation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.io.lstcontainers.ThrownEventsHistogram.fill_from_simtel">
+<span class="sig-name descname"><span class="pre">fill_from_simtel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.ThrownEventsHistogram.fill_from_simtel" title="Link to this definition">¶</a></dt>
+<dd><p>fill from a SimTel Histogram entry</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -234,7 +265,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 22 Feb 2024 14:36.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 23 Feb 2024 08:30.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
