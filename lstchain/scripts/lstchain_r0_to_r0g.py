@@ -118,7 +118,7 @@ def main():
                     n_tiles=n_tiles,
                     rows_per_tile=rows_per_tile,
                     compression_block_size_kb=64*1024,
-                    defaul_compression="lst"))
+                    defaul_compression="zstd9"))
             stream.open(str(name))
 
             stream.move_to_new_table("DataStream")
