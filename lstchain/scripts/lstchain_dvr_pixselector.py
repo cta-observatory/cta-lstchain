@@ -456,19 +456,14 @@ def main():
                 writer_conf = tables.Filters(complevel=9, fletcher32=True)
                 filemode = 'w'
                 if not write_pixel_masks:
-                    log.info('\n\nHOLA, %d %d\n', run_id, current_run_number)
                     if run_id != current_run_number:
                         current_run_number = run_id
-                        log.info('Son distintos')
                     else:
-                        log.info('HOLA k ase')
                         filemode = 'a'
                         # In the "compute_dvr_settings" mode (not writing pixel
                         # masks) we will write only one file per run number,
                         # so for every new subrun we just append one row to the
                         # run_summary table.
-
-                log.info('\nHOLA, filemode: %s\n\n', filemode)
 
                 with HDF5TableWriter(output_file, filters=writer_conf,
                                      mode=filemode) as writer:
