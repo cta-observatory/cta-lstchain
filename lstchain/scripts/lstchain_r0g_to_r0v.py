@@ -28,18 +28,18 @@ from contextlib import ExitStack
 parser = argparse.ArgumentParser(description="Volume reducer program (R0G to "
                                              "R0V)")
 parser.add_argument('-f', '--R0G-file', dest='input_file', required=True,
-                    type=str, help='Input R0G file name (of stream 1)')
+                    type=Path, help='Input R0G file name (of stream 1)')
 
 parser.add_argument('-o', '--output-dir', dest='output_dir',
                     type=str, default='./',
                     help='Output directory')
 
 parser.add_argument('--pixselection-file', dest='pix_file', required=True,
-                    type=str, help='Pixel_selection .h5 file '
+                    type=Path, help='Pixel_selection .h5 file '
                     'produced by lstchain_dvr_pixselector')
 
 parser.add_argument('--log', dest='log_file',
-                    type=str, default=None,
+                    type=Path, default=None,
                     help='Log file name')
 
 # Events for which gain selection will be applied:
@@ -57,8 +57,8 @@ def main():
     log_file = args.log_file
     runinfo = paths.parse_r0_filename(input_file)
     if log_file is None:
-        log_file = output_dir
-        log_file += f'/R0g_to_R0v_Run{runinfo.run:05d}.{runinfo.subrun:04d}.log'
+        log_file = Path(output_dir,
+                        f'R0g_to_R0v_Run{runinfo.run:05d}.{runinfo.subrun:04d}.log')
     formatter = logging.Formatter('%(asctime)s - '
                                   '%(levelname)s - %(message)s',
                                   '%Y-%m-%d %H:%M:%S')
@@ -68,7 +68,7 @@ def main():
     logging.getLogger().addHandler(logging.StreamHandler(sys.stderr))
 
     pix_file = args.pix_file
-    if not Path(pix_file).is_file():
+    if not pix_file.is_file():
         log.error('File %s does not exist!', pix_file) 
         sys.exit(1)
 
@@ -85,10 +85,10 @@ def main():
 
     # Loop over the files (4 streams) to perform the gain selection:
     
-    input_stream_names = [Path(Path(input_file).parent,
+    input_stream_names = [Path(input_file.parent,
                                re.sub("LST-1...Run", 
                                       f"LST-1.{id_stream+1}.Run",
-                                      Path(input_file).name))
+                                      input_file.name))
                           for id_stream in range(4)]
   
     output_stream_names = [Path(output_dir, Path(inputsn).name) 
