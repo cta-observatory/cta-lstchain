@@ -505,19 +505,26 @@ def main():
                 continue
 
     log.info('Output files:')
+  
     # We now create also .json files with recommended image cleaning
     # settings for lstchain_dl1ab. We determine the picture threshold 
     # from the values of min_charge_for_certain_selection:
-    #
+  
     for file in list_of_output_files:
         log.info(file)
         dvr_settings = read_table(file, '/run_summary'))
         meanq = dvr_settings['mean_charge_for_certain_selection'].mean()
         picture_threshold = np.floor(meanq)
         if picture_threshold % 2 != 0:
-            picture_threshold += 1
-        
-
+            picture_threshold += 1  # We change picture_threshold in steps of 2 p.e.
+        boundary_threshold = picture_threshold / 2
+        newconfig = get_standard_config()['tailcuts_clean_with_pedestal_threshold']
+        newconfig['picture_thresh'] = picture_threshold
+        newconfig['boundary_thresh'] = boundary_threshold
+        json_filename = Path(output_dir, f'dl1ab_Run{parse_dl1_filename(file).run:05d}.json')
+        dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig}, 
+                    json_filename, overwrite=True)
+        log.info('     %s', json_filename)
     log.info('lstchain_dvr_pixselector finished successfully!')
 
 
