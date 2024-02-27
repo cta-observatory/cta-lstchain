@@ -27,7 +27,12 @@ settings for the whole run, and a few subruns are enough to determine them).
 The program creates in the output directory (which is the current by default) 
 a file DVR_settings_LST-1.Run12469.h5 which contains a table "run_summary" 
 which includes the DVR algorithm parameters determined for each processed 
-subrun.
+subrun. It also creates a file with recommended cleaning settings for running 
+DL1ab, based on the NSB level measured in the processed runs. We use
+as picture threshold the closest even number not smaller than the charge 
+"min_charge_for_certain_selection" (averaged for all subruns and rounded) 
+which is the value from which a pixel will be certainly kept by the Data Volume 
+Reduction.
 
 Then we run again the script over all subruns, and using the option to create
 the pixel maks (this can also be done subrun by subrun, to parallelize the
@@ -36,8 +41,9 @@ creation of the pixel masks files):
 lstchain_dvr_pixselector -f "/.../dl1_LST-1.Run12469.????.h5" --action create_pixel_masks
 
 The script will detect that the file DVR_settings_LST-1.Run12469.h5 already
-exists, read it, and use, as threshold for DVR, the average for all the previously processed subruns, in p.e., rounded to the closest lower integer (we do 
-not want to have too many different ways of reducing the data, so we 
+exists, read it, and use, as threshold for DVR, the average for all the 
+previously processed subruns, in p.e., rounded to the closest lower integer 
+(we do not want to have too many different ways of reducing the data, so we 
 "discretize" the threshold in 1-p.e. steps). Then the event-wise pixel maks 
 (selected pixels) for the subrun will be computed and written out to a file
 Pixel_selection_LST-1.Run12469.xxxx.h5  for each subrun xxxx
@@ -231,7 +237,10 @@ def main():
     muon_ring_max_t_gradient = 5
 
     current_run_number = -1
-
+  
+    # keep track of the output files:
+    list_of_output_files = []
+  
     for dl1_file in dl1_files:
         log.info('\nInput file: %s', dl1_file)
 
@@ -465,6 +474,9 @@ def main():
                         # so for every new subrun we just append one row to the
                         # run_summary table.
 
+                if filemode == 'w':
+                    list_of_output_files.append(output_file)
+
                 with HDF5TableWriter(output_file, filters=writer_conf,
                                      mode=filemode) as writer:
                     writer.write("run_summary", summary_info)
@@ -496,6 +508,9 @@ def main():
                 time.sleep(300)
                 continue
 
+    log.info('Output files:')
+    for file in list_of_output_files:
+        log.info(file)
     log.info('lstchain_dvr_pixselector finished successfully!')
 
 
