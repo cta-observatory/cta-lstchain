@@ -728,10 +728,11 @@ def apply_models(dl1,
                          "the predicted probabilty to assign as gammaness is unclear."
                          "Please check training data")
 
-    # gammaness is the prediction probability for the first class (0)
-    dl2['gammaness'] = probs[:, 0]
-    col = list(classifier.classes_).index(0)
-    dl2['reco_type'] = np.where(probs[:, col] > 0.5, 0, 101)
+    # gammaness is the prediction probability for the class 0 (proton: class 101)
+    mc_type_gamma, mc_type_proton = 0, 101
+    col = list(classifier.classes_).index(mc_type_gamma)
+    dl2['gammaness'] = probs[:, col]
+    dl2['reco_type'] = np.where(probs[:, col] > 0.5, mc_type_gamma, mc_type_proton)
     del classifier
 
     return dl2
