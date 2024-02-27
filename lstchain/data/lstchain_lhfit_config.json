@@ -249,7 +249,7 @@
   "waveform_nsb_tuning":{
     "nsb_tuning": false,
     "nsb_tuning_ratio": 0.52,
-    "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
+    "spe_location": "lstchain/data/spe_LST1_2022-04-27_AP2.0e-4.dat"
   },
   "lh_fit_config": {
     "sigma_s": [
