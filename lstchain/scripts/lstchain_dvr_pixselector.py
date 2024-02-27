@@ -174,18 +174,12 @@ def main():
         log.error('Unknown option in --action flag!')
         sys.exit(1)
 
-    dl1_files = []
-
-    if (write_pixel_masks or 
-        len(all_dl1_files) <= max_number_of_processed_subruns):
+    if write_pixel_masks:
         # process all input files:
         dl1_files = all_dl1_files
     else:
-        step = len(all_dl1_files) / max_number_of_processed_subruns
-        k = 0
-        while np.round(k) < len(all_dl1_files):
-            dl1_files.append(all_dl1_files[int(np.round(k))])
-            k += step
+        # process at most max_number_of_processed_subruns for each run:
+        dl1_files = get_input_files(all_dl1_files, max_number_of_processed_subruns)
 
     # The pixel selection will be applied only to "physics triggers"
     # (showers), not to other events like interleaved pedestal and flatfield
@@ -616,3 +610,23 @@ def find_DVR_threshold(charges_cosmics, max_pix_survival_fraction,
              np.round(fraction_of_survival, 3))
 
     return min_charge_for_certain_selection
+
+
+def get_input_files(all_dl1_files, max_number_of_processed_subruns):
+"""
+Reduce the number of DL1 files in all_dl1_files to a maximum of
+max_number_of_processed_subruns per run
+"""
+
+    runlist = np.unique([parse_dl1_filename(f).run for f in all_dl1_files])
+
+    dl1_files = []
+    for run in runlist:
+        file_list = [f for f in fnames if f.find(f'dl1_LST-1.Run{run:05d}')>0]
+        step = len(file_list) / max_number_of_processed_subruns
+        k = 0
+        while np.round(k) < len(file_list):
+            dl1_files.append(file_list[int(np.round(k))])
+            k += step
+
+    return dl1_files
