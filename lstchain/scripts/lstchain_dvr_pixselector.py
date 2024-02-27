@@ -68,6 +68,7 @@ import sys
 from lstchain.paths import parse_dl1_filename
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.io import dl1_params_tel_mon_cal_key
+from lstchain.io.config import get_standard_config, dump_config
 
 from ctapipe.io import read_table
 from ctapipe.core import Container, Field
@@ -182,7 +183,6 @@ def main():
     else:
         # process at most max_number_of_processed_subruns for each run:
         dl1_files = get_input_files(all_dl1_files, max_number_of_processed_subruns)
-
     # The pixel selection will be applied only to "physics triggers"
     # (showers), not to other events like interleaved pedestal and flatfield
     # events:
@@ -378,6 +378,8 @@ def main():
         summary_info.min_charge_for_certain_selection = min_charge_for_certain_selection
 
         # Cuts to identify promising muon ring candidates:
+        # (TBF: Note: this will not work well for high NSB! Especially
+        # if run on a DL1 file before DL1ab, i.e. with the default cleaning)
         mucan_event_list = np.where(cosmic_mask &
                                     (data_parameters['intensity'] >
                                      muon_ring_min_intensity) &
@@ -504,27 +506,30 @@ def main():
                 time.sleep(300)
                 continue
 
-    log.info('Output files:')
   
     # We now create also .json files with recommended image cleaning
     # settings for lstchain_dl1ab. We determine the picture threshold 
     # from the values of min_charge_for_certain_selection:
   
-    for file in list_of_output_files:
-        log.info(file)
-        dvr_settings = read_table(file, '/run_summary'))
-        meanq = dvr_settings['mean_charge_for_certain_selection'].mean()
-        picture_threshold = np.floor(meanq)
-        if picture_threshold % 2 != 0:
-            picture_threshold += 1  # We change picture_threshold in steps of 2 p.e.
-        boundary_threshold = picture_threshold / 2
-        newconfig = get_standard_config()['tailcuts_clean_with_pedestal_threshold']
-        newconfig['picture_thresh'] = picture_threshold
-        newconfig['boundary_thresh'] = boundary_threshold
-        json_filename = Path(output_dir, f'dl1ab_Run{parse_dl1_filename(file).run:05d}.json')
-        dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig}, 
-                    json_filename, overwrite=True)
-        log.info('     %s', json_filename)
+    if not write_pixel_masks:
+        log.info('Output files:')
+        for file in list_of_output_files:
+            log.info(file)
+            dvr_settings = read_table(file, '/run_summary')
+            meanq = dvr_settings['min_charge_for_certain_selection'].mean()
+            picture_threshold = np.floor(meanq)
+            if picture_threshold % 2 != 0:
+                picture_threshold += 1  # We change picture_threshold in steps of 2 p.e.
+                boundary_threshold = picture_threshold / 2
+                newconfig = get_standard_config()['tailcuts_clean_with_pedestal_threshold']
+                newconfig['picture_thresh'] = picture_threshold
+                newconfig['boundary_thresh'] = boundary_threshold
+                run = int(file.name[file.name.find('Run')+3:-3])
+                json_filename = Path(output_dir, f'dl1ab_Run{run:05d}.json')
+                dump_config({'tailcuts_clean_with_pedestal_threshold': 
+                             newconfig}, json_filename, overwrite=True)
+                log.info(json_filename)
+
     log.info('lstchain_dvr_pixselector finished successfully!')
 
 
