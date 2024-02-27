@@ -132,15 +132,15 @@ def apply_to_file(filename, models_dict, output_dir, config):
             dl2 = dl1_to_dl2.apply_models(data,
                                           models_dict['cls_gh'],
                                           models_dict['reg_energy'],
-                                          reg_disp_vector=models_dict['disp_vector'],
+                                          reg_disp_vector=models_dict['reg_disp_vector'],
                                           effective_focal_length=effective_focal_length,
                                           custom_config=config)
         elif config['disp_method'] == 'disp_norm_sign':
             dl2 = dl1_to_dl2.apply_models(data,
                                           models_dict['cls_gh'],
                                           models_dict['reg_energy'],
-                                          reg_disp_norm=models_dict['disp_norm'],
-                                          cls_disp_sign=models_dict['disp_sign'],
+                                          reg_disp_norm=models_dict['reg_disp_norm'],
+                                          cls_disp_sign=models_dict['cls_disp_sign'],
                                           effective_focal_length=effective_focal_length,
                                           custom_config=config)
 
@@ -173,15 +173,15 @@ def apply_to_file(filename, models_dict, output_dir, config):
                 dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
                                                  models_dict['cls_gh'],
                                                  models_dict['reg_energy'],
-                                                 reg_disp_vector=models_dict['disp_vector'],
+                                                 reg_disp_vector=models_dict['reg_disp_vector'],
                                                  effective_focal_length=effective_focal_length,
                                                  custom_config=config)
             elif config['disp_method'] == 'disp_norm_sign':
                 dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
                                                  models_dict['cls_gh'],
                                                  models_dict['reg_energy'],
-                                                 reg_disp_norm=models_dict['disp_norm'],
-                                                 cls_disp_sign=models_dict['disp_sign'],
+                                                 reg_disp_norm=models_dict['reg_disp_norm'],
+                                                 cls_disp_sign=models_dict['cls_disp_sign'],
                                                  effective_focal_length=effective_focal_length,
                                                  custom_config=config)
 
@@ -266,14 +266,23 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    # load models once and for all
-    models_dict = {'reg_energy': joblib.load(Path(args.path_models, 'reg_energy.sav'))}
-    models_dict['cls_gh'] = joblib.load(Path(args.path_models, 'cls_gh.sav'))
+    models_keys = ['reg_energy', 'cls_gh']
+
     if config['disp_method'] == 'disp_vector':
-        models_dict['disp_vector'] = joblib.load(Path(args.path_models, 'reg_disp_vector.sav'))
+        models_keys.append('reg_disp_vector')
     elif config['disp_method'] == 'disp_norm_sign':
-        models_dict['disp_norm'] = joblib.load(Path(args.path_models, 'reg_disp_norm.sav'))
-        models_dict['disp_sign'] = joblib.load(Path(args.path_models, 'cls_disp_sign.sav'))
+        models_keys.extend(['reg_disp_norm', 'cls_disp_sign'])
+
+    models_dict = {}
+    for models_key in models_keys:
+        models_path = Path(args.path_models, f'{models_key}.sav')
+
+        # For a single input file, each model is loaded just before it is used
+        if len(args.input_files)==1:
+            models_dict[models_key] = models_path
+        # For multiple input files, all the models are loaded only once here 
+        else:
+            models_dict[models_key] = joblib.load(models_path)
 
     for filename in args.input_files:
         apply_to_file(filename, models_dict, args.output_dir, config)
