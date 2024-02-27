@@ -163,6 +163,8 @@ def main():
     if args.action == 'compute_dvr_settings':
         log.info('I will calculate the Data Volume Reduction parameters from '
                  'the input DL1 files, and write them to the output file')
+        log.info('A maximum of %d subruns per run will be processed',
+                 max_number_of_processed_subruns)
     elif args.action == 'create_pixel_masks':
         write_pixel_masks = True
         log.info('Option to write pixel masks in output file selected. I will '
@@ -613,16 +615,17 @@ def find_DVR_threshold(charges_cosmics, max_pix_survival_fraction,
 
 
 def get_input_files(all_dl1_files, max_number_of_processed_subruns):
-"""
-Reduce the number of DL1 files in all_dl1_files to a maximum of
-max_number_of_processed_subruns per run
-"""
+    """
+    Reduce the number of DL1 files in all_dl1_files to a maximum of
+    max_number_of_processed_subruns per run
+    """
 
     runlist = np.unique([parse_dl1_filename(f).run for f in all_dl1_files])
 
     dl1_files = []
     for run in runlist:
-        file_list = [f for f in fnames if f.find(f'dl1_LST-1.Run{run:05d}')>0]
+        file_list = [f for f in all_dl1_files 
+                     if f.find(f'dl1_LST-1.Run{run:05d}')>0]
         step = len(file_list) / max_number_of_processed_subruns
         k = 0
         while np.round(k) < len(file_list):
