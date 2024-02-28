@@ -672,7 +672,7 @@ def get_input_files(all_dl1_files, max_number_of_processed_subruns):
 
     return dl1_files
 
-def get_typical_dvr_min_charge(dvrtable)
+def get_typical_dvr_min_charge(dvrtable):
     """
     From a DVR_settings table determine the typical (most frequent) 
     value of the "min_charge_for_certain_selection" for the subruns stored 
