@@ -370,6 +370,7 @@ def main():
             runmask = dvr_settings['run_id'] == run_id
             meanq = dvr_settings['min_charge_for_certain_selection'][runmask].mean()
             min_charge_for_certain_selection  = np.floor(meanq)
+    
             # we do not have to calculate it from scratch, we get the
             # value (same for all subruns) from the DVR_settings_LST*.h5 file,
             # just averaging the subrun-wise values and taking the closest
@@ -515,9 +516,7 @@ def main():
         log.info('Output files:')
         for file in list_of_output_files:
             log.info(file)
-            dvr_settings = read_table(file, '/run_summary')
-            meanq = dvr_settings['min_charge_for_certain_selection'].mean()
-            picture_threshold = np.floor(meanq)
+            picture_threshold = get_typical_dvr_min_charge(file)
             if picture_threshold % 2 != 0:
                 picture_threshold += 1  # We change picture_threshold in steps of 2 p.e.
             boundary_threshold = picture_threshold / 2
@@ -581,7 +580,16 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
 
 def find_DVR_threshold(charges_cosmics, max_pix_survival_fraction,
                        picture_threshold, camera_geom):
-
+    """
+    Find the minimum charge a pixel must have in order to keep it in the
+    volume-reduced data (R0V). We base the decision on the fraction of pixels
+    which are above a given charge (average over all cosmics, excluding from 
+    the calculation the 10% noisiest pixels, to avoid stars). The maximum 
+    allowed fraction is max_pix_survival_fraction. This returns the smallest 
+    charge (integer number of p.e.) for which the average fraction is smaller
+    than max_pix_survival_fraction.
+    """
+                         
     # By default use the provided picture threshold to keep pixels:
     min_charge_for_certain_selection = picture_threshold
 
@@ -659,3 +667,21 @@ def get_input_files(all_dl1_files, max_number_of_processed_subruns):
             k += step
 
     return dl1_files
+
+def get_typical_dvr_min_charge(file)
+    """
+    Open a DVR_settings*h5 file and determine the typical value of the
+    "min_charge_for_certain_selection" for the subruns stored in it
+
+    It is "typical" (not just mean or median) because we try to avoid 
+    outliers that can be produced by external light sources, like
+    e.g. car flashes.
+    
+    """
+    dvr_settings = read_table(file, '/run_summary')
+    meanq = dvr_settings['min_charge_for_certain_selection'].mean()
+
+    # Return an integer (to limit the amount of different values that
+    # we will use for data volume reduction)
+    
+    return np.floor(meanq)
