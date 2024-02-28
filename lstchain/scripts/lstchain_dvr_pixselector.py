@@ -226,7 +226,7 @@ def main():
 
     # Cuts to identify muon rings candidates (in order to save them fully)
     # These are conservative cuts which are fulfilled comfortable by all "good
-    # quality" rigs that are actually used for calibration:
+    # quality" rings that are actually used for calibration:
     muon_ring_min_intensity = 1000
     muon_ring_min_length = 0.5
     muon_ring_min_n_pixels = 50
