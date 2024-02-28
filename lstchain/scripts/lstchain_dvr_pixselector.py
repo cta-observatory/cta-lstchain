@@ -367,14 +367,13 @@ def main():
                                                                   args.picture_threshold,
                                                                   camera_geom)
         else:
+            # For the creation of pixel masks, we get the most typical value
+            # of min_charge_for_certain_selection among the subruns of the run
+            # in the DVR_settings_LST*.h5 file
             runmask = dvr_settings['run_id'] == run_id
-            meanq = dvr_settings['min_charge_for_certain_selection'][runmask].mean()
-            min_charge_for_certain_selection  = np.floor(meanq)
-    
-            # we do not have to calculate it from scratch, we get the
-            # value (same for all subruns) from the DVR_settings_LST*.h5 file,
-            # just averaging the subrun-wise values and taking the closest
-            # (lower) integer
+            # the DVR file should contain only this run, but just in case:
+            dvrtable = dvr_settings[runmask]
+            min_charge_for_certain_selection  = get_typical_dvr_min_charge(dvrtable)
 
         summary_info.min_charge_for_certain_selection = min_charge_for_certain_selection
 
@@ -516,9 +515,14 @@ def main():
         log.info('Output files:')
         for file in list_of_output_files:
             log.info(file)
-            picture_threshold = get_typical_dvr_min_charge(file)
+            dvrtable = read_table(file, "/run_summary")
+            picture_threshold = get_typical_dvr_min_charge(dvrtable)
+
+            # we round it to an even number of p.e., just to limit the amount 
+            # of different settings in the analysis (i.e. we change 
+            # picture_threshold in steps of 2 p.e.):
             if picture_threshold % 2 != 0:
-                picture_threshold += 1  # We change picture_threshold in steps of 2 p.e.
+                picture_threshold += 1
             boundary_threshold = picture_threshold / 2
             newconfig = get_standard_config()['tailcuts_clean_with_pedestal_threshold']
             newconfig['picture_thresh'] = picture_threshold
@@ -668,20 +672,36 @@ def get_input_files(all_dl1_files, max_number_of_processed_subruns):
 
     return dl1_files
 
-def get_typical_dvr_min_charge(file)
+def get_typical_dvr_min_charge(dvrtable)
     """
-    Open a DVR_settings*h5 file and determine the typical value of the
-    "min_charge_for_certain_selection" for the subruns stored in it
+    From a DVR_settings table determine the typical (most frequent) 
+    value of the "min_charge_for_certain_selection" for the subruns stored 
+    in it
 
     It is "typical" (not just mean or median) because we try to avoid 
     outliers that can be produced by external light sources, like
     e.g. car flashes.
     
     """
-    dvr_settings = read_table(file, '/run_summary')
-    meanq = dvr_settings['min_charge_for_certain_selection'].mean()
 
-    # Return an integer (to limit the amount of different values that
-    # we will use for data volume reduction)
+    min_fraction_of_good_subruns = 0.5
+    # if less than the above fraction of subruns have the same value
+    # of min_charge_for_certain_selection a warning will be issued.
     
-    return np.floor(meanq)
+    allqs = dvr_table['min_charge_for_certain_selection'] 
+    sortedqs = np.sort(allqs)
+    # these are integer numbers pf p.e.'s
+
+    value, counts = np.unique(sortedqs, return_counts=True)
+    # in case of two values having the same number of counts,
+    # the lower "min_charge_for_certain_selection" (because
+    # of the sorting) will be chosen - conservative in the 
+    # sense of keeping more pixels.
+
+    if counts.max() / counts.sum() < min_fraction_of_good_subruns:
+        log.warn('Unstable data (noise-wise)! Less than half of the subruns'
+                 'had similar noise conditions!')
+
+    mode = value[np.argmax(counts)]
+    
+    return mode
