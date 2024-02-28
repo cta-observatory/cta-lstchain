@@ -688,7 +688,7 @@ def get_typical_dvr_min_charge(dvrtable):
     # if less than the above fraction of subruns have the same value
     # of min_charge_for_certain_selection a warning will be issued.
     
-    allqs = dvr_table['min_charge_for_certain_selection'] 
+    allqs = dvrtable['min_charge_for_certain_selection'] 
     sortedqs = np.sort(allqs)
     # these are integer numbers pf p.e.'s
 
