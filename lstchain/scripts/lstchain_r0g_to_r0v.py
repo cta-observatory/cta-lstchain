@@ -139,7 +139,7 @@ def main():
 
                 # Check if this event is known
                 if event.event_id not in pixel_mask:
-                    log.warn('Event id %d not found in pixel selection file!',
+                    log.warning('Event id %d not found in pixel selection file!',
                              event.event_id)
                     continue
 
