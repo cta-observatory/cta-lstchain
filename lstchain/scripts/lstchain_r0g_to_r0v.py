@@ -31,7 +31,7 @@ parser.add_argument('-f', '--R0G-file', dest='input_file', required=True,
                     type=Path, help='Input R0G file name (of stream 1)')
 
 parser.add_argument('-o', '--output-dir', dest='output_dir',
-                    type=str, default='./',
+                    type=Path, default='./',
                     help='Output directory')
 
 parser.add_argument('--pixselection-file', dest='pix_file', required=True,
