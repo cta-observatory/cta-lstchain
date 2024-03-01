@@ -27,7 +27,12 @@ settings for the whole run, and a few subruns are enough to determine them).
 The program creates in the output directory (which is the current by default) 
 a file DVR_settings_LST-1.Run12469.h5 which contains a table "run_summary" 
 which includes the DVR algorithm parameters determined for each processed 
-subrun.
+subrun. It also creates a file with recommended cleaning settings for running 
+DL1ab, based on the NSB level measured in the processed runs. We use
+as picture threshold the closest even number not smaller than the charge 
+"min_charge_for_certain_selection" (averaged for all subruns and rounded) 
+which is the value from which a pixel will be certainly kept by the Data Volume 
+Reduction.
 
 Then we run again the script over all subruns, and using the option to create
 the pixel maks (this can also be done subrun by subrun, to parallelize the
@@ -36,8 +41,9 @@ creation of the pixel masks files):
 lstchain_dvr_pixselector -f "/.../dl1_LST-1.Run12469.????.h5" --action create_pixel_masks
 
 The script will detect that the file DVR_settings_LST-1.Run12469.h5 already
-exists, read it, and use, as threshold for DVR, the average for all the previously processed subruns, in p.e., rounded to the closest lower integer (we do 
-not want to have too many different ways of reducing the data, so we 
+exists, read it, and use, as threshold for DVR, the average for all the 
+previously processed subruns, in p.e., rounded to the closest lower integer 
+(we do not want to have too many different ways of reducing the data, so we 
 "discretize" the threshold in 1-p.e. steps). Then the event-wise pixel maks 
 (selected pixels) for the subrun will be computed and written out to a file
 Pixel_selection_LST-1.Run12469.xxxx.h5  for each subrun xxxx
@@ -62,6 +68,7 @@ import sys
 from lstchain.paths import parse_dl1_filename
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.io import dl1_params_tel_mon_cal_key
+from lstchain.io.config import get_standard_config, dump_config
 
 from ctapipe.io import read_table
 from ctapipe.core import Container, Field
@@ -157,6 +164,8 @@ def main():
     if args.action == 'compute_dvr_settings':
         log.info('I will calculate the Data Volume Reduction parameters from '
                  'the input DL1 files, and write them to the output file')
+        log.info('A maximum of %d subruns per run will be processed',
+                 max_number_of_processed_subruns)
     elif args.action == 'create_pixel_masks':
         write_pixel_masks = True
         log.info('Option to write pixel masks in output file selected. I will '
@@ -168,19 +177,12 @@ def main():
         log.error('Unknown option in --action flag!')
         sys.exit(1)
 
-    dl1_files = []
-
-    if (write_pixel_masks or 
-        len(all_dl1_files) <= max_number_of_processed_subruns):
+    if write_pixel_masks:
         # process all input files:
         dl1_files = all_dl1_files
     else:
-        step = len(all_dl1_files) / max_number_of_processed_subruns
-        k = 0
-        while np.round(k) < len(all_dl1_files):
-            dl1_files.append(all_dl1_files[int(np.round(k))])
-            k += step
-
+        # process at most max_number_of_processed_subruns for each run:
+        dl1_files = get_input_files(all_dl1_files, max_number_of_processed_subruns)
     # The pixel selection will be applied only to "physics triggers"
     # (showers), not to other events like interleaved pedestal and flatfield
     # events:
@@ -224,14 +226,17 @@ def main():
 
     # Cuts to identify muon rings candidates (in order to save them fully)
     # These are conservative cuts which are fulfilled comfortable by all "good
-    # quality" rigs that are actually used for calibration:
+    # quality" rings that are actually used for calibration:
     muon_ring_min_intensity = 1000
     muon_ring_min_length = 0.5
     muon_ring_min_n_pixels = 50
     muon_ring_max_t_gradient = 5
 
     current_run_number = -1
-
+  
+    # keep track of the output files:
+    list_of_output_files = []
+  
     for dl1_file in dl1_files:
         log.info('\nInput file: %s', dl1_file)
 
@@ -362,17 +367,19 @@ def main():
                                                                   args.picture_threshold,
                                                                   camera_geom)
         else:
+            # For the creation of pixel masks, we get the most typical value
+            # of min_charge_for_certain_selection among the subruns of the run
+            # in the DVR_settings_LST*.h5 file
             runmask = dvr_settings['run_id'] == run_id
-            meanq = dvr_settings['min_charge_for_certain_selection'][runmask].mean()
-            min_charge_for_certain_selection  = np.floor(meanq)
-            # we do not have to calculate it from scratch, we get the
-            # value (same for all subruns) from the DVR_settings_LST*.h5 file,
-            # just averaging the subrun-wise values and taking the closest
-            # (lower) integer
+            # the DVR file should contain only this run, but just in case:
+            dvrtable = dvr_settings[runmask]
+            min_charge_for_certain_selection  = get_typical_dvr_min_charge(dvrtable)
 
         summary_info.min_charge_for_certain_selection = min_charge_for_certain_selection
 
         # Cuts to identify promising muon ring candidates:
+        # (TBF: Note: this will not work well for high NSB! Especially
+        # if run on a DL1 file before DL1ab, i.e. with the default cleaning)
         mucan_event_list = np.where(cosmic_mask &
                                     (data_parameters['intensity'] >
                                      muon_ring_min_intensity) &
@@ -465,6 +472,9 @@ def main():
                         # so for every new subrun we just append one row to the
                         # run_summary table.
 
+                if filemode == 'w':
+                    list_of_output_files.append(output_file)
+
                 with HDF5TableWriter(output_file, filters=writer_conf,
                                      mode=filemode) as writer:
                     writer.write("run_summary", summary_info)
@@ -495,6 +505,33 @@ def main():
                          number_of_writing_attempts)
                 time.sleep(300)
                 continue
+
+  
+    # We now create also .json files with recommended image cleaning
+    # settings for lstchain_dl1ab. We determine the picture threshold 
+    # from the values of min_charge_for_certain_selection:
+  
+    if not write_pixel_masks:
+        log.info('Output files:')
+        for file in list_of_output_files:
+            log.info(file)
+            dvrtable = read_table(file, "/run_summary")
+            picture_threshold = get_typical_dvr_min_charge(dvrtable)
+
+            # we round it to an even number of p.e., just to limit the amount 
+            # of different settings in the analysis (i.e. we change 
+            # picture_threshold in steps of 2 p.e.):
+            if picture_threshold % 2 != 0:
+                picture_threshold += 1
+            boundary_threshold = picture_threshold / 2
+            newconfig = get_standard_config()['tailcuts_clean_with_pedestal_threshold']
+            newconfig['picture_thresh'] = picture_threshold
+            newconfig['boundary_thresh'] = boundary_threshold
+            run = int(file.name[file.name.find('Run')+3:-3])
+            json_filename = Path(output_dir, f'dl1ab_Run{run:05d}.json')
+            dump_config({'tailcuts_clean_with_pedestal_threshold': 
+                             newconfig}, json_filename, overwrite=True)
+            log.info(json_filename)
 
     log.info('lstchain_dvr_pixselector finished successfully!')
 
@@ -547,7 +584,16 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
 
 def find_DVR_threshold(charges_cosmics, max_pix_survival_fraction,
                        picture_threshold, camera_geom):
-
+    """
+    Find the minimum charge a pixel must have in order to keep it in the
+    volume-reduced data (R0V). We base the decision on the fraction of pixels
+    which are above a given charge (average over all cosmics, excluding from 
+    the calculation the 10% noisiest pixels, to avoid stars). The maximum 
+    allowed fraction is max_pix_survival_fraction. This returns the smallest 
+    charge (integer number of p.e.) for which the average fraction is smaller
+    than max_pix_survival_fraction.
+    """
+                         
     # By default use the provided picture threshold to keep pixels:
     min_charge_for_certain_selection = picture_threshold
 
@@ -601,3 +647,61 @@ def find_DVR_threshold(charges_cosmics, max_pix_survival_fraction,
              np.round(fraction_of_survival, 3))
 
     return min_charge_for_certain_selection
+
+
+def get_input_files(all_dl1_files, max_number_of_processed_subruns):
+    """
+    Reduce the number of DL1 files in all_dl1_files to a maximum of
+    max_number_of_processed_subruns per run
+    """
+
+    runlist = np.unique([parse_dl1_filename(f).run for f in all_dl1_files])
+
+    dl1_files = []
+    for run in runlist:
+        file_list = [f for f in all_dl1_files 
+                     if f.find(f'dl1_LST-1.Run{run:05d}')>0]
+        if len(file_list) <= max_number_of_processed_subruns:
+            dl1_files.extend(file_list)
+            continue
+        step = len(file_list) / max_number_of_processed_subruns
+        k = 0
+        while np.round(k) < len(file_list):
+            dl1_files.append(file_list[int(np.round(k))])
+            k += step
+
+    return dl1_files
+
+def get_typical_dvr_min_charge(dvrtable):
+    """
+    From a DVR_settings table determine the typical (most frequent) 
+    value of the "min_charge_for_certain_selection" for the subruns stored 
+    in it
+
+    It is "typical" (not just mean or median) because we try to avoid 
+    outliers that can be produced by external light sources, like
+    e.g. car flashes.
+    
+    """
+
+    min_fraction_of_good_subruns = 0.5
+    # if less than the above fraction of subruns have the same value
+    # of min_charge_for_certain_selection a warning will be issued.
+    
+    allqs = dvrtable['min_charge_for_certain_selection'] 
+    sortedqs = np.sort(allqs)
+    # these are integer numbers pf p.e.'s
+
+    value, counts = np.unique(sortedqs, return_counts=True)
+    # in case of two values having the same number of counts,
+    # the lower "min_charge_for_certain_selection" (because
+    # of the sorting) will be chosen - conservative in the 
+    # sense of keeping more pixels.
+
+    if counts.max() / counts.sum() < min_fraction_of_good_subruns:
+        log.warn('Unstable data (noise-wise)! Less than half of the subruns'
+                 'had similar noise conditions!')
+
+    mode = value[np.argmax(counts)]
+    
+    return mode
