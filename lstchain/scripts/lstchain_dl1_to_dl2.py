@@ -249,7 +249,13 @@ def apply_to_file(filename, models_dict, output_dir, config):
             write_dataframe(dl2_onlylhfit, output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
 
     else:
-        write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
+        if 'lh_fit_config' not in config.keys():
+            write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
+        else:
+            dl2_onlylhfit = dl2_srcindep[lhfit_keys]
+            dl2_srcindep.drop(lhfit_keys, axis=1, inplace=True)
+            write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
+            write_dataframe(dl2_onlylhfit, output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
         write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config,
                         meta=metadata)
 

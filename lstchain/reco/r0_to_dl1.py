@@ -303,9 +303,7 @@ def apply_lh_fit(
             try:
                 lhfit_container = fitter(event=event, telescope_id=telescope_id, dl1_container=dl1_container)
             except Exception:
-                logger.error("Unexpected error encountered in likelihood reconstruction.\n"
-                             "Compiled likelihood reconstruction numbaCC functions may be missing.\n"
-                             "In this case you should run: lstchain/scripts/numba_compil_lhfit.py")
+                logger.error("Unexpected error encountered in likelihood reconstruction.")
                 raise
     else:
         lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=-10)
@@ -445,6 +443,11 @@ def r0_to_dl1(
     if 'lh_fit_config' in config.keys():
         lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
         lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
+        if lhfit_fitter_config['TimeWaveformFitter']['use_interleaved'] and not is_simu:
+            tmp_source = EventSource(input_url=input_filename,
+                                      config=Config(config["source_config"]))
+            lhfit_fitter.get_ped_from_interleaved(tmp_source)
+            del tmp_source
 
     # initialize the writer of the interleaved events 
     interleaved_writer = None

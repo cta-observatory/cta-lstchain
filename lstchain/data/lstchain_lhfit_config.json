@@ -141,39 +141,69 @@
     "lhfit_width",
     "lhfit_length",
     "lhfit_length_asymmetry",
-    "lhfit_time_gradient"
+    "lhfit_time_gradient",
+    "leakage_intensity_width_2",
+    "lhfit_r",
+    "lhfit_psi",
+    "sin_az_tel",
+    "alt_tel"
   ],
 
-  "disp_method": "disp_vector",
+  "disp_method": "disp_norm_sign",
 
   "disp_regression_features": [
     "lhfit_log_intensity",
+    "lhfit_width",
     "lhfit_length",
-    "lhfit_wl",
     "lhfit_length_asymmetry",
+    "lhfit_time_gradient",
+    "leakage_intensity_width_2",
+    "lhfit_r",
     "lhfit_psi",
-    "lhfit_time_gradient"
+    "lhfit_phi",
+    "sin_az_tel",
+    "alt_tel"
   ],
 
   "disp_classification_features": [
     "lhfit_log_intensity",
+    "lhfit_width",
     "lhfit_length",
-    "lhfit_wl",
     "lhfit_length_asymmetry",
+    "lhfit_time_gradient",
+    "leakage_intensity_width_2",
+    "lhfit_r",
+    "lhfit_wl",
     "lhfit_psi",
-    "lhfit_time_gradient"
+    "lhfit_phi",
+    "sin_az_tel",
+    "alt_tel"
   ],
 
   "particle_classification_features": [
     "lhfit_log_intensity",
     "lhfit_width",
     "lhfit_length",
-    "lhfit_wl",
     "lhfit_length_asymmetry",
     "lhfit_time_gradient",
+    "log_intensity",
+    "width",
+    "length",
+    "x",
+    "y",
+    "wl",
+    "signed_skewness",
+    "kurtosis",
+    "signed_time_gradient",
+    "leakage_intensity_width_2",
+    "lhfit_r",
+    "lhfit_wl",
+    "lhfit_psi",
+    "lhfit_phi",
     "log_reco_energy",
-    "reco_disp_dx",
-    "reco_disp_dy"
+    "reco_disp_norm",
+    "sin_az_tel",
+    "alt_tel"
   ],
 
   "allowed_tels": [1],
@@ -212,6 +242,7 @@
 
   "LSTCalibrationCalculator":{
     "systematic_correction_path": null,
+    "npe_median_cut_outliers": [-5,5],
     "squared_excess_noise_factor": 1.222,
     "flatfield_product": "FlasherFlatFieldCalculator",
     "pedestal_product": "PedestalIntegrator",
@@ -236,7 +267,7 @@
       "tel_id":1,
       "time_sampling_correction_path": null,
       "charge_product":"LocalPeakWindowSum",
-      "charge_median_cut_outliers": [-0.5,0.5],
+      "charge_median_cut_outliers": [-0.9,2],
       "charge_std_cut_outliers": [-10,10],
       "time_cut_outliers": [2,38],
       "LocalPeakWindowSum":{
@@ -272,7 +303,7 @@
             ],
     "n_peaks": 0,
     "no_asymmetry": false,
-    "use_weight": false,
+    "use_interleaved": true,
     "verbose": 0
   }
 }

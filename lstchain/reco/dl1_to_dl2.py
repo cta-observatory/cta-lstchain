@@ -360,6 +360,11 @@ def build_models(filegammas, fileprotons,
         effective_focal_length = OPTICS.effective_focal_length
 
     df_gamma = update_disp_with_effective_focal_length(df_gamma, effective_focal_length=effective_focal_length)
+    if 'lh_fit_config' in config.keys():
+        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
+        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
+        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
+        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
 
     if config['source_dependent']:
         # if source-dependent parameters are already in dl1 data, just read those data
@@ -394,13 +399,6 @@ def build_models(filegammas, fileprotons,
             )
 
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
-
-    if 'lh_fit_config' in config.keys():
-        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
-        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
-
-        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
-        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
 
     # Normalize all azimuth angles to the range [0, 360) degrees
     df_gamma.az_tel = Angle(df_gamma.az_tel, u.rad).wrap_at(360 * u.deg).rad
@@ -794,8 +792,6 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
     src_dep_params['expected_src_x'] = expected_src_pos_x_m
     src_dep_params['expected_src_y'] = expected_src_pos_y_m
 
-    src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m) ** 2 + (data['y'] - expected_src_pos_y_m) ** 2)
-
     disp, miss = camera_to_shower_coordinates(
         expected_src_pos_x_m,
         expected_src_pos_y_m,
@@ -805,6 +801,21 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
 
     src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(disp) * -1
     src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(disp) * -1
+
+    if 'lhfit_x' in data.keys():
+        # Use lhfit parameters for 'dist' and 'alpha'
+        disp, miss = camera_to_shower_coordinates(
+            expected_src_pos_x_m,
+            expected_src_pos_y_m,
+            data['lhfit_x'],
+            data['lhfit_y'],
+            data['lhfit_psi'])
+        src_dep_params['dist'] = np.sqrt((data['lhfit_x'] - expected_src_pos_x_m) ** 2 +
+                                         (data['lhfit_y'] - expected_src_pos_y_m) ** 2)
+    else:
+        src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m) ** 2 +
+                                         (data['y'] - expected_src_pos_y_m) ** 2)
+
     src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
 
     return src_dep_params
