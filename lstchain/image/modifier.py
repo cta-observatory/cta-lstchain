@@ -194,6 +194,8 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
                     '/dl1/event/telescope/monitoring/calibration')
     data_dl1_pedestal =  read_table(data_dl1_filename,
                     '/dl1/event/telescope/monitoring/pedestal')
+    data_dl1_flatfield =  read_table(data_dl1_filename,
+                    '/dl1/event/telescope/monitoring/flatfield')
     data_dl1_parameters =  read_table(data_dl1_filename,
                     '/dl1/event/telescope/parameters/LST_LSTCam')
     data_dl1_image = read_table(data_dl1_filename,
@@ -203,8 +205,9 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # Locate pixels with HG declared unusable either in original calibration or
     # in interleaved events:
     bad_pixels = unusable[0][0]  # original calibration
-    for tf in unusable[1:][0]:   # calibrations with interleaveds
-        bad_pixels = np.logical_or(bad_pixels, tf)
+    if unusable.shape[0] > 1:
+        for tf in unusable[1:][0]:   # calibrations with interleaveds
+            bad_pixels = np.logical_or(bad_pixels, tf)
     good_pixels = ~bad_pixels
 
     # First index:  1,2,... = values from interleaveds (0 is for original
@@ -214,6 +217,29 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     # HG adc to pe conversion factors from interleaved calibrations:
     data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][:, 0, :]
+
+    if data_dl1_flatfield['charge_mean'].shape[0] < 2:
+        logging.error('\nCould not find interleaved FF calibrations in '
+                      'monitoring table!')
+        return None, None, None
+
+    if data_dl1_pedestal['charge_std'].shape[0] < 2 :
+        logging.error('\nCould not find interleaved pedestal info in '
+                      'monitoring table!')
+        return None, None, None
+
+    # Mean HG charge in interleaved FF events, to spot possible issues:
+    data_HG_FF_mean = data_dl1_flatfield['charge_mean'][1:, 0, :]
+    dummy = []
+    # indices which connect each FF calculation to a given calibration:
+    calibration_id = data_dl1_flatfield['calibration_id'][1:]
+
+    for i, x in enumerate(data_HG_FF_mean[:, ]):
+        dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
+    dummy = np.array(dummy)
+    # Average for all interleaved calibrations (in case there are more than one)
+    data_HG_FF_mean_pe = np.mean(dummy, axis=0) # one value per pixel
+
     # Pixel-wise pedestal standard deviation (for an unbiased extractor),
     # in adc counts:
     data_HG_ped_std = data_dl1_pedestal['charge_std'][1:, 0, :]
@@ -224,20 +250,26 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     for i, x in enumerate(data_HG_ped_std[:, ]):
         dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
     dummy = np.array(dummy)
-
     # Average for all interleaved calibrations (in case there are more than one)
     data_HG_ped_std_pe = np.mean(dummy, axis=0) # one value per pixel
 
     # Identify noisy pixels, likely containing stars - we want to adjust MC to
     # the average diffuse NSB across the camera
-    data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe)
-    data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe)
-    log.info(f'Real data: median across camera of good pixels\' pedestal std '
+
+    data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe[good_pixels])
+    data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe[good_pixels])
+    log.info('\nReal data:')
+    log.info(f'   Number of bad pixels (from calibration): {bad_pixels.sum()}')
+    log.info(f'   Median of FF pixel charge: '
+             f'{np.nanmedian(data_HG_FF_mean_pe[good_pixels]):.3f} p.e.')
+    log.info(f'   Median across camera of good pixels\' pedestal std '
+
              f'{data_median_std_ped_pe:.3f} p.e.')
     brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
     too_bright_pixels = (data_HG_ped_std_pe > brightness_limit)
-    log.info(f'Number of pixels beyond 3 std dev of median: '
-             f'{too_bright_pixels.sum()}, (above {brightness_limit:.2f} p.e.)')
+    log.info(f'   Number of pixels beyond 3 std dev of median: '
+             f'   {too_bright_pixels.sum()}, (above {brightness_limit:.2f} '
+             f'p.e.)')
 
     ped_mask = data_dl1_parameters['event_type'] == 2
     # The charges in the images below are obtained with the extractor for
