@@ -291,6 +291,9 @@
                 ["type", "*", 0.0],
                 ["type", "LST_LST_LSTCam", 0.0]
             ],
+    "spatial_selection": "dvr",
+    "dvr_pic_threshold": 8,
+    "dvr_pix_for_full_image": 500,
     "sigma_space": 3,
     "sigma_time": 4,
     "time_before_shower": [
