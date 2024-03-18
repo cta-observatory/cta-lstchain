@@ -13,7 +13,6 @@ from lstchain.image.modifier import tune_nsb_on_waveform
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
 from lstchain.reco.reconstructorCC import log_pdf as log_pdf
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -27,17 +26,19 @@ class TimeWaveformFitter(TelescopeComponent):
                                         allow_none=False).tag(config=True)
     spatial_selection = Unicode(default_value='dvr',
                                 help='Method to select pixels to perform the likelihood fit. Can be:\n'
-                                     'hillas : use the hillas length and width times sigma_space as an ellipsis.'
-                                     '\ndvr : use data volume reduction logic with dvr_pic_threshold and'
+                                     'hillas : use the hillas length and width times sigma_space as an ellipsis.\n'
+                                     'dvr : use data volume reduction logic with dvr_pic_threshold and'
                                      ' dvr_pix_for_full_image',
                                 allow_none=False).tag(config=True)
-    dvr_pic_threshold = Int(8, help='Pixel charge threshold for dvr like pixel selection.',
+    dvr_pic_threshold = Int(default_value=8, help='Pixel charge threshold for dvr like pixel selection.',
                             allow_none=False).tag(config=True)
-    dvr_pix_for_full_image = Int(500, help='Number of selected pixels above which all are kept.',
+    dvr_pix_for_full_image = Int(default_value=500, help='Number of selected pixels above which all are kept.',
                                  allow_none=False).tag(config=True)
-    sigma_space = Float(4, help='Size of the region on which the fit is performed relative to the image extension.',
+    sigma_space = Float(default_value=4,
+                        help='Size of the region on which the fit is performed relative to the image extension.',
                         allow_none=False).tag(config=True)
-    sigma_time = Float(3, help='Time window on which the fit is performed relative to the image temporal extension.',
+    sigma_time = Float(default_value=3,
+                       help='Time window on which the fit is performed relative to the image temporal extension.',
                        allow_none=False).tag(config=True)
     time_before_shower = FloatTelescopeParameter(default_value=10,
                                                  help='Additional time at the start of the fit temporal window.',
@@ -45,12 +46,13 @@ class TimeWaveformFitter(TelescopeComponent):
     time_after_shower = FloatTelescopeParameter(default_value=20,
                                                 help='Additional time at the end of the fit temporal window.',
                                                 allow_none=False).tag(config=True)
-    no_asymmetry = Bool(False, help='If true, the asymmetry of the spatial model is fixed to 0.',
+    no_asymmetry = Bool(default_value=False, help='If true, the asymmetry of the spatial model is fixed to 0.',
                         allow_none=False).tag(config=True)
-    use_interleaved = Bool(None, help='If true, the std deviation of pedestals and dimmed pixels are estimated on '
-                                      'interleaved events', allow_none=True).tag(config=True)
-    n_peaks = Int(0, help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
-                          'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
+    use_interleaved = Bool(default_value=None, help='If true, the std deviation of pedestals and dimmed pixels are '
+                                                    'estimated on interleaved events', allow_none=True).tag(config=True)
+    n_peaks = Int(default_value=0,
+                  help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
+                       'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
                   allow_none=False).tag(config=True)
     bound_charge_factor = FloatTelescopeParameter(default_value=4,
                                                   help='Maximum relative change to the fitted charge parameter.',
@@ -77,11 +79,12 @@ class TimeWaveformFitter(TelescopeComponent):
     default_seed_v_cm = FloatTelescopeParameter(default_value=40,
                                                 help='Default starting value of v_cm when the seed extraction failed.',
                                                 allow_none=False).tag(config=True)
-    verbose = Int(0, help='4 - used for tests: create debug plots\n'
-                          '3 - create debug plots, wait for input after each event, increase minuit verbose level\n'
-                          '2 - create debug plots, increase minuit verbose level\n'
-                          '1 - increase minuit verbose level\n'
-                          '0 - silent', allow_none=False).tag(config=True)
+    verbose = Int(default_value=0,
+                  help='4 - used for tests: create debug plots\n'
+                       '3 - create debug plots, wait for input after each event, increase minuit verbose level\n'
+                       '2 - create debug plots, increase minuit verbose level\n'
+                       '1 - increase minuit verbose level\n'
+                       '0 - silent', allow_none=False).tag(config=True)
 
     def __init__(self, subarray, config=None, parent=None, **kwargs):
         super().__init__(subarray=subarray, config=config, parent=parent, **kwargs)
@@ -345,8 +348,10 @@ class TimeWaveformFitter(TelescopeComponent):
     def clean_data(self, image, geometry, pix_x, pix_y, pix_radius, times, start_parameters, telescope_id):
         """
         Method used to select pixels and time samples used in the fitting procedure.
-        The spatial selection takes pixels in an ellipsis obtained from the seed Hillas parameters extended by one pixel
-        size and multiplied by a factor sigma_space.
+        The spatial selection can be done in one of two methods:
+        - takes pixels in an ellipsis obtained from the seed Hillas parameters extended by one pixel size and multiplied
+        by a factor sigma_space.
+        - use all pixels kept by the data volume reduction algorythm
         The temporal selection takes a time window centered on the seed time of center of mass and of duration equal to
         the time of propagation of the signal along the length of the ellipsis times a factor sigma_time.
         An additional fixed duration is also added before and after this time window through the time_before_shower and
