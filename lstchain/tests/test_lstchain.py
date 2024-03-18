@@ -128,6 +128,7 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     os.remove(tmp_path / "tmp.h5")
     config['lh_fit_config']["spatial_selection"] = 'dvr'
     config['lh_fit_config']["use_interleaved"] = True
+    config['waveform_nsb_tuning']['nsb_tuning'] = True
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 
