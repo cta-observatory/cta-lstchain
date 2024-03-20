@@ -349,7 +349,7 @@ def build_models(filegammas, fileprotons,
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     # Update parameters related to target direction on camera frame for gamma MC
-    # taking into account of the abrration effect using effective focal length
+    # taking into account of the aberration effect using effective focal length
     try:
         subarray_info = SubarrayDescription.from_hdf(filegammas)
         tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
@@ -359,7 +359,12 @@ def build_models(filegammas, fileprotons,
         logger.warning("The effective focal length for the standard LST optics will be used.")
         effective_focal_length = OPTICS.effective_focal_length
 
-    df_gamma = update_disp_with_effective_focal_length(df_gamma, effective_focal_length = effective_focal_length)
+    df_gamma = update_disp_with_effective_focal_length(df_gamma, effective_focal_length=effective_focal_length)
+    if 'lh_fit_config' in config.keys():
+        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
+        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
+        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
+        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
 
     if config['source_dependent']:
         # if source-dependent parameters are already in dl1 data, just read those data
@@ -395,12 +400,15 @@ def build_models(filegammas, fileprotons,
 
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
-    if 'lh_fit_config' in config.keys():
-        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
-        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
+    # Normalize all azimuth angles to the range [0, 360) degrees
+    df_gamma.az_tel = Angle(df_gamma.az_tel, u.rad).wrap_at(360 * u.deg).rad
+    df_proton.az_tel = Angle(df_proton.az_tel, u.rad).wrap_at(360 * u.deg).rad
 
-        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
-        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
+    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
+    if 'sin_az_tel' not in df_gamma.columns:
+        df_gamma['sin_az_tel'] = np.sin(df_gamma.az_tel)
+    if 'sin_az_tel' not in df_proton.columns:
+        df_proton['sin_az_tel'] = np.sin(df_proton.az_tel)
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
@@ -417,16 +425,6 @@ def build_models(filegammas, fileprotons,
                                                   + config['particle_classification_features']
                                                   + config['disp_classification_features'],
                                     )
-
-    # Normalize all azimuth angles to the range [0, 360) degrees
-    df_gamma.az_tel = Angle(df_gamma.az_tel, u.rad).wrap_at(360 * u.deg).rad
-    df_proton.az_tel = Angle(df_proton.az_tel, u.rad).wrap_at(360 * u.deg).rad
-
-    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
-    if 'sin_az_tel' not in df_gamma.columns:
-        df_gamma['sin_az_tel'] = np.sin(df_gamma.az_tel)
-    if 'sin_az_tel' not in df_proton.columns:
-        df_proton['sin_az_tel'] = np.sin(df_proton.az_tel)
 
     # Training MC gammas in reduced viewcone
     src_r_min = config['train_gamma_src_r_deg'][0]
@@ -548,9 +546,13 @@ def build_models(filegammas, fileprotons,
         train['reco_disp_sign_correctness'][select] = 1 - train['reco_disp_sign_correctness'][select]
 
         train['reco_disp_norm_diff'] = np.abs(train['dist'] - train['reco_disp_norm'])
-    
-    # Train the Classifier
 
+    # Check that any new features used in particle classification are finite
+    train = utils.filter_events(train,
+                                filters=events_filters,
+                                finite_params=config['particle_classification_features']
+                                )
+    # Train the Classifier
     cls_gh = train_sep(train, custom_config=config)
 
     if save_models:
@@ -649,15 +651,16 @@ def apply_models(dl1,
     elif config['disp_method'] == 'disp_norm_sign':
         if isinstance(reg_disp_norm, (str, bytes, Path)):
             reg_disp_norm = joblib.load(reg_disp_norm)
+        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
+        del reg_disp_norm
+
         if isinstance(cls_disp_sign, (str, bytes, Path)):
             cls_disp_sign = joblib.load(cls_disp_sign)
-        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
         disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
         col = list(cls_disp_sign.classes_).index(1)
         disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
-
-        del reg_disp_norm
         del cls_disp_sign
+
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
         dl2['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
@@ -719,9 +722,7 @@ def apply_models(dl1,
     
     if isinstance(classifier, (str, bytes, Path)):
         classifier = joblib.load(classifier)
-    dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])
-    del classifier
 
     # This check is valid as long as we train on only two classes (gammas and protons)
     if probs.shape[1] > 2:
@@ -729,8 +730,12 @@ def apply_models(dl1,
                          "the predicted probabilty to assign as gammaness is unclear."
                          "Please check training data")
 
-    # gammaness is the prediction probability for the first class (0)
-    dl2['gammaness'] = probs[:, 0]
+    # gammaness is the prediction probability for the class 0 (proton: class 101)
+    mc_type_gamma, mc_type_proton = 0, 101
+    col = list(classifier.classes_).index(mc_type_gamma)
+    dl2['gammaness'] = probs[:, col]
+    dl2['reco_type'] = np.where(probs[:, col] > 0.5, mc_type_gamma, mc_type_proton)
+    del classifier
 
     return dl2
 
@@ -787,8 +792,6 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
     src_dep_params['expected_src_x'] = expected_src_pos_x_m
     src_dep_params['expected_src_y'] = expected_src_pos_y_m
 
-    src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m) ** 2 + (data['y'] - expected_src_pos_y_m) ** 2)
-
     disp, miss = camera_to_shower_coordinates(
         expected_src_pos_x_m,
         expected_src_pos_y_m,
@@ -798,6 +801,21 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
 
     src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(disp) * -1
     src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(disp) * -1
+
+    if 'lhfit_x' in data.keys():
+        # Use lhfit parameters for 'dist' and 'alpha'
+        disp, miss = camera_to_shower_coordinates(
+            expected_src_pos_x_m,
+            expected_src_pos_y_m,
+            data['lhfit_x'],
+            data['lhfit_y'],
+            data['lhfit_psi'])
+        src_dep_params['dist'] = np.sqrt((data['lhfit_x'] - expected_src_pos_x_m) ** 2 +
+                                         (data['lhfit_y'] - expected_src_pos_y_m) ** 2)
+    else:
+        src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m) ** 2 +
+                                         (data['y'] - expected_src_pos_y_m) ** 2)
+
     src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
 
     return src_dep_params

@@ -6,8 +6,9 @@ import astropy.units as u
 
 from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
 
+from ctapipe.containers import EventType
 from ctapipe.core import TelescopeComponent
-from ctapipe.core.traits import Bool, Float, FloatTelescopeParameter, Int, Path
+from ctapipe.core.traits import Bool, Float, FloatTelescopeParameter, Int
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
 from lstchain.reco.reconstructorCC import log_pdf as log_pdf
 
@@ -33,12 +34,10 @@ class TimeWaveformFitter(TelescopeComponent):
     time_after_shower = FloatTelescopeParameter(default_value=20,
                                                 help='Additional time at the end of the fit temporal window.',
                                                 allow_none=False).tag(config=True)
-    use_weight = Bool(False, help='If True, the brightest sample is twice as important as the dimmest pixel in the '
-                                  'likelihood. If false all samples are equivalent.', allow_none=False).tag(config=True)
     no_asymmetry = Bool(False, help='If true, the asymmetry of the spatial model is fixed to 0.',
                         allow_none=False).tag(config=True)
-    use_interleaved = Path(None, help='Location of the dl1 file used to estimate the pedestal exploiting interleaved'
-                                      ' events.', allow_none=True).tag(config=True)
+    use_interleaved = Bool(None, help='If true, the std deviation of pedestals and dimmed pixels are estimated on '
+                                      'interleaved events', allow_none=True).tag(config=True)
     n_peaks = Int(0, help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
                           'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
                   allow_none=False).tag(config=True)
@@ -96,6 +95,8 @@ class TimeWaveformFitter(TelescopeComponent):
         self.transition_charges = {}
         for tel_id in subarray.tel:
             self.transition_charges[tel_id] = transition_charges[self.crosstalk.tel[tel_id]]
+        self.error = None
+        self.allowed_pixels = True
 
         self.start_parameters = None
         self.names_parameters = None
@@ -103,6 +104,29 @@ class TimeWaveformFitter(TelescopeComponent):
         self.error_parameters = None
         self.bound_parameters = None
         self.fcn = None
+
+    def get_ped_from_interleaved(self, source):
+        """
+        Parameters
+        ----------
+        source
+        """
+        self.error = {}
+        waveforms = {}
+        for tel_id in self.subarray.tel:
+            waveforms[tel_id] = []
+        for i, event in enumerate(source):
+            if event.trigger.event_type == EventType.SKY_PEDESTAL:
+                source.r0_r1_calibrator.calibrate(event)
+                for tel_id in event.r1.tel.keys():
+                    waveforms[tel_id].append(event.r1.tel[tel_id].waveform.squeeze())
+        for tel_id, tel_waveforms in waveforms.items():
+            x=np.concatenate(np.asarray(tel_waveforms), axis=1)
+            std=[]
+            for elt in x:
+                std.append(np.nanstd(elt))
+            self.error[tel_id] = std
+            self.allowed_pixels = (std > 0.5 * np.median(std))
 
     def call_setup(self, event, telescope_id, dl1_container):
         """
@@ -212,6 +236,7 @@ class TimeWaveformFitter(TelescopeComponent):
                             }
 
         mask_pixel, mask_time = self.clean_data(pix_x, pix_y, pix_radius, times, start_parameters, telescope_id)
+        mask_pixel = mask_pixel & self.allowed_pixels
         spatial_ones = np.ones(np.sum(mask_pixel))
 
         is_high_gain = is_high_gain[mask_pixel]
@@ -226,7 +251,7 @@ class TimeWaveformFitter(TelescopeComponent):
         pix_area = geometry.pix_area[mask_pixel].to_value(unit ** 2)
 
         data = waveform
-        error = None  # TODO include option to use calibration data
+        error = self.error
 
         filter_pixels = np.nonzero(~mask_pixel)
         filter_times = np.nonzero(~mask_time)
@@ -234,6 +259,8 @@ class TimeWaveformFitter(TelescopeComponent):
         if error is None:
             std = np.std(data[~mask_pixel])
             error = np.full(data.shape[0], std)
+        else:
+            error = self.error[telescope_id]
 
         data = np.delete(data, filter_pixels, axis=0)
         data = np.delete(data, filter_times, axis=1)
@@ -247,7 +274,7 @@ class TimeWaveformFitter(TelescopeComponent):
                       template.t0, template.amplitude_LG,
                       template.amplitude_HG, self.n_peaks,
                       self.transition_charges[telescope_id],
-                      self.use_weight, self.factorial]
+                      self.factorial]
 
         self.start_parameters = start_parameters
         self.names_parameters = start_parameters.keys()

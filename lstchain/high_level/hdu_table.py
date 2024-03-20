@@ -312,7 +312,7 @@ def add_icrs_position_params(data, source_pos, time_utc):
 def fill_reco_altaz_w_expected_pos(data):
     """
     Fill the reconstructed alt, az positions with the expected source positions,
-    for source-dependent analysis.
+    for source-dependent analysis. 
 
     Note: This is just a trick to easily extract ON/OFF events in gammapy
     analysis. For source-dependent analysis, gammaness and alpha cut are
@@ -323,6 +323,7 @@ def fill_reco_altaz_w_expected_pos(data):
     `WobbleRegionsFinder` in gammapy to define the source and background region.
     """
     # Compute the expected source position for the first event
+
     obstime = Time(data["dragon_time"][0], scale="utc", format="unix")
     expected_src_x = data["expected_src_x"][0] * u.m
     expected_src_y = data["expected_src_y"][0] * u.m
