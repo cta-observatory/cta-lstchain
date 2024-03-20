@@ -18,7 +18,9 @@ from astropy.table import QTable, Table
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
-from lstchain.reco.utils import camera_to_altaz, location
+from lstchain.reco.utils import camera_to_altaz
+from ctapipe_io_lst.constants import LST1_LOCATION
+
 
 __all__ = [
     "add_icrs_position_params",
@@ -272,7 +274,7 @@ def get_pointing_params(data, source_pos, time_utc):
     pnt_icrs = SkyCoord(
         alt=pointing_alt[0],
         az=pointing_az[0],
-        frame=AltAz(obstime=time_utc[0], location=location),
+        frame=AltAz(obstime=time_utc[0], location=LST1_LOCATION),
     ).transform_to(frame="icrs")
 
     source_pointing_diff = source_pos.separation(pnt_icrs)
@@ -294,7 +296,7 @@ def add_icrs_position_params(data, source_pos, time_utc):
     reco_az = data["reco_az"]
 
     reco_altaz = SkyCoord(
-        alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
+        alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=LST1_LOCATION)
     )
 
     with erfa_astrom.set(ErfaAstromInterpolator(300 * u.s)):
@@ -313,14 +315,20 @@ def fill_reco_altaz_w_expected_pos(data):
     for source-dependent analysis.
 
     Note: This is just a trick to easily extract ON/OFF events in gammapy
-    analysis.
+    analysis. For source-dependent analysis, gammaness and alpha cut are
+    already applied when creating DL3 file and there is no need to apply additional
+    cuts in higher analysis (e.g. on/background region cut in gammapy).
+    This function fills the same reconstructed position (AltAz, ICRS frame,
+    derived from the first event) for all events. It is recommended to use
+    `WobbleRegionsFinder` in gammapy to define the source and background region.
     """
-    obstime = Time(data["dragon_time"], scale="utc", format="unix")
-    expected_src_x = data["expected_src_x"] * u.m
-    expected_src_y = data["expected_src_y"] * u.m
+    # Compute the expected source position for the first event
+    obstime = Time(data["dragon_time"][0], scale="utc", format="unix")
+    expected_src_x = data["expected_src_x"][0] * u.m
+    expected_src_y = data["expected_src_y"][0] * u.m
     focal = 28 * u.m
-    pointing_alt = data["pointing_alt"]
-    pointing_az = data["pointing_az"]
+    pointing_alt = data["pointing_alt"][0]
+    pointing_az = data["pointing_az"][0]
 
     expected_src_altaz = camera_to_altaz(
         expected_src_x,
@@ -333,6 +341,18 @@ def fill_reco_altaz_w_expected_pos(data):
 
     data["reco_alt"] = expected_src_altaz.alt
     data["reco_az"] = expected_src_altaz.az
+
+    reco_altaz = SkyCoord(
+        alt=data["reco_alt"][0], az=data["reco_az"][0],
+        frame=AltAz(obstime=obstime, location=LST1_LOCATION)
+    )
+
+    with erfa_astrom.set(ErfaAstromInterpolator(300 * u.s)):
+        reco_icrs = reco_altaz.transform_to(frame="icrs")
+
+    # Fill the same expected source position (ICRS frame) for all events
+    data["RA"] = reco_icrs.ra.to(u.deg)
+    data["Dec"] = reco_icrs.dec.to(u.deg)
 
     return data
 
@@ -370,7 +390,8 @@ def create_event_list(
 
     time_params, time_utc = get_timing_params(data)
 
-    data = add_icrs_position_params(data, source_pos, time_utc)
+    if not 'RA' in data.colnames:
+        data = add_icrs_position_params(data, source_pos, time_utc)
     reco_icrs = SkyCoord(ra=data["RA"], dec=data["Dec"], unit="deg")
     pnt_icrs = get_pointing_params(data, source_pos, time_utc)
 
@@ -450,6 +471,19 @@ def create_event_list(
     ev_header["DEC_OBJ"] = source_pos.dec.to_value()
     ev_header["FOVALIGN"] = "RADEC"
 
+    ev_header["GEOLON"] = (
+        LST1_LOCATION.lon.to_value(u.deg),
+        "Geographic longitude of telescope (deg)",
+    )
+    ev_header["GEOLAT"] = (
+        LST1_LOCATION.lat.to_value(u.deg),
+        "Geographic latitude of telescope (deg)",
+    )
+    ev_header["ALTITUDE"] = (
+        round(LST1_LOCATION.height.to_value(u.m), 2),
+        "Geographic latitude of telescope (m)",
+    )
+
     # GTI table metadata
     gti_header = DEFAULT_HEADER.copy()
     gti_header["CREATED"] = Time.now().utc.iso
@@ -472,20 +506,12 @@ def create_event_list(
     pnt_header["MJDREFF"] = ev_header["MJDREFF"]
     pnt_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
     pnt_header["TIMESYS"] = ev_header["TIMESYS"]
-    pnt_header["OBSGEO-L"] = (
-        location.lon.to_value(u.deg),
-        "Geographic longitude of telescope (deg)",
-    )
-    pnt_header["OBSGEO-B"] = (
-        location.lat.to_value(u.deg),
-        "Geographic latitude of telescope (deg)",
-    )
-    pnt_header["OBSGEO-H"] = (
-        round(location.height.to_value(u.m), 2),
-        "Geographic latitude of telescope (m)",
-    )
-
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
+
+    pnt_header["GEOLON"] = ev_header["GEOLON"]
+    pnt_header["GEOLAT"] = ev_header["GEOLAT"]
+    pnt_header["ALTITUDE"] = ev_header["ALTITUDE"]
+
     pnt_header["MEAN_ZEN"] = str(data_pars["ZEN_PNT"])
     pnt_header["MEAN_AZ"] = str(data_pars["AZ_PNT"])
     pnt_header["B_DELTA"] = str(data_pars["B_DELTA"])
