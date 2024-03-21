@@ -241,17 +241,10 @@ def find_DL1_subrun(run, sub_run, dl1_dir=DEFAULT_DL1_PATH):
 
     return file_list[0]
 
-def find_interleaved_subruns(run, r0_dir=DEFAULT_R0_PATH, dl1_dir=DEFAULT_DL1_PATH):
+def find_interleaved_subruns(run, interleaved_dir):
     '''
-    Find the given subrun of interleaved file in onsite tree (dir [dl1_dir]/interleaved)
+    Return the list of interleaved files for a given run
     '''
-    
-    # look in R0 to find the date
-    r0_list = find_r0_subrun(run,0,r0_dir)
-    date = r0_list.parent.name
-
-    # search the files 
-    interleaved_dir =  Path(f"{dl1_dir}/{date}/interleaved")
 
     file_list = sorted(interleaved_dir.rglob(f'interleaved_LST-1.Run{run:05d}.*.h5'))
     

@@ -69,7 +69,7 @@ def test_create_irf_full_enclosure_with_config(
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
     irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
-    config_file = os.path.join(os.getcwd(), "./docs/examples/irf_tool_config.json")
+    config_file = os.path.join(os.getcwd(), "./docs/examples/irf_dl3_tool_config.json")
 
     assert (
         run_tool(
@@ -215,7 +215,6 @@ def test_create_dl3_energy_dependent_cuts(temp_dir_observed_files, observed_dl2_
                 f"--output-dl3-path={temp_dir_observed_files}",
                 f"--input-irf-path={temp_dir_observed_files}",
                 "--irf-file-pattern=pnt_irf.fits.gz",
-                "--final-irf-file=final_pnt_irf.fits.gz",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
@@ -246,7 +245,6 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_fi
                 f"--output-dl3-path={temp_dir_observed_files}",
                 f"--input-irf-path={simulated_irf_file.parent}",
                 f"--irf-file-pattern={simulated_irf_file.name}",
-                f"--final-irf-file={simulated_irf_file.name}",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
@@ -266,7 +264,7 @@ def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
 
-    config_file = os.path.join(os.getcwd(), "docs/examples/dl3_tool_config.json")
+    config_file = os.path.join(os.getcwd(), "docs/examples/irf_dl3_tool_config.json")
 
     assert (
         run_tool(
@@ -306,7 +304,6 @@ def test_create_srcdep_dl3(
                 f"--output-dl3-path={temp_dir_observed_srcdep_files}",
                 f"--input-irf-path={simulated_srcdep_irf_file.parent}",
                 f"--irf-file-pattern={simulated_srcdep_irf_file.name}",
-                f"--final-irf-file={simulated_srcdep_irf_file.name}",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
