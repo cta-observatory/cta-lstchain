@@ -17,8 +17,7 @@ dependencies:
   - iminuit>=2
   - joblib~=1.2.0
   - toml
-  - protobuf=3.20
-  - protozfits=2.2
+  - protozfits=2.5
   - pyparsing
   - scipy~=1.11.4
   - scikit-learn=1.2
