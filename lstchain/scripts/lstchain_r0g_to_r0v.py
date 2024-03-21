@@ -19,7 +19,6 @@ from pathlib import Path
 from ctapipe.containers import EventType
 from ctapipe.io import read_table
 from ctapipe_io_lst import PixelStatus
-from astropy.io import fits
 
 import lstchain.paths as paths
 import numpy as np
