@@ -14,7 +14,6 @@ DataReductionFITSWriter
       ~DataReductionFITSWriter.classes
       ~DataReductionFITSWriter.description
       ~DataReductionFITSWriter.example
-      ~DataReductionFITSWriter.final_irf_file
       ~DataReductionFITSWriter.flags
       ~DataReductionFITSWriter.gzip
       ~DataReductionFITSWriter.input_dl2
@@ -49,7 +48,6 @@ DataReductionFITSWriter
    .. autoattribute:: classes
    .. autoattribute:: description
    .. autoattribute:: example
-   .. autoattribute:: final_irf_file
    .. autoattribute:: flags
    .. autoattribute:: gzip
    .. autoattribute:: input_dl2
