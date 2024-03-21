@@ -129,6 +129,7 @@ def main():
             stream.write_message(input_streams[i].CameraConfiguration[0])
 
             stream.move_to_new_table("Events")
+            stream.set_bool("LSTDVR", True, "LST offline DVR applied")
 
             for event in input_streams[i].Events:
                 # skip corrupted events:
@@ -166,12 +167,6 @@ def main():
 
             stream.close()
             input_streams[i].close()
-
-            # Open again output file for setting the LSTDVR flag:
-            outfile = fits.open(name, mode="update")
-            outfile['Events'].header.set("LSTDVR", True, 
-                                         "LST offline DVR applied")
-            outfile.close()
 
     log.info('Number of processed events: %d', num_events)
     log.info('R0G to R0V conversion finished successfully!')
