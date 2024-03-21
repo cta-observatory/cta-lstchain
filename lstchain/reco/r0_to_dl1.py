@@ -406,6 +406,7 @@ def r0_to_dl1(
             metadata=metadata,
         )
     nsb_tuning = False
+    nsb_tuning_args = None
     if 'waveform_nsb_tuning' in config.keys():
         nsb_tuning = config['waveform_nsb_tuning']['nsb_tuning']
         if nsb_tuning:
@@ -435,6 +436,7 @@ def r0_to_dl1(
                             + str(np.asarray(nsb_original)[allowed_tel])
                             + 'GHz to {0:d}%'.format(int(nsb_tuning_ratio * 100 + 100.5))
                             + ' for telescopes ids ' + str(config['source_config']['LSTEventSource']['allowed_tels']))
+                nsb_tuning_args = [nsb_tuning_ratio, nsb_original, pulse_template, charge_spe_cumulative_pdf]
             else:
                 logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
                 nsb_tuning = False
@@ -443,10 +445,13 @@ def r0_to_dl1(
     if 'lh_fit_config' in config.keys():
         lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
         lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
-        if lhfit_fitter_config['TimeWaveformFitter']['use_interleaved'] and not is_simu:
+        if lhfit_fitter_config['TimeWaveformFitter']['use_interleaved']:
             tmp_source = EventSource(input_url=input_filename,
-                                      config=Config(config["source_config"]))
-            lhfit_fitter.get_ped_from_interleaved(tmp_source)
+                                     config=Config(config["source_config"]))
+            if is_simu:
+                lhfit_fitter.get_ped_from_true_signal_less(tmp_source, nsb_tuning_args)
+            else:
+                lhfit_fitter.get_ped_from_interleaved(tmp_source)
             del tmp_source
 
     # initialize the writer of the interleaved events 

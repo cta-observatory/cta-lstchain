@@ -95,6 +95,9 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
             ["type", "*", 0.0],
             ["type", "LST_LST_LSTCam", 0.0]
         ],
+        "spatial_selection": "hillas",
+        "dvr_pic_threshold": 8,
+        "dvr_pix_for_full_image": 500,
         "sigma_space": 3,
         "sigma_time": 4,
         "time_before_shower": [
@@ -122,6 +125,11 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     config['lh_fit_config']["no_asymmetry"] = True
     config['lh_fit_config']["verbose"] = 0
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
+    os.remove(tmp_path / "tmp.h5")
+    config['lh_fit_config']["spatial_selection"] = 'dvr'
+    config['lh_fit_config']["use_interleaved"] = True
+    config['waveform_nsb_tuning']['nsb_tuning'] = True
+    r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 
 @pytest.mark.private_data
@@ -139,6 +147,9 @@ def test_r0_to_dl1_lhfit_observed(tmp_path):
             ["type", "*", 0.0],
             ["type", "LST_LST_LSTCam", 0.0]
         ],
+        "spatial_selection": "hillas",
+        "dvr_pic_threshold": 8,
+        "dvr_pix_for_full_image": 500,
         "sigma_space": 3,
         "sigma_time": 4,
         "time_before_shower": [
@@ -155,6 +166,9 @@ def test_r0_to_dl1_lhfit_observed(tmp_path):
         "use_interleaved": False,
         "verbose": 0
     }
+    r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
+    os.remove(tmp_path / "tmp2.h5")
+    config['lh_fit_config']["spatial_selection"] = 'dvr'
     r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
 
 
