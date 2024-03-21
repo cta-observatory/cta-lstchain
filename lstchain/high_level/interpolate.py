@@ -672,7 +672,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
             psf_hdu_interp = create_psf_table_hdu(
                 psf=psf_interp[0],
-                true_energy=e_true,
+                true_energy_bins=e_true,
                 source_offset_bins=src_bins,
                 fov_offset_bins=fov_off,
                 extname="PSF",

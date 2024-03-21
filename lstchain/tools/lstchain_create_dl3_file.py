@@ -10,9 +10,8 @@ For using IRF interpolation methods, to get IRF with sky pointing the same or
 closer (in the interpolation parameter space) to that of the data provided,
 one has to provide,
 
-- the path to the IRFs,
-- glob search pattern for selecting the IRFs to be used, and
-- a final interpolated IRF file name.
+- the path to the IRFs, and
+- glob search pattern for selecting the IRFs to be used
 
 If instead of using IRF interpolation, one needs to add only the nearest IRF
 node to the given data, in the interpolation space, then one needs to pass the
@@ -101,7 +100,6 @@ class DataReductionFITSWriter(Tool):
         -o /path/to/DL3/file/
         --input-irf-path /path/to/irf/
         --irf-file-pattern "irf*.fits.gz"
-        --final-irf-file final_interp_irf.fits.gz
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
@@ -123,7 +121,6 @@ class DataReductionFITSWriter(Tool):
         -o /path/to/DL3/file/
         -i /path/to/irf/
         -p "irf*.fits.gz"
-        -f final_interp_irf.fits.gz
         --interp-method linear
         --source-name Crab
         --source-ra 83.633deg
@@ -136,7 +133,6 @@ class DataReductionFITSWriter(Tool):
         -o /path/to/DL3/file/
         -i /path/to/irf/
         -p "irf*.fits.gz"
-        -f final_interp_irf.fits.gz
         --use-nearest-irf-node
         --source-name Crab
         --source-ra 83.633deg
@@ -168,13 +164,6 @@ class DataReductionFITSWriter(Tool):
     irf_file_pattern = traits.Unicode(
         help="IRF file pattern to search in the given IRF files path",
         default_value="*irf*.fits.gz",
-    ).tag(config=True)
-
-    final_irf_file = traits.Path(
-        help="Final IRF file included with DL3 file",
-        directory_ok=False,
-        file_ok=True,
-        default_value="final_irf.fits.gz",
     ).tag(config=True)
 
     source_name = traits.Unicode(
@@ -226,7 +215,6 @@ class DataReductionFITSWriter(Tool):
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
         ("i", "input-irf-path"): "DataReductionFITSWriter.input_irf_path",
         ("p", "irf-file-pattern"): "DataReductionFITSWriter.irf_file_pattern",
-        ("f", "final-irf-file"): "DataReductionFITSWriter.final_irf_file",
         "interp-method": "DataReductionFITSWriter.interp_method",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
@@ -277,18 +265,6 @@ class DataReductionFITSWriter(Tool):
                     " use --overwrite to overwrite"
                 )
 
-        self.final_irf_output = self.output_dl3_path.absolute() / str(self.final_irf_file.name)
-
-        if self.final_irf_output.exists():
-            if self.overwrite:
-                self.log.warning(f"Overwriting {self.final_irf_output}")
-                self.final_irf_output.unlink()
-            else:
-                raise ToolConfigurationError(
-                    f"Final IRF file {self.final_irf_output} already exists,"
-                    " use --overwrite to overwrite"
-                )
-
         if self.input_irf_path:
             self.irf_list = sorted(
                 self.input_irf_path.glob(self.irf_file_pattern)
@@ -311,9 +287,6 @@ class DataReductionFITSWriter(Tool):
                     " No interpolation possible"
                 )
                 self.irf_final_hdu = fits.open(self.irf_list[0])
-                self.irf_final_hdu.writeto(
-                    self.final_irf_output, overwrite=self.overwrite
-                )
             else:
                 raise ToolConfigurationError(
                     f"No IRF files in {self.input_irf_path} with pattern, "
@@ -349,14 +322,8 @@ class DataReductionFITSWriter(Tool):
             self.irf_final_hdu = interpolate_irf(
                 self.irf_list, self.data_params, self.interp_method
             )
-            self.irf_final_hdu.writeto(
-                self.final_irf_output, overwrite=self.overwrite
-            )
         else:
             self.irf_final_hdu = fits.open(self.irf_list[0])
-            self.irf_final_hdu.writeto(
-                self.final_irf_output, overwrite=self.overwrite
-            )
             self.log.info(
                 f"Nearest IRF {self.irf_list[0]} is used without interpolation"
             )
@@ -366,21 +333,19 @@ class DataReductionFITSWriter(Tool):
         Check if the final IRF has energy-dependent gammaness cuts or not.
         """
         try:
-            with fits.open(self.final_irf_output) as hdul:
-                self.use_energy_dependent_gh_cuts = (
-                    "GH_CUT" not in hdul["EFFECTIVE AREA"].header
-                )
+            self.use_energy_dependent_gh_cuts = (
+                "GH_CUT" not in self.irf_final_hdu["EFFECTIVE AREA"].header
+            )
         except KeyError:
             raise ToolConfigurationError(
-                f"{self.final_irf_output} does not have EFFECTIVE AREA HDU, "
+                f"{self.irf_final_hdu} does not have EFFECTIVE AREA HDU, "
                 " to check for global cut information in the Header value"
             )
 
         if self.source_dep:
-            with fits.open(self.final_irf_output) as hdul:
-                self.use_energy_dependent_alpha_cuts = (
-                    "AL_CUT" not in hdul["EFFECTIVE AREA"].header
-                )
+            self.use_energy_dependent_alpha_cuts = (
+                "AL_CUT" not in self.irf_final_hdu["EFFECTIVE AREA"].header
+            )
 
     def apply_srcindep_gh_cut(self):
         """
@@ -390,7 +355,7 @@ class DataReductionFITSWriter(Tool):
 
         if self.use_energy_dependent_gh_cuts:
             self.energy_dependent_gh_cuts = QTable.read(
-                self.final_irf_output, hdu="GH_CUTS"
+                self.irf_final_hdu["GH_CUTS"]
             )
 
             self.data = self.cuts.apply_energy_dependent_gh_cuts(
@@ -401,8 +366,7 @@ class DataReductionFITSWriter(Tool):
                 f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
             )
         else:
-            with fits.open(self.final_irf_output) as hdul:
-                self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
+            self.cuts.global_gh_cut = self.irf_final_hdu[1].header["GH_CUT"]
             self.data = self.cuts.apply_global_gh_cut(self.data)
             self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
 
@@ -421,7 +385,7 @@ class DataReductionFITSWriter(Tool):
 
             if self.use_energy_dependent_gh_cuts:
                 self.energy_dependent_gh_cuts = QTable.read(
-                    self.final_irf_output, hdu="GH_CUTS"
+                    self.irf_final_hdu["GH_CUTS"]
                 )
 
                 data_temp = self.cuts.apply_energy_dependent_gh_cuts(
@@ -432,13 +396,12 @@ class DataReductionFITSWriter(Tool):
                     f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
                 )
             else:
-                with fits.open(self.final_irf_output) as hdul:
-                    self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
+                self.cuts.global_gh_cut = self.irf_final_hdu[1].header["GH_CUT"]
                 data_temp = self.cuts.apply_global_gh_cut(data_temp)
 
             if self.use_energy_dependent_alpha_cuts:
                 self.energy_dependent_alpha_cuts = QTable.read(
-                    self.final_irf_output, hdu="AL_CUTS"
+                    self.irf_final_hdu["AL_CUTS"]
                 )
                 data_temp = self.cuts.apply_energy_dependent_alpha_cuts(
                     data_temp, self.energy_dependent_alpha_cuts
@@ -448,8 +411,7 @@ class DataReductionFITSWriter(Tool):
                     f'{self.energy_dependent_alpha_cuts.meta["AL_CONT"]}'
                 )
             else:
-                with fits.open(self.final_irf_output) as hdul:
-                    self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
+                self.cuts.global_alpha_cut = self.irf_final_hdu[1].header["AL_CUT"]
                 data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
             # Fill the reco alt/az positions with expected source positions
@@ -476,7 +438,7 @@ class DataReductionFITSWriter(Tool):
                 "Remove duplicated events: a ratio of duplicated events is "
                 f"{duplicated_events_ratio}"
             )
-        
+
         # Sort the data frame based on event_id
         self.data.sort('event_id')
 
@@ -491,9 +453,12 @@ class DataReductionFITSWriter(Tool):
             if not self.use_nearest_irf_node:
                 self.interp_irfs()
             else:
-                self.final_irf_output = check_in_delaunay_triangle(
-                    self.irf_list, self.data_params, self.use_nearest_irf_node
-                )[0]
+                ## Check
+                self.irf_final_hdu = fits.open(
+                    check_in_delaunay_triangle(
+                        self.irf_list, self.data_params, self.use_nearest_irf_node
+                    )[0]
+                )
         self.check_energy_dependent_cuts()
 
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
@@ -520,8 +485,6 @@ class DataReductionFITSWriter(Tool):
             [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
         )
 
-        self.irf_final_hdu = fits.open(self.final_irf_output)
-
         self.log.info("Adding IRF HDUs")
         self.mc_params = dict()
 
@@ -546,8 +509,6 @@ class DataReductionFITSWriter(Tool):
     def finish(self):
 
         self.hdulist.writeto(self.output_file, overwrite=self.overwrite)
-        if len(self.irf_list) > 1:
-            Provenance().add_output_file(self.final_irf_output)
 
         Provenance().add_output_file(self.output_file)
 
