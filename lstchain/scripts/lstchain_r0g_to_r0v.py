@@ -140,6 +140,7 @@ def main():
                 if event.event_id not in pixel_mask:
                     log.warning('Event id %d not found in pixel selection file!',
                              event.event_id)
+                    log.warning('    ==> SKIPPING it!')
                     continue
 
                 num_gains = event.num_channels
