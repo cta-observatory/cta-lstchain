@@ -202,13 +202,14 @@ def main():
 
     # If a relevant fraction of FF-like events were not tagged as FF...:
     max_frac = 0.1
-    if ((num_FF_like_with_no_FF_type / num_FF_like > max_frac) &
-        (use_flatfield_heuristic == False)):
-            log.warn('More than %d percent of FF-like events '
-                     'have wrong event_type!', int(100*max_frac))
-            log.warn('You should use heuristic identification of FF events!')
-    else:
-        log.info('R0 to R0G conversion finished successfully!')
+    if num_FF_like > 0:
+      if ((num_FF_like_with_no_FF_type / num_FF_like > max_frac) &
+          (use_flatfield_heuristic == False)):
+              log.warn('More than %d percent of FF-like events '
+                       'have wrong event_type!', int(100*max_frac))
+              log.warn('You should use heuristic identification of FF events!')
+      else:
+          log.info('R0 to R0G conversion finished successfully!')
 
 def get_event_type(wf_hg, offset, evtype):
 
