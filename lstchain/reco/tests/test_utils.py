@@ -188,7 +188,8 @@ def test_get_obstime_real():
     # now test with a QTable:
     a = delta_t[recorded_events][cut] * u.s
     b = timestamps[recorded_events][cut] * u.s
-    events = QTable([a, b], names=("delta_t", "dragon_time"))
+    c = sorted_event_types[recorded_events][cut]
+    events = QTable([a, b, c], names=("delta_t", "dragon_time", "event_type"))
     t_eff, t_elapsed = utils.get_effective_time(events)
     print(t_obs, t_elapsed, true_t_eff, t_eff)
     # test accuracy to 0.05%:
