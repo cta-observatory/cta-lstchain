@@ -144,13 +144,20 @@ def test_get_obstime_real():
     n_cosmics = np.random.poisson(cosmics_rate * t_obs)
 
     timestamps = np.random.uniform(0, t_obs, n_cosmics)
+    event_types = EventType.SUBARRAY.value * np.ones(n_cosmics)
     timestamps = np.append(timestamps, np.arange(t0_pedestal, t_obs, 1 / pedestal_rate))
+    n_pedestals = len(timestamps) - n_cosmics
+    event_types = np.append(event_types,  EventType.SKY_PEDESTAL.value * np.ones(n_pedestals))
     timestamps = np.append(
         timestamps, np.arange(t0_flatfield, t_obs, 1 / flatfield_rate)
     )
-    # sort events by timestamp:
-    timestamps.sort()
+    n_flatfield = len(timestamps) - n_cosmics - n_pedestals
+    event_types = np.append(event_types, EventType.FLATFIELD.value * np.ones(n_flatfield))
 
+    # sort events by timestamp:
+    sorted_event_types = event_types[np.argsort(timestamps)]
+    timestamps.sort()
+    
     # time to previous event:
     delta_t = np.insert(np.diff(timestamps), 0, 0)
 
@@ -169,6 +176,7 @@ def test_get_obstime_real():
         {
             "delta_t": delta_t[recorded_events][cut],
             "dragon_time": timestamps[recorded_events][cut],
+            "event_type": event_types[recorded_events][cut],
         }
     )
     t_eff, t_elapsed = utils.get_effective_time(events)
