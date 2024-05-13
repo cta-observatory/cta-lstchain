@@ -176,7 +176,7 @@ def test_get_obstime_real():
         {
             "delta_t": delta_t[recorded_events][cut],
             "dragon_time": timestamps[recorded_events][cut],
-            "event_type": event_types[recorded_events][cut],
+            "event_type": sorted_event_types[recorded_events][cut],
         }
     )
     t_eff, t_elapsed = utils.get_effective_time(events)
