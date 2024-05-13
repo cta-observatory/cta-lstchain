@@ -3,6 +3,7 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
+from ctapipe.containers import EventType
 import numpy as np
 import pandas as pd
 
