@@ -17,6 +17,7 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord
 from astropy.time import Time
 from ctapipe.coordinates import CameraFrame
+from ctapipe.containers import EventType
 from ctapipe_io_lst import OPTICS
 from ctapipe_io_lst.constants import LST1_LOCATION
 
@@ -654,8 +655,19 @@ def get_effective_time(events):
     t_eff: astropy Quantity (in seconds, if input has no units)
     t_elapsed: astropy Quantity (ditto)
     """
-    timestamp = np.array(events["dragon_time"])
-    delta_t = np.array(events["delta_t"])
+
+    # For consistency with the event selection applied in the DL2 to DL3 stage
+    # we require the events to be tagged as "physics triggers". In this way we
+    # count as livetime only periods in which the telescope is recording showers
+    # and properly tagging them. Without this filter the effective time was in 
+    # *rare* occasions (example: run 7199) a few % larger than it should be - it was 
+    # including periods in which showers were tagged "UNKNOWN", which were not 
+    # present in the DL3 file. For most runs the effect is zero.
+    
+    typemask = events["event_type"] == EventType.SUBARRAY.value
+    
+    timestamp = np.array(events["dragon_time"][typemask])
+    delta_t = np.array(events["delta_t"][typemask])
 
     if not isinstance(timestamp, u.Quantity):
         timestamp *= u.s
