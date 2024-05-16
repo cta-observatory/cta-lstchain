@@ -8,7 +8,7 @@ from astropy.time import Time
 import pymongo
 
 from .paths import parse_calibration_name
-from ..io.io import get_resource_path
+from .io.io import get_resource_path
 
 log = logging.getLogger(__name__)
 
