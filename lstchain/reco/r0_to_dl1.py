@@ -57,6 +57,7 @@ from ..io import (
     write_metadata,
     write_simtel_energy_histogram,
     write_subarray_tables,
+    get_resource_path
 )
 
 from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key
@@ -425,7 +426,9 @@ def r0_to_dl1(
                     nsb_tuning_ratio = calculate_required_additional_nsb(input_filename,
                                                                          config['waveform_nsb_tuning']['target_data'],
                                                                          config=config)[0]
-                spe = np.loadtxt(config['waveform_nsb_tuning']['spe_location']).T
+
+                spe_location = config['waveform_nsb_tuning']['spe_location'] if 'spe_location' in config['waveform_nsb_tuning'] and config['waveform_nsb_tuning']['spe_location'] is not None else get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")
+                spe = np.loadtxt(spe_location).T
                 spe_integral = np.cumsum(spe[1])
                 charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                                      bounds_error=False, fill_value=0.,

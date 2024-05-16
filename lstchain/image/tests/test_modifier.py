@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from scipy.sparse import csr_matrix
+from lstchain.io.io import get_resource_path
 
 
 @pytest.mark.parametrize('fraction', [0.2, 0.5])
@@ -99,7 +100,7 @@ def test_tune_nsb_on_waveform():
     pulse_templates = NormalizedPulseTemplate(amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
                                               amplitude_LG_err=None)
     gain = np.array(['HG', 'LG'])
-    spe = np.loadtxt(os.path.join(os.path.dirname(__file__), '../../data/SinglePhE_ResponseInPhE_expo2Gaus.dat')).T
+    spe = np.loadtxt(get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")).T
     spe_integral = np.cumsum(spe[1])
     charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                          bounds_error=False, fill_value=0.,

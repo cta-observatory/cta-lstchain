@@ -2,13 +2,13 @@ from glob import glob
 import logging
 from pathlib import Path
 from enum import Enum, auto
-from pkg_resources import resource_filename
 from datetime import datetime
 import tempfile
 from astropy.time import Time
 import pymongo
 
 from .paths import parse_calibration_name
+from ..io.io import get_resource_path
 
 log = logging.getLogger(__name__)
 
@@ -19,14 +19,9 @@ CAT_A_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-A'
 CAT_B_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-B'
 
 
-DEFAULT_CONFIG = Path(resource_filename(
-    'lstchain',
-    "data/onsite_camera_calibration_param.json",
-))
-DEFAULT_CONFIG_CAT_B_CALIB = Path(resource_filename(
-    'lstchain',
-    "data/catB_camera_calibration_param.json",
-))
+DEFAULT_CONFIG = get_resource_path("data/onsite_camera_calibration_param.json")
+
+DEFAULT_CONFIG_CAT_B_CALIB = get_resource_path("data/catB_camera_calibration_param.json")
 
 class DataCategory(Enum):
     #: Real-Time data processing
