@@ -56,11 +56,11 @@ from ..io import (
     write_mcheader,
     write_metadata,
     write_simtel_energy_histogram,
-    write_subarray_tables,
-    get_resource_path
+    write_subarray_tables
 )
 
-from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key
+
+from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key, get_resource_path
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from ..visualization.plot_reconstructor import plot_debug
