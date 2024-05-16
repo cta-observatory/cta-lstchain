@@ -13,7 +13,7 @@ from tqdm import tqdm
 import json
 from traitlets.config.loader import DeferredConfigString, LazyConfigValue
 from pathlib import PosixPath, Path
-from pkg_resources import resource_filename
+from importlib import resources
 
 import astropy.units as u
 from astropy.table import Table, vstack, QTable
@@ -1352,4 +1352,4 @@ def get_resource_path(filename):
     """
     Get a resource data path in lstchain package
     """
-    return Path(resource_filename("lstchain", filename))
+    return resources.files("lstchain") / filename
