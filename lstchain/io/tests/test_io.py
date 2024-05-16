@@ -7,7 +7,8 @@ import pytest
 import tables
 from astropy.table import Table, QTable
 from ctapipe.instrument import SubarrayDescription
-from lstchain.io import add_config_metadata, get_resource_path
+from lstchain.io import add_config_metadata
+from lstchain.io.io import get_resource_path
 from pathlib import PosixPath
 from traitlets.config.loader import DeferredConfigString, LazyConfigValue
 
