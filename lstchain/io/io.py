@@ -12,7 +12,7 @@ from tables import open_file
 from tqdm import tqdm
 import json
 from traitlets.config.loader import DeferredConfigString, LazyConfigValue
-from pathlib import PosixPath, Path
+from pathlib import PosixPath
 from importlib import resources
 
 import astropy.units as u
