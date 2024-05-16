@@ -14,10 +14,12 @@ from copy import deepcopy
 import astropy.units as u
 import numpy as np
 import pandas as pd
-from astropy.coordinates import AltAz, SkyCoord, EarthLocation
+from astropy.coordinates import AltAz, SkyCoord
 from astropy.time import Time
 from ctapipe.coordinates import CameraFrame
+from ctapipe.containers import EventType
 from ctapipe_io_lst import OPTICS
+from ctapipe_io_lst.constants import LST1_LOCATION
 
 from . import disp
 
@@ -50,10 +52,8 @@ __all__ = [
     "get_events_in_GTI"
 ]
 
-# position of the LST1
-location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 obstime = Time("2018-11-01T02:00")
-horizon_frame = AltAz(location=location, obstime=obstime)
+horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
 
 # Geomagnetic parameters for the LST1 as per
 # https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm and
@@ -296,7 +296,7 @@ def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime=None
     """
     if not obstime:
         logging.info("No time given. To be use only for MC data.")
-    horizon_frame = AltAz(location=location, obstime=obstime)
+    horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
 
     pointing_direction = SkyCoord(
         alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame
@@ -362,7 +362,7 @@ def radec_to_camera(sky_coordinate, obstime, pointing_alt, pointing_az, focal):
     camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
 
-    horizon_frame = AltAz(location=location, obstime=obstime)
+    horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
 
     pointing_direction = SkyCoord(
         alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame
@@ -372,7 +372,7 @@ def radec_to_camera(sky_coordinate, obstime, pointing_alt, pointing_az, focal):
         focal_length=focal,
         telescope_pointing=pointing_direction,
         obstime=obstime,
-        location=location,
+        location=LST1_LOCATION,
     )
 
     camera_pos = sky_coordinate.transform_to(camera_frame)
@@ -533,10 +533,9 @@ def filter_events(
 
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
-        with pd.option_context('mode.use_inf_as_na', True):
-            not_finite_mask = events_df[_finite_params].isna()
+        events_df[_finite_params] = events_df[_finite_params].replace([np.inf, -np.inf], np.nan)
+        not_finite_mask = events_df[_finite_params].isna()
         filter &= ~(not_finite_mask.any(axis=1))
-
         not_finite_counts = (not_finite_mask).sum(axis=0)[_finite_params]
         if (not_finite_counts > 0).any():
             log.warning("Data contains not-predictable events.")
@@ -656,8 +655,19 @@ def get_effective_time(events):
     t_eff: astropy Quantity (in seconds, if input has no units)
     t_elapsed: astropy Quantity (ditto)
     """
-    timestamp = np.array(events["dragon_time"])
-    delta_t = np.array(events["delta_t"])
+
+    # For consistency with the event selection applied in the DL2 to DL3 stage
+    # we require the events to be tagged as "physics triggers". In this way we
+    # count as livetime only periods in which the telescope is recording showers
+    # and properly tagging them. Without this filter the effective time was in 
+    # *rare* occasions (example: run 7199) a few % larger than it should be - it was 
+    # including periods in which showers were tagged "UNKNOWN", which were not 
+    # present in the DL3 file. For most runs the effect is zero.
+    
+    typemask = events["event_type"] == EventType.SUBARRAY.value
+    
+    timestamp = np.array(events["dragon_time"][typemask])
+    delta_t = np.array(events["delta_t"][typemask])
 
     if not isinstance(timestamp, u.Quantity):
         timestamp *= u.s
@@ -672,7 +682,7 @@ def get_effective_time(events):
     # might indicate the DAQ was stopped (e.g. if the table contains more
     # than one run). We set 0.01 s as limit to decide a "break" occurred:
     t_elapsed = np.sum(time_diff[time_diff < 0.01 * u.s])
-    
+
     # delta_t is the time elapsed since the previous triggered event.
     # We exclude the null values that might be set for the first even in a file.
     # Same as the elapsed time, we exclude events with delta_t larger than 0.01 s.
@@ -838,7 +848,7 @@ def get_events_in_GTI(events, CatB_cal_table):
 
     Parameters
     ----------
-    events : pandas DataFrame or astropy.table.QTable 
+    events : pandas DataFrame or astropy.table.QTable
         Data frame or table of DL1 or DL2 events.
     CatB_cal_table: table of CatB calibration applied to the events (dl1_mon_tel_CatB_cal_key)
 

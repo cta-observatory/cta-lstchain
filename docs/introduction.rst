@@ -112,7 +112,7 @@ Here is an example configuration file for the IRF creation step.
 
 .. toggle:: 
 
-    .. include:: examples/irf_tool_config.json
+    .. include:: examples/irf_dl3_tool_config.json
         :code: json
 
 
@@ -126,12 +126,7 @@ To write DL3 files, you should use:
 
 For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 
-Here is an example configuration file for the IRF creation step.
-
-.. toggle:: 
-
-    .. include:: examples/dl3_tool_config.json
-        :code: json
+You should use the same configuration file used for the IRF creation (hence you have the same cuts).
 
 
 Post DL3 analysis

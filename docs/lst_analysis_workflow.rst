@@ -130,10 +130,9 @@ DL3/IRF config files
 --------------------
 
 
-DL3/IRF example config files are provided in `docs/example`:
+An example config file for IRF/DL3 creation is provided in `docs/example`:
 
-  - `dl3_tool_config.json <dl3_tool_config.json>`_
-  - `irf_tool_config.json <irf_tool_config.json>`_
+  - `irf_dl3_tool_config.json <irf_dl3_tool_config.json>`_
 
 
 Such files should be used to produce DL3 files and IRFs from DL2 (see :ref:`the Analysis Steps <introduction>`)

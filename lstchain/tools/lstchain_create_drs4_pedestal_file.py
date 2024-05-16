@@ -14,7 +14,7 @@ from ctapipe.core.traits import (
     flag,
 )
 from ctapipe.io.hdf5tableio import HDF5TableWriter
-from ctapipe_io_lst import LSTEventSource, EVBPreprocessing, TriggerBits
+from ctapipe_io_lst import LSTEventSource, EVBPreprocessingFlag, TriggerBits
 from ctapipe_io_lst.calibration import get_spike_A_positions
 from ctapipe_io_lst.constants import (
     N_CAPACITORS_PIXEL,
@@ -273,10 +273,10 @@ class DRS4PedestalAndSpikeHeight(Tool):
         check_large_values = False
         check_negative = True
         check_small = True
-        
+
         if self.source.cta_r1:
             preprocessing = self.source.evb_preprocessing[TriggerBits.MONO]
-            if EVBPreprocessing.BASELINE_SUBTRACTION in preprocessing:
+            if EVBPreprocessingFlag.BASELINE_SUBTRACTION in preprocessing:
                 check_large_values = True
                 check_negative = False
                 check_small = False

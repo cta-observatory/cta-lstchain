@@ -3,9 +3,10 @@ from setuptools import setup, find_packages
 import os
 
 
-def find_scripts(script_dir, prefix):
+def find_scripts(script_dir, prefix, suffix='.py'):
     script_list = [
-        os.path.splitext(f)[0] for f in os.listdir(script_dir) if f.startswith(prefix)
+        os.path.splitext(f)[0] for f in os.listdir(script_dir) 
+        if (f.startswith(prefix) and f.endswith(suffix))
     ]
     script_dir = script_dir.replace("/", ".")
     point_list = []
@@ -42,7 +43,7 @@ setup(
         'astropy~=5.0',
         'bokeh~=2.0',
         'ctapipe~=0.19.2',
-        'ctapipe_io_lst~=0.22.3',
+        'ctapipe_io_lst~=0.23.0',
         'ctaplot~=0.6.4',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=1.1',
@@ -53,13 +54,13 @@ setup(
         'numba',
         'numpy',
         'pandas',
-        'protobuf~=3.20.0',
         'pyirf~=0.10.0',
         'scipy>=1.8,<1.12',
         'seaborn',
         'scikit-learn~=1.2',
         'tables',
         'toml',
+        'protozfits>=2.5,<3',
         'pymongo',
         'pyparsing',
         'setuptools_scm',

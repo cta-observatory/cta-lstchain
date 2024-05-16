@@ -21,11 +21,14 @@ from ctapipe_io_lst import (
     DRAGON_COUNTERS_DTYPE,
     LSTEventSource,
     MultiFiles,
+    TriggerBits,
 )
 from ctapipe_io_lst.event_time import combine_counters
+from ctapipe_io_lst.evb_preprocessing import get_processings_for_trigger_bits
 from traitlets.config import Config
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from protozfits import File
 
 from lstchain import __version__
 from lstchain.paths import parse_r0_filename
@@ -311,7 +314,7 @@ def read_counters(path):
     dict: reference counters and timestamps
     """
     with MultiFiles(path, all_streams=True, all_subruns=False) as f:
-        first_event = next(f)
+        _, first_event = next(f)
 
         if first_event.event_id != 1:
             raise ValueError("Must be used on first file streams (subrun)")
@@ -382,7 +385,7 @@ def get_data_format(date_path, run_number):
         path = next(date_path.glob(pattern))
     except StopIteration:
         log.error("No input file found for date %s, run number %d", date_path, run_number)
-        return ""
+        return "-"
 
     try:
         with fits.open(path) as hdul:
@@ -390,7 +393,29 @@ def get_data_format(date_path, run_number):
             return events.header["PBFHEAD"]
     except Exception:
         log.exception("Error getting data format for date %s, run number %d", date_path, run_number)
-        return ""
+        return "-"
+
+
+def get_evb_preprocessing(date_path, run_number):
+    """Get data format (name of protobuf object) in data file"""
+    pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
+    try:
+        path = next(date_path.glob(pattern))
+    except StopIteration:
+        log.error("No input file found for date %s, run number %d", date_path, run_number)
+        return 0
+
+    try:
+        with File(str(path)) as f:
+            # EVBv5 data
+            if not hasattr(f, "CameraConfiguration"):
+                return 0
+
+            evb_preprocessing = get_processings_for_trigger_bits(f.CameraConfiguration[0])
+            return evb_preprocessing[TriggerBits.MONO].value
+    except Exception:
+        log.exception("Error getting evb-preprocessing for date %s, run number %d", date_path, run_number)
+        return 0
 
 
 def main():
@@ -431,6 +456,7 @@ def main():
             for (run, counters) in zip(run_numbers, reference_counters)
         ]
 
+    preprocessing = [get_evb_preprocessing(date_path, run) for run in run_numbers]
 
     run_summary = Table(
         {
@@ -444,6 +470,7 @@ def main():
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(run_types, name="run_type", index=2)
     run_summary.add_column(data_format, name="data_format", index=3)
+    run_summary.add_column(preprocessing, name="evb_preprocessing", index=4)
     run_summary.write(
         args.output_dir / f"RunSummary_{args.date}.ecsv",
         format="ascii.ecsv",

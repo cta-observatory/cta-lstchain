@@ -4,15 +4,16 @@ from iminuit import Minuit
 import numpy as np
 import astropy.units as u
 
-from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
-
+from ctapipe.containers import EventType
 from ctapipe.core import TelescopeComponent
-from ctapipe.core.traits import Bool, Float, FloatTelescopeParameter, Int, Path
+from ctapipe.core.traits import Bool, Float, FloatTelescopeParameter, Int, Unicode
+
+from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
+from lstchain.image.modifier import tune_nsb_on_waveform
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
 from lstchain.reco.reconstructorCC import log_pdf as log_pdf
 
 logger = logging.getLogger(__name__)
-
 
 
 class TimeWaveformFitter(TelescopeComponent):
@@ -23,9 +24,21 @@ class TimeWaveformFitter(TelescopeComponent):
                                       allow_none=False).tag(config=True)
     crosstalk = FloatTelescopeParameter(default_value=0, help='Average pixel crosstalk.',
                                         allow_none=False).tag(config=True)
-    sigma_space = Float(4, help='Size of the region on which the fit is performed relative to the image extension.',
+    spatial_selection = Unicode(default_value='dvr',
+                                help='Method to select pixels to perform the likelihood fit. Can be:\n'
+                                     'hillas : use the hillas length and width times sigma_space as an ellipsis.\n'
+                                     'dvr : use data volume reduction logic with dvr_pic_threshold and'
+                                     ' dvr_pix_for_full_image',
+                                allow_none=False).tag(config=True)
+    dvr_pic_threshold = Int(default_value=8, help='Pixel charge threshold for dvr like pixel selection.',
+                            allow_none=False).tag(config=True)
+    dvr_pix_for_full_image = Int(default_value=500, help='Number of selected pixels above which all are kept.',
+                                 allow_none=False).tag(config=True)
+    sigma_space = Float(default_value=4,
+                        help='Size of the region on which the fit is performed relative to the image extension.',
                         allow_none=False).tag(config=True)
-    sigma_time = Float(3, help='Time window on which the fit is performed relative to the image temporal extension.',
+    sigma_time = Float(default_value=3,
+                       help='Time window on which the fit is performed relative to the image temporal extension.',
                        allow_none=False).tag(config=True)
     time_before_shower = FloatTelescopeParameter(default_value=10,
                                                  help='Additional time at the start of the fit temporal window.',
@@ -33,14 +46,13 @@ class TimeWaveformFitter(TelescopeComponent):
     time_after_shower = FloatTelescopeParameter(default_value=20,
                                                 help='Additional time at the end of the fit temporal window.',
                                                 allow_none=False).tag(config=True)
-    use_weight = Bool(False, help='If True, the brightest sample is twice as important as the dimmest pixel in the '
-                                  'likelihood. If false all samples are equivalent.', allow_none=False).tag(config=True)
-    no_asymmetry = Bool(False, help='If true, the asymmetry of the spatial model is fixed to 0.',
+    no_asymmetry = Bool(default_value=False, help='If true, the asymmetry of the spatial model is fixed to 0.',
                         allow_none=False).tag(config=True)
-    use_interleaved = Path(None, help='Location of the dl1 file used to estimate the pedestal exploiting interleaved'
-                                      ' events.', allow_none=True).tag(config=True)
-    n_peaks = Int(0, help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
-                          'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
+    use_interleaved = Bool(default_value=None, help='If true, the std deviation of pedestals and dimmed pixels are '
+                                                    'estimated on interleaved events', allow_none=True).tag(config=True)
+    n_peaks = Int(default_value=0,
+                  help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
+                       'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
                   allow_none=False).tag(config=True)
     bound_charge_factor = FloatTelescopeParameter(default_value=4,
                                                   help='Maximum relative change to the fitted charge parameter.',
@@ -67,11 +79,12 @@ class TimeWaveformFitter(TelescopeComponent):
     default_seed_v_cm = FloatTelescopeParameter(default_value=40,
                                                 help='Default starting value of v_cm when the seed extraction failed.',
                                                 allow_none=False).tag(config=True)
-    verbose = Int(0, help='4 - used for tests: create debug plots\n'
-                          '3 - create debug plots, wait for input after each event, increase minuit verbose level\n'
-                          '2 - create debug plots, increase minuit verbose level\n'
-                          '1 - increase minuit verbose level\n'
-                          '0 - silent', allow_none=False).tag(config=True)
+    verbose = Int(default_value=0,
+                  help='4 - used for tests: create debug plots\n'
+                       '3 - create debug plots, wait for input after each event, increase minuit verbose level\n'
+                       '2 - create debug plots, increase minuit verbose level\n'
+                       '1 - increase minuit verbose level\n'
+                       '0 - silent', allow_none=False).tag(config=True)
 
     def __init__(self, subarray, config=None, parent=None, **kwargs):
         super().__init__(subarray=subarray, config=config, parent=parent, **kwargs)
@@ -82,7 +95,7 @@ class TimeWaveformFitter(TelescopeComponent):
             self.template_dict[tel_id] = NormalizedPulseTemplate.load_from_eventsource(
                 subarray.tel[tel_id].camera.readout)
             self.template_time_of_max_dict[tel_id] = self.template_dict[tel_id].compute_time_of_max()
-        poisson_peaks = np.arange(self.n_peaks+1, dtype=int)
+        poisson_peaks = np.arange(self.n_peaks + 1, dtype=int)
         poisson_peaks[0] = 1
         self.factorial = np.cumprod(poisson_peaks, dtype='u8')
         # Find the transition charge between full likelihood computation and Gaussian approximation
@@ -91,11 +104,13 @@ class TimeWaveformFitter(TelescopeComponent):
         transition_charges = {}
         for config_crosstalk in self.crosstalk:
             # if n_peaks is set to 0, only the Gaussian approximation is used
-            transition_charges[config_crosstalk[2]] = 0.0 if self.n_peaks == 0\
-                else self.find_transition_charge(config_crosstalk[2], 1e-2/self.n_peaks)
+            transition_charges[config_crosstalk[2]] = 0.0 if self.n_peaks == 0 \
+                else self.find_transition_charge(config_crosstalk[2], 1e-2 / self.n_peaks)
         self.transition_charges = {}
         for tel_id in subarray.tel:
             self.transition_charges[tel_id] = transition_charges[self.crosstalk.tel[tel_id]]
+        self.error = None
+        self.allowed_pixels = True
 
         self.start_parameters = None
         self.names_parameters = None
@@ -103,6 +118,60 @@ class TimeWaveformFitter(TelescopeComponent):
         self.error_parameters = None
         self.bound_parameters = None
         self.fcn = None
+
+    def get_ped_from_interleaved(self, source):
+        """
+        Use interleaved events to extract the pixel-wise pedestal variance from data.
+        """
+        self.error = {}
+        waveforms = {}
+        for tel_id in self.subarray.tel:
+            waveforms[tel_id] = []
+        for i, event in enumerate(source):
+            if event.trigger.event_type == EventType.SKY_PEDESTAL:
+                source.r0_r1_calibrator.calibrate(event)
+                for tel_id in event.r1.tel.keys():
+                    waveforms[tel_id].append(event.r1.tel[tel_id].waveform.squeeze())
+        for tel_id, tel_waveforms in waveforms.items():
+            x = np.concatenate(np.asarray(tel_waveforms), axis=1)
+            std = []
+            for elt in x:
+                std.append(np.nanstd(elt))
+            self.error[tel_id] = std
+            self.allowed_pixels = (std > 0.5 * np.median(std))
+
+    def get_ped_from_true_signal_less(self, source, nsb_tuning_args):
+        """
+        Use pixels with no true signal in MC to extract the pedestal variance, assumed uniform in the camera.
+        """
+        self.error = {}
+        waveforms = {}
+        n_pix = {}
+        dt = {}
+        for tel_id in self.subarray.tel:
+            waveforms[tel_id] = []
+            readout = self.subarray.tel[tel_id].camera.readout
+            sampling_rate = readout.sampling_rate.to_value(u.GHz)
+            dt[tel_id] = (1.0 / sampling_rate)
+            waveforms[tel_id] = []
+        for i, event in enumerate(source):
+            if i > 50 and len(waveforms) > 1000:
+                break
+            if event.trigger.event_type == EventType.SUBARRAY:
+                for tel_id in event.r1.tel.keys():
+                    if i == 0:
+                        n_pix[tel_id] = event.r1.tel[tel_id].waveform.shape[0]
+                    mask = event.simulation.tel[tel_id].true_image == 0
+                    wave = event.r1.tel[tel_id].waveform
+                    if nsb_tuning_args is not None:
+                        selected_gains = event.r1.tel[tel_id].selected_gain_channel
+                        mask_high = (selected_gains == 0)
+                        tune_nsb_on_waveform(wave, nsb_tuning_args[0], nsb_tuning_args[1][tel_id] * u.GHz,
+                                             dt[tel_id] * u.ns, nsb_tuning_args[2], mask_high, nsb_tuning_args[3])
+                    waveforms[tel_id].append(wave[mask].flatten())
+        for tel_id, tel_waveforms in waveforms.items():
+            self.error[tel_id] = np.full(n_pix[tel_id], np.nanstd(np.concatenate(tel_waveforms)))
+            self.allowed_pixels = np.ones(n_pix[tel_id], dtype=bool)
 
     def call_setup(self, event, telescope_id, dl1_container):
         """
@@ -131,7 +200,7 @@ class TimeWaveformFitter(TelescopeComponent):
         pix_x = geometry.pix_x.to_value(unit)
         pix_y = geometry.pix_y.to_value(unit)
         r_max = geometry.guess_radius().to_value(unit)
-        pix_radius = np.sqrt(geometry.pix_area[0].to_value(unit ** 2)/np.pi)  # find linear size of a pixel
+        pix_radius = np.sqrt(geometry.pix_area[0].to_value(unit ** 2) / np.pi)  # find linear size of a pixel
         readout = self.subarray.tel[telescope_id].camera.readout
         sampling_rate = readout.sampling_rate.to_value(u.GHz)
         dt = (1.0 / sampling_rate)
@@ -172,7 +241,7 @@ class TimeWaveformFitter(TelescopeComponent):
         # With current likelihood computation, order and type of the parameters are important
         start_parameters = {'charge': dl1_container.intensity,
                             't_cm': dl1_container.intercept
-                            - self.template_time_of_max_dict[telescope_id],
+                                    - self.template_time_of_max_dict[telescope_id],
                             'x_cm': start_x_cm.to_value(unit),
                             'y_cm': start_y_cm.to_value(unit),
                             'length': start_length,
@@ -211,7 +280,9 @@ class TimeWaveformFitter(TelescopeComponent):
                             'rl': (rl_min, rl_max)
                             }
 
-        mask_pixel, mask_time = self.clean_data(pix_x, pix_y, pix_radius, times, start_parameters, telescope_id)
+        mask_pixel, mask_time = self.clean_data(image, geometry, pix_x, pix_y, pix_radius, times, start_parameters,
+                                                telescope_id)
+        mask_pixel = mask_pixel & self.allowed_pixels
         spatial_ones = np.ones(np.sum(mask_pixel))
 
         is_high_gain = is_high_gain[mask_pixel]
@@ -226,7 +297,7 @@ class TimeWaveformFitter(TelescopeComponent):
         pix_area = geometry.pix_area[mask_pixel].to_value(unit ** 2)
 
         data = waveform
-        error = None  # TODO include option to use calibration data
+        error = self.error
 
         filter_pixels = np.nonzero(~mask_pixel)
         filter_times = np.nonzero(~mask_time)
@@ -234,6 +305,8 @@ class TimeWaveformFitter(TelescopeComponent):
         if error is None:
             std = np.std(data[~mask_pixel])
             error = np.full(data.shape[0], std)
+        else:
+            error = self.error[telescope_id]
 
         data = np.delete(data, filter_pixels, axis=0)
         data = np.delete(data, filter_times, axis=1)
@@ -247,7 +320,7 @@ class TimeWaveformFitter(TelescopeComponent):
                       template.t0, template.amplitude_LG,
                       template.amplitude_HG, self.n_peaks,
                       self.transition_charges[telescope_id],
-                      self.use_weight, self.factorial]
+                      self.factorial]
 
         self.start_parameters = start_parameters
         self.names_parameters = start_parameters.keys()
@@ -260,8 +333,8 @@ class TimeWaveformFitter(TelescopeComponent):
         focal_length = self.subarray.tel[telescope_id].optics.equivalent_focal_length
         angle_dist_eq = [(u.rad, u.m, lambda x: np.tan(x) * focal_length.to_value(u.m),
                           lambda x: np.arctan(x / focal_length.to_value(u.m))),
-                         (u.rad**2, u.m**2, lambda x: (np.tan(np.sqrt(x)) * focal_length.to_value(u.m))**2,
-                          lambda x: (np.arctan(np.sqrt(x) / focal_length.to_value(u.m)))**2)]
+                         (u.rad ** 2, u.m ** 2, lambda x: (np.tan(np.sqrt(x)) * focal_length.to_value(u.m)) ** 2,
+                          lambda x: (np.arctan(np.sqrt(x) / focal_length.to_value(u.m))) ** 2)]
         with u.set_enabled_equivalencies(angle_dist_eq):
             self.start_parameters = None
             self.names_parameters = None
@@ -272,11 +345,13 @@ class TimeWaveformFitter(TelescopeComponent):
 
             return self.predict(unit_cam, fit_params)
 
-    def clean_data(self, pix_x, pix_y, pix_radius, times, start_parameters, telescope_id):
+    def clean_data(self, image, geometry, pix_x, pix_y, pix_radius, times, start_parameters, telescope_id):
         """
         Method used to select pixels and time samples used in the fitting procedure.
-        The spatial selection takes pixels in an ellipsis obtained from the seed Hillas parameters extended by one pixel
-        size and multiplied by a factor sigma_space.
+        The spatial selection can be done in one of two methods:
+        - takes pixels in an ellipsis obtained from the seed Hillas parameters extended by one pixel size and multiplied
+        by a factor sigma_space.
+        - use all pixels kept by the data volume reduction algorythm
         The temporal selection takes a time window centered on the seed time of center of mass and of duration equal to
         the time of propagation of the signal along the length of the ellipsis times a factor sigma_time.
         An additional fixed duration is also added before and after this time window through the time_before_shower and
@@ -284,6 +359,10 @@ class TimeWaveformFitter(TelescopeComponent):
 
         Parameters
         ----------
+        image : array_like
+            Charge in each pixel
+        geometry: `ctapipe.instrument.CameraGeometry`
+            Camera geometry
         pix_x, pix_y: array-like
             Pixels positions
         pix_radius: float
@@ -299,20 +378,30 @@ class TimeWaveformFitter(TelescopeComponent):
             Mask used to select pixels and times for the fit
 
         """
-        x_cm = start_parameters['x_cm']
-        y_cm = start_parameters['y_cm']
         length = start_parameters['length']
-        width = start_parameters['wl'] * length
-        psi = start_parameters['psi']
+        if self.spatial_selection == 'hillas':
+            x_cm = start_parameters['x_cm']
+            y_cm = start_parameters['y_cm']
+            width = start_parameters['wl'] * length
+            psi = start_parameters['psi']
 
-        dx = pix_x - x_cm
-        dy = pix_y - y_cm
+            dx = pix_x - x_cm
+            dy = pix_y - y_cm
 
-        lon = dx * np.cos(psi) + dy * np.sin(psi)
-        lat = dx * np.sin(psi) - dy * np.cos(psi)
+            lon = dx * np.cos(psi) + dy * np.sin(psi)
+            lat = dx * np.sin(psi) - dy * np.cos(psi)
 
-        mask_pixel = ((lon / (length + pix_radius)) ** 2 + (
-                lat / (width + pix_radius)) ** 2) < self.sigma_space ** 2
+            mask_pixel = ((lon / (length + pix_radius)) ** 2 + (
+                    lat / (width + pix_radius)) ** 2) < self.sigma_space ** 2
+        elif self.spatial_selection == 'dvr':
+            mask_pixel = (image > self.dvr_pic_threshold)
+            # we add-up (sum) the selected-pixel-wise map of neighbors, to find
+            # those who appear at least once (>0). Those should be added:
+            additional_pixels = (np.sum(geometry.neighbor_matrix[mask_pixel], axis=0) > 0)
+            mask_pixel |= additional_pixels
+            # if more than min_npixels_for_full_event were selected, keep whole camera:
+            if mask_pixel.sum() > self.dvr_pix_for_full_image:
+                mask_pixel = np.array(geometry.n_pixels * [True])
 
         v = start_parameters['v']
         t_start = (start_parameters['t_cm']
@@ -368,6 +457,7 @@ class TimeWaveformFitter(TelescopeComponent):
             Parameters used to compute the likelihood but not fitted
 
         """
+
         def f(*args):
             return -2 * self.log_likelihood(*args, fit_params=fit_params)
 
@@ -406,10 +496,10 @@ class TimeWaveformFitter(TelescopeComponent):
             self.fit(fit_params)
             container.lhfit_TS = self.fcn
 
-            container.lhfit_x = (self.end_parameters['x_cm']*unit_cam).to(u.m)
-            container.lhfit_x_uncertainty = (self.error_parameters['x_cm']*unit_cam).to(u.m)
-            container.lhfit_y = (self.end_parameters['y_cm']*unit_cam).to(u.m)
-            container.lhfit_y_uncertainty = (self.error_parameters['y_cm']*unit_cam).to(u.m)
+            container.lhfit_x = (self.end_parameters['x_cm'] * unit_cam).to(u.m)
+            container.lhfit_x_uncertainty = (self.error_parameters['x_cm'] * unit_cam).to(u.m)
+            container.lhfit_y = (self.end_parameters['y_cm'] * unit_cam).to(u.m)
+            container.lhfit_y_uncertainty = (self.error_parameters['y_cm'] * unit_cam).to(u.m)
             container.lhfit_r = np.sqrt(container.lhfit_x ** 2 + container.lhfit_y ** 2)
             container.lhfit_phi = np.arctan2(container.lhfit_y, container.lhfit_x)
             if self.end_parameters['psi'] > np.pi:

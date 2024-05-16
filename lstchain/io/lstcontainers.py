@@ -76,8 +76,8 @@ class DL1ParametersContainer(Container):
     leakage_pixels_width_2 = Field(np.nan, 'Fraction of signal pixels that are '
                                            'in the two outermost rings of pixels')
     n_pixels = Field(-1, 'Number of pixels after cleaning')
-    concentration_cog = Field(np.nan, 'Fraction of intensity in three pixels '
-                                      'closest to the cog')
+    concentration_cog = Field(np.nan, 'Fraction of intensity inside one pixel '
+                                      'diameter of the cog')
     concentration_core = Field(np.nan, 'Fraction of intensity inside hillas '
                                        'ellipse')
     concentration_pixel = Field(np.nan, 'Fraction of intensity in brightest '
