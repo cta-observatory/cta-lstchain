@@ -4,7 +4,6 @@ import math
 import tables
 
 from ctapipe.core import run_tool
-from pkg_resources import resource_filename
 from lstchain.tools.lstchain_fit_intensity_scan import FitIntensityScan
 from lstchain.io.io import get_resource_path
 

@@ -1,4 +1,3 @@
-import os
 from ctapipe.containers import ArrayEventContainer
 import numpy as np
 from lstchain.reco.r0_to_dl1 import r0_to_dl1, rescale_dl1_charge
