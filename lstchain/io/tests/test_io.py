@@ -7,7 +7,7 @@ import pytest
 import tables
 from astropy.table import Table, QTable
 from ctapipe.instrument import SubarrayDescription
-from lstchain.io import add_config_metadata, get_resource_filename
+from lstchain.io import add_config_metadata, get_resource_path
 from pathlib import PosixPath
 from traitlets.config.loader import DeferredConfigString, LazyConfigValue
 
@@ -238,6 +238,6 @@ def test_add_config_metadata():
     assert json.loads(container.meta["config"]) == config
 
 
-def test_get_resource_filename():
-    filepath = get_resource_filename("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")
+def test_get_resource_path():
+    filepath = get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")
     assert filepath.is_file()
