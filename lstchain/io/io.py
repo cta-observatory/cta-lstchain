@@ -353,14 +353,6 @@ def auto_merge_h5files(
             common_keys=common_keys.difference(keys_to_copy)
 
             with open_file(filename) as file:
-
-                # check value of Table.nrow for keys copied from the first file
-                for k in keys_to_copy:
-                    first_node = merge_file.root[k]
-                    present_node = file.root[k]
-                    if first_node.nrows != present_node.nrows:
-                        raise ValueError("Length of key {} from file {} different than in file {}".format(k, filename, file_list[0]))
-
                 for k in common_keys:
                     in_node = file.root[k]
                     out_node = merge_file.root[k]
