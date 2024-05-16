@@ -1,12 +1,6 @@
 import pytest
 import numpy as np
-import astropy.units as u
-from scipy.interpolate import interp1d
 from scipy.sparse import csr_matrix
-
-from lstchain.image.modifier import tune_nsb_on_waveform
-from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
-from lstchain.io.io import get_resource_path
 
 
 @pytest.mark.parametrize('fraction', [0.2, 0.5])
@@ -82,6 +76,12 @@ def test_calculate_required_additional_nsb(mc_gamma_testfile, observed_dl1_files
 
 
 def test_tune_nsb_on_waveform():
+    import astropy.units as u
+    from scipy.interpolate import interp1d
+    from lstchain.io.io import get_resource_path
+    from lstchain.image.modifier import tune_nsb_on_waveform
+    from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
+
     waveform = np.array(
         [[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
          [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]]
