@@ -13,6 +13,7 @@ from tqdm import tqdm
 import json
 from traitlets.config.loader import DeferredConfigString, LazyConfigValue
 from pathlib import PosixPath
+from importlib import resources
 
 import astropy.units as u
 from astropy.table import Table, vstack, QTable
@@ -76,6 +77,7 @@ __all__ = [
     'write_metadata',
     'write_simtel_energy_histogram',
     'write_subarray_tables',
+    'get_resource_path'
 ]
 
 
@@ -1345,3 +1347,9 @@ def get_mc_fov_offset(filename):
 
     return mean_offset
 
+
+def get_resource_path(filename):
+    """
+    Get a resource data path in lstchain package
+    """
+    return resources.files("lstchain") / filename

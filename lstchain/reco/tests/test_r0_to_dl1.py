@@ -1,4 +1,3 @@
-import os
 from ctapipe.containers import ArrayEventContainer
 import numpy as np
 from lstchain.reco.r0_to_dl1 import r0_to_dl1, rescale_dl1_charge
@@ -25,6 +24,5 @@ def test_r0_to_dl1_nsb_tuning(tmp_path, mc_gamma_testfile):
     config = deepcopy(standard_config)
     config['source_config']['EventSource']['allowed_tels'] = [1]
     config['waveform_nsb_tuning']['nsb_tuning'] = True
-    config['waveform_nsb_tuning']['spe_location'] = os.path.join(os.path.dirname(__file__),
-                                                                 '../../data/SinglePhE_ResponseInPhE_expo2Gaus.dat')
+    config['waveform_nsb_tuning']['spe_location'] = None  ## If None, the default file data/SinglePhE_ResponseInPhE_expo2Gaus.dat is used
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
