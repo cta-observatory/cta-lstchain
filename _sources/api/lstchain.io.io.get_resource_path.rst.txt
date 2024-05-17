@@ -1,0 +1,6 @@
+get_resource_path
+=================
+
+.. currentmodule:: lstchain.io.io
+
+.. autofunction:: get_resource_path

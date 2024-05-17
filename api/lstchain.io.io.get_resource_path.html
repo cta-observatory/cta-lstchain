@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>update_parameters &mdash; lstchain 0.10.12.dev19+gf1c0d775 documentation</title>
+  <title>get_resource_path &mdash; lstchain 0.10.12.dev19+gf1c0d775 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -30,8 +30,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="plot_muon_event" href="lstchain.image.muon.plot_muon.plot_muon_event.html" />
-    <link rel="prev" title="tag_pix_thr" href="lstchain.image.muon.muon_analysis.tag_pix_thr.html" /> 
+    <link rel="next" title="DL1MonitoringEventIndexContainer" href="lstchain.io.lstcontainers.DL1MonitoringEventIndexContainer.html" />
+    <link rel="prev" title="write_subarray_tables" href="lstchain.io.io.write_subarray_tables.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -71,20 +71,19 @@
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/image/index.html#introduction">Introduction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/image/index.html#muon-analysis">Muon analysis</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/image/index.html#reference-api">Reference/API</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image">lstchain.image Package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.cleaning">lstchain.image.cleaning Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.modifier">lstchain.image.modifier Module</a></li>
-<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.muon.muon_analysis">lstchain.image.muon.muon_analysis Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.muon.plot_muon">lstchain.image.muon.plot_muon Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/io/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/io/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.config">lstchain.io.config Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.data_management">lstchain.io.data_management Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.event_selection">lstchain.io.event_selection Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.io">lstchain.io.io Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.lstcontainers">lstchain.io.lstcontainers Module</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
@@ -110,10 +109,10 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
-          <li class="breadcrumb-item"><a href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
-      <li class="breadcrumb-item active">update_parameters</li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+      <li class="breadcrumb-item active">get_resource_path</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/lstchain.image.muon.muon_analysis.update_parameters.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api/lstchain.io.io.get_resource_path.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -121,28 +120,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="update-parameters">
-<h1>update_parameters<a class="headerlink" href="#update-parameters" title="Link to this heading">¶</a></h1>
+  <section id="get-resource-path">
+<h1>get_resource_path<a class="headerlink" href="#get-resource-path" title="Link to this heading">¶</a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="lstchain.image.muon.muon_analysis.update_parameters">
-<span class="sig-prename descclassname"><span class="pre">lstchain.image.muon.muon_analysis.</span></span><span class="sig-name descname"><span class="pre">update_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_pixels</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.muon.muon_analysis.update_parameters" title="Link to this definition">¶</a></dt>
-<dd><p>Create the parameters used to select good muon rings and perform the muon analysis.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>config: `dict` or None</strong></dt><dd><p>Subset of parameters to be updated</p>
-</dd>
-<dt><strong>n_pixels: `int`</strong></dt><dd><p>Number of pixels of the camera</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>params: <cite>dict</cite></dt><dd><p>Dictionary of parameters used for the muon analysis</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="lstchain.io.io.get_resource_path">
+<span class="sig-prename descclassname"><span class="pre">lstchain.io.io.</span></span><span class="sig-name descname"><span class="pre">get_resource_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.io.get_resource_path" title="Link to this definition">¶</a></dt>
+<dd><p>Get a resource data path in lstchain package</p>
 </dd></dl>
 
 </section>
@@ -151,8 +134,8 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="lstchain.image.muon.muon_analysis.tag_pix_thr.html" class="btn btn-neutral float-left" title="tag_pix_thr" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="lstchain.image.muon.plot_muon.plot_muon_event.html" class="btn btn-neutral float-right" title="plot_muon_event" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="lstchain.io.io.write_subarray_tables.html" class="btn btn-neutral float-left" title="write_subarray_tables" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.io.lstcontainers.DL1MonitoringEventIndexContainer.html" class="btn btn-neutral float-right" title="DL1MonitoringEventIndexContainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
