@@ -366,7 +366,7 @@ class DataBinning(Component):
 
     scale_true_energy= Float(
         help="Scaling value for True energy",
-        default_value=1,0,
+        default_value=1.0,
     ).tag(config=True)
 
     reco_energy_min = Float(
