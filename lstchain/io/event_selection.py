@@ -364,6 +364,11 @@ class DataBinning(Component):
         default_value=25,
     ).tag(config=True)
 
+    scale_true_energy= Float(
+        help="Scaling value for True energy",
+        default_value=1,0,
+    ).tag(config=True)
+
     reco_energy_min = Float(
         help="Minimum value for Reco Energy bins in TeV units",
         default_value=0.005,
