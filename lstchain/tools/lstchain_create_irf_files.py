@@ -317,6 +317,10 @@ class IRFFITSWriter(Tool):
                 p["geomag_params"],
             ) = read_mc_dl2_to_QTable(p["file"])
 
+            p["events"]["true_energy"] *= self.data_bin.scale_true_energy
+            p["simulation_info"].energy_min *= self.data_bin.scale_true_energy
+            p["simulation_info"].energy_max *= self.data_bin.scale_true_energy
+
             p["mc_type"] = check_mc_type(p["file"])
 
             self.log.debug(
