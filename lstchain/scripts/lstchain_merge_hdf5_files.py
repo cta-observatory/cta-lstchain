@@ -23,20 +23,15 @@ from glob import glob
 from lstchain.io import auto_merge_h5files
 from lstchain.io import get_dataset_keys
 from lstchain.io.io import (
-    dl1_params_tel_mon_ped_key,
-    dl1_params_tel_mon_cal_key,
-    dl1_params_tel_mon_flat_key,
     dl1_mon_tel_catB_cal_key,
     dl1_mon_tel_catB_ped_key,
     dl1_mon_tel_catB_flat_key
 )
 
-default_keys_to_copy = [dl1_params_tel_mon_ped_key, 
-                       dl1_params_tel_mon_cal_key,
-                       dl1_params_tel_mon_flat_key,
-                       dl1_mon_tel_catB_cal_key,
-                       dl1_mon_tel_catB_ped_key,
-                       dl1_mon_tel_catB_flat_key
+default_keys_to_copy = [
+    dl1_mon_tel_catB_cal_key,
+    dl1_mon_tel_catB_ped_key,
+    dl1_mon_tel_catB_flat_key
 ]
 
 parser = argparse.ArgumentParser(description='Merge HDF5 files')
