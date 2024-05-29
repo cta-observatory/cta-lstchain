@@ -90,7 +90,7 @@ jobs:
         run: |
           pytest -n auto --dist loadscope --cov --cov-report=xml -m 'private_data or not private_data' lstchain
 
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v4
         with:
           # disable gcov, not needed
           functionalities: gcov
