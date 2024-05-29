@@ -91,6 +91,10 @@ jobs:
           pytest -n auto --dist loadscope --cov --cov-report=xml -m 'private_data or not private_data' lstchain
 
       - uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   docs:
     needs: pyflakes
