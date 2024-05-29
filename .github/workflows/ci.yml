@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
 
@@ -35,7 +35,7 @@ jobs:
 
     defaults:
       run:
-        shell: bash -el {0}
+        shell: bash -leo pipefail {0}
 
     strategy:
       matrix:
@@ -55,10 +55,10 @@ jobs:
           sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
 
       - name: Mamba setup
-        uses: mamba-org/provision-with-micromamba@v14
+        uses: mamba-org/setup-micromamba@v1
         with:
-          environment-name: "lst-dev"
           environment-file: environment.yml
+          cache-downloads: true
 
       - name: Install dependencies
         env:
@@ -105,7 +105,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
 
