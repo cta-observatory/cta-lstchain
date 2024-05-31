@@ -338,6 +338,15 @@ def auto_merge_h5files(
         keys = set(get_dataset_keys(file_list[0]))
     else:
         keys = set(nodes_keys)
+    
+    # Do not merge nor copy monitoring tables present in sub-run files
+    keys_to_remove = [
+        dl1_params_tel_mon_ped_key, 
+        dl1_params_tel_mon_cal_key, 
+        dl1_params_tel_mon_flat_key
+    ]
+    for key_to_remove in keys_to_remove:
+        keys.discard(key_to_remove)
 
     keys_to_copy = set() if keys_to_copy is None else set(keys_to_copy).intersection(keys)
 
@@ -355,14 +364,12 @@ def auto_merge_h5files(
             common_keys=common_keys.difference(keys_to_copy)
 
             with open_file(filename) as file:
-
                 # check value of Table.nrow for keys copied from the first file
                 for k in keys_to_copy:
                     first_node = merge_file.root[k]
                     present_node = file.root[k]
                     if first_node.nrows != present_node.nrows:
                         raise ValueError("Length of key {} from file {} different than in file {}".format(k, filename, file_list[0]))
-
                 for k in common_keys:
                     in_node = file.root[k]
                     out_node = merge_file.root[k]
