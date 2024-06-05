@@ -78,16 +78,9 @@ def train_energy(train, custom_config=None):
     logger.info("Training Random Forest Regressor for Energy Reconstruction...")
 
     reg = model(**energy_regression_args)
-
-    if 'pointing_wise_weights' in energy_regression_args:
-        logger.info("Pointing-wise event weighting activated")
-        _, _ = utils.compute_rf_event_weights(train)
-        reg.fit(train[features],
-                train['log_mc_energy'],
-                sample_weight=train['weight'])
-    else:
-        reg.fit(train[features],
-                train['log_mc_energy'])
+    reg.fit(train[features],
+            train['log_mc_energy'],
+            sample_weight=train['weight'])
 
     logger.info("Model {} trained!".format(model))
     return reg
@@ -353,6 +346,12 @@ def build_models(filegammas, fileprotons,
     # Adding a filter on mc_type just for training
     events_filters['mc_type'] = [-9000, np.inf]
 
+    pointing_wise_weights = False
+    if 'random_forest_weight_settings' in config:
+        if config['random_forest_weight_settings']['pointing_wise_weights']:
+            logger.info("Pointing-wise event weighting activated")
+            pointing_wise_weights = True
+
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
@@ -439,6 +438,13 @@ def build_models(filegammas, fileprotons,
     src_r_max = config['train_gamma_src_r_deg'][1]
     df_gamma = utils.apply_src_r_cut(df_gamma, src_r_min, src_r_max)
 
+    if pointing_wise_weights:
+        # Give same total weight to all events in every pointing node, by
+        # applying event-wise weights which depend on the statistics per node
+        _, _ = utils.compute_rf_event_weights(df_gamma)
+    else:
+        df_gamma['weight'] = np.ones(len(df_gamma))
+
     # Train regressors for energy and disp_norm reconstruction, only with gammas
     n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
     if n_gamma_regressors not in [1.0, None]:
@@ -498,6 +504,13 @@ def build_models(filegammas, fileprotons,
             raise ValueError(
                 "The requested number of protons for the classifier training is not valid."
             ) from e
+
+    if pointing_wise_weights:
+        # Give same total weight to all events in every pointing node, by
+        # applying event-wise weights which depend on the statistics per node
+        _, _ = utils.compute_rf_event_weights(df_proton)
+    else:
+        df_proton['weight'] = np.ones(len(df_proton))
 
     test = pd.concat([testg, df_proton], ignore_index=True)
 
