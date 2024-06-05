@@ -529,8 +529,9 @@ def main():
             newconfig['boundary_thresh'] = boundary_threshold
             run = int(file.name[file.name.find('Run')+3:-3])
             json_filename = Path(output_dir, f'dl1ab_Run{run:05d}.json')
-            dump_config({'tailcuts_clean_with_pedestal_threshold': 
-                             newconfig}, json_filename, overwrite=True)
+            dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
+                         'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
+                        json_filename, overwrite=True)
             log.info(json_filename)
 
     log.info('lstchain_dvr_pixselector finished successfully!')

@@ -10,12 +10,10 @@ import sys
 from xml.etree.ElementTree import ElementTree
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from ctapipe.io import read_table
-from pkg_resources import resource_filename
+from lstchain.io.io import get_resource_path
 from pathlib import Path
 
-default_camera_config = Path(resource_filename('lstchain', 'resources/conf.LSTCam.xml'))
-
-
+default_camera_config = get_resource_path('resources/conf.LSTCam.xml')
 
 parser = ArgumentParser(
     description=__doc__,

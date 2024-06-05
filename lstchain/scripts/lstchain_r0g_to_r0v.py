@@ -148,14 +148,15 @@ def main():
                 wf = wf.reshape((num_gains, num_pixels, num_samples))
 
                 evtype = event_type[event.event_id]
-
+                pixel_status = protozfits.any_array_to_numpy(event.pixel_status)
                 ordered_pix_mask = np.array(num_pixels*[True])
+              
                 if evtype in EVENT_TYPES_TO_REDUCE:
                     pixmask = pixel_mask[event.event_id]
                     ordered_pix_mask = pixmask[pixel_id_map]
                     new_wf = wf[:, ordered_pix_mask, :]
                     event.waveform.data = new_wf.tobytes()
-                    pixel_status = protozfits.any_array_to_numpy(event.pixel_status)
+                  
                 # Modify pixel status as needed
                 new_status = np.where(ordered_pix_mask,
                                       pixel_status | PixelStatus.DVR_STATUS_0,
