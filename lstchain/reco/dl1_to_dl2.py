@@ -119,7 +119,7 @@ def train_disp_vector(train, custom_config=None, predict_features=None):
     reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose([train[f] for f in predict_features])
-    reg.fit(x, y)
+    reg.fit(x, y, sample_weight=train['weight'])
 
     logger.info("Model {} trained!".format(model))
 
@@ -153,7 +153,7 @@ def train_disp_norm(train, custom_config=None, predict_feature='disp_norm'):
     reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
-    reg.fit(x, y)
+    reg.fit(x, y, sample_weight=train['weight'])
 
     logger.info("Model {} trained!".format(model))
 
@@ -187,7 +187,7 @@ def train_disp_sign(train, custom_config=None, predict_feature='disp_sign'):
     clf = model(**classification_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
-    clf.fit(x, y)
+    clf.fit(x, y, sample_weight=train['weight'])
 
     logger.info("Model {} trained!".format(model))
 
@@ -224,7 +224,8 @@ def train_reco(train, custom_config=None):
 
     reg_energy = model(**energy_regression_args)
     reg_energy.fit(train[energy_features],
-                   train['log_mc_energy'])
+                   train['log_mc_energy'], sample_weight = train['weight']
+    )
 
     logger.info("Random Forest trained!")
     logger.info("Given disp_features: ", disp_features)
@@ -232,7 +233,8 @@ def train_reco(train, custom_config=None):
 
     reg_disp = RandomForestRegressor(**disp_regression_args)
     reg_disp.fit(train[disp_features],
-                 train['disp_norm'])
+                 train['disp_norm'],
+                 sample_weight=train['weight'])
 
     logger.info("Random Forest trained!")
     logger.info("Done!")
@@ -268,7 +270,8 @@ def train_sep(train, custom_config=None):
     clf = model(**classification_args)
 
     clf.fit(train[features],
-            train['mc_type'])
+            train['mc_type'],
+            sample_weight=train['weight'])
     logger.info("Random Forest trained!")
     return clf
 
