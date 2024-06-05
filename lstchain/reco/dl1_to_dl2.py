@@ -78,8 +78,16 @@ def train_energy(train, custom_config=None):
     logger.info("Training Random Forest Regressor for Energy Reconstruction...")
 
     reg = model(**energy_regression_args)
-    reg.fit(train[features],
-            train['log_mc_energy'])
+
+    if 'pointing_wise_weights' in energy_regression_args:
+        logger.info("Pointing-wise event weighting activated")
+        _, _ = utils.compute_rf_event_weights(train)
+        reg.fit(train[features],
+                train['log_mc_energy'],
+                sample_weight=train['weight'])
+    else:
+        reg.fit(train[features],
+                train['log_mc_energy'])
 
     logger.info("Model {} trained!".format(model))
     return reg

@@ -79,7 +79,8 @@
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
-    "warm_start": false
+    "warm_start": false,
+    "pointing_wise_weights": true
   },
 
   "random_forest_disp_regressor_args": {
@@ -96,7 +97,8 @@
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
-    "warm_start": false
+    "warm_start": false,
+    "pointing_wise_weights": true
   },
 
   "random_forest_disp_classifier_args": {
@@ -114,7 +116,8 @@
     "oob_score": false,
     "random_state": 42,
     "warm_start": false,
-    "class_weight": null
+    "class_weight": null,
+    "pointing_wise_weights": true
   },
 
   "random_forest_particle_classifier_args": {
@@ -132,7 +135,8 @@
     "oob_score": false,
     "random_state": 42,
     "warm_start": false,
-    "class_weight": null
+    "class_weight": null,
+    "pointing_wise_weights": true
   },
 
 
