@@ -32,6 +32,7 @@ __all__ = [
     "cartesian_to_polar",
     "clip_alt",
     "compute_alpha",
+    "compute_rf_event_weights",
     "compute_theta2",
     "expand_tel_list",
     "extract_source_position",
@@ -862,3 +863,51 @@ def get_events_in_GTI(events, CatB_cal_table):
     gti_mask = gti[events['calibration_id']]
 
     return events[gti_mask]
+
+def compute_rf_event_weights(events):
+    """
+    Compute event-wise weights. Can be used for correcting for the different
+    statistics present in each pointing node of the MC training sample,
+    to avoid "jumps" in the performance of the random forests
+
+    events: a DL1 parameters dataframe
+    """
+
+    # Add a 'weight' column to the input table
+    weights = np.array(np.ones(len(events)))
+
+    # First identify existing telescope pointings in the sample:
+    # Convert to degrees and round to avoid potential
+    # rounding issues:
+    alt = np.round(events['alt_tel'], decimals=5)
+    az = np.round(events['az_tel'], decimals=5)
+    dummy = np.unique(np.array([alt, az]).T, axis=0)
+    # sort in azimuth:
+    pointings = dummy[np.argsort(dummy[:,1])]
+
+    # Find the total statistics in each of the pointings:
+    stats = []
+    for tel_alt_az in pointings:
+        mask = (np.isclose(tel_alt_az[0], events['alt_tel'],
+                           atol=1e-5, rtol=0) &
+                np.isclose(tel_alt_az[1], events['az_tel'],
+                           atol=1e-5, rtol=0))
+        stats.append(mask.sum())
+
+    stats = np.array(stats)
+    weight_per_pointing = stats.mean() / stats
+
+    # Now set the weights.
+    # Weight in a given node will be mean_events_per_node / n_events_in_node
+
+    for ipointing, tel_alt_az in enumerate(pointings):
+        mask = (np.isclose(tel_alt_az[0], events['alt_tel'],
+                           atol=1e-5, rtol=0) &
+                np.isclose(tel_alt_az[1], events['az_tel'],
+                           atol=1e-5, rtol=0))
+        weights[mask] = weight_per_pointing[ipointing]
+
+    events['weight'] = weights
+
+    # return the indetified pointings and weights set (for checks)
+    return pointings, weight_per_pointing
