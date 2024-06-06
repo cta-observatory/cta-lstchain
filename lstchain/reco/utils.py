@@ -881,9 +881,7 @@ def compute_rf_event_weights(events):
     # rounding issues:
     alt = np.round(events['alt_tel'], decimals=5)
     az = np.round(events['az_tel'], decimals=5)
-    dummy = np.unique(np.array([alt, az]).T, axis=0)
-    # sort in azimuth:
-    pointings = dummy[np.argsort(dummy[:,1])]
+    pointings = np.unique(np.array([alt, az]).T, axis=1)
 
     # Find the total statistics in each of the pointings:
     stats = []
