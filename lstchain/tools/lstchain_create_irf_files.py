@@ -28,9 +28,15 @@ For source-dependent analysis, alpha cut can be used instead of theta cut.
 If you want to generate source-dependent IRFs, source-dep flag should be activated.
 The global alpha cut used to generate IRFs is stored as AL_CUT in the HDU header.
 
-Modified IRFs can be created in case of considering systematics in the
-light efficiency. This can be done by setting a value different to one for the
-"scale_true_energy" argument present in the DataBinning Component of the configuration file. 
+Modified IRFs with true energy scaled by a given factor can be created to evaluate 
+the systematic uncertainty in the light collection efficiency. This can be done by 
+setting a value different from one for the "scale_true_energy" argument present in 
+the DataBinning Component of the configuration file of the IRF creation Tool.
+(The true energy of the MC events will be scaled before filling the IRFs histograms 
+when pyirf commands are used. The effects expected are a non-diagonal energy dispersion
+matrix and a different spectrum).
+                
+
 """
 
 from astropy import table
@@ -322,8 +328,6 @@ class IRFFITSWriter(Tool):
 
             
             if self.data_bin.scale_true_energy != 1.0:
-                # This will scale the true energy of the MC events just before filling the IRFs histograms when pyirf commands are used.
-                # Effects expected: non-diagonal energy dispersion matrix and a different spectrum.
                 p["events"]["true_energy"] *= self.data_bin.scale_true_energy
                 p["simulation_info"].energy_min *= self.data_bin.scale_true_energy
                 p["simulation_info"].energy_max *= self.data_bin.scale_true_energy
