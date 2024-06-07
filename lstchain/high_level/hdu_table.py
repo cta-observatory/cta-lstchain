@@ -200,6 +200,11 @@ def create_hdu_index_hdu(file_list, hdu_index_file, overwrite=False):
 
         # 0:PRIMARY, 1:EVENTS, 2:GTI, 3:POINTING, 4-:IRF 
         for hdu in hdu_list[4:]:
+
+            # GH_CUTS and AL_CUTS don't have HDUCLAS4 header
+            if hdu.header["EXTNAME"] in ['GH_CUTS', 'AL_CUTS']:
+                continue
+
             irf_hdu = hdu.header["HDUCLAS4"]
             
             t_irf = t_events.copy()
