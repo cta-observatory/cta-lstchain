@@ -870,8 +870,29 @@ def compute_rf_event_weights(events):
     statistics present in each pointing node of the MC training sample,
     to avoid "jumps" in the performance of the random forests
 
-    events: a DL1 parameters dataframe
+    events: a DL1 parameters dataframe. The table is modified in place by the
+    addition of a column called 'weight' (unless it exists already). The
+    column contains an event-wise weight to be used in the Random Forest
+    training, to give each of the telescope pointings in the training sample
+    the same overall weight in the training.
+
+    Returns: pointings, weight_per_pointing
+
+    pointings: ndarray of shape (number_of_pointings, 2) Alt Az (in radians)
+    for each of the identified telescope pointings in the input MC sample
+
+    weight_per_pointing: ndarray [number_of_pointings] weight for each of the
+    identified pointings. The weight is equal to the mean number of training
+    events per node divided by the number of training events in the specific
+    node. If used as sample_weight in scikit-learn, each node will have the
+    same total weight in the training of the Random Forests
+
     """
+
+    if 'weight' in events.columns:
+        log.warning("compute_rf_event_weights: DL2 table already contains")
+        log.warning("a column called weight. It will NOT be overwritten!")
+        return None, None
 
     # Add a 'weight' column to the input table
     weights = np.array(np.ones(len(events)))
@@ -907,5 +928,5 @@ def compute_rf_event_weights(events):
 
     events['weight'] = weights
 
-    # return the indetified pointings and weights set (for checks)
+    # return the identified pointings and weights set (for checks)
     return pointings, weight_per_pointing
