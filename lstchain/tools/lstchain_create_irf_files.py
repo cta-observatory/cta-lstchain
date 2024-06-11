@@ -230,6 +230,7 @@ class IRFFITSWriter(Tool):
         "global-alpha-cut": "DL3Cuts.global_alpha_cut",
         "allowed-tels": "DL3Cuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
+        "scale_true_energy": "DataBinning.scale_true_energy"
     }
 
     flags = {
@@ -542,7 +543,10 @@ class IRFFITSWriter(Tool):
             geomag_params["GEOMAG_DELTA"].to_value(u.deg),
             "deg",
         )
-
+        extra_headers["ETRUE SCALE"]= (
+            self.data_bin.scale_true_energy
+        )
+      
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
         else:
