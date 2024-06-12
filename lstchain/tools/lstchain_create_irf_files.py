@@ -145,7 +145,13 @@ class IRFFITSWriter(Tool):
         --global-alpha-cut 10
         --source-dep
 
-    """
+    To build modified IRFs by specifying a scaling factor applying to the true energy (without using a config file):
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -o /path/to/irf.fits.gz
+        --point-like (Only for point_like IRFs)
+        --scaling_true_energy 1.15
+        """
 
     input_gamma_dl2 = traits.Path(
         help="Input MC gamma DL2 file",
