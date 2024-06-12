@@ -543,7 +543,7 @@ class IRFFITSWriter(Tool):
             geomag_params["GEOMAG_DELTA"].to_value(u.deg),
             "deg",
         )
-        extra_headers["ETRUE SCALE"]= (
+        extra_headers["ETRUE_SCALE"]= (
             self.data_bin.scale_true_energy
         )
       
