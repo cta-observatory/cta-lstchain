@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>High Level Analysis (high_level) &mdash; lstchain 0.10.12.dev30+ge0970795 documentation</title>
+  <title>High Level Analysis (high_level) &mdash; lstchain 0.10.12.dev40+g8b1ca268 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=2973ea24"></script>
+        <script src="../../_static/documentation_options.js?v=a6c704d7"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev30+ge0970795
+                0.10.12.dev40+g8b1ca268
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -177,16 +177,13 @@ following recommendations from GADF v0.3</p>
 <tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interp_params.html#lstchain.high_level.interpolate.interp_params" title="lstchain.high_level.interpolate.interp_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_params</span></code></a>(params_list, data)</p></td>
 <td><p>From a given list of angular parameters, to be used for interpolation, take values from a given data dict.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interpolate_al_cuts.html#lstchain.high_level.interpolate.interpolate_al_cuts" title="lstchain.high_level.interpolate.interpolate_al_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_al_cuts</span></code></a>(al_cuts, grid_points, ...)</p></td>
-<td><p>Interpolates a grid of AL_CUTS tables to a target-point.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interpolate_cuts.html#lstchain.high_level.interpolate.interpolate_cuts" title="lstchain.high_level.interpolate.interpolate_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_cuts</span></code></a>(cuts, grid_points, target_point)</p></td>
+<td><p>Interpolates a grid of GH_CUTS or AL_CUTS tables to a target-point.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interpolate_gh_cuts.html#lstchain.high_level.interpolate.interpolate_gh_cuts" title="lstchain.high_level.interpolate.interpolate_gh_cuts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_gh_cuts</span></code></a>(gh_cuts, grid_points, ...)</p></td>
-<td><p>Interpolates a grid of GH_CUTS tables to a target-point.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interpolate_irf.html#lstchain.high_level.interpolate.interpolate_irf" title="lstchain.high_level.interpolate.interpolate_irf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_irf</span></code></a>(irfs, data_pars[, interp_method])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.interpolate_irf.html#lstchain.high_level.interpolate.interpolate_irf" title="lstchain.high_level.interpolate.interpolate_irf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_irf</span></code></a>(irfs, data_pars[, interp_method])</p></td>
 <td><p>Using pyirf functions with a list of IRFs and parameters to compare with data, to interpolate over in a selected interpolation parameter space.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.load_irf_grid.html#lstchain.high_level.interpolate.load_irf_grid" title="lstchain.high_level.interpolate.load_irf_grid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_irf_grid</span></code></a>(irfs, extname, interp_col[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.interpolate.load_irf_grid.html#lstchain.high_level.interpolate.load_irf_grid" title="lstchain.high_level.interpolate.load_irf_grid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_irf_grid</span></code></a>(irfs, extname, interp_col[, ...])</p></td>
 <td><p>From a given list of IRFs, load the list of IRF data values that can be interpolated.</p></td>
 </tr>
 </tbody>
@@ -227,7 +224,7 @@ following recommendations from GADF v0.3</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 04 Jun 2024 10:34.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 17 Jun 2024 13:30.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

@@ -1,6 +1,0 @@
-interpolate_gh_cuts
-===================
-
-.. currentmodule:: lstchain.high_level.interpolate
-
-.. autofunction:: interpolate_gh_cuts

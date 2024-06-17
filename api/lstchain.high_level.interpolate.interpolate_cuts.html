@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>interpolate_gh_cuts &mdash; lstchain 0.10.12.dev30+ge0970795 documentation</title>
+  <title>interpolate_cuts &mdash; lstchain 0.10.12.dev40+g8b1ca268 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/documentation_options.js?v=2973ea24"></script>
+        <script src="../_static/documentation_options.js?v=a6c704d7"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -31,7 +31,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="interpolate_irf" href="lstchain.high_level.interpolate.interpolate_irf.html" />
-    <link rel="prev" title="interpolate_al_cuts" href="lstchain.high_level.interpolate.interpolate_al_cuts.html" /> 
+    <link rel="prev" title="interp_params" href="lstchain.high_level.interpolate.interp_params.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev30+ge0970795
+                0.10.12.dev40+g8b1ca268
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -107,9 +107,9 @@
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
-      <li class="breadcrumb-item active">interpolate_gh_cuts</li>
+      <li class="breadcrumb-item active">interpolate_cuts</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/lstchain.high_level.interpolate.interpolate_gh_cuts.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api/lstchain.high_level.interpolate.interpolate_cuts.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -117,17 +117,17 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="interpolate-gh-cuts">
-<h1>interpolate_gh_cuts<a class="headerlink" href="#interpolate-gh-cuts" title="Link to this heading">¶</a></h1>
+  <section id="interpolate-cuts">
+<h1>interpolate_cuts<a class="headerlink" href="#interpolate-cuts" title="Link to this heading">¶</a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="lstchain.high_level.interpolate.interpolate_gh_cuts">
-<span class="sig-prename descclassname"><span class="pre">lstchain.high_level.interpolate.</span></span><span class="sig-name descname"><span class="pre">interpolate_gh_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gh_cuts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.high_level.interpolate.interpolate_gh_cuts" title="Link to this definition">¶</a></dt>
-<dd><p>Interpolates a grid of GH_CUTS tables to a target-point.</p>
+<dt class="sig sig-object py" id="lstchain.high_level.interpolate.interpolate_cuts">
+<span class="sig-prename descclassname"><span class="pre">lstchain.high_level.interpolate.</span></span><span class="sig-name descname"><span class="pre">interpolate_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cuts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.high_level.interpolate.interpolate_cuts" title="Link to this definition">¶</a></dt>
+<dd><p>Interpolates a grid of GH_CUTS or AL_CUTS tables to a target-point.</p>
 <p>Wrapper around scipy.interpolate.griddata [1].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>gh_cuts: numpy.ndarray, shape=(N, M, …)</strong></dt><dd><p>Gammaness-cuts for all combinations of grid-points, like energy.
+<dt><strong>cuts: numpy.ndarray, shape=(N, M, …)</strong></dt><dd><p>Gammaness-cuts or Alpha-cuts for all combinations of grid-points, like energy.
 Shape (N:n_grid_points, M:n_energy_bins)</p>
 </dd>
 <dt><strong>grid_points: numpy.ndarray, shape=(N, O)</strong></dt><dd><p>Array of the N O-dimensional morphing parameter values corresponding
@@ -142,14 +142,14 @@ Defaults to ‘linear’.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>gh_cuts_interp: numpy.ndarray, shape=(1, M, …)</dt><dd><p>Gammaness-cuts for the target grid-point, shape (1, M:n_energy_bins)</p>
+<dt>cuts_interp: numpy.ndarray, shape=(1, M, …)</dt><dd><p>Gammaness-cuts or Alpha-cuts for the target grid-point, shape (1, M:n_energy_bins)</p>
 </dd>
 </dl>
 </dd>
 </dl>
 <p class="rubric">References</p>
 <div role="list" class="citation-list">
-<div class="citation" id="rfa80595e0c4c-1" role="doc-biblioentry">
+<div class="citation" id="r601a8b345849-1" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
 <p><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html">https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html</a></p>
 </div>
@@ -162,14 +162,14 @@ Defaults to ‘linear’.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="lstchain.high_level.interpolate.interpolate_al_cuts.html" class="btn btn-neutral float-left" title="interpolate_al_cuts" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.high_level.interpolate.interp_params.html" class="btn btn-neutral float-left" title="interp_params" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="lstchain.high_level.interpolate.interpolate_irf.html" class="btn btn-neutral float-right" title="interpolate_irf" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 04 Jun 2024 10:34.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 17 Jun 2024 13:30.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
