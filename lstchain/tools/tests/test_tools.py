@@ -379,3 +379,39 @@ def test_index_dl3_files(temp_dir_observed_files):
     data = DataStore.from_dir(temp_dir_observed_files)
 
     assert 2008 in data.obs_table["OBS_ID"]
+
+    for hdu_name in [
+            'EVENTS', 'GTI', 'POINTING',
+            'EFFECTIVE AREA', 'ENERGY DISPERSION', 
+            'BACKGROUND', 'PSF'
+    ]:
+        assert hdu_name in data.hdu_table['HDU_NAME']
+
+@pytest.mark.private_data
+def test_index_srcdep_dl3_files(temp_dir_observed_srcdep_files):
+    """
+    Generating Index files from a given path and glob pattern for srcdep DL3 files
+    """
+    from lstchain.tools.lstchain_create_dl3_index_files import FITSIndexWriter
+    from gammapy.data import DataStore
+
+    assert (
+        run_tool(
+            FITSIndexWriter(),
+            argv=[
+                f"--input-dl3-dir={temp_dir_observed_srcdep_files}",
+                "--overwrite",
+            ],
+            cwd=temp_dir_observed_srcdep_files,
+        )
+        == 0
+    )
+    data = DataStore.from_dir(temp_dir_observed_srcdep_files)
+
+    assert 2008 in data.obs_table["OBS_ID"]
+
+    for hdu_name in [
+            'EVENTS', 'GTI', 'POINTING',
+            'EFFECTIVE AREA', 'ENERGY DISPERSION'
+    ]:
+        assert hdu_name in data.hdu_table['HDU_NAME']
