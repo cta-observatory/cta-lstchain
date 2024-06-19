@@ -89,7 +89,7 @@ def main():
     dict_nsb = {
         "nsb_tuning": True,
         "nsb_tuning_ratio": np.round(nsb_correction_ratio, decimals=2),
-        "spe_location": get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")
+        "spe_location": str(get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
     }
 
     log.info(f'\ndata_ped_stdev: {data_ped_variance**0.5:.3f} p.e.')
