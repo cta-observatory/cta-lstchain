@@ -307,7 +307,7 @@ def main():
 
         if not np.any(np.isin(found_event_types[0], 
                               event_types_to_be_reduced)):
-            log.warn('No reducible events were found in file! SKIPPING IT!')
+            log.warning('No reducible events were found in file! SKIPPING IT!')
             continue
 
         cosmic_mask   = event_type_data == EventType.SUBARRAY.value  # showers
@@ -320,7 +320,7 @@ def main():
         # that more than half of the events are labeled as UNKNOWN, we assume 
         # they are cosmics:
         if unknown_mask.sum() > 0.5 * len(event_type_data):
-            log.warn('Too many events tagged UNKNOWN! '
+            log.warning('Too many events tagged UNKNOWN! '
                      'I will assume they are cosmics!')
             cosmic_mask |= unknown_mask
 
@@ -499,10 +499,10 @@ def main():
                 if number_of_writing_attempts > 60:
                     log.error('I gave up!')
                     sys.exit(1)
-                log.warn('%s: could not write output, attempt %d',
-                         '... Will try again after 5 minutes',
-                         time.asctime(time.localtime()),
-                         number_of_writing_attempts)
+                log.warning('%s: could not write output, attempt %d',
+                            '... Will try again after 5 minutes',
+                            time.asctime(time.localtime()),
+                            number_of_writing_attempts)
                 time.sleep(300)
                 continue
 
