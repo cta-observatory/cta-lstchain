@@ -702,7 +702,7 @@ def get_typical_dvr_min_charge(dvrtable):
     if counts.max() / counts.sum() < min_fraction_of_good_subruns:
         log.warn('Unstable data? (noise-wise) Less than half of the subruns '
                  'had similar noise conditions!')
-        log.warn('Range of min_charge_for_certain_selection: %d - %d',
+        log.warn('Range of min_charge_for_certain_selection: %.1f - %.1f',
                  allqs.min(), allqs.max())
 
     mode = value[np.argmax(counts)]
