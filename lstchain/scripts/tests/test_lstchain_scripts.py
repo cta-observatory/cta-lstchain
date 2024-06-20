@@ -20,11 +20,18 @@ from ctapipe.containers import EventType
 
 
 from lstchain.io.config import get_srcdep_config, get_standard_config
-from lstchain.io.io import (dl1_images_lstcam_key, dl1_params_lstcam_key,
-                            dl1_params_tel_mon_cal_key,
-                            dl1_params_tel_mon_flat_key,
-                            dl1_params_tel_mon_ped_key, dl2_params_lstcam_key,
-                            get_dataset_keys, get_srcdep_params)
+from lstchain.io.io import (
+    dl1_images_lstcam_key,
+    dl1_params_lstcam_key,
+    dl1_params_tel_mon_cal_key,
+    dl1_params_tel_mon_flat_key,
+    dl1_params_tel_mon_ped_key,
+    dl2_params_lstcam_key,
+    get_dataset_keys,
+    get_srcdep_params,
+    get_resource_path
+)
+
 
 
 def find_entry_points(package_name):
@@ -198,6 +205,20 @@ def tune_nsb(mc_gamma_testfile, observed_dl1_files):
     )
 
 
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def tune_nsb_waveform(mc_gamma_testfile, observed_dl1_files):
+    return run_program(
+        "lstchain_tune_nsb_waveform",
+        "--config",
+        "lstchain/data/lstchain_standard_config.json",
+        "--input-mc",
+        mc_gamma_testfile,
+        "--input-data",
+        observed_dl1_files["dl1_file1"],
+    )
+
+
 def test_validity_tune_nsb(tune_nsb):
     output_lines = tune_nsb.stdout.splitlines()
     for line in output_lines:
@@ -211,6 +232,22 @@ def test_validity_tune_nsb(tune_nsb):
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
             assert line == '  "extra_noise_in_bright_pixels": 0.0'
+
+
+def test_validity_tune_nsb_waveform(tune_nsb_waveform):
+    """
+    The resulting nsb_tuning_ratio value of -1 expected in this test is meaningless
+    because the input data do not allow a full test of the functionality.
+    This test is only a formal check that the script runs.
+    """
+    output_lines = tune_nsb_waveform.stdout.splitlines()
+    for line in output_lines:
+        if '"nsb_tuning"' in line:
+            assert line == '  "nsb_tuning": true,'
+        if '"nsb_tuning_ratio"' in line:
+            assert line == '  "nsb_tuning_ratio": -1.0,'
+        if '"spe_location"' in line:
+            assert line == f'  "spe_location": "{get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")}"'
 
 
 def test_lstchain_mc_trainpipe(rf_models):
