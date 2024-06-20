@@ -871,7 +871,8 @@ def compute_rf_event_weights(events):
     to avoid "jumps" in the performance of the random forests
 Parameters
 ----------
-    events: a DL1 parameters dataframe. The table is modified in place by the
+    events : `~pd.DataFrame`
+        DL1 parameters dataframe. The table is modified in place by the
     addition of a column called 'weight' (unless it exists already). The
     column contains an event-wise weight to be used in the Random Forest
     training, to give each of the telescope pointings in the training sample
