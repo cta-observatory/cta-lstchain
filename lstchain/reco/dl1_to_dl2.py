@@ -444,6 +444,7 @@ def build_models(filegammas, fileprotons,
     if pointing_wise_weights:
         # Give same total weight to all events in every pointing node, by
         # applying event-wise weights which depend on the statistics per node
+        # The weight is written to a new column of df_gamma, called 'weight'
         _, _ = utils.compute_rf_event_weights(df_gamma)
     else:
         df_gamma['weight'] = np.ones(len(df_gamma))
@@ -511,6 +512,7 @@ def build_models(filegammas, fileprotons,
     if pointing_wise_weights:
         # Give same total weight to all events in every pointing node, by
         # applying event-wise weights which depend on the statistics per node
+        # The weight is written to a new column of df_gamma, called 'weight'
         _, _ = utils.compute_rf_event_weights(df_proton)
     else:
         df_proton['weight'] = np.ones(len(df_proton))
