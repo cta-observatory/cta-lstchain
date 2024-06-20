@@ -869,8 +869,9 @@ def compute_rf_event_weights(events):
     Compute event-wise weights. Can be used for correcting for the different
     statistics present in each pointing node of the MC training sample,
     to avoid "jumps" in the performance of the random forests
-Parameters
-----------
+
+    Parameters
+    ----------
     events : `~pd.DataFrame`
         DL1 parameters dataframe. The table is modified in place by the
     addition of a column called 'weight' (unless it exists already). The
