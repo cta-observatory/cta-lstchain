@@ -877,7 +877,8 @@ Parameters
     training, to give each of the telescope pointings in the training sample
     the same overall weight in the training.
 
-    Returns: pointings, weight_per_pointing
+    Returns
+    -------
 
     pointings: ndarray of shape (number_of_pointings, 2) Alt Az (in radians)
     for each of the identified telescope pointings in the input MC sample
