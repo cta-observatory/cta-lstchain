@@ -882,7 +882,7 @@ Parameters
     -------
 
     pointings: ndarray of shape (number_of_pointings, 2) Alt Az (in radians)
-    for each of the identified telescope pointings in the input MC sample
+        for each of the identified telescope pointings in the input MC sample
 
     weight_per_pointing: ndarray [number_of_pointings] weight for each of the
     identified pointings. The weight is equal to the mean number of training
