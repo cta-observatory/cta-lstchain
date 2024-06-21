@@ -1,0 +1,6 @@
+compute_rf_event_weights
+========================
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: compute_rf_event_weights

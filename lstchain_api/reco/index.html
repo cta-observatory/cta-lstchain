@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reconstruction (reco) &mdash; lstchain 0.10.12.dev51+g6ea82fee documentation</title>
+  <title>Reconstruction (reco) &mdash; lstchain 0.10.12.dev67+g609a977b documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=fd157dde"></script>
+        <script src="../../_static/documentation_options.js?v=5b79d009"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev51+g6ea82fee
+                0.10.12.dev67+g609a977b
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -270,58 +270,61 @@ implemented already in ctapipe but I haven’t managed to find how to do it).</p
 <tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.compute_alpha.html#lstchain.reco.utils.compute_alpha" title="lstchain.reco.utils.compute_alpha"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_alpha</span></code></a>(data)</p></td>
 <td><p>Computes the angle between the shower major axis and polar angle of the shower centroid</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.compute_theta2.html#lstchain.reco.utils.compute_theta2" title="lstchain.reco.utils.compute_theta2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_theta2</span></code></a>(data, source_position[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.compute_rf_event_weights.html#lstchain.reco.utils.compute_rf_event_weights" title="lstchain.reco.utils.compute_rf_event_weights"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_rf_event_weights</span></code></a>(events)</p></td>
+<td><p>Compute event-wise weights.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.compute_theta2.html#lstchain.reco.utils.compute_theta2" title="lstchain.reco.utils.compute_theta2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_theta2</span></code></a>(data, source_position[, ...])</p></td>
 <td><p>Computes a square of theta (angle from z-axis) from camera frame coordinates</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.expand_tel_list.html#lstchain.reco.utils.expand_tel_list" title="lstchain.reco.utils.expand_tel_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_tel_list</span></code></a>(tel_list, max_tels)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.expand_tel_list.html#lstchain.reco.utils.expand_tel_list" title="lstchain.reco.utils.expand_tel_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_tel_list</span></code></a>(tel_list, max_tels)</p></td>
 <td><p>transform for the telescope list (to turn it into a telescope pattern) un-pack var-length list of tel_ids into fixed-width bit pattern by tel_index</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.extract_source_position.html#lstchain.reco.utils.extract_source_position" title="lstchain.reco.utils.extract_source_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_source_position</span></code></a>(data, ...[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.extract_source_position.html#lstchain.reco.utils.extract_source_position" title="lstchain.reco.utils.extract_source_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_source_position</span></code></a>(data, ...[, ...])</p></td>
 <td><p>Extract source position from data</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.filter_events.html#lstchain.reco.utils.filter_events" title="lstchain.reco.utils.filter_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_events</span></code></a>(events[, filters, finite_params])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.filter_events.html#lstchain.reco.utils.filter_events" title="lstchain.reco.utils.filter_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_events</span></code></a>(events[, filters, finite_params])</p></td>
 <td><p>Apply data filtering to a pandas dataframe or astropy Table.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_effective_time.html#lstchain.reco.utils.get_effective_time" title="lstchain.reco.utils.get_effective_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_effective_time</span></code></a>(events)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_effective_time.html#lstchain.reco.utils.get_effective_time" title="lstchain.reco.utils.get_effective_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_effective_time</span></code></a>(events)</p></td>
 <td><p>Calculate the effective observation time of a set of real data events from a sky observation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_event_pos_in_camera.html#lstchain.reco.utils.get_event_pos_in_camera" title="lstchain.reco.utils.get_event_pos_in_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_event_pos_in_camera</span></code></a>(event, tel)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_event_pos_in_camera.html#lstchain.reco.utils.get_event_pos_in_camera" title="lstchain.reco.utils.get_event_pos_in_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_event_pos_in_camera</span></code></a>(event, tel)</p></td>
 <td><p>Return the position of the source in the camera frame.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_geomagnetic_delta.html#lstchain.reco.utils.get_geomagnetic_delta" title="lstchain.reco.utils.get_geomagnetic_delta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_geomagnetic_delta</span></code></a>(zen, az[, geomag_dec, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_geomagnetic_delta.html#lstchain.reco.utils.get_geomagnetic_delta" title="lstchain.reco.utils.get_geomagnetic_delta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_geomagnetic_delta</span></code></a>(zen, az[, geomag_dec, ...])</p></td>
 <td><p>From a given geomagnetic declination and inclination angle along with telescope zenith and azimuth pointing to get the angle between the geomagnetic field and the shower axis, for a single telescope.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.impute_pointing.html#lstchain.reco.utils.impute_pointing" title="lstchain.reco.utils.impute_pointing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">impute_pointing</span></code></a>(dl1_data[, missing_values])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.impute_pointing.html#lstchain.reco.utils.impute_pointing" title="lstchain.reco.utils.impute_pointing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">impute_pointing</span></code></a>(dl1_data[, missing_values])</p></td>
 <td><p>Impute missing pointing values using <cite>linear_imputer</cite> and replace them inplace</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.linear_imputer.html#lstchain.reco.utils.linear_imputer" title="lstchain.reco.utils.linear_imputer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linear_imputer</span></code></a>(y[, missing_values, copy])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.linear_imputer.html#lstchain.reco.utils.linear_imputer" title="lstchain.reco.utils.linear_imputer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linear_imputer</span></code></a>(y[, missing_values, copy])</p></td>
 <td><p>Replace missing values in y with values from a linear interpolation on their position in the array.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.polar_to_cartesian.html#lstchain.reco.utils.polar_to_cartesian" title="lstchain.reco.utils.polar_to_cartesian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">polar_to_cartesian</span></code></a>(norm, angle, sign)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.polar_to_cartesian.html#lstchain.reco.utils.polar_to_cartesian" title="lstchain.reco.utils.polar_to_cartesian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">polar_to_cartesian</span></code></a>(norm, angle, sign)</p></td>
 <td><p>Polar to cartesian transformation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.predict_source_position_in_camera.html#lstchain.reco.utils.predict_source_position_in_camera" title="lstchain.reco.utils.predict_source_position_in_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_source_position_in_camera</span></code></a>(cog_x, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.predict_source_position_in_camera.html#lstchain.reco.utils.predict_source_position_in_camera" title="lstchain.reco.utils.predict_source_position_in_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_source_position_in_camera</span></code></a>(cog_x, ...)</p></td>
 <td><p>Compute the source position in the camera frame</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.radec_to_camera.html#lstchain.reco.utils.radec_to_camera" title="lstchain.reco.utils.radec_to_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">radec_to_camera</span></code></a>(sky_coordinate, obstime, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.radec_to_camera.html#lstchain.reco.utils.radec_to_camera" title="lstchain.reco.utils.radec_to_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">radec_to_camera</span></code></a>(sky_coordinate, obstime, ...)</p></td>
 <td><p>Coordinate transform from sky coordinate to camera coordinates (x, y) in distance</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.reco_source_position_sky.html#lstchain.reco.utils.reco_source_position_sky" title="lstchain.reco.utils.reco_source_position_sky"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reco_source_position_sky</span></code></a>(cog_x, cog_y, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.reco_source_position_sky.html#lstchain.reco.utils.reco_source_position_sky" title="lstchain.reco.utils.reco_source_position_sky"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reco_source_position_sky</span></code></a>(cog_x, cog_y, ...)</p></td>
 <td><p>Compute the reconstructed source position in the sky</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.rotate.html#lstchain.reco.utils.rotate" title="lstchain.reco.utils.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate</span></code></a>(flat_object[, degree, origin])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.rotate.html#lstchain.reco.utils.rotate" title="lstchain.reco.utils.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate</span></code></a>(flat_object[, degree, origin])</p></td>
 <td><p>Rotate 2D object around given axle</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.sky_to_camera.html#lstchain.reco.utils.sky_to_camera" title="lstchain.reco.utils.sky_to_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sky_to_camera</span></code></a>(alt, az, focal, pointing_alt, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.sky_to_camera.html#lstchain.reco.utils.sky_to_camera" title="lstchain.reco.utils.sky_to_camera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sky_to_camera</span></code></a>(alt, az, focal, pointing_alt, ...)</p></td>
 <td><p>Coordinate transform from aky position (alt, az) (in angles) to camera coordinates (x, y) in distance.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.source_dx_dy.html#lstchain.reco.utils.source_dx_dy" title="lstchain.reco.utils.source_dx_dy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_dx_dy</span></code></a>(source_pos_x, source_pos_y, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.source_dx_dy.html#lstchain.reco.utils.source_dx_dy" title="lstchain.reco.utils.source_dx_dy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_dx_dy</span></code></a>(source_pos_x, source_pos_y, ...)</p></td>
 <td><p>Compute the coordinates of the vector (dx, dy) from the center of gravity to the source position</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.source_side.html#lstchain.reco.utils.source_side" title="lstchain.reco.utils.source_side"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_side</span></code></a>(source_pos_x, cog_x)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.source_side.html#lstchain.reco.utils.source_side" title="lstchain.reco.utils.source_side"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_side</span></code></a>(source_pos_x, cog_x)</p></td>
 <td><p>Compute on what side of the center of gravity the source is in the camera.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_events_in_GTI.html#lstchain.reco.utils.get_events_in_GTI" title="lstchain.reco.utils.get_events_in_GTI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_events_in_GTI</span></code></a>(events, CatB_cal_table)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.utils.get_events_in_GTI.html#lstchain.reco.utils.get_events_in_GTI" title="lstchain.reco.utils.get_events_in_GTI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_events_in_GTI</span></code></a>(events, CatB_cal_table)</p></td>
 <td><p>Select events in good time intervals (GTI) on the base of the GTI defined the catB calibration table (dl1_mon_tel_CatB_cal_key)</p></td>
 </tr>
 </tbody>
@@ -376,7 +379,7 @@ The volume reduction produces reduced waveforms and write them in the DL0 contai
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 20 Jun 2024 13:56.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 21 Jun 2024 10:10.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

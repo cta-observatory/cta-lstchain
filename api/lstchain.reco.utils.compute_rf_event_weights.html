@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>load_irf_grid &mdash; lstchain 0.10.12.dev67+g609a977b documentation</title>
+  <title>compute_rf_event_weights &mdash; lstchain 0.10.12.dev67+g609a977b documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -30,8 +30,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="analyze_on_off" href="lstchain.high_level.significance_calculation.analyze_on_off.html" />
-    <link rel="prev" title="interpolate_irf" href="lstchain.high_level.interpolate.interpolate_irf.html" /> 
+    <link rel="next" title="compute_theta2" href="lstchain.reco.utils.compute_theta2.html" />
+    <link rel="prev" title="compute_alpha" href="lstchain.reco.utils.compute_alpha.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -70,19 +70,22 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/high_level/index.html#introduction">Introduction</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/high_level/index.html#module-lstchain.high_level.hdu_table">lstchain.high_level.hdu_table Module</a></li>
-<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/high_level/index.html#module-lstchain.high_level.interpolate">lstchain.high_level.interpolate Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/high_level/index.html#module-lstchain.high_level.significance_calculation">lstchain.high_level.significance_calculation Module</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/reco/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/reco/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.disp">lstchain.reco.disp Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.dl1_to_dl2">lstchain.reco.dl1_to_dl2 Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.r0_to_dl1">lstchain.reco.r0_to_dl1 Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.utils">lstchain.reco.utils Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.volume_reducer">lstchain.reco.volume_reducer Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
@@ -106,10 +109,10 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
-          <li class="breadcrumb-item"><a href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
-      <li class="breadcrumb-item active">load_irf_grid</li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+      <li class="breadcrumb-item active">compute_rf_event_weights</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/lstchain.high_level.interpolate.load_irf_grid.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api/lstchain.reco.utils.compute_rf_event_weights.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -117,31 +120,34 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="load-irf-grid">
-<h1>load_irf_grid<a class="headerlink" href="#load-irf-grid" title="Link to this heading">¶</a></h1>
+  <section id="compute-rf-event-weights">
+<h1>compute_rf_event_weights<a class="headerlink" href="#compute-rf-event-weights" title="Link to this heading">¶</a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="lstchain.high_level.interpolate.load_irf_grid">
-<span class="sig-prename descclassname"><span class="pre">lstchain.high_level.interpolate.</span></span><span class="sig-name descname"><span class="pre">load_irf_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">irfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp_col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gadf_irf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.high_level.interpolate.load_irf_grid" title="Link to this definition">¶</a></dt>
-<dd><p>From a given list of IRFs, load the list of IRF data values that can be
-interpolated. For GH_CUTS which is not GADF approved, the HDU is stored
-differently and so requires a different way of loading the data.</p>
-<dl class="field-list simple">
+<dt class="sig sig-object py" id="lstchain.reco.utils.compute_rf_event_weights">
+<span class="sig-prename descclassname"><span class="pre">lstchain.reco.utils.</span></span><span class="sig-name descname"><span class="pre">compute_rf_event_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.reco.utils.compute_rf_event_weights" title="Link to this definition">¶</a></dt>
+<dd><p>Compute event-wise weights. Can be used for correcting for the different
+statistics present in each pointing node of the MC training sample,
+to avoid “jumps” in the performance of the random forests</p>
+<dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>irfs: List of IRFs to use to interpolate</strong></dt><dd><p>List</p>
+<dd class="field-odd"><dl>
+<dt><strong>events</strong><span class="classifier"><cite>~pd.DataFrame</cite></span></dt><dd><p>DL1 parameters dataframe. The table is modified in place by the</p>
 </dd>
-<dt><strong>extname: Name of the IRF to be extracted</strong></dt><dd><p>Str</p>
-</dd>
-<dt><strong>interp_col: Name of the column whose values are to be interpolated</strong></dt><dd><p>Str</p>
-</dd>
-<dt><strong>gadf_irf: IRF being as per GADF standard or custom</strong></dt><dd><p>Bool</p>
-</dd>
+<dt><strong>addition of a column called ‘weight’ (unless it exists already). The</strong></dt><dd></dd>
+<dt><strong>column contains an event-wise weight to be used in the Random Forest</strong></dt><dd></dd>
+<dt><strong>training, to give each of the telescope pointings in the training sample</strong></dt><dd></dd>
+<dt><strong>the same overall weight in the training.</strong></dt><dd></dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>irf_list: List of columns of the IRF from each file</dt><dd><p>‘numpy.stack’</p>
+<dt>pointings: ndarray of shape (number_of_pointings, 2) Alt Az (in radians)</dt><dd><p>for each of the identified telescope pointings in the input MC sample</p>
 </dd>
+<dt>weight_per_pointing: ndarray [number_of_pointings] weight for each of the</dt><dd></dd>
+<dt>identified pointings. The weight is equal to the mean number of training</dt><dd></dd>
+<dt>events per node divided by the number of training events in the specific</dt><dd></dd>
+<dt>node. If used as sample_weight in scikit-learn, each node will have the</dt><dd></dd>
+<dt>same total weight in the training of the Random Forests</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -153,8 +159,8 @@ differently and so requires a different way of loading the data.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="lstchain.high_level.interpolate.interpolate_irf.html" class="btn btn-neutral float-left" title="interpolate_irf" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="lstchain.high_level.significance_calculation.analyze_on_off.html" class="btn btn-neutral float-right" title="analyze_on_off" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="lstchain.reco.utils.compute_alpha.html" class="btn btn-neutral float-left" title="compute_alpha" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.reco.utils.compute_theta2.html" class="btn btn-neutral float-right" title="compute_theta2" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
