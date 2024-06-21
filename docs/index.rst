@@ -19,6 +19,7 @@
    lst_analysis_workflow
    contribute
    snippets
+   notebooks
 
 .. _lstchain_docs:
 
