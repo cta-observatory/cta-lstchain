@@ -257,17 +257,17 @@ def test_interp_irf(
                 psf_1_meta = fits.open(irf)["PSF"].header
                 psf_2 = psf_1.copy()
                 psf_2_meta = psf_1_meta.copy()
-                
+
                 psf_1["RPSF"][0] *= factor_czd
                 psf_2["RPSF"][0] *= factor_czd * factor_sd
-                
+
                 psf_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
                 psf_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
                 psf_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
                 psf_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
                 psf_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
                 psf_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
-                
+
                 psf_hdu_1 = fits.BinTableHDU(
                     psf_1, header=psf_1_meta, name="PSF"
                 )
@@ -333,10 +333,14 @@ def test_interp_irf(
     hdu_en_srcdep = interpolate_irf(irfs_en_srcdep, data_pars)
     hdu_en_srcdep.writeto(irf_file_en_srcdep_final, overwrite=True)
 
+    aeff_shape_final = Table.read(irf_file_g_final, hdu=1)["EFFAREA"].shape
+    aeff_shape_2 = Table.read(irf_file_g_2, hdu=1)["EFFAREA"].shape
+
     assert hdu_g[1].header["ZEN_PNT"] == zen_t
     assert irf_file_g_2.exists()
     assert irf_file_g_3.exists()
     assert irf_file_g_final.exists()
+    assert aeff_shape_final == aeff_shape_2
 
     assert hdu_en[1].header["ZEN_PNT"] == zen_t
     assert irf_file_en_2.exists()

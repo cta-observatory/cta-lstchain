@@ -422,7 +422,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     main_headers = fits.open(irfs[0])[1].header
 
     point_like = main_headers["HDUCLAS3"] == "POINT-LIKE"
-    
+
     # Update headers to be added to the final IRFs
     extra_headers = dict()
 
@@ -471,19 +471,19 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     }
 
     for hdu_name in hdu_names:
-        
+
         if hdu_name == "BACKGROUND":
             log.warning("The interpolation of BACKGROUND is not yet supported")
             continue
-            
+
         if interp_col_keys[hdu_name] == 'cut':
             gadf_irf = False
         else:
-            gadf_irf = True    
-            
+            gadf_irf = True
+
         irf_list = load_irf_grid(
-            irfs, 
-            extname=hdu_name, 
+            irfs,
+            extname=hdu_name,
             interp_col=interp_col_keys[hdu_name],
             gadf_irf=gadf_irf
         )
@@ -492,7 +492,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         if hdu_name in ['EFFECTIVE AREA', 'ENERGY DISPERSION', 'PSF']:
             e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
             fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
-            
+
             if hdu_name == "EFFECTIVE AREA":
                 aeff_estimator = EffectiveAreaEstimator(
                     grid_points=irf_pars_sel,
@@ -500,9 +500,9 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
                     interpolator_kwargs={"method": interp_method},
                 )
                 aeff_interp = aeff_estimator(interp_pars_sel)
-                
+
                 aeff_hdu_interp = create_aeff2d_hdu(
-                    effective_area=aeff_interp.T[0],
+                    effective_area=aeff_interp[0],
                     true_energy_bins=e_true,
                     fov_offset_bins=fov_off,
                     point_like=point_like,
@@ -519,7 +519,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
                     energy_dispersion=irf_list,
                 )
                 edisp_interp = edisp_estimator(interp_pars_sel)
-                
+
                 edisp_hdu_interp = create_energy_dispersion_hdu(
                     energy_dispersion=edisp_interp[0],
                     true_energy_bins=e_true,
@@ -556,7 +556,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
             cut_header = fits.Header()
             cut_header["CREATOR"] = f"lstchain v{__version__}"
             cut_header["DATE"] = Time.now().utc.iso
-            
+
             for k, v in extra_headers.items():
                 cut_header[k] = v
 
