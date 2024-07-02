@@ -1,0 +1,52 @@
+{
+  "EventSelector": {
+    "filters": {
+      "intensity": [50, Infinity],
+      "width": [0, Infinity],
+      "length": [0, Infinity],
+      "r": [0, 1],
+      "wl": [0.01, 1],
+      "leakage_intensity_width_2": [0, 1],
+      "event_type": [32, 32]
+    }
+  },
+  "DL3Cuts": {
+    "min_event_p_en_bin": 100,
+    "global_gh_cut": 0.7,
+    "gh_efficiency": 0.7,
+    "min_gh_cut": 0.1,
+    "max_gh_cut": 0.98,
+    "global_alpha_cut": 10,
+    "global_theta_cut": 0.2,
+    "theta_containment": 0.7,
+    "alpha_containment": 0.7,
+    "min_theta_cut": 0.1,
+    "max_theta_cut": 0.32,
+    "fill_theta_cut": 0.32,
+    "min_alpha_cut": 1,
+    "max_alpha_cut": 20,
+    "fill_alpha_cut": 20,
+    "allowed_tels": [1]
+  },
+  "DataBinning": {
+    "true_energy_min": 0.005,
+    "true_energy_max": 500,
+    "true_energy_n_bins": 25,
+    "scale_true_energy": 1.15,
+    "reco_energy_min": 0.005,
+    "reco_energy_max": 500,
+    "reco_energy_n_bins": 25,
+    "energy_migration_min": 0.2,
+    "energy_migration_max": 5,
+    "energy_migration_n_bins": 30,
+    "fov_offset_min": 0.1,
+    "fov_offset_max": 1.1,
+    "fov_offset_n_edges": 9,
+    "bkg_fov_offset_min": 0,
+    "bkg_fov_offset_max": 10,
+    "bkg_fov_offset_n_edges": 21,
+    "source_offset_min": 0,
+    "source_offset_max": 1,
+    "source_offset_n_edges": 101
+  }
+}
