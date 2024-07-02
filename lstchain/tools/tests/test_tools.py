@@ -618,8 +618,8 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
 
     irf_file=temp_dir_observed_files / "fe_irf.fits.gz"
     irf_file_mod = temp_dir_observed_files / "mod_irf.fits.gz"
-    config_file = os.path.join(os.getcwd(), "/home/deborahd/cta-lstchain/docs/examples/irf_dl3_tool_config.json")
-    config_file_mod = os.path.join(os.getcwd(), "/home/deborahd/cta-lstchain/docs/examples/irf_dl3_tool_config_mod.json")
+    config_file = os.path.join(os.getcwd(), "docs/examples/irf_dl3_tool_config.json")
+    config_file_mod = os.path.join(os.getcwd(), "docs/examples/irf_dl3_tool_config_mod.json")
 
     assert (
         run_tool(
