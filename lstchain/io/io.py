@@ -1278,7 +1278,7 @@ def extract_simulation_nsb(filename):
             for _, line in f.history:
                 line = line.decode('utf-8').strip().split(' ')
                 if next_nsb and line[0] == 'NIGHTSKY_BACKGROUND':
-                    nsb[tel_id] = line[1].strip('all:')
+                    nsb[tel_id] = float(line[1].strip('all:'))
                     tel_id = tel_id+1
                 if line[0] == 'STORE_PHOTOELECTRONS':
                     next_nsb = True
