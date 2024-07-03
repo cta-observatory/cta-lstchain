@@ -433,10 +433,8 @@ def r0_to_dl1(
                 charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                                      bounds_error=False, fill_value=0.,
                                                      assume_sorted=True)
-                allowed_tel = np.zeros(len(nsb_original), dtype=bool)
-                allowed_tel[np.array(config['source_config']['LSTEventSource']['allowed_tels'])] = True
                 logger.info('Tuning NSB on MC waveform from '
-                            + str(np.asarray(nsb_original)[allowed_tel])
+                            + str(np.asarray(nsb_original))
                             + 'GHz to {0:d}%'.format(int(nsb_tuning_ratio * 100 + 100.5))
                             + ' for telescopes ids ' + str(config['source_config']['LSTEventSource']['allowed_tels']))
                 nsb_tuning_args = [nsb_tuning_ratio, nsb_original, pulse_template, charge_spe_cumulative_pdf]
