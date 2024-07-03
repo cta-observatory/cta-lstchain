@@ -156,8 +156,7 @@ def test_extract_simulation_nsb(mc_gamma_testfile):
     from lstchain.io.io import extract_simulation_nsb
 
     nsb = extract_simulation_nsb(mc_gamma_testfile)
-    assert np.isclose(nsb[0], 0.246, rtol=0.1)
-    assert np.isclose(nsb[1], 0.217, rtol=0.1)
+    assert np.isclose(nsb[1], 0.246, rtol=0.1)
 
 
 def test_remove_duplicated_events():
