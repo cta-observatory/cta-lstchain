@@ -427,8 +427,7 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
     irf_file=temp_dir_observed_files / "fe_irf.fits.gz"
     irf_file_mod = temp_dir_observed_files / "mod_irf.fits.gz"
     config_file = os.path.join(os.getcwd(), "docs/examples/irf_dl3_tool_config.json")
-    config_file_mod = os.path.join(os.getcwd(), "docs/examples/irf_dl3_tool_config_mod.json")
-
+    
     assert (
         run_tool(
             IRFFITSWriter(),
@@ -457,13 +456,14 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
                 f"--input-proton-dl2={simulated_dl2_file}",
                 f"--input-electron-dl2={simulated_dl2_file}",
                 f"--output-irf-file={irf_file_mod}",
-                f"--config={config_file_mod}",
+                f"--config={config_file}",
                 "--overwrite",
                 "--DataBinning.true_energy_n_bins=2",
                 "--DataBinning.reco_energy_n_bins=2",
                 "--DataBinning.true_energy_min: 0.2",
                 "--DataBinning.true_energy_max: 0.3",
                 "--DL3Cuts.min_event_p_en_bin=2",
+                "--DataBinning.scale_true_energy=1.15",
             ],
             cwd=temp_dir_observed_files,
         )
