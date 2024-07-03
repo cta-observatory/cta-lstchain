@@ -197,28 +197,24 @@ def create_hdu_index_hdu(file_list, hdu_index_file, overwrite=False):
         t_pnt["HDU_NAME"] = "POINTING"
 
         hdu_index_tables.append(t_pnt)
-        hdu_names = [
-            "EFFECTIVE AREA",
-            "ENERGY DISPERSION",
-            "BACKGROUND",
-            "PSF",
-            "RAD_MAX",
-        ]
 
-        for irf in hdu_names:
-            try:
-                t_irf = t_events.copy()
-                irf_hdu = hdu_list[irf].header["HDUCLAS4"]
+        # 0:PRIMARY, 1:EVENTS, 2:GTI, 3:POINTING, 4-:IRF 
+        for hdu in hdu_list[4:]:
 
-                t_irf["HDU_CLASS"] = irf_hdu.lower()
-                t_irf["HDU_TYPE"] = irf_hdu.lower().strip(
-                    "_" + irf_hdu.lower().split("_")[-1]
-                )
-                t_irf["HDU_NAME"] = irf
-                hdu_index_tables.append(t_irf)
-            except KeyError:
-                log.error(f"Run {t_events['OBS_ID']} does not contain HDU {irf}")
+            # GH_CUTS and AL_CUTS don't have HDUCLAS4 header
+            if hdu.header["EXTNAME"] in ['GH_CUTS', 'AL_CUTS']:
+                continue
 
+            irf_hdu = hdu.header["HDUCLAS4"]
+            
+            t_irf = t_events.copy()
+            t_irf["HDU_CLASS"] = irf_hdu.lower()
+            t_irf["HDU_TYPE"] = irf_hdu.lower().strip(
+                "_" + irf_hdu.lower().split("_")[-1]
+            )
+            t_irf["HDU_NAME"] = hdu.name
+            hdu_index_tables.append(t_irf)
+            
     hdu_index_table = Table(hdu_index_tables)
 
     hdu_index_header = DEFAULT_HEADER.copy()

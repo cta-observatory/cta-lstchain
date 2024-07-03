@@ -65,6 +65,10 @@
     "fraction_cleaning_intensity": 0.03
   },
 
+  "random_forest_weight_settings": {
+    "pointing_wise_weights": true
+  },
+
   "random_forest_energy_regressor_args": {
     "max_depth": 30,
     "min_samples_leaf": 10,

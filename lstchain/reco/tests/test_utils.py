@@ -237,3 +237,14 @@ def test_apply_src_r_cut(simulated_dl1_file):
     src_r_max = srcdep_config['train_gamma_src_r_deg'][1]
     params = apply_src_r_cut(params, src_r_min, src_r_max)
     assert (params.event_id.values == np.arange(100, 110, 1)).all()
+
+def test_compute_rf_event_weights():
+    from lstchain.reco.utils import compute_rf_event_weights
+
+    alt_tel = np.append(3*[0.41109], 6*[0.53508])
+    az_tel = np.append(3*[1.32615], 6*[1.38195])
+
+    df = pd.DataFrame({"alt_tel": alt_tel, "az_tel": az_tel})
+    _, _ = compute_rf_event_weights(df)
+    np.testing.assert_array_equal(df['weight'],
+                                  np.append(3*[4.5/3], 6*[4.5/6]))

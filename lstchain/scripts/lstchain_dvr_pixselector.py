@@ -307,7 +307,7 @@ def main():
 
         if not np.any(np.isin(found_event_types[0], 
                               event_types_to_be_reduced)):
-            log.warn('No reducible events were found in file! SKIPPING IT!')
+            log.warning('No reducible events were found in file! SKIPPING IT!')
             continue
 
         cosmic_mask   = event_type_data == EventType.SUBARRAY.value  # showers
@@ -320,7 +320,7 @@ def main():
         # that more than half of the events are labeled as UNKNOWN, we assume 
         # they are cosmics:
         if unknown_mask.sum() > 0.5 * len(event_type_data):
-            log.warn('Too many events tagged UNKNOWN! '
+            log.warning('Too many events tagged UNKNOWN! '
                      'I will assume they are cosmics!')
             cosmic_mask |= unknown_mask
 
@@ -499,10 +499,10 @@ def main():
                 if number_of_writing_attempts > 60:
                     log.error('I gave up!')
                     sys.exit(1)
-                log.warn('%s: could not write output, attempt %d',
-                         '... Will try again after 5 minutes',
-                         time.asctime(time.localtime()),
-                         number_of_writing_attempts)
+                log.warning('%s: could not write output, attempt %d',
+                            '... Will try again after 5 minutes',
+                            time.asctime(time.localtime()),
+                            number_of_writing_attempts)
                 time.sleep(300)
                 continue
 
@@ -529,8 +529,9 @@ def main():
             newconfig['boundary_thresh'] = boundary_threshold
             run = int(file.name[file.name.find('Run')+3:-3])
             json_filename = Path(output_dir, f'dl1ab_Run{run:05d}.json')
-            dump_config({'tailcuts_clean_with_pedestal_threshold': 
-                             newconfig}, json_filename, overwrite=True)
+            dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
+                         'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
+                        json_filename, overwrite=True)
             log.info(json_filename)
 
     log.info('lstchain_dvr_pixselector finished successfully!')
@@ -699,8 +700,10 @@ def get_typical_dvr_min_charge(dvrtable):
     # sense of keeping more pixels.
 
     if counts.max() / counts.sum() < min_fraction_of_good_subruns:
-        log.warn('Unstable data (noise-wise)! Less than half of the subruns'
+        log.warning('Unstable data? (noise-wise) Less than half of the subruns '
                  'had similar noise conditions!')
+        log.warning('Range of min_charge_for_certain_selection: %.1f - %.1f',
+                 allqs.min(), allqs.max())
 
     mode = value[np.argmax(counts)]
     
