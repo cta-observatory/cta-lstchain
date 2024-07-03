@@ -149,7 +149,6 @@ class IRFFITSWriter(Tool):
     > lstchain_create_irf_files
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
-        --point-like (Only for point_like IRFs)
         --scaling_true_energy 1.15
         """
 
