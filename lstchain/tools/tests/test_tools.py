@@ -482,7 +482,6 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
     assert(aeff_mod_hdu.data.shape==aeff_hdu.data.shape)
     assert(edisp_mod_hdu.data.shape==edisp_hdu.data.shape)
 
-    #test with scaling factor=1.15
     edisp=EnergyDispersion2D.read(irf_file)
     edisp_mod=EnergyDispersion2D.read(irf_file_mod)
 
@@ -490,25 +489,31 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
     e_migra_mod=edisp_mod.axes["migra"].center
 
     e_true_list=[0.2,2,20]
+    e_migra_prob=[]
+    e_migra_prob_mod=[]
 
     for i in e_true_list:
         e_true = i* u.TeV
-        e_migra_prob = edisp.evaluate(
+        e_migra_prob.append(edisp.evaluate(
         offset=0.4*u.deg,
         energy_true=e_true,
         migra=e_migra
-        )
-        e_migra_prob_mod = edisp_mod.evaluate(
+        ))
+        e_migra_prob_mod.append(edisp_mod.evaluate(
         offset=0.4*u.deg,
         energy_true=e_true,
         migra=e_migra_mod
-        )
+        ))
 
     #check that the maximum of the density probability of the migration has shifted
-    for i in range(len(e_migra)):
-        if e_migra_prob[i]>e_migra_prob[i-1]:
-            order_max=i
-        if e_migra_prob_mod[i]>e_migra_prob_mod[i-1]:
-            order_max_mod=i
+    order_max = []
+    order_max_mod = []
+    for idx, _ in enumerate(e_true_list):
+        for j in range(len(e_migra)):
+            if e_migra_prob[idx][j] > e_migra_prob[idx][j-1]:
+                order_max.append(j)
+            if e_migra_prob_mod[idx][j] > e_migra_prob_mod[idx][j-1]:
+                order_max_mod.append(j)
 
-    assert (order_max!=order_max_mod)
+    for i in range(len(order_max)):
+        assert (order_max[i]!=order_max_mod[i])
