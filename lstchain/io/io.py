@@ -1274,19 +1274,15 @@ def extract_simulation_nsb(filename):
     next_nsb = False
     tel_id = 1
     with SimTelFile(filename) as f:
-        try:
-            for _, line in f.history:
-                line = line.decode('utf-8').strip().split(' ')
-                if next_nsb and line[0] == 'NIGHTSKY_BACKGROUND':
-                    nsb[tel_id] = float(line[1].strip('all:'))
-                    tel_id = tel_id+1
-                if line[0] == 'STORE_PHOTOELECTRONS':
-                    next_nsb = True
-                else:
-                    next_nsb = False
-        except Exception as e:
-            log.error('Unexpected end of %s,\n caught exception %s', filename, e)
-            raise e
+        for _, line in f.history:
+            line = line.decode('utf-8').strip().split(' ')
+            if next_nsb and line[0] == 'NIGHTSKY_BACKGROUND':
+                nsb[tel_id] = float(line[1].strip('all:'))
+                tel_id = tel_id+1
+            if line[0] == 'STORE_PHOTOELECTRONS':
+                next_nsb = True
+            else:
+                next_nsb = False
     return nsb
 
 
