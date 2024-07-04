@@ -149,7 +149,7 @@ class IRFFITSWriter(Tool):
     > lstchain_create_irf_files
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
-        --scaling_true_energy 1.15
+        --scaling-true-energy 1.15
         """
 
     input_gamma_dl2 = traits.Path(
@@ -235,7 +235,7 @@ class IRFFITSWriter(Tool):
         "global-alpha-cut": "DL3Cuts.global_alpha_cut",
         "allowed-tels": "DL3Cuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
-        "scale_true_energy": "DataBinning.scale_true_energy"
+        "scale-true-energy": "DataBinning.scale_true_energy"
     }
 
     flags = {
