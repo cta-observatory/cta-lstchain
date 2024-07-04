@@ -476,8 +476,8 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
     edisp_hdu=EnergyDispersion2D.read(irf_file, hdu='ENERGY DISPERSION')
     edisp_mod_hdu=EnergyDispersion2D.read(irf_file_mod, hdu='ENERGY DISPERSION')
 
-    assert(aeff_mod_hdu.data.shape==aeff_hdu.data.shape)
-    assert(edisp_mod_hdu.data.shape==edisp_hdu.data.shape)
+    assert aeff_mod_hdu.data.shape==aeff_hdu.data.shape
+    assert edisp_mod_hdu.data.shape==edisp_hdu.data.shape
 
     edisp=EnergyDispersion2D.read(irf_file)
     edisp_mod=EnergyDispersion2D.read(irf_file_mod)
@@ -513,4 +513,4 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
                 order_max_mod.append(j)
 
     for i in range(len(order_max)):
-        assert (order_max[i]!=order_max_mod[i])
+        assert order_max[i]!=order_max_mod[i]
