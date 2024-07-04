@@ -417,7 +417,7 @@ def test_index_srcdep_dl3_files(temp_dir_observed_srcdep_files):
 
 def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_file):
     """
-    Checking the validy of modified IRFs after scaling the True Energy by a factor.
+    Checking the validity of modified IRFs after scaling the True Energy by a factor.
     """
 
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
