@@ -476,9 +476,6 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
     edisp_hdu=EnergyDispersion2D.read(irf_file, hdu='ENERGY DISPERSION')
     edisp_mod_hdu=EnergyDispersion2D.read(irf_file_mod, hdu='ENERGY DISPERSION')
 
-
-    #assert (aeff_mod.data.shape==(25,1))
-    #assert (edisp_mod.data.shape==(25,30,1))#(E,migra,offset)
     assert(aeff_mod_hdu.data.shape==aeff_hdu.data.shape)
     assert(edisp_mod_hdu.data.shape==edisp_hdu.data.shape)
 
