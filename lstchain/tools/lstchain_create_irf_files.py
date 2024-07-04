@@ -149,7 +149,7 @@ class IRFFITSWriter(Tool):
     > lstchain_create_irf_files
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
-        --scaling-true-energy 1.15
+        --scale-true-energy 1.15
         """
 
     input_gamma_dl2 = traits.Path(
