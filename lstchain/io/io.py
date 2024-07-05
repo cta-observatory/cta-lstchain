@@ -1263,14 +1263,16 @@ def remove_duplicated_events(data):
 
 def extract_simulation_nsb(filename):
     """
-    Get current run NSB from configuration in simtel file
+    Get current run NSB from configuration in simtel file.
+
+    WARNING : In current MC, correct NSB are logged after 'STORE_PHOTOELECTRONS' entries
+    In any new production, behaviour needs to be verified.
+    New version of simtel will allow to use better metadata.
+
     :param str filename: Input file name
     :return dict of `float` by tel_id: NSB rate
     """
     nsb = {}
-    # In current MC, correct NSB are logged after 'STORE_PHOTOELECTRONS' entries
-    # TODO In any new production, behaviour needs to be verified.
-    # New version of simtel will allow to use better metadata
     next_nsb = False
     tel_id = 1
     with SimTelFile(filename) as f:
