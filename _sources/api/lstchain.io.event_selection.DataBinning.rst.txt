@@ -22,6 +22,7 @@ DataBinning
       ~DataBinning.reco_energy_max
       ~DataBinning.reco_energy_min
       ~DataBinning.reco_energy_n_bins
+      ~DataBinning.scale_true_energy
       ~DataBinning.source_offset_max
       ~DataBinning.source_offset_min
       ~DataBinning.source_offset_n_edges
@@ -54,6 +55,7 @@ DataBinning
    .. autoattribute:: reco_energy_max
    .. autoattribute:: reco_energy_min
    .. autoattribute:: reco_energy_n_bins
+   .. autoattribute:: scale_true_energy
    .. autoattribute:: source_offset_max
    .. autoattribute:: source_offset_min
    .. autoattribute:: source_offset_n_edges

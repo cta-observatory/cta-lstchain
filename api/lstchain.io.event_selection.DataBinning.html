@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DataBinning &mdash; lstchain 0.10.12.dev80+g27ce9310 documentation</title>
+  <title>DataBinning &mdash; lstchain 0.10.12.dev116+gef91c644 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/documentation_options.js?v=d3ddf22b"></script>
+        <script src="../_static/documentation_options.js?v=1bb63bd4"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev80+g27ce9310
+                0.10.12.dev116+gef91c644
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -167,22 +167,25 @@ generating IRFs as per pyIRF requirements.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.reco_energy_n_bins" title="lstchain.io.event_selection.DataBinning.reco_energy_n_bins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reco_energy_n_bins</span></code></a></p></td>
 <td><p>Number of bins in log scale for Reco Energy</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.source_offset_max" title="lstchain.io.event_selection.DataBinning.source_offset_max"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_offset_max</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.scale_true_energy" title="lstchain.io.event_selection.DataBinning.scale_true_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scale_true_energy</span></code></a></p></td>
+<td><p>Scaling value for True energy</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.source_offset_max" title="lstchain.io.event_selection.DataBinning.source_offset_max"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_offset_max</span></code></a></p></td>
 <td><p>Maximum value for Source offset for PSF IRF</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.source_offset_min" title="lstchain.io.event_selection.DataBinning.source_offset_min"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_offset_min</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.source_offset_min" title="lstchain.io.event_selection.DataBinning.source_offset_min"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_offset_min</span></code></a></p></td>
 <td><p>Minimum value for Source offset for PSF IRF</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.source_offset_n_edges" title="lstchain.io.event_selection.DataBinning.source_offset_n_edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_offset_n_edges</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.source_offset_n_edges" title="lstchain.io.event_selection.DataBinning.source_offset_n_edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_offset_n_edges</span></code></a></p></td>
 <td><p>Number of edges for Source offset for PSF IRF</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.true_energy_max" title="lstchain.io.event_selection.DataBinning.true_energy_max"><code class="xref py py-obj docutils literal notranslate"><span class="pre">true_energy_max</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.true_energy_max" title="lstchain.io.event_selection.DataBinning.true_energy_max"><code class="xref py py-obj docutils literal notranslate"><span class="pre">true_energy_max</span></code></a></p></td>
 <td><p>Maximum value for True Energy bins in TeV units</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.true_energy_min" title="lstchain.io.event_selection.DataBinning.true_energy_min"><code class="xref py py-obj docutils literal notranslate"><span class="pre">true_energy_min</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.true_energy_min" title="lstchain.io.event_selection.DataBinning.true_energy_min"><code class="xref py py-obj docutils literal notranslate"><span class="pre">true_energy_min</span></code></a></p></td>
 <td><p>Minimum value for True Energy bins in TeV units</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.true_energy_n_bins" title="lstchain.io.event_selection.DataBinning.true_energy_n_bins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">true_energy_n_bins</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.io.event_selection.DataBinning.true_energy_n_bins" title="lstchain.io.event_selection.DataBinning.true_energy_n_bins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">true_energy_n_bins</span></code></a></p></td>
 <td><p>Number of bins in log scale for True Energy</p></td>
 </tr>
 </tbody>
@@ -284,6 +287,12 @@ generating IRFs as per pyIRF requirements.</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.io.event_selection.DataBinning.scale_true_energy">
+<span class="sig-name descname"><span class="pre">scale_true_energy</span></span><a class="headerlink" href="#lstchain.io.event_selection.DataBinning.scale_true_energy" title="Link to this definition">¶</a></dt>
+<dd><p>Scaling value for True energy</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="lstchain.io.event_selection.DataBinning.source_offset_max">
 <span class="sig-name descname"><span class="pre">source_offset_max</span></span><a class="headerlink" href="#lstchain.io.event_selection.DataBinning.source_offset_max" title="Link to this definition">¶</a></dt>
 <dd><p>Maximum value for Source offset for PSF IRF</p>
@@ -376,7 +385,7 @@ true_energy_n_bins + 1 edges.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 08 Jul 2024 08:04.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 08 Jul 2024 09:50.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
