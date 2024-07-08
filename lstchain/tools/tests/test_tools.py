@@ -434,8 +434,6 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
     import astropy.units as u
     from gammapy.irf import EffectiveAreaTable2D, EnergyDispersion2D
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
-    from gammapy.irf import EffectiveAreaTable2D, EnergyDispersion2D
-    import astropy.units as u
 
     irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
     irf_file_mod = temp_dir_observed_files / "mod_irf.fits.gz"
