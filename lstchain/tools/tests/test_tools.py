@@ -4,6 +4,7 @@ import os
 from astropy.io import fits
 import numpy as np
 
+
 def test_create_irf_full_enclosure(temp_dir_observed_files, simulated_dl2_file):
     """
     Generating full enclosure IRF file from a test DL2 files
@@ -380,11 +381,16 @@ def test_index_dl3_files(temp_dir_observed_files):
     assert 2008 in data.obs_table["OBS_ID"]
 
     for hdu_name in [
-            'EVENTS', 'GTI', 'POINTING',
-            'EFFECTIVE AREA', 'ENERGY DISPERSION', 
-            'BACKGROUND', 'PSF'
+        "EVENTS",
+        "GTI",
+        "POINTING",
+        "EFFECTIVE AREA",
+        "ENERGY DISPERSION",
+        "BACKGROUND",
+        "PSF",
     ]:
-        assert hdu_name in data.hdu_table['HDU_NAME']
+        assert hdu_name in data.hdu_table["HDU_NAME"]
+
 
 @pytest.mark.private_data
 def test_index_srcdep_dl3_files(temp_dir_observed_srcdep_files):
@@ -410,24 +416,29 @@ def test_index_srcdep_dl3_files(temp_dir_observed_srcdep_files):
     assert 2008 in data.obs_table["OBS_ID"]
 
     for hdu_name in [
-            'EVENTS', 'GTI', 'POINTING',
-            'EFFECTIVE AREA', 'ENERGY DISPERSION'
+        "EVENTS",
+        "GTI",
+        "POINTING",
+        "EFFECTIVE AREA",
+        "ENERGY DISPERSION",
     ]:
-        assert hdu_name in data.hdu_table['HDU_NAME']
+        assert hdu_name in data.hdu_table["HDU_NAME"]
 
+
+@pytest.mark.private_data
 def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_file):
     """
     Checking the validity of modified IRFs after scaling the True Energy by a factor.
     """
 
-    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
-    from gammapy.irf import EffectiveAreaTable2D, EnergyDispersion2D
     import astropy.units as u
+    from gammapy.irf import EffectiveAreaTable2D, EnergyDispersion2D
+    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
-    irf_file=temp_dir_observed_files / "fe_irf.fits.gz"
+    irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
     irf_file_mod = temp_dir_observed_files / "mod_irf.fits.gz"
     config_file = os.path.join(os.getcwd(), "docs/examples/irf_dl3_tool_config.json")
-    
+
     assert (
         run_tool(
             IRFFITSWriter(),
@@ -470,47 +481,51 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
         == 0
     )
 
-    aeff_hdu=EffectiveAreaTable2D.read(irf_file, hdu='EFFECTIVE AREA')
-    aeff_mod_hdu=EffectiveAreaTable2D.read(irf_file_mod, hdu='EFFECTIVE AREA')
+    aeff_hdu = EffectiveAreaTable2D.read(irf_file, hdu="EFFECTIVE AREA")
+    aeff_mod_hdu = EffectiveAreaTable2D.read(irf_file_mod, hdu="EFFECTIVE AREA")
 
-    edisp_hdu=EnergyDispersion2D.read(irf_file, hdu='ENERGY DISPERSION')
-    edisp_mod_hdu=EnergyDispersion2D.read(irf_file_mod, hdu='ENERGY DISPERSION')
+    edisp_hdu = EnergyDispersion2D.read(irf_file, hdu="ENERGY DISPERSION")
+    edisp_mod_hdu = EnergyDispersion2D.read(irf_file_mod, hdu="ENERGY DISPERSION")
 
-    assert aeff_mod_hdu.data.shape==aeff_hdu.data.shape
-    assert edisp_mod_hdu.data.shape==edisp_hdu.data.shape
+    assert aeff_mod_hdu.data.shape == aeff_hdu.data.shape
+    assert edisp_mod_hdu.data.shape == edisp_hdu.data.shape
 
-    edisp=EnergyDispersion2D.read(irf_file)
-    edisp_mod=EnergyDispersion2D.read(irf_file_mod)
+    edisp = EnergyDispersion2D.read(irf_file)
+    edisp_mod = EnergyDispersion2D.read(irf_file_mod)
 
     e_migra = edisp.axes["migra"].center
-    e_migra_mod=edisp_mod.axes["migra"].center
+    e_migra_mod = edisp_mod.axes["migra"].center
 
-    e_true_list=[0.2,2,20]
-    e_migra_prob=[]
-    e_migra_prob_mod=[]
+    e_true_list = [0.2, 2, 20]
+    e_migra_prob = []
+    e_migra_prob_mod = []
 
     for i in e_true_list:
-        e_true = i* u.TeV
-        e_migra_prob.append(edisp.evaluate(
-        offset=0.4*u.deg,
-        energy_true=e_true,
-        migra=e_migra
-        ))
-        e_migra_prob_mod.append(edisp_mod.evaluate(
-        offset=0.4*u.deg,
-        energy_true=e_true,
-        migra=e_migra_mod
-        ))
+        e_true = i * u.TeV
+        e_migra_prob.append(
+            edisp.evaluate(
+                offset=0.4 * u.deg,
+                energy_true=e_true,
+                migra=e_migra,
+            )
+        )
+        e_migra_prob_mod.append(
+            edisp_mod.evaluate(
+                offset=0.4 * u.deg,
+                energy_true=e_true,
+                migra=e_migra_mod,
+            )
+        )
 
-    #check that the maximum of the density probability of the migration has shifted
+    # Check that the maximum of the density probability of the migration has shifted
     order_max = []
     order_max_mod = []
     for idx, _ in enumerate(e_true_list):
         for j in range(len(e_migra)):
-            if e_migra_prob[idx][j] > e_migra_prob[idx][j-1]:
+            if e_migra_prob[idx][j] > e_migra_prob[idx][j - 1]:
                 order_max.append(j)
-            if e_migra_prob_mod[idx][j] > e_migra_prob_mod[idx][j-1]:
+            if e_migra_prob_mod[idx][j] > e_migra_prob_mod[idx][j - 1]:
                 order_max_mod.append(j)
 
     for i in range(len(order_max)):
-        assert order_max[i]!=order_max_mod[i]
+        assert order_max[i] != order_max_mod[i]
