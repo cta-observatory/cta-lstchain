@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Input/Output (io) &mdash; lstchain 0.10.12.dev73+g7f925950 documentation</title>
+  <title>Input/Output (io) &mdash; lstchain 0.10.12.dev80+g27ce9310 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=9f2aafd2"></script>
+        <script src="../../_static/documentation_options.js?v=d3ddf22b"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev73+g7f925950
+                0.10.12.dev80+g27ce9310
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -236,7 +236,7 @@
 <td><p>Copy dataset (Table and Array) nodes from <code class="docutils literal notranslate"><span class="pre">from_file</span></code> to <code class="docutils literal notranslate"><span class="pre">to_file</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.extract_simulation_nsb.html#lstchain.io.io.extract_simulation_nsb" title="lstchain.io.io.extract_simulation_nsb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_simulation_nsb</span></code></a>(filename)</p></td>
-<td><p>Get current run NSB from configuration in simtel file :param str filename: Input file name :return array of <cite>float</cite> by tel_id: NSB rate</p></td>
+<td><p>Get current run NSB from configuration in simtel file.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.extract_observation_time.html#lstchain.io.io.extract_observation_time" title="lstchain.io.io.extract_observation_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_observation_time</span></code></a>(t_df)</p></td>
 <td><p>Calculate observation time</p></td>
@@ -265,61 +265,58 @@
 <tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.merging_check.html#lstchain.io.io.merging_check" title="lstchain.io.io.merging_check"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merging_check</span></code></a>(file_list)</p></td>
 <td><p>Check that a list of hdf5 files are compatible for merging regarding:</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.parse_cfg_bytestring.html#lstchain.io.io.parse_cfg_bytestring" title="lstchain.io.io.parse_cfg_bytestring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_cfg_bytestring</span></code></a>(bytestring)</p></td>
-<td><p>Parse configuration as read by eventio :param bytes bytestring: A <code class="docutils literal notranslate"><span class="pre">Bytes</span></code> object with configuration data for one parameter :return: Tuple in form <code class="docutils literal notranslate"><span class="pre">('parameter_name',</span> <span class="pre">'value')</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_data_dl2_to_QTable.html#lstchain.io.io.read_data_dl2_to_QTable" title="lstchain.io.io.read_data_dl2_to_QTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_data_dl2_to_QTable</span></code></a>(filename[, srcdep_pos])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_data_dl2_to_QTable.html#lstchain.io.io.read_data_dl2_to_QTable" title="lstchain.io.io.read_data_dl2_to_QTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_data_dl2_to_QTable</span></code></a>(filename[, srcdep_pos])</p></td>
 <td><p>Read data DL2 files from lstchain and return QTable format, along with a dict of target parameters for IRF interpolation</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_dl2_params.html#lstchain.io.io.read_dl2_params" title="lstchain.io.io.read_dl2_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_dl2_params</span></code></a>(t_filename[, columns_to_read])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_dl2_params.html#lstchain.io.io.read_dl2_params" title="lstchain.io.io.read_dl2_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_dl2_params</span></code></a>(t_filename[, columns_to_read])</p></td>
 <td><p>Read specified parameters from a file with DL2 data</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_mc_dl2_to_QTable.html#lstchain.io.io.read_mc_dl2_to_QTable" title="lstchain.io.io.read_mc_dl2_to_QTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_mc_dl2_to_QTable</span></code></a>(filename)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_mc_dl2_to_QTable.html#lstchain.io.io.read_mc_dl2_to_QTable" title="lstchain.io.io.read_mc_dl2_to_QTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_mc_dl2_to_QTable</span></code></a>(filename)</p></td>
 <td><p>Read MC DL2 files from lstchain and convert into pyirf internal format - astropy.table.QTable.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_metadata.html#lstchain.io.io.read_metadata" title="lstchain.io.io.read_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_metadata</span></code></a>(filename)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_metadata.html#lstchain.io.io.read_metadata" title="lstchain.io.io.read_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_metadata</span></code></a>(filename)</p></td>
 <td><p>Read metadata from a HDF5 file</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simtel_energy_histogram.html#lstchain.io.io.read_simtel_energy_histogram" title="lstchain.io.io.read_simtel_energy_histogram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simtel_energy_histogram</span></code></a>(filename)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simtel_energy_histogram.html#lstchain.io.io.read_simtel_energy_histogram" title="lstchain.io.io.read_simtel_energy_histogram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simtel_energy_histogram</span></code></a>(filename)</p></td>
 <td><p>Read the simtel energy histogram from a HDF5 file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simu_info_hdf5.html#lstchain.io.io.read_simu_info_hdf5" title="lstchain.io.io.read_simu_info_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simu_info_hdf5</span></code></a>(filename)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simu_info_hdf5.html#lstchain.io.io.read_simu_info_hdf5" title="lstchain.io.io.read_simu_info_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simu_info_hdf5</span></code></a>(filename)</p></td>
 <td><p>Read simu info from an hdf5 file</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simu_info_merged_hdf5.html#lstchain.io.io.read_simu_info_merged_hdf5" title="lstchain.io.io.read_simu_info_merged_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simu_info_merged_hdf5</span></code></a>(filename)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.read_simu_info_merged_hdf5.html#lstchain.io.io.read_simu_info_merged_hdf5" title="lstchain.io.io.read_simu_info_merged_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_simu_info_merged_hdf5</span></code></a>(filename)</p></td>
 <td><p>Read simu info from a merged hdf5 file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.recursive_copy_node.html#lstchain.io.io.recursive_copy_node" title="lstchain.io.io.recursive_copy_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">recursive_copy_node</span></code></a>(src_file, dir_file, path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.recursive_copy_node.html#lstchain.io.io.recursive_copy_node" title="lstchain.io.io.recursive_copy_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">recursive_copy_node</span></code></a>(src_file, dir_file, path)</p></td>
 <td><p>Copy a node recursively from a src file to a dir file without copying the tables/arrays in the node</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.remove_duplicated_events.html#lstchain.io.io.remove_duplicated_events" title="lstchain.io.io.remove_duplicated_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_duplicated_events</span></code></a>(data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.remove_duplicated_events.html#lstchain.io.io.remove_duplicated_events" title="lstchain.io.io.remove_duplicated_events"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_duplicated_events</span></code></a>(data)</p></td>
 <td><p>Remove duplicated events after gammaness/alpha cut when generating DL3 files.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.stack_tables_h5files.html#lstchain.io.io.stack_tables_h5files" title="lstchain.io.io.stack_tables_h5files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stack_tables_h5files</span></code></a>(filenames_list[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.stack_tables_h5files.html#lstchain.io.io.stack_tables_h5files" title="lstchain.io.io.stack_tables_h5files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stack_tables_h5files</span></code></a>(filenames_list[, ...])</p></td>
 <td><p>In theory similar to auto_merge_h5files but slower.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_calibration_data.html#lstchain.io.io.write_calibration_data" title="lstchain.io.io.write_calibration_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_calibration_data</span></code></a>(writer, mon_index, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_calibration_data.html#lstchain.io.io.write_calibration_data" title="lstchain.io.io.write_calibration_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_calibration_data</span></code></a>(writer, mon_index, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_dataframe.html#lstchain.io.io.write_dataframe" title="lstchain.io.io.write_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_dataframe</span></code></a>(dataframe, outfile, table_path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_dataframe.html#lstchain.io.io.write_dataframe" title="lstchain.io.io.write_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_dataframe</span></code></a>(dataframe, outfile, table_path)</p></td>
 <td><p>Write a pandas dataframe to a HDF5 file using pytables formatting.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_dl2_dataframe.html#lstchain.io.io.write_dl2_dataframe" title="lstchain.io.io.write_dl2_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_dl2_dataframe</span></code></a>(dataframe, outfile[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_dl2_dataframe.html#lstchain.io.io.write_dl2_dataframe" title="lstchain.io.io.write_dl2_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_dl2_dataframe</span></code></a>(dataframe, outfile[, ...])</p></td>
 <td><p>Write DL2 dataframe to a HDF5 file</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_mcheader.html#lstchain.io.io.write_mcheader" title="lstchain.io.io.write_mcheader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_mcheader</span></code></a>(mcheader, output_filename[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_mcheader.html#lstchain.io.io.write_mcheader" title="lstchain.io.io.write_mcheader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_mcheader</span></code></a>(mcheader, output_filename[, ...])</p></td>
 <td><p>Write the mcheader from an event container to a HDF5 file</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_metadata.html#lstchain.io.io.write_metadata" title="lstchain.io.io.write_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_metadata</span></code></a>(metadata, output_filename)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_metadata.html#lstchain.io.io.write_metadata" title="lstchain.io.io.write_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_metadata</span></code></a>(metadata, output_filename)</p></td>
 <td><p>Write metadata to a HDF5 file</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_simtel_energy_histogram.html#lstchain.io.io.write_simtel_energy_histogram" title="lstchain.io.io.write_simtel_energy_histogram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_simtel_energy_histogram</span></code></a>(source, ...[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_simtel_energy_histogram.html#lstchain.io.io.write_simtel_energy_histogram" title="lstchain.io.io.write_simtel_energy_histogram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_simtel_energy_histogram</span></code></a>(source, ...[, ...])</p></td>
 <td><p>Write the energy histogram from a simtel source to a HDF5 file</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_subarray_tables.html#lstchain.io.io.write_subarray_tables" title="lstchain.io.io.write_subarray_tables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_subarray_tables</span></code></a>(writer, event[, metadata])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.write_subarray_tables.html#lstchain.io.io.write_subarray_tables" title="lstchain.io.io.write_subarray_tables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_subarray_tables</span></code></a>(writer, event[, metadata])</p></td>
 <td><p>Write subarray tables info to a HDF5 file</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.io.io.get_resource_path.html#lstchain.io.io.get_resource_path" title="lstchain.io.io.get_resource_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_resource_path</span></code></a>(filename)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.io.io.get_resource_path.html#lstchain.io.io.get_resource_path" title="lstchain.io.io.get_resource_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_resource_path</span></code></a>(filename)</p></td>
 <td><p>Get a resource data path in lstchain package</p></td>
 </tr>
 </tbody>
@@ -389,7 +386,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 26 Jun 2024 14:03.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 08 Jul 2024 08:04.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

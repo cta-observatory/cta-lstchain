@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>extract_simulation_nsb &mdash; lstchain 0.10.12.dev73+g7f925950 documentation</title>
+  <title>extract_simulation_nsb &mdash; lstchain 0.10.12.dev80+g27ce9310 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/documentation_options.js?v=9f2aafd2"></script>
+        <script src="../_static/documentation_options.js?v=d3ddf22b"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev73+g7f925950
+                0.10.12.dev80+g27ce9310
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -125,9 +125,18 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="lstchain.io.io.extract_simulation_nsb">
 <span class="sig-prename descclassname"><span class="pre">lstchain.io.io.</span></span><span class="sig-name descname"><span class="pre">extract_simulation_nsb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.io.extract_simulation_nsb" title="Link to this definition">¶</a></dt>
-<dd><p>Get current run NSB from configuration in simtel file
-:param str filename: Input file name
-:return array of <cite>float</cite> by tel_id: NSB rate</p>
+<dd><p>Get current run NSB from configuration in simtel file.</p>
+<p>WARNING : In current MC, correct NSB are logged after ‘STORE_PHOTOELECTRONS’ entries
+In any new production, behaviour needs to be verified.
+New version of simtel will allow to use better metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Input file name</p>
+</dd>
+<dt class="field-even">Return dict of float by tel_id<cite>float</cite> by tel_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>NSB rate</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -143,7 +152,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 26 Jun 2024 14:03.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 08 Jul 2024 08:04.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
