@@ -3,10 +3,7 @@ from ctapipe.core import run_tool
 import os
 from astropy.io import fits
 import numpy as np
-<<<<<<< HEAD
 
-=======
->>>>>>> 3d0a1539 (Update test_tools.py)
 
 def test_create_irf_full_enclosure(temp_dir_observed_files, simulated_dl2_file):
     """
