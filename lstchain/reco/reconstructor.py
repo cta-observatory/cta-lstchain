@@ -9,7 +9,6 @@ from ctapipe.core import TelescopeComponent
 from ctapipe.core.traits import Bool, Float, FloatTelescopeParameter, Int, Unicode
 
 from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
-from lstchain.image.modifier import WaveformNsbTunner
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
 from lstchain.reco.reconstructorCC import log_pdf as log_pdf
 
