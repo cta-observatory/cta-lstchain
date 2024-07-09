@@ -1,6 +1,5 @@
-
+import astropy.units as u
 import logging
-
 import numpy as np
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.io import (
@@ -21,11 +20,10 @@ __all__ = [
     'calculate_noise_parameters',
     'random_psf_smearer',
     'set_numba_seed',
-    'tune_nsb_on_waveform',
+    'WaveformNsbTunner',
 ]
 
 log = logging.getLogger(__name__)
-
 
 # number of neighbors of completely surrounded pixels of hexagonal cameras:
 N_PIXEL_NEIGHBORS = 6
@@ -191,22 +189,22 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     # Real data DL1 tables:
     data_dl1_calibration = read_table(data_dl1_filename,
-                    '/dl1/event/telescope/monitoring/calibration')
-    data_dl1_pedestal =  read_table(data_dl1_filename,
-                    '/dl1/event/telescope/monitoring/pedestal')
-    data_dl1_flatfield =  read_table(data_dl1_filename,
-                    '/dl1/event/telescope/monitoring/flatfield')
-    data_dl1_parameters =  read_table(data_dl1_filename,
-                    '/dl1/event/telescope/parameters/LST_LSTCam')
+                                      '/dl1/event/telescope/monitoring/calibration')
+    data_dl1_pedestal = read_table(data_dl1_filename,
+                                   '/dl1/event/telescope/monitoring/pedestal')
+    data_dl1_flatfield = read_table(data_dl1_filename,
+                                    '/dl1/event/telescope/monitoring/flatfield')
+    data_dl1_parameters = read_table(data_dl1_filename,
+                                     '/dl1/event/telescope/parameters/LST_LSTCam')
     data_dl1_image = read_table(data_dl1_filename,
-                    '/dl1/event/telescope/image/LST_LSTCam')
+                                '/dl1/event/telescope/image/LST_LSTCam')
 
     unusable = data_dl1_calibration['unusable_pixels']
     # Locate pixels with HG declared unusable either in original calibration or
     # in interleaved events:
     bad_pixels = unusable[0][0]  # original calibration
     if unusable.shape[0] > 1:
-        for tf in unusable[1:][0]:   # calibrations with interleaveds
+        for tf in unusable[1:][0]:  # calibrations with interleaveds
             bad_pixels = np.logical_or(bad_pixels, tf)
     good_pixels = ~bad_pixels
 
@@ -223,7 +221,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
                       'monitoring table!')
         return None, None, None
 
-    if data_dl1_pedestal['charge_std'].shape[0] < 2 :
+    if data_dl1_pedestal['charge_std'].shape[0] < 2:
         logging.error('\nCould not find interleaved pedestal info in '
                       'monitoring table!')
         return None, None, None
@@ -238,7 +236,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
         dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
     dummy = np.array(dummy)
     # Average for all interleaved calibrations (in case there are more than one)
-    data_HG_FF_mean_pe = np.mean(dummy, axis=0) # one value per pixel
+    data_HG_FF_mean_pe = np.mean(dummy, axis=0)  # one value per pixel
 
     # Pixel-wise pedestal standard deviation (for an unbiased extractor),
     # in adc counts:
@@ -251,7 +249,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
         dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
     dummy = np.array(dummy)
     # Average for all interleaved calibrations (in case there are more than one)
-    data_HG_ped_std_pe = np.mean(dummy, axis=0) # one value per pixel
+    data_HG_ped_std_pe = np.mean(dummy, axis=0)  # one value per pixel
 
     # Identify noisy pixels, likely containing stars - we want to adjust MC to
     # the average diffuse NSB across the camera
@@ -296,9 +294,9 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     # Find the peak of the pedestal biased charge distribution of real data.
     # Use an interpolated version of the histogram, for robustness:
-    func = interp1d(0.5*(dataq[1][1:]+dataq[1][:-1]), dataq[0],
+    func = interp1d(0.5 * (dataq[1][1:] + dataq[1][:-1]), dataq[0],
                     kind='quadratic', fill_value='extrapolate')
-    xx = np.linspace(qrange[0], qrange[1], 100*qbins)
+    xx = np.linspace(qrange[0], qrange[1], 100 * qbins)
     mode_data = xx[np.argmax(func(xx))]
 
     # Event reader for simtel file:
@@ -369,9 +367,9 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
                        density=True)
     # Find the peak of the pedestal biased charge distribution of MC. Use
     # an interpolated version of the histogram, for robustness:
-    func = interp1d(0.5*(mcq[1][1:]+mcq[1][:-1]), mcq[0],
+    func = interp1d(0.5 * (mcq[1][1:] + mcq[1][:-1]), mcq[0],
                     kind='quadratic', fill_value='extrapolate')
-    xx = np.linspace(qrange[0], qrange[1], 100*qbins)
+    xx = np.linspace(qrange[0], qrange[1], 100 * qbins)
     mode_mc = xx[np.argmax(func(xx))]
 
     mc_unbiased_std_ped_pe = np.std(mc_ped_charges)
@@ -384,7 +382,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # The noise is defined as the number of NSB photoelectrons, i.e. the extra
     # variance, rather than standard deviation, of the distribution
     extra_noise_in_bright_pixels = \
-        ((data_median_std_ped_pe**2 - mc_unbiased_std_ped_pe**2) *
+        ((data_median_std_ped_pe ** 2 - mc_unbiased_std_ped_pe ** 2) *
          shower_extractor_window_width / pedestal_extractor_window_width)
 
     # Just in case, makes sure we just add noise if the MC noise is smaller
@@ -400,53 +398,13 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # maximum distance (in pe) from peak, to avoid strong impact of outliers:
     maxq = 10
     # calculate widening of the noise bump:
-    added_noise = (np.sum(dq[dq<maxq]**2)/len(dq[dq<maxq]) -
-                   np.sum(dqmc[dqmc<maxq]**2)/len(dqmc[dqmc < maxq]))
+    added_noise = (np.sum(dq[dq < maxq] ** 2) / len(dq[dq < maxq]) -
+                   np.sum(dqmc[dqmc < maxq] ** 2) / len(dqmc[dqmc < maxq]))
     extra_noise_in_dim_pixels = max(0., added_noise)
 
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
-           extra_noise_in_bright_pixels
+        extra_noise_in_bright_pixels
 
-
-def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
-                         dt, pulse_templates, gain, charge_spe_cumulative_pdf):
-    """
-    Inject single photon pulses in existing R1 waveforms to increase NSB.
-    Parameters
-    ----------
-    waveform: charge (p.e. / ns) in each pixel and sampled time
-    added_nsb_fraction: fraction of the original NSB in simulation to be added
-    original_nsb: original NSB rate (astropy unit Hz)
-    dt: time between waveform samples (astropy unit s)
-    pulse_templates: `lstchain.data.NormalizedPulseTemplate` containing
-    the single p.e. pulse template used for the injection
-    gain: gain channel identifier for each pixel
-    charge_spe_cumulative_pdf: `scipy.interpolate.interp1d` Single p.e. gain
-    fluctuation cumulative pdf used to randomise the normalisation of
-    injected pulses
-    """
-    n = 25
-    n_pixels, n_samples = waveform.shape
-    duration = (n + n_samples) * dt  # TODO check needed time window, effect of edges
-    t = np.arange(-n, n_samples) * dt.value
-    mean_added_nsb = (added_nsb_fraction * original_nsb) * duration
-    rng = np.random.default_rng()
-    additional_nsb = rng.poisson(mean_added_nsb, n_pixels)
-    added_nsb_time = rng.uniform(-n * dt.value, -n * dt.value + duration.value, (n_pixels, max(additional_nsb)))
-    added_nsb_amp = charge_spe_cumulative_pdf(rng.uniform(size=(n_pixels, max(additional_nsb))))
-    baseline_correction = (added_nsb_fraction * original_nsb * dt).value
-    waveform -= baseline_correction
-    waveform += nsb_only_waveforms(
-        time=t[n:],
-        is_high_gain=gain,
-        additional_nsb=additional_nsb,
-        amplitude=added_nsb_amp,
-        t_0=added_nsb_time,
-        t0_template=pulse_templates.t0,
-        dt_template=pulse_templates.dt,
-        a_hg_template=pulse_templates.amplitude_HG,
-        a_lg_template=pulse_templates.amplitude_LG
-    )
 
 def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config=None):
     # TODO check if good estimation
@@ -577,3 +535,119 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     extra_nsb = ((data_ped_variance - mc_ped_variance)
                  / mc_ped_variance)
     return extra_nsb, data_ped_variance, mc_ped_variance
+
+
+class WaveformNsbTunner:
+    def __init__(self, added_nsb_fraction, original_nsb, pulse_template, charge_spe_cumulative_pdf,
+                 pre_computed_multiplicity=10):
+        self.added_nsb_fraction = added_nsb_fraction
+        self.original_nsb = original_nsb
+        self.pulse_template = pulse_template
+        self.charge_spe_cumulative_pdf = charge_spe_cumulative_pdf
+        self.multiplicity = pre_computed_multiplicity
+        self.nsb_waveforms = {}
+        self.nb_simulated = {}
+        self.rng = np.random.default_rng()
+        if self.multiplicity == 0:
+            self.tune_nsb_on_waveform = self._tune_nsb_on_waveform_direct
+        else:
+            self.tune_nsb_on_waveform = self._tune_nsb_on_waveform_precomputed
+
+    def initialise_waveforms(self, waveform, dt, tel_id):
+        log.info(f"Pre-generating nsb waveforms for nsb tuning and telescope id {tel_id}.")
+        n = 25
+        n_pixels, n_samples = waveform.shape
+        baseline_correction = -(self.added_nsb_fraction * self.original_nsb[tel_id] * dt).to_value("")
+        nsb_waveforms = np.full((self.multiplicity * n_pixels, 2, n_samples), baseline_correction)
+        duration = (n + n_samples) * dt  # TODO check needed time window, effect of edges
+        t = np.arange(-n, n_samples) * dt.to_value(u.ns)
+        mean_added_nsb = (self.added_nsb_fraction * self.original_nsb[tel_id] * duration).to_value("")
+        additional_nsb = self.rng.poisson(mean_added_nsb, self.multiplicity * n_pixels)
+        added_nsb_time = self.rng.uniform(-n * dt.to_value(u.ns), -n * dt.to_value(u.ns) + duration.to_value(u.ns),
+                                          (self.multiplicity * n_pixels, max(additional_nsb)))
+        added_nsb_amp = self.charge_spe_cumulative_pdf(
+            self.rng.uniform(size=(self.multiplicity * n_pixels, max(additional_nsb))))
+        nsb_waveforms[:, 0, :] += nsb_only_waveforms(
+            time=t[n:],
+            is_high_gain=np.zeros(self.multiplicity * n_pixels),
+            additional_nsb=additional_nsb,
+            amplitude=added_nsb_amp,
+            t_0=added_nsb_time,
+            t0_template=self.pulse_template[tel_id].t0,
+            dt_template=self.pulse_template[tel_id].dt,
+            a_hg_template=self.pulse_template[tel_id].amplitude_HG,
+            a_lg_template=self.pulse_template[tel_id].amplitude_LG
+        )
+        nsb_waveforms[:, 1, :] += nsb_only_waveforms(
+            time=t[n:],
+            is_high_gain=np.ones(self.multiplicity * n_pixels),
+            additional_nsb=additional_nsb,
+            amplitude=added_nsb_amp,
+            t_0=added_nsb_time,
+            t0_template=self.pulse_template[tel_id].t0,
+            dt_template=self.pulse_template[tel_id].dt,
+            a_hg_template=self.pulse_template[tel_id].amplitude_HG,
+            a_lg_template=self.pulse_template[tel_id].amplitude_LG
+        )
+        self.nsb_waveforms[tel_id] = nsb_waveforms
+        self.nb_simulated[tel_id] = self.multiplicity * n_pixels
+
+    def _tune_nsb_on_waveform_precomputed(self, waveform, tel_id, is_high_gain, subarray):
+        """
+        Inject single photon pulses in existing R1 waveforms to increase NSB using pre-computed pure nsb waveforms.
+        Parameters
+        ----------
+        waveform: charge (p.e. / ns) in each pixel and sampled time
+        the single p.e. pulse template used for the injection
+        tel_id: Telescope id associated to the waveform to tune
+        is_high_gain: : boolean 1D array
+        Gain channel used per pixel: True=hg, False=lg
+        subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+        """
+        if tel_id not in self.nsb_waveforms:
+            readout = subarray.tel[tel_id].camera.readout
+            sampling_rate = readout.sampling_rate
+            dt = (1.0 / sampling_rate).to(u.s)
+            self.initialise_waveforms(waveform, dt, tel_id)
+        n_pixels, _ = waveform.shape
+        self.rng.shuffle(self.nsb_waveforms[tel_id])
+        waveform += ((is_high_gain == 0)[:, np.newaxis] * self.nsb_waveforms[tel_id][:n_pixels, 0] +
+                     (is_high_gain == 1)[:, np.newaxis] * self.nsb_waveforms[tel_id][:n_pixels, 1])
+
+    def _tune_nsb_on_waveform_direct(self, waveform, tel_id, is_high_gain, subarray):
+        """
+        Inject single photon pulses in existing R1 waveforms to increase NSB.
+        Parameters
+        ----------
+        waveform: charge (p.e. / ns) in each pixel and sampled time
+        the single p.e. pulse template used for the injection
+        tel_id: Telescope id associated to the waveform to tune
+        is_high_gain: : boolean 1D array
+        Gain channel used per pixel: True=hg, False=lg
+        subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+        """
+        n = 25
+        n_pixels, n_samples = waveform.shape
+        readout = subarray.tel[tel_id].camera.readout
+        sampling_rate = readout.sampling_rate
+        dt = (1.0 / sampling_rate).to(u.s)
+        duration = (n + n_samples) * dt  # TODO check needed time window, effect of edges
+        t = np.arange(-n, n_samples) * dt.to_value(u.ns)
+        mean_added_nsb = (self.added_nsb_fraction * self.original_nsb[tel_id] * duration).to_value("")
+        additional_nsb = self.rng.poisson(mean_added_nsb, n_pixels)
+        added_nsb_time = self.rng.uniform(-n * dt.to_value(u.ns), -n * dt.to_value(u.ns) + duration.to_value(u.ns),
+                                          (n_pixels, max(additional_nsb)))
+        added_nsb_amp = self.charge_spe_cumulative_pdf(self.rng.uniform(size=(n_pixels, max(additional_nsb))))
+        baseline_correction = (self.added_nsb_fraction * self.original_nsb[tel_id] * dt).to_value("")
+        waveform -= baseline_correction
+        waveform += nsb_only_waveforms(
+            time=t[n:],
+            is_high_gain=is_high_gain,
+            additional_nsb=additional_nsb,
+            amplitude=added_nsb_amp,
+            t_0=added_nsb_time,
+            t0_template=self.pulse_template[tel_id].t0,
+            dt_template=self.pulse_template[tel_id].dt,
+            a_hg_template=self.pulse_template[tel_id].amplitude_HG,
+            a_lg_template=self.pulse_template[tel_id].amplitude_LG
+        )

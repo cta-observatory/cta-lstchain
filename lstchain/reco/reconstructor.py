@@ -9,7 +9,7 @@ from ctapipe.core import TelescopeComponent
 from ctapipe.core.traits import Bool, Float, FloatTelescopeParameter, Int, Unicode
 
 from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
-from lstchain.image.modifier import tune_nsb_on_waveform
+from lstchain.image.modifier import WaveformNsbTunner
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
 from lstchain.reco.reconstructorCC import log_pdf as log_pdf
 
@@ -140,19 +140,14 @@ class TimeWaveformFitter(TelescopeComponent):
             self.error[tel_id] = std
             self.allowed_pixels = (std > 0.5 * np.median(std))
 
-    def get_ped_from_true_signal_less(self, source, nsb_tuning_args):
+    def get_ped_from_true_signal_less(self, source, nsb_tunner):
         """
         Use pixels with no true signal in MC to extract the pedestal variance, assumed uniform in the camera.
         """
         self.error = {}
         waveforms = {}
         n_pix = {}
-        dt = {}
         for tel_id in self.subarray.tel:
-            waveforms[tel_id] = []
-            readout = self.subarray.tel[tel_id].camera.readout
-            sampling_rate = readout.sampling_rate.to_value(u.GHz)
-            dt[tel_id] = (1.0 / sampling_rate)
             waveforms[tel_id] = []
         for i, event in enumerate(source):
             if i > 50 and len(waveforms) > 1000:
@@ -163,11 +158,10 @@ class TimeWaveformFitter(TelescopeComponent):
                         n_pix[tel_id] = event.r1.tel[tel_id].waveform.shape[0]
                     mask = event.simulation.tel[tel_id].true_image == 0
                     wave = event.r1.tel[tel_id].waveform
-                    if nsb_tuning_args is not None:
+                    if nsb_tunner is not None:
                         selected_gains = event.r1.tel[tel_id].selected_gain_channel
                         mask_high = (selected_gains == 0)
-                        tune_nsb_on_waveform(wave, nsb_tuning_args[0], nsb_tuning_args[1][tel_id] * u.GHz,
-                                             dt[tel_id] * u.ns, nsb_tuning_args[2], mask_high, nsb_tuning_args[3])
+                        nsb_tunner.tune_nsb_on_waveform(wave, tel_id, mask_high, self.subarray)
                     waveforms[tel_id].append(wave[mask].flatten())
         for tel_id, tel_waveforms in waveforms.items():
             self.error[tel_id] = np.full(n_pix[tel_id], np.nanstd(np.concatenate(tel_waveforms)))
