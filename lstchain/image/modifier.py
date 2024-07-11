@@ -566,6 +566,11 @@ class WaveformNsbTunner:
         self.pulse_template = pulse_template
         self.charge_spe_cumulative_pdf = charge_spe_cumulative_pdf
         self.multiplicity = pre_computed_multiplicity
+
+        # Number of extra time sample added at the start of the time window used to inject NSB pulses
+        # It should be large enough to account for pulses created by NSB hits before the recorded time window
+        self.extra_samples = 25
+
         self.nsb_waveforms = {}
         self.nb_simulated = {}
         self.rng = np.random.default_rng()
@@ -590,20 +595,20 @@ class WaveformNsbTunner:
 
         """
         log.info(f"Pre-generating nsb waveforms for nsb tuning and telescope id {tel_id}.")
-        n = 25
         n_pixels, n_samples = waveform.shape
         baseline_correction = -(self.added_nsb_fraction * self.original_nsb[tel_id] * dt).to_value("")
         nsb_waveforms = np.full((self.multiplicity * n_pixels, 2, n_samples), baseline_correction)
-        duration = (n + n_samples) * dt  # TODO check needed time window, effect of edges
-        t = np.arange(-n, n_samples) * dt.to_value(u.ns)
+        duration = (self.extra_samples + n_samples) * dt
+        t = np.arange(-self.extra_samples, n_samples) * dt.to_value(u.ns)
         mean_added_nsb = (self.added_nsb_fraction * self.original_nsb[tel_id] * duration).to_value("")
         additional_nsb = self.rng.poisson(mean_added_nsb, self.multiplicity * n_pixels)
-        added_nsb_time = self.rng.uniform(-n * dt.to_value(u.ns), -n * dt.to_value(u.ns) + duration.to_value(u.ns),
+        added_nsb_time = self.rng.uniform(-self.extra_samples * dt.to_value(u.ns),
+                                          -self.extra_samples * dt.to_value(u.ns) + duration.to_value(u.ns),
                                           (self.multiplicity * n_pixels, max(additional_nsb)))
         added_nsb_amp = self.charge_spe_cumulative_pdf(
             self.rng.uniform(size=(self.multiplicity * n_pixels, max(additional_nsb))))
         nsb_waveforms[:, 0, :] += nsb_only_waveforms(
-            time=t[n:],
+            time=t[self.extra_samples:],
             is_high_gain=np.zeros(self.multiplicity * n_pixels),
             additional_nsb=additional_nsb,
             amplitude=added_nsb_amp,
@@ -614,7 +619,7 @@ class WaveformNsbTunner:
             a_lg_template=self.pulse_template[tel_id].amplitude_LG
         )
         nsb_waveforms[:, 1, :] += nsb_only_waveforms(
-            time=t[n:],
+            time=t[self.extra_samples:],
             is_high_gain=np.ones(self.multiplicity * n_pixels),
             additional_nsb=additional_nsb,
             amplitude=added_nsb_amp,
@@ -669,22 +674,22 @@ class WaveformNsbTunner:
         subarray: `ctapipe.instrument.subarray.SubarrayDescription`
 
         """
-        n = 25
         n_pixels, n_samples = waveform.shape
         readout = subarray.tel[tel_id].camera.readout
         sampling_rate = readout.sampling_rate
         dt = (1.0 / sampling_rate).to(u.s)
-        duration = (n + n_samples) * dt  # TODO check needed time window, effect of edges
-        t = np.arange(-n, n_samples) * dt.to_value(u.ns)
+        duration = (self.extra_samples + n_samples) * dt
+        t = np.arange(-self.extra_samples, n_samples) * dt.to_value(u.ns)
         mean_added_nsb = (self.added_nsb_fraction * self.original_nsb[tel_id] * duration).to_value("")
         additional_nsb = self.rng.poisson(mean_added_nsb, n_pixels)
-        added_nsb_time = self.rng.uniform(-n * dt.to_value(u.ns), -n * dt.to_value(u.ns) + duration.to_value(u.ns),
+        added_nsb_time = self.rng.uniform(-self.extra_samples * dt.to_value(u.ns),
+                                          -self.extra_samples * dt.to_value(u.ns) + duration.to_value(u.ns),
                                           (n_pixels, max(additional_nsb)))
         added_nsb_amp = self.charge_spe_cumulative_pdf(self.rng.uniform(size=(n_pixels, max(additional_nsb))))
         baseline_correction = (self.added_nsb_fraction * self.original_nsb[tel_id] * dt).to_value("")
         waveform -= baseline_correction
         waveform += nsb_only_waveforms(
-            time=t[n:],
+            time=t[self.extra_samples:],
             is_high_gain=is_high_gain,
             additional_nsb=additional_nsb,
             amplitude=added_nsb_amp,
