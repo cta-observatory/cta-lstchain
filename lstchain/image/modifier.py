@@ -407,7 +407,6 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
 
 def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config=None):
-    # TODO check if good estimation
     # TODO reduce duplicated code with 'calculate_noise_parameters'
     """
     Calculates the additional NSB needed in the MC waveforms
@@ -538,8 +537,26 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
 
 
 class WaveformNsbTunner:
+    """
+    Handles the injection of additional NSB pulses in waveforms.
+    """
     def __init__(self, added_nsb_fraction, original_nsb, pulse_template, charge_spe_cumulative_pdf,
                  pre_computed_multiplicity=10):
+        """
+        Parameters
+        ----------
+        added_nsb_fraction: `float`
+            Fraction of `original_nsb` to be added during NSB injection. Can be more than 1.
+        original_nsb: `dict`[`int`,`astropy.units.Quantity`]
+            NSB frequency used in the original waveforms per telescope
+        pulse_template: `dict`[int,`lstchain.data.NormalizedPulseTemplate`]
+            Single photo-electron pulse template per telescope
+        charge_spe_cumulative_pdf: `scipy.interpolate.interp1d`
+            Cumulative amplitude probability density function for single photo-electrons
+        pre_computed_multiplicity: `int`
+            Multiplicative factor on the number of pixels used to determine the number of pre-generated, nsb-only,
+            waveforms. Later used during event modification. Set to 0 to always compute the correction on the fly.
+        """
         self.added_nsb_fraction = added_nsb_fraction
         self.original_nsb = original_nsb
         self.pulse_template = pulse_template
@@ -554,6 +571,18 @@ class WaveformNsbTunner:
             self.tune_nsb_on_waveform = self._tune_nsb_on_waveform_precomputed
 
     def initialise_waveforms(self, waveform, dt, tel_id):
+        """
+        Creates an array of nsb only waveforms later used to inject additional nsb in events.
+        Called once for each telescope id at first encounter in `self._tune_nsb_on_waveform_precomputed`.
+        Parameters
+        ----------
+        waveform: ndarray
+            waveform used to know the number of pixels and time samples for a given telescope id
+        dt: `astropy.units.Quantity`
+            Time between samples
+        tel_id: `int`
+            telescope identifier for which nsb waveforms are generated
+        """
         log.info(f"Pre-generating nsb waveforms for nsb tuning and telescope id {tel_id}.")
         n = 25
         n_pixels, n_samples = waveform.shape
@@ -597,11 +626,12 @@ class WaveformNsbTunner:
         Inject single photon pulses in existing R1 waveforms to increase NSB using pre-computed pure nsb waveforms.
         Parameters
         ----------
-        waveform: charge (p.e. / ns) in each pixel and sampled time
-        the single p.e. pulse template used for the injection
-        tel_id: Telescope id associated to the waveform to tune
-        is_high_gain: : boolean 1D array
-        Gain channel used per pixel: True=hg, False=lg
+        waveform: ndarray
+            charge (p.e. / ns) in each pixel and sampled time
+        tel_id: `int`
+            Telescope id associated to the waveform to tune
+        is_high_gain: ndarray of boolean
+            Gain channel used per pixel: True=hg, False=lg
         subarray: `ctapipe.instrument.subarray.SubarrayDescription`
         """
         if tel_id not in self.nsb_waveforms:
@@ -610,6 +640,8 @@ class WaveformNsbTunner:
             dt = (1.0 / sampling_rate).to(u.s)
             self.initialise_waveforms(waveform, dt, tel_id)
         n_pixels, _ = waveform.shape
+        # The nsb_waveform array is randomised along the first axis,
+        # then the n_pixels first elements with correct gain are used for the injection
         self.rng.shuffle(self.nsb_waveforms[tel_id])
         waveform += ((is_high_gain == 0)[:, np.newaxis] * self.nsb_waveforms[tel_id][:n_pixels, 0] +
                      (is_high_gain == 1)[:, np.newaxis] * self.nsb_waveforms[tel_id][:n_pixels, 1])
@@ -619,11 +651,12 @@ class WaveformNsbTunner:
         Inject single photon pulses in existing R1 waveforms to increase NSB.
         Parameters
         ----------
-        waveform: charge (p.e. / ns) in each pixel and sampled time
-        the single p.e. pulse template used for the injection
-        tel_id: Telescope id associated to the waveform to tune
-        is_high_gain: : boolean 1D array
-        Gain channel used per pixel: True=hg, False=lg
+        waveform: ndarray
+            charge (p.e. / ns) in each pixel and sampled time
+        tel_id: `int`
+            Telescope id associated to the waveform to tune
+        is_high_gain: ndarray of boolean
+            Gain channel used per pixel: True=hg, False=lg
         subarray: `ctapipe.instrument.subarray.SubarrayDescription`
         """
         n = 25
