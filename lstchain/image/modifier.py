@@ -411,6 +411,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     """
     Calculates the additional NSB needed in the MC waveforms
     to match a real data DL1 file
+
     Parameters
     ----------
     simtel_filename: a simtel file containing showers, from the production
@@ -424,11 +425,13 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     agreement of data and simulations.
     config: configuration containing the calibration
     settings used for processing both the data and the MC files above
+
     Returns
     -------
     extra_nsb: Fraction of the additional NSB in data compared to MC.
     data_ped_variance: Pedestal variance from data
     mc_ped_variance: Pedestal variance from MC
+
     """
 
     log.setLevel(logging.INFO)
@@ -556,6 +559,7 @@ class WaveformNsbTunner:
         pre_computed_multiplicity: `int`
             Multiplicative factor on the number of pixels used to determine the number of pre-generated, nsb-only,
             waveforms. Later used during event modification. Set to 0 to always compute the correction on the fly.
+
         """
         self.added_nsb_fraction = added_nsb_fraction
         self.original_nsb = original_nsb
@@ -574,14 +578,16 @@ class WaveformNsbTunner:
         """
         Creates an array of nsb only waveforms later used to inject additional nsb in events.
         Called once for each telescope id at first encounter in `self._tune_nsb_on_waveform_precomputed`.
+
         Parameters
         ----------
         waveform: ndarray
-            waveform used to know the number of pixels and time samples for a given telescope id
+            Waveform used to know the number of pixels and time samples for a given telescope id
         dt: `astropy.units.Quantity`
             Time between samples
         tel_id: `int`
-            telescope identifier for which nsb waveforms are generated
+            Telescope identifier for which nsb waveforms are generated
+
         """
         log.info(f"Pre-generating nsb waveforms for nsb tuning and telescope id {tel_id}.")
         n = 25
@@ -624,15 +630,17 @@ class WaveformNsbTunner:
     def _tune_nsb_on_waveform_precomputed(self, waveform, tel_id, is_high_gain, subarray):
         """
         Inject single photon pulses in existing R1 waveforms to increase NSB using pre-computed pure nsb waveforms.
+
         Parameters
         ----------
         waveform: ndarray
-            charge (p.e. / ns) in each pixel and sampled time
+            Charge (p.e. / ns) in each pixel and sampled time
         tel_id: `int`
             Telescope id associated to the waveform to tune
         is_high_gain: ndarray of boolean
             Gain channel used per pixel: True=hg, False=lg
         subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+
         """
         if tel_id not in self.nsb_waveforms:
             readout = subarray.tel[tel_id].camera.readout
@@ -649,15 +657,17 @@ class WaveformNsbTunner:
     def _tune_nsb_on_waveform_direct(self, waveform, tel_id, is_high_gain, subarray):
         """
         Inject single photon pulses in existing R1 waveforms to increase NSB.
+
         Parameters
         ----------
         waveform: ndarray
-            charge (p.e. / ns) in each pixel and sampled time
+            Charge (p.e. / ns) in each pixel and sampled time
         tel_id: `int`
             Telescope id associated to the waveform to tune
         is_high_gain: ndarray of boolean
             Gain channel used per pixel: True=hg, False=lg
         subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+
         """
         n = 25
         n_pixels, n_samples = waveform.shape
