@@ -474,7 +474,7 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
                 "--DataBinning.true_energy_min: 0.2",
                 "--DataBinning.true_energy_max: 0.3",
                 "--DL3Cuts.min_event_p_en_bin=2",
-                "--DataBinning.scale_true_energy=1.15",
+                "--DataBinning.scale_true_energy=1.5",
             ],
             cwd=temp_dir_observed_files,
         )
