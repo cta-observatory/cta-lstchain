@@ -1279,7 +1279,7 @@ def extract_simulation_nsb(filename):
         for _, line in f.history:
             line = line.decode('utf-8').strip().split(' ')
             if next_nsb and line[0] == 'NIGHTSKY_BACKGROUND':
-                nsb[tel_id] = float(line[1].strip('all:'))
+                nsb[tel_id] = float(line[1].strip('all:')) * u.GHz
                 tel_id = tel_id+1
             if line[0] == 'STORE_PHOTOELECTRONS':
                 next_nsb = True
@@ -1288,7 +1288,7 @@ def extract_simulation_nsb(filename):
     log.warning('Original MC night sky background extracted from the config history in the simtel file.\n'
                 'This is done for existing LST MC such as the one created using: '
                 'https://github.com/cta-observatory/lst-sim-config/tree/sim-tel_LSTProd2_MAGICST0316'
-                '\nExtracted values are: ' + str(np.asarray(nsb)) + 'GHz. Check that it corresponds to expectations.')
+                '\nExtracted values are: ' + str(np.asarray(nsb)) + '. Check that it corresponds to expectations.')
     return nsb
 
 

@@ -77,17 +77,18 @@ def test_calculate_required_additional_nsb(mc_gamma_testfile, observed_dl1_files
 
 def test_tune_nsb_on_waveform():
     import astropy.units as u
+    from ctapipe_io_lst import LSTEventSource
     from scipy.interpolate import interp1d
     from lstchain.io.io import get_resource_path
-    from lstchain.image.modifier import tune_nsb_on_waveform
+    from lstchain.image.modifier import WaveformNsbTunner
     from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
 
     waveform = np.array(
-        [[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
-         [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]]
+        [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     )
-    added_nsb_fraction, original_nsb = 1.0, 0.1 * u.GHz
-    dt = 1 * u.ns
+    added_nsb_fraction, original_nsb = 1.0, {1: 0.1 * u.GHz}
+    subarray = LSTEventSource.create_subarray(1)
     amplitude_HG = np.zeros(40)
     amplitude_LG = np.zeros(40)
     amplitude_HG[19] = 0.25
@@ -96,17 +97,32 @@ def test_tune_nsb_on_waveform():
     amplitude_LG[19] = 0.4
     amplitude_LG[20] = 1.0
     amplitude_LG[21] = 0.4
-    time = np.linspace(-10,30,40)
-    pulse_templates = NormalizedPulseTemplate(amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
-                                              amplitude_LG_err=None)
-    gain = np.array(['HG', 'LG'])
+    time = np.linspace(-10, 30, 40)
+    pulse_templates = {1: NormalizedPulseTemplate(amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
+                                                  amplitude_LG_err=None)}
+    gain = np.array([1, 0])
     spe = np.loadtxt(get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")).T
     spe_integral = np.cumsum(spe[1])
     charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                          bounds_error=False, fill_value=0.,
                                          assume_sorted=True)
-    tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
-                         dt, pulse_templates, gain, charge_spe_cumulative_pdf)
-    #  assert may be randomly wrong in very unusual cases
+    nsb_tunner = WaveformNsbTunner(added_nsb_fraction,
+                                   original_nsb,
+                                   pulse_templates,
+                                   charge_spe_cumulative_pdf,
+                                   pre_computed_multiplicity=0)
+    nsb_tunner.tune_nsb_on_waveform(waveform, 1, gain, subarray)
+    assert np.any(waveform != 0)
+    assert np.isclose(np.mean(waveform), 0.0, atol=0.2)
+    waveform = np.array(
+        [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    )
+    nsb_tunner = WaveformNsbTunner(added_nsb_fraction,
+                                   original_nsb,
+                                   pulse_templates,
+                                   charge_spe_cumulative_pdf,
+                                   pre_computed_multiplicity=10)
+    nsb_tunner.tune_nsb_on_waveform(waveform, 1, gain, subarray)
     assert np.any(waveform != 0)
     assert np.isclose(np.mean(waveform), 0.0, atol=0.2)

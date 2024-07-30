@@ -279,8 +279,9 @@
   },
   "waveform_nsb_tuning":{
     "nsb_tuning": false,
-    "nsb_tuning_ratio": 0.52,
-    "spe_location": null
+    "nsb_tuning_ratio": 0.5,
+    "spe_location": null,
+    "pre_computed_multiplicity": 10
   },
   "lh_fit_config": {
     "sigma_s": [

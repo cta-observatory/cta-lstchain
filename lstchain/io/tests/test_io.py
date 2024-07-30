@@ -154,9 +154,10 @@ def test_trigger_type_in_dl1_params(simulated_dl1_file):
 
 def test_extract_simulation_nsb(mc_gamma_testfile):
     from lstchain.io.io import extract_simulation_nsb
+    import astropy.units as u
 
     nsb = extract_simulation_nsb(mc_gamma_testfile)
-    assert np.isclose(nsb[1], 0.246, rtol=0.1)
+    assert np.isclose(nsb[1].to_value(u.GHz), 0.246, rtol=0.1)
 
 
 def test_remove_duplicated_events():
