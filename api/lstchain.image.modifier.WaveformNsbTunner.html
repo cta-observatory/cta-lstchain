@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tune_nsb_on_waveform &mdash; lstchain 0.10.12.dev123+g21d8f7eb documentation</title>
+  <title>WaveformNsbTunner &mdash; lstchain 0.10.12.dev130+ga3da2c0c documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/documentation_options.js?v=a5dd6e1a"></script>
+        <script src="../_static/documentation_options.js?v=a8e9f6f8"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev123+g21d8f7eb
+                0.10.12.dev130+ga3da2c0c
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -111,9 +111,9 @@
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
-      <li class="breadcrumb-item active">tune_nsb_on_waveform</li>
+      <li class="breadcrumb-item active">WaveformNsbTunner</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/lstchain.image.modifier.tune_nsb_on_waveform.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api/lstchain.image.modifier.WaveformNsbTunner.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -121,24 +121,41 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="tune-nsb-on-waveform">
-<h1>tune_nsb_on_waveform<a class="headerlink" href="#tune-nsb-on-waveform" title="Link to this heading">¶</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="lstchain.image.modifier.tune_nsb_on_waveform">
-<span class="sig-prename descclassname"><span class="pre">lstchain.image.modifier.</span></span><span class="sig-name descname"><span class="pre">tune_nsb_on_waveform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">waveform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_nsb_fraction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_nsb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pulse_templates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_spe_cumulative_pdf</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.tune_nsb_on_waveform" title="Link to this definition">¶</a></dt>
-<dd><p>Inject single photon pulses in existing R1 waveforms to increase NSB.
-Parameters
-———-
-waveform: charge (p.e. / ns) in each pixel and sampled time
-added_nsb_fraction: fraction of the original NSB in simulation to be added
-original_nsb: original NSB rate (astropy unit Hz)
-dt: time between waveform samples (astropy unit s)
-pulse_templates: <cite>lstchain.data.NormalizedPulseTemplate</cite> containing
-the single p.e. pulse template used for the injection
-gain: gain channel identifier for each pixel
-charge_spe_cumulative_pdf: <cite>scipy.interpolate.interp1d</cite> Single p.e. gain
-fluctuation cumulative pdf used to randomise the normalisation of
-injected pulses</p>
+  <section id="waveformnsbtunner">
+<h1>WaveformNsbTunner<a class="headerlink" href="#waveformnsbtunner" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.image.modifier.WaveformNsbTunner">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.image.modifier.</span></span><span class="sig-name descname"><span class="pre">WaveformNsbTunner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">added_nsb_fraction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_nsb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pulse_template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_spe_cumulative_pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_computed_multiplicity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.WaveformNsbTunner" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Handles the injection of additional NSB pulses in waveforms.</p>
+<p class="rubric">Methods Summary</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.image.modifier.WaveformNsbTunner.initialise_waveforms" title="lstchain.image.modifier.WaveformNsbTunner.initialise_waveforms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initialise_waveforms</span></code></a>(waveform, dt, tel_id)</p></td>
+<td><p>Creates an array of nsb only waveforms later used to inject additional nsb in events.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Documentation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.image.modifier.WaveformNsbTunner.initialise_waveforms">
+<span class="sig-name descname"><span class="pre">initialise_waveforms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">waveform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tel_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.WaveformNsbTunner.initialise_waveforms" title="Link to this definition">¶</a></dt>
+<dd><p>Creates an array of nsb only waveforms later used to inject additional nsb in events.
+Called once for each telescope id at first encounter in <cite>self._tune_nsb_on_waveform_precomputed</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>waveform: ndarray</strong></dt><dd><p>Waveform used to know the number of pixels and time samples for a given telescope id</p>
+</dd>
+<dt><strong>dt: `astropy.units.Quantity`</strong></dt><dd><p>Time between samples</p>
+</dd>
+<dt><strong>tel_id: `int`</strong></dt><dd><p>Telescope identifier for which nsb waveforms are generated</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -154,7 +171,7 @@ injected pulses</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 22 Jul 2024 09:11.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 30 Jul 2024 07:25.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

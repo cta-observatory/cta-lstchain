@@ -1,0 +1,17 @@
+WaveformNsbTunner
+=================
+
+.. currentmodule:: lstchain.image.modifier
+
+.. autoclass:: WaveformNsbTunner
+   :show-inheritance:
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~WaveformNsbTunner.initialise_waveforms
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: initialise_waveforms

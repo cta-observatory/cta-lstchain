@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>calculate_required_additional_nsb &mdash; lstchain 0.10.12.dev123+g21d8f7eb documentation</title>
+  <title>calculate_required_additional_nsb &mdash; lstchain 0.10.12.dev130+ga3da2c0c documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/documentation_options.js?v=a5dd6e1a"></script>
+        <script src="../_static/documentation_options.js?v=a8e9f6f8"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev123+g21d8f7eb
+                0.10.12.dev130+ga3da2c0c
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -127,25 +127,31 @@
 <dt class="sig sig-object py" id="lstchain.image.modifier.calculate_required_additional_nsb">
 <span class="sig-prename descclassname"><span class="pre">lstchain.image.modifier.</span></span><span class="sig-name descname"><span class="pre">calculate_required_additional_nsb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simtel_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dl1_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.calculate_required_additional_nsb" title="Link to this definition">¶</a></dt>
 <dd><p>Calculates the additional NSB needed in the MC waveforms
-to match a real data DL1 file
-Parameters
-———-
-simtel_filename: a simtel file containing showers, from the production
-(same NSB and telescope settings) as the one on which the correction will
-be applied. It must contain pixel-wise info on true number of p.e.’s from
-C-photons (will be used to identify pixels which only contain noise).
-data_dl1_filename: a real data DL1 file (processed with calibration
-settings corresponding to those with which the MC is to be processed).
-It must contain calibrated images, i.e. “DL1a” data. This file has the
-“target” NSB which we want to have in the MC files, for better
-agreement of data and simulations.
-config: configuration containing the calibration
-settings used for processing both the data and the MC files above
-Returns
-——-
-extra_nsb: Fraction of the additional NSB in data compared to MC.
-data_ped_variance: Pedestal variance from data
-mc_ped_variance: Pedestal variance from MC</p>
+to match a real data DL1 file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>simtel_filename: a simtel file containing showers, from the production</strong></dt><dd></dd>
+<dt><strong>(same NSB and telescope settings) as the one on which the correction will</strong></dt><dd></dd>
+<dt><strong>be applied. It must contain pixel-wise info on true number of p.e.’s from</strong></dt><dd></dd>
+<dt><strong>C-photons (will be used to identify pixels which only contain noise).</strong></dt><dd></dd>
+<dt><strong>data_dl1_filename: a real data DL1 file (processed with calibration</strong></dt><dd></dd>
+<dt><strong>settings corresponding to those with which the MC is to be processed).</strong></dt><dd></dd>
+<dt><strong>It must contain calibrated images, i.e. “DL1a” data. This file has the</strong></dt><dd></dd>
+<dt><strong>“target” NSB which we want to have in the MC files, for better</strong></dt><dd></dd>
+<dt><strong>agreement of data and simulations.</strong></dt><dd></dd>
+<dt><strong>config: configuration containing the calibration</strong></dt><dd></dd>
+<dt><strong>settings used for processing both the data and the MC files above</strong></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>extra_nsb: Fraction of the additional NSB in data compared to MC.</dt><dd></dd>
+<dt>data_ped_variance: Pedestal variance from data</dt><dd></dd>
+<dt>mc_ped_variance: Pedestal variance from MC</dt><dd></dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -161,7 +167,7 @@ mc_ped_variance: Pedestal variance from MC</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 22 Jul 2024 09:11.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 30 Jul 2024 07:25.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
