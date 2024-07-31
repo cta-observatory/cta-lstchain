@@ -574,11 +574,11 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
             modified_integrated_charge[ii + 1].extend(
                     event.dl1.tel[1].image[pedmask])
 
-        modified_integrated_charge = np.array(modified_integrated_charge)
-        # Fit the total added NSB rate vs. the average pixel charge:
-        params, _ = curve_fit(custom_function,
-                              np.mean(modified_integrated_charge, axis=1),
-                              total_added_nsb, p0=[-0.2, 0.2, 2])
+    modified_integrated_charge = np.array(modified_integrated_charge)
+    # Fit the total added NSB rate vs. the average pixel charge:
+    params, _ = curve_fit(custom_function,
+                          np.mean(modified_integrated_charge, axis=1),
+                          total_added_nsb, p0=[-0.2, 0.2, 2])
 
     # Obtain the right rate of NSB to be added to MC so that it matches the
     # data:
