@@ -411,7 +411,26 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
 def get_pix_median_charges(data_dl1_filename, event_type):
     """
+    Obtain from a DL1 real data file (containing camera images, i.e. DL1a)
+    the median (accross camera) of mean (and std dev) of pixel charge for
+    events of type event_type. The medians are obtained using only healthy
+    pixels and excluding too bright outliers (we want to get the typical
+    pixel values, unaffected by the few stars in the FoV)
+
+    Parameters
+    ----------
+    data_dl1_filename: DL1 file name
+    event_type (ctapipe.containers.EventType): type of events, e.g. pedestals
+
+    Returns
+    -------
+    median_ped_meanpixq (p.e.)
+    median_ped_stdpixq  (p.e.)  Median values for healthy and not too
+    noisy pixels
+    tel_id : telescope id to which the events in the file correspond (we assume
+    for now that a given DL1 file contains data from just one telescope)
     """
+
     # Real data DL1 tables:
     camera_images = read_table(data_dl1_filename,
                                '/dl1/event/telescope/image/LST_LSTCam')
@@ -421,7 +440,7 @@ def get_pix_median_charges(data_dl1_filename, event_type):
 
     # All events in a DL1 file should correspond to the same telescope,
     # just take it from the first event:
-    # tel_id = image_params['tel_id'][0]
+    tel_id = image_params['tel_id'][0]
 
     data_dl1_calibration = read_table(data_dl1_filename,
                                       '/dl1/event/telescope/monitoring/calibration')
@@ -454,7 +473,7 @@ def get_pix_median_charges(data_dl1_filename, event_type):
     median_ped_meanpixq = np.median(ped_meanpixq[good_pixels])
     median_ped_stdpixq = np.median(ped_stdpixq[good_pixels])
 
-    return median_ped_meanpixq, median_ped_stdpixq
+    return median_ped_meanpixq, median_ped_stdpixq, tel_id
 
 
 
@@ -491,7 +510,10 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     if config is None:
         config = standard_config
 
-    median_ped_meanpixq, median_ped_stdpixq = get_pix_median_charges(
+    # Obtain the median (accross camera) of mean (and satd dev of) pixel charge
+    # taking into account only healthy pixels, and excluding outliers.
+    # We also get the tel_id to which the DL1 file corresponds:
+    median_ped_meanpixq, median_ped_stdpixq, tel_id = get_pix_median_charges(
             data_dl1_filename, EventType.SKY_PEDESTAL)
 
     # Now we process the Monte Carlo:
