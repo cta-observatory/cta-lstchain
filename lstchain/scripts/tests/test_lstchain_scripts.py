@@ -236,16 +236,16 @@ def test_validity_tune_nsb(tune_nsb):
 
 def test_validity_tune_nsb_waveform(tune_nsb_waveform):
     """
-    The resulting nsb_tuning_ratio value of -1 expected in this test is meaningless
-    because the input data do not allow a full test of the functionality.
-    This test is only a formal check that the script runs.
+    The resulting nsb_tuning_rate value of -1 expected in this test is
+    meaningless because the input data do not allow a full test of the
+    functionality. This test is only a formal check that the script runs.
     """
     output_lines = tune_nsb_waveform.stdout.splitlines()
     for line in output_lines:
         if '"nsb_tuning"' in line:
             assert line == '  "nsb_tuning": true,'
-        if '"nsb_tuning_ratio"' in line:
-            assert line == '  "nsb_tuning_ratio": -1.0,'
+        if '"nsb_tuning_rate"' in line:
+            assert line == '  "nsb_tuning_rate": -1.0,'
         if '"spe_location"' in line:
             assert line == f'  "spe_location": "{get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")}"'
 

@@ -82,13 +82,13 @@ def main():
 
     config = read_configuration_file(args.config)
 
-    nsb_correction_ratio, data_ped_variance, mc_ped_variance = \
+    extra_nsb_rate, data_ped_variance, mc_ped_variance = \
         calculate_required_additional_nsb(args.input_mc, args.input_data,
                                           config=Config(config))
 
     dict_nsb = {
         "nsb_tuning": True,
-        "nsb_tuning_ratio": np.round(nsb_correction_ratio, decimals=2),
+        "nsb_tuning_rate": np.round(extra_nsb_rate, decimals=3),
         "spe_location": str(get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
     }
 
