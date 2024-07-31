@@ -88,7 +88,7 @@ def main():
 
     dict_nsb = {
         "nsb_tuning": True,
-        "nsb_tuning_rate": np.round(extra_nsb_rate, decimals=3),
+        "nsb_tuning_rate_GHz": np.round(extra_nsb_rate, decimals=3),
         "spe_location": str(get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
     }
 

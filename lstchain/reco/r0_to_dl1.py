@@ -411,7 +411,8 @@ def r0_to_dl1(
                 pulse_templates = {tel_id: NormalizedPulseTemplate.load_from_eventsource(
                     subarray.tel[tel_id].camera.readout, resample=True)
                     for tel_id in config['source_config']['LSTEventSource']['allowed_tels']}
-                if 'nsb_tuning_rate' in config['waveform_nsb_tuning'].keys():
+                if 'nsb_tuning_rate_GHz' in config[
+                    'waveform_nsb_tuning'].keys():
                     # get value from config to possibly extract it beforehand on multiple files for averaging purposes
                     # or gain time
                     nsb_tuning_rate = config['waveform_nsb_tuning'][
@@ -438,8 +439,10 @@ def r0_to_dl1(
                 logger.info(f'{nsb_tuning_rate:.3f} GHz for telescope ids:')
                 logger.info(f'{allowed_tels}')
 
-                nsb_per_tel = np.ones(np.max(allowed_tels)+1) * nsb_tuning_rate
-                nsb_tuner = WaveformNsbTunner(nsb_per_tel * u.GHz,
+                nsb_per_tel = {tel_id: nsb_tuning_rate * u.GHz for tel_id in
+                               allowed_tels}
+
+                nsb_tuner = WaveformNsbTunner(nsb_per_tel,
                                               pulse_templates,
                                               charge_spe_cumulative_pdf,
                                               pre_computed_multiplicity)
