@@ -408,6 +408,56 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
         extra_noise_in_bright_pixels
 
+
+def get_pix_median_charges(data_dl1_filename, event_type):
+    """
+    """
+    # Real data DL1 tables:
+    camera_images = read_table(data_dl1_filename,
+                               '/dl1/event/telescope/image/LST_LSTCam')
+    # parameters:
+    image_params = read_table(data_dl1_filename,
+                              '/dl1/event/telescope/parameters/LST_LSTCam')
+
+    # All events in a DL1 file should correspond to the same telescope,
+    # just take it from the first event:
+    tel_id = image_params['tel_id'][0]
+
+    data_dl1_calibration = read_table(data_dl1_filename,
+                                      '/dl1/event/telescope/monitoring/calibration')
+    unusable = data_dl1_calibration['unusable_pixels']
+
+    # Locate pixels with HG declared unusable either in original calibration or
+    # in interleaved events:
+    bad_pixels = unusable[0][0]  # original calibration
+    for tf in unusable[1:][0]:  # calibrations with interleaved
+        bad_pixels = np.logical_or(bad_pixels, tf)
+    good_pixels = ~bad_pixels
+    # First index:  1,2,... = values from interleaved (0 is for original
+    # calibration run)
+    # Second index: 0 = high gain
+    # Third index: pixels
+
+    # Now compute the average pixel charge in real pedestal events, for good
+    # and "not too bright" pixels (the idea is to exclude stars, we want to
+    # estimate the overall "diffuse" NSB level)
+    interleaved_ped = image_params['event_type'] == event_type.value
+    ped_pixq = camera_images['image'][interleaved_ped]
+    ped_meanpixq = np.mean(ped_pixq, axis=0)
+    ped_stdpixq = np.std(ped_pixq, axis=0)
+    median_ped_meanpixq = np.median(ped_meanpixq[good_pixels])
+    # Exclude the brightest pixels, which may be affected by stars:
+    too_bright = (ped_meanpixq > median_ped_meanpixq + 3 * np.std(ped_meanpixq))
+    good_pixels &= ~too_bright
+    log.info(f'Good and not too bright pixels: {good_pixels.sum()}')
+    # Recompute median:
+    median_ped_meanpixq = np.median(ped_meanpixq[good_pixels])
+    median_ped_stdpixq = np.median(ped_stdpixq[good_pixels])
+
+    return median_ped_meanpixq, median_ped_stdpixq
+
+
+
 def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config=None):
     """
     Calculates the additional NSB needed in the MC waveforms
@@ -441,47 +491,8 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     if config is None:
         config = standard_config
 
-    # Real data DL1 tables:
-    camera_images = read_table(data_dl1_filename,
-                               '/dl1/event/telescope/image/LST_LSTCam')
-    # parameters:
-    image_params = read_table(data_dl1_filename,
-                              '/dl1/event/telescope/parameters/LST_LSTCam')
-
-    # All events in a DL1 file should correspond to the same telescope,
-    # just take it from the first event:
-    tel_id = image_params['tel_id'][0]
-
-    data_dl1_calibration = read_table(data_dl1_filename,
-                                      '/dl1/event/telescope/monitoring/calibration')
-    unusable = data_dl1_calibration['unusable_pixels']
-
-    # Locate pixels with HG declared unusable either in original calibration or
-    # in interleaved events:
-    bad_pixels = unusable[0][0]  # original calibration
-    for tf in unusable[1:][0]:  # calibrations with interleaved
-        bad_pixels = np.logical_or(bad_pixels, tf)
-    good_pixels = ~bad_pixels
-    # First index:  1,2,... = values from interleaved (0 is for original
-    # calibration run)
-    # Second index: 0 = high gain
-    # Third index: pixels
-
-    # Now compute the average pixel charge in real pedestal events, for good
-    # and "not too bright" pixels (the idea is to exclude stars, we want to
-    # estimate the overall "diffuse" NSB level)
-    interleaved_ped = image_params['event_type'] == EventType.SKY_PEDESTAL.value
-    ped_pixq = camera_images['image'][interleaved_ped]
-    ped_meanpixq = np.mean(ped_pixq, axis=0)
-    ped_stdpixq = np.std(ped_pixq, axis=0)
-    median_ped_meanpixq = np.median(ped_meanpixq[good_pixels])
-    # Exclude the brightest pixels, which may be affected by stars:
-    too_bright = (ped_meanpixq > median_ped_meanpixq + 3 * np.std(ped_meanpixq))
-    good_pixels &= ~too_bright
-    log.info(f'Good and not too bright pixels: {good_pixels.sum()}')
-    # Recompyte median:
-    median_ped_meanpixq = np.median(ped_meanpixq[good_pixels])
-    median_ped_stdpixq = np.median(ped_stdpixq[good_pixels])
+    median_ped_meanpixq, median_ped_stdpixq = get_pix_median_charges(
+            data_dl1_filename, EventType.SKY_PEDESTAL)
 
     # Now we process the Monte Carlo:
     # Event reader for simtel file:
