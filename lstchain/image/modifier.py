@@ -530,12 +530,12 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
 
 
     for nsb_rate in np.diff(total_added_nsb):
-        # Create an array to put the NSB value for tel_id. It is an array for
-        # the future case in which there are more telescopes, but for now we
-        # just create it with a single value for tel_id
-        nsb = np.zeros(tel_id+1)
-        nsb[tel_id] = nsb_rate
-        nsb_tuner.append(WaveformNsbTunner(nsb * u.GHz, pulse_templates,
+        # Create a dict to put the NSB value for each tel_id. It is an array for
+        # the future case in which there are more telescopes, but for now it
+        # just creates it with a single value, for tel_id
+        nsb = {tel_id: nsb_rate * u.GHz for tel_id in
+               config['source_config']['LSTEventSource']['allowed_tels']}
+        nsb_tuner.append(WaveformNsbTunner(nsb, pulse_templates,
                                            charge_spe_cumulative_pdf, 10))
     # last argument means it will precompute 10 * 1855 (pixels) * 2 (gains)
     # noise waveforms to pick from during the actual introduction of the noise
@@ -588,9 +588,9 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
 
     # Now open the MC file again and test that the tuning was successful:
     mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
-    nsb = np.zeros(tel_id+1)
-    nsb[tel_id] = extra_nsb
-    tuner = WaveformNsbTunner(nsb * u.GHz , pulse_templates,
+    nsb = {tel_id: extra_nsb * u.GHz for tel_id in
+           config['source_config']['LSTEventSource']['allowed_tels']}
+    tuner = WaveformNsbTunner(nsb, pulse_templates,
                               charge_spe_cumulative_pdf, 10)
     final_mc_qped = []
     numevents = 0
@@ -632,8 +632,8 @@ class WaveformNsbTunner:
         """
         Parameters
         ----------
-        added_nsb: array [`float`,`astropy.units.Quantity`]
-            NSB frequency (GHz) to be added to the waveforms (per telescope)
+        added_nsb: dict [`float`,`astropy.units.Quantity`]
+            NSB frequency (GHz) to be added to the waveforms (per tel_id)
         pulse_template: `dict`[int,`lstchain.data.NormalizedPulseTemplate`]
             Single photo-electron pulse template per telescope
         charge_spe_cumulative_pdf: `scipy.interpolate.interp1d`
