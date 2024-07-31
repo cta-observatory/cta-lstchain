@@ -501,7 +501,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     extra_nsb: additional NSB rate in absolute units, p.e./ns (a.k.a. "GHz"),
     that has to be added in the MC to match the real data
     data_ped_variance: Pedestal variance from data
-    mc_ped_variance: Pedestal variance from MC
+    mc_ped_variance: Pedestal variance from MC, AFTER THE TUNING!
 
     """
 
