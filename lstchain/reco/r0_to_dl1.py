@@ -404,7 +404,7 @@ def r0_to_dl1(
         )
     nsb_tuning = False
     nsb_tuner = None
-    if 'waveform_nsb_tuning' in config.keys():
+    if 'waveform_nsb_tuning' in config:
         nsb_tuning = config['waveform_nsb_tuning']['nsb_tuning']
         if nsb_tuning:
             if is_simu:
@@ -412,7 +412,7 @@ def r0_to_dl1(
                     subarray.tel[tel_id].camera.readout, resample=True)
                     for tel_id in config['source_config']['LSTEventSource']['allowed_tels']}
                 if 'nsb_tuning_rate_GHz' in config[
-                    'waveform_nsb_tuning'].keys():
+                    'waveform_nsb_tuning']:
                     # get value from config to possibly extract it beforehand on multiple files for averaging purposes
                     # or gain time
                     nsb_tuning_rate = config['waveform_nsb_tuning'][
@@ -451,7 +451,7 @@ def r0_to_dl1(
                 nsb_tuning = False
 
     lhfit_fitter = None
-    if 'lh_fit_config' in config.keys():
+    if 'lh_fit_config' in config:
         lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
         lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
         if lhfit_fitter_config['TimeWaveformFitter']['use_interleaved']:
