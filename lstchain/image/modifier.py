@@ -421,7 +421,7 @@ def get_pix_median_charges(data_dl1_filename, event_type):
 
     # All events in a DL1 file should correspond to the same telescope,
     # just take it from the first event:
-    tel_id = image_params['tel_id'][0]
+    # tel_id = image_params['tel_id'][0]
 
     data_dl1_calibration = read_table(data_dl1_filename,
                                       '/dl1/event/telescope/monitoring/calibration')
