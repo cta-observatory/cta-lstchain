@@ -403,7 +403,7 @@ def r0_to_dl1(
             metadata=metadata,
         )
     nsb_tuning = False
-    nsb_tunner = None
+    nsb_tuner = None
     if 'waveform_nsb_tuning' in config.keys():
         nsb_tuning = config['waveform_nsb_tuning']['nsb_tuning']
         if nsb_tuning:
@@ -412,16 +412,18 @@ def r0_to_dl1(
                 pulse_templates = {tel_id: NormalizedPulseTemplate.load_from_eventsource(
                     subarray.tel[tel_id].camera.readout, resample=True)
                     for tel_id in config['source_config']['LSTEventSource']['allowed_tels']}
-                if 'nsb_tuning_ratio' in config['waveform_nsb_tuning'].keys():
+                if 'nsb_tuning_rate' in config['waveform_nsb_tuning'].keys():
                     # get value from config to possibly extract it beforehand on multiple files for averaging purposes
                     # or gain time
-                    nsb_tuning_ratio = config['waveform_nsb_tuning']['nsb_tuning_ratio']
+                    nsb_tuning_rate = config['waveform_nsb_tuning'][
+                        'nsb_tuning_rate_GHz']
                 else:
                     # extract the pedestal variance difference between the current MC file and the target data
                     # FIXME? fails for multiple telescopes
-                    nsb_tuning_ratio = calculate_required_additional_nsb(input_filename,
-                                                                         config['waveform_nsb_tuning']['target_data'],
-                                                                         config=config)[0]
+                    nsb_tuning_rate, _, _ = calculate_required_additional_nsb(
+                            input_filename,
+                            config['waveform_nsb_tuning']['target_data'],
+                            config=config)
                 spe_location = (config['waveform_nsb_tuning']['spe_location']
                                 or get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
                 spe = np.loadtxt(spe_location).T
@@ -430,15 +432,18 @@ def r0_to_dl1(
                                                      bounds_error=False, fill_value=0.,
                                                      assume_sorted=True)
                 pre_computed_multiplicity = config['waveform_nsb_tuning'].get('pre_computed_multiplicity', 10)
-                logger.info('Tuning NSB on MC waveform from '
-                            + str(np.asarray(nsb_original))
-                            + ' to {0:d}%'.format(int(nsb_tuning_ratio * 100 + 100.5))
-                            + ' for telescopes ids ' + str(config['source_config']['LSTEventSource']['allowed_tels']))
-                nsb_tunner = WaveformNsbTunner(nsb_tuning_ratio,
-                                               nsb_original,
-                                               pulse_templates,
-                                               charge_spe_cumulative_pdf,
-                                               pre_computed_multiplicity)
+
+                allowed_tels = config['source_config']['LSTEventSource'][
+                    'allowed_tels']
+                logger.info(f'Tuning NSB on MC waveform by adding ')
+                logger.info(f'{nsb_tuning_rate:.3f} GHz for telescope ids:')
+                logger.info(f'{allowed_tels}')
+
+                nsb_per_tel = np.ones(np.max(allowed_tels)+1) * nsb_tuning_rate
+                nsb_tuner = WaveformNsbTunner(nsb_per_tel * u.GHz,
+                                              pulse_templates,
+                                              charge_spe_cumulative_pdf,
+                                              pre_computed_multiplicity)
             else:
                 logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
                 nsb_tuning = False
@@ -451,7 +456,7 @@ def r0_to_dl1(
             tmp_source = EventSource(input_url=input_filename,
                                      config=Config(config["source_config"]))
             if is_simu:
-                lhfit_fitter.get_ped_from_true_signal_less(tmp_source, nsb_tunner)
+                lhfit_fitter.get_ped_from_true_signal_less(tmp_source, nsb_tuner)
             else:
                 lhfit_fitter.get_ped_from_interleaved(tmp_source)
             del tmp_source
@@ -570,7 +575,7 @@ def r0_to_dl1(
                     waveform = event.r1.tel[tel_id].waveform
                     selected_gains = event.r1.tel[tel_id].selected_gain_channel
                     mask_high = selected_gains == 0
-                    nsb_tunner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
+                    nsb_tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
 
             # create image for all events
             r1_dl1_calibrator(event)
