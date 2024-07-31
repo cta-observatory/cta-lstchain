@@ -12,7 +12,6 @@ from scipy.interpolate import interp1d
 from traitlets.config import Config
 
 from lstchain.io import standard_config, read_configuration_file
-from lstchain.io.config import read_configuration_file
 from lstchain.reco.reconstructorCC import nsb_only_waveforms
 from lstchain.data import NormalizedPulseTemplate
 from lstchain.io.io import get_resource_path
@@ -409,7 +408,6 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
         extra_noise_in_bright_pixels
 
-
 def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config=None):
     """
     Calculates the additional NSB needed in the MC waveforms
@@ -473,7 +471,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     # and "not too bright" pixels (the idea is to exclude stars, we want to
     # estimate the overall "diffuse" NSB level)
     interleaved_ped = image_params['event_type'] == EventType.SKY_PEDESTAL.value
-    ped_pixq = camera['image'][interleaved_ped]
+    ped_pixq = camera_images['image'][interleaved_ped]
     ped_meanpixq = np.mean(ped_pixq, axis=1)
     ped_stdpixq = np.std(ped_pixq, axis=1)
     median_ped_meanpixq = np.median(ped_meanpixq[good_pixels])
@@ -489,9 +487,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     # Event reader for simtel file:
     mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
 
-    subarray = mcreader.subarray
-    sampling_rate = subarray.tel[1].camera.readout.sampling_rate
-    dt = (1.0 / sampling_rate).to(u.ns)
+    subarray = mc_reader.subarray
 
     # Get the single-pe response fluctuations:
     spe_location = (config['waveform_nsb_tuning']['spe_location']
@@ -538,7 +534,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
         # the future case in which there are more telescopes, but for now we
         # just create it with a single value for tel_id
         nsb = np.zeros(tel_id+1)
-        nsb[tel_id] = nsbrate
+        nsb[tel_id] = nsb_rate
         nsb_tuner.append(WaveformNsbTunner(nsb * u.GHz, pulse_templates,
                                            charge_spe_cumulative_pdf, 10))
     # last argument means it will precompute 10 * 1855 (pixels) * 2 (gains)
@@ -598,7 +594,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
                               charge_spe_cumulative_pdf, 10)
     final_mc_qped = []
     numevents = 0
-    for event in mcreader:
+    for event in mc_reader:
         if tel_id not in event.trigger.tels_with_trigger:
             continue
         numevents += 1

@@ -408,7 +408,6 @@ def r0_to_dl1(
         nsb_tuning = config['waveform_nsb_tuning']['nsb_tuning']
         if nsb_tuning:
             if is_simu:
-                nsb_original = extract_simulation_nsb(input_filename)
                 pulse_templates = {tel_id: NormalizedPulseTemplate.load_from_eventsource(
                     subarray.tel[tel_id].camera.readout, resample=True)
                     for tel_id in config['source_config']['LSTEventSource']['allowed_tels']}
