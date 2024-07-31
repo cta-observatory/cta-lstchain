@@ -472,8 +472,8 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     # estimate the overall "diffuse" NSB level)
     interleaved_ped = image_params['event_type'] == EventType.SKY_PEDESTAL.value
     ped_pixq = camera_images['image'][interleaved_ped]
-    ped_meanpixq = np.mean(ped_pixq, axis=1)
-    ped_stdpixq = np.std(ped_pixq, axis=1)
+    ped_meanpixq = np.mean(ped_pixq, axis=0)
+    ped_stdpixq = np.std(ped_pixq, axis=0)
     median_ped_meanpixq = np.median(ped_meanpixq[good_pixels])
     # Exclude the brightest pixels, which may be affected by stars:
     too_bright = (ped_meanpixq > median_ped_meanpixq + 3 * np.std(ped_meanpixq))
