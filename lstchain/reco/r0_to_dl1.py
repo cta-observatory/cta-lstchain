@@ -59,7 +59,7 @@ from ..io import (
     write_subarray_tables
 )
 
-from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key, get_resource_path
+from ..io.io import add_column_table, dl1_params_lstcam_key, get_resource_path
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from ..visualization.plot_reconstructor import plot_debug
@@ -434,7 +434,7 @@ def r0_to_dl1(
 
                 allowed_tels = config['source_config']['LSTEventSource'][
                     'allowed_tels']
-                logger.info(f'Tuning NSB on MC waveform by adding ')
+                logger.info('Tuning NSB on MC waveform by adding ')
                 logger.info(f'{nsb_tuning_rate:.3f} GHz for telescope ids:')
                 logger.info(f'{allowed_tels}')
 
