@@ -510,7 +510,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     if config is None:
         config = standard_config
 
-    # Obtain the median (accross camera) of mean (and satd dev of) pixel charge
+    # Obtain the median (across camera) of mean (and std dev of) pixel charge
     # taking into account only healthy pixels, and excluding outliers.
     # We also get the tel_id to which the DL1 file corresponds:
     median_ped_meanpixq, median_ped_stdpixq, tel_id = get_pix_median_charges(
