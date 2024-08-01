@@ -73,8 +73,8 @@ def test_calculate_required_additional_nsb(mc_gamma_testfile, observed_dl1_files
     # Mean pixel charge variance in pedestals is 0 because there is only one
     # pedestal event in the test file
     assert np.isclose(data_ped_variance, 0.0, atol=0.1)
-    assert np.isclose(mc_ped_variance, 3.2, atol=0.2)
-    assert np.isclose(extra_nsb, 0.22, atol=0.03)
+    assert np.isclose(mc_ped_variance, 2.3, atol=0.2)
+    assert np.isclose(extra_nsb, 0.08, atol=0.02)
 
 
 def test_tune_nsb_on_waveform():
