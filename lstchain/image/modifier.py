@@ -412,7 +412,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 def get_pix_median_charges(data_dl1_filename, event_type):
     """
     Obtain from a DL1 real data file (containing camera images, i.e. DL1a)
-    the median (accross camera) of mean (and std dev) of pixel charge for
+    the median (across camera) of mean (and std dev) of pixel charge for
     events of type event_type. The medians are obtained using only healthy
     pixels and excluding too bright outliers (we want to get the typical
     pixel values, unaffected by the few stars in the FoV)
