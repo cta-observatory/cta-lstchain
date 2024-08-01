@@ -618,6 +618,10 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     extra_nsb = custom_function(median_ped_meanpixq,
                                 params[0], params[1], params[2])
 
+    # Since the level of noise in MC is low, it should hardly ever happen
+    # that extra_nsb is negative, but just in case:
+    if extra_nsb < 0:
+        extra_nsb = 0
 
     # Now open the MC file again and test that the tuning was successful:
     mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
