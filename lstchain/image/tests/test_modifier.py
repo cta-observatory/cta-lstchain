@@ -70,9 +70,11 @@ def test_calculate_required_additional_nsb(mc_gamma_testfile, observed_dl1_files
         mc_gamma_testfile,
         observed_dl1_files["dl1_file1"]
     )
+    # Mean pixel charge variance in pedestals is 0 because there is only one
+    # pedestal event in the test file
     assert np.isclose(data_ped_variance, 0.0, atol=0.1)
-    assert np.isclose(mc_ped_variance, 3.11, atol=0.01)
-    assert np.isclose(extra_nsb, -1.0)
+    assert np.isclose(mc_ped_variance, 2.3, atol=0.2)
+    assert np.isclose(extra_nsb, 0.08, atol=0.02)
 
 
 def test_tune_nsb_on_waveform():
@@ -80,14 +82,14 @@ def test_tune_nsb_on_waveform():
     from ctapipe_io_lst import LSTEventSource
     from scipy.interpolate import interp1d
     from lstchain.io.io import get_resource_path
-    from lstchain.image.modifier import WaveformNsbTunner
+    from lstchain.image.modifier import WaveformNsbTuner
     from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
 
     waveform = np.array(
         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     )
-    added_nsb_fraction, original_nsb = 1.0, {1: 0.1 * u.GHz}
+    added_nsb_rate = {1: 0.1 * u.GHz}
     subarray = LSTEventSource.create_subarray(1)
     amplitude_HG = np.zeros(40)
     amplitude_LG = np.zeros(40)
@@ -106,11 +108,10 @@ def test_tune_nsb_on_waveform():
     charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                          bounds_error=False, fill_value=0.,
                                          assume_sorted=True)
-    nsb_tunner = WaveformNsbTunner(added_nsb_fraction,
-                                   original_nsb,
-                                   pulse_templates,
-                                   charge_spe_cumulative_pdf,
-                                   pre_computed_multiplicity=0)
+    nsb_tunner = WaveformNsbTuner(added_nsb_rate,
+                                  pulse_templates,
+                                  charge_spe_cumulative_pdf,
+                                  pre_computed_multiplicity=0)
     nsb_tunner.tune_nsb_on_waveform(waveform, 1, gain, subarray)
     assert np.any(waveform != 0)
     assert np.isclose(np.mean(waveform), 0.0, atol=0.2)
@@ -118,11 +119,10 @@ def test_tune_nsb_on_waveform():
         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     )
-    nsb_tunner = WaveformNsbTunner(added_nsb_fraction,
-                                   original_nsb,
-                                   pulse_templates,
-                                   charge_spe_cumulative_pdf,
-                                   pre_computed_multiplicity=10)
+    nsb_tunner = WaveformNsbTuner(added_nsb_rate,
+                                  pulse_templates,
+                                  charge_spe_cumulative_pdf,
+                                  pre_computed_multiplicity=10)
     nsb_tunner.tune_nsb_on_waveform(waveform, 1, gain, subarray)
     assert np.any(waveform != 0)
     assert np.isclose(np.mean(waveform), 0.0, atol=0.2)

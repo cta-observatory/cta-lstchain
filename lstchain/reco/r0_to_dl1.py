@@ -37,7 +37,7 @@ from ..data import NormalizedPulseTemplate
 from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.cleaning import apply_dynamic_cleaning
-from ..image.modifier import calculate_required_additional_nsb, WaveformNsbTunner
+from ..image.modifier import calculate_required_additional_nsb, WaveformNsbTuner
 from .reconstructor import TimeWaveformFitter
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
@@ -59,7 +59,7 @@ from ..io import (
     write_subarray_tables
 )
 
-from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key, get_resource_path
+from ..io.io import add_column_table, dl1_params_lstcam_key, get_resource_path
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from ..visualization.plot_reconstructor import plot_debug
@@ -403,25 +403,27 @@ def r0_to_dl1(
             metadata=metadata,
         )
     nsb_tuning = False
-    nsb_tunner = None
-    if 'waveform_nsb_tuning' in config.keys():
+    nsb_tuner = None
+    if 'waveform_nsb_tuning' in config:
         nsb_tuning = config['waveform_nsb_tuning']['nsb_tuning']
         if nsb_tuning:
             if is_simu:
-                nsb_original = extract_simulation_nsb(input_filename)
                 pulse_templates = {tel_id: NormalizedPulseTemplate.load_from_eventsource(
                     subarray.tel[tel_id].camera.readout, resample=True)
                     for tel_id in config['source_config']['LSTEventSource']['allowed_tels']}
-                if 'nsb_tuning_ratio' in config['waveform_nsb_tuning'].keys():
+                if 'nsb_tuning_rate_GHz' in config[
+                    'waveform_nsb_tuning']:
                     # get value from config to possibly extract it beforehand on multiple files for averaging purposes
                     # or gain time
-                    nsb_tuning_ratio = config['waveform_nsb_tuning']['nsb_tuning_ratio']
+                    nsb_tuning_rate = config['waveform_nsb_tuning'][
+                        'nsb_tuning_rate_GHz']
                 else:
                     # extract the pedestal variance difference between the current MC file and the target data
                     # FIXME? fails for multiple telescopes
-                    nsb_tuning_ratio = calculate_required_additional_nsb(input_filename,
-                                                                         config['waveform_nsb_tuning']['target_data'],
-                                                                         config=config)[0]
+                    nsb_tuning_rate, _, _ = calculate_required_additional_nsb(
+                            input_filename,
+                            config['waveform_nsb_tuning']['target_data'],
+                            config=config)
                 spe_location = (config['waveform_nsb_tuning']['spe_location']
                                 or get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
                 spe = np.loadtxt(spe_location).T
@@ -430,28 +432,33 @@ def r0_to_dl1(
                                                      bounds_error=False, fill_value=0.,
                                                      assume_sorted=True)
                 pre_computed_multiplicity = config['waveform_nsb_tuning'].get('pre_computed_multiplicity', 10)
-                logger.info('Tuning NSB on MC waveform from '
-                            + str(np.asarray(nsb_original))
-                            + ' to {0:d}%'.format(int(nsb_tuning_ratio * 100 + 100.5))
-                            + ' for telescopes ids ' + str(config['source_config']['LSTEventSource']['allowed_tels']))
-                nsb_tunner = WaveformNsbTunner(nsb_tuning_ratio,
-                                               nsb_original,
-                                               pulse_templates,
-                                               charge_spe_cumulative_pdf,
-                                               pre_computed_multiplicity)
+
+                allowed_tels = config['source_config']['LSTEventSource'][
+                    'allowed_tels']
+                logger.info('Tuning NSB on MC waveform by adding ')
+                logger.info(f'{nsb_tuning_rate:.3f} GHz for telescope ids:')
+                logger.info(f'{allowed_tels}')
+
+                nsb_per_tel = {tel_id: nsb_tuning_rate * u.GHz for tel_id in
+                               allowed_tels}
+
+                nsb_tuner = WaveformNsbTuner(nsb_per_tel,
+                                             pulse_templates,
+                                             charge_spe_cumulative_pdf,
+                                             pre_computed_multiplicity)
             else:
                 logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
                 nsb_tuning = False
 
     lhfit_fitter = None
-    if 'lh_fit_config' in config.keys():
+    if 'lh_fit_config' in config:
         lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
         lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
         if lhfit_fitter_config['TimeWaveformFitter']['use_interleaved']:
             tmp_source = EventSource(input_url=input_filename,
                                      config=Config(config["source_config"]))
             if is_simu:
-                lhfit_fitter.get_ped_from_true_signal_less(tmp_source, nsb_tunner)
+                lhfit_fitter.get_ped_from_true_signal_less(tmp_source, nsb_tuner)
             else:
                 lhfit_fitter.get_ped_from_interleaved(tmp_source)
             del tmp_source
@@ -570,7 +577,7 @@ def r0_to_dl1(
                     waveform = event.r1.tel[tel_id].waveform
                     selected_gains = event.r1.tel[tel_id].selected_gain_channel
                     mask_high = selected_gains == 0
-                    nsb_tunner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
+                    nsb_tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
 
             # create image for all events
             r1_dl1_calibrator(event)

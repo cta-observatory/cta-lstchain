@@ -274,7 +274,7 @@
   },
   "waveform_nsb_tuning":{
     "nsb_tuning": false,
-    "nsb_tuning_ratio": 0.5,
+    "nsb_tuning_rate_GHz": 0.15,
     "spe_location": null,
     "pre_computed_multiplicity": 10
   },
