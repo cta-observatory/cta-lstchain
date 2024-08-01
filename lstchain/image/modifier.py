@@ -597,7 +597,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
         modified_integrated_charge[0].extend(event.dl1.tel[tel_id].image[
                                                  pedmask])
 
-        # Now add the differentlevels of NSB and recompute charges:
+        # Now add the different levels of NSB and recompute charges:
         for ii, tuner in enumerate(nsb_tuner[1:]):
             waveform = event.r1.tel[tel_id].waveform
 
