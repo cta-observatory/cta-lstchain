@@ -23,7 +23,7 @@ __all__ = [
     'calculate_noise_parameters',
     'random_psf_smearer',
     'set_numba_seed',
-    'WaveformNsbTunner',
+    'WaveformNsbTuner',
 ]
 
 log = logging.getLogger(__name__)
@@ -556,7 +556,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     # Just the product of added_nsb and original_nsb (first two arguments
     # below) is relevant! Units "GHz" (p.e./ns)
     nsb_tuner = [None]
-    # We now create the instances of WaveformNsbTunner to add the different
+    # We now create the instances of WaveformNsbTuner to add the different
     # levels of noise to the MC waveforms.
     # NOTE: the waveform gets updated every time, the noise addition is
     # cumulative (hence the np.diff):
@@ -568,8 +568,9 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
         # just creates it with a single value, for tel_id
         nsb = {tel_id: nsb_rate * u.GHz for tel_id in
                config['source_config']['LSTEventSource']['allowed_tels']}
-        nsb_tuner.append(WaveformNsbTunner(nsb, pulse_templates,
-                                           charge_spe_cumulative_pdf, 10))
+        nsb_tuner.append(WaveformNsbTuner(nsb, pulse_templates,
+                                          charge_spe_cumulative_pdf,
+                                          pre_computed_multiplicity=10))
     # last argument means it will precompute 10 * 1855 (pixels) * 2 (gains)
     # noise waveforms to pick from during the actual introduction of the noise
 
@@ -626,8 +627,9 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
     nsb = {tel_id: extra_nsb * u.GHz for tel_id in
            config['source_config']['LSTEventSource']['allowed_tels']}
-    tuner = WaveformNsbTunner(nsb, pulse_templates,
-                              charge_spe_cumulative_pdf, 10)
+    tuner = WaveformNsbTuner(nsb, pulse_templates,
+                             charge_spe_cumulative_pdf,
+                             pre_computed_multiplicity=10)
     final_mc_qped = []
     numevents = 0
     for event in mc_reader:
@@ -659,7 +661,7 @@ def custom_function(x, a, b, c):
     """
     return a + b * x ** c
 
-class WaveformNsbTunner:
+class WaveformNsbTuner:
     """
     Handles the injection of additional NSB pulses in waveforms.
     """

@@ -37,7 +37,7 @@ from ..data import NormalizedPulseTemplate
 from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.cleaning import apply_dynamic_cleaning
-from ..image.modifier import calculate_required_additional_nsb, WaveformNsbTunner
+from ..image.modifier import calculate_required_additional_nsb, WaveformNsbTuner
 from .reconstructor import TimeWaveformFitter
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
@@ -442,10 +442,10 @@ def r0_to_dl1(
                 nsb_per_tel = {tel_id: nsb_tuning_rate * u.GHz for tel_id in
                                allowed_tels}
 
-                nsb_tuner = WaveformNsbTunner(nsb_per_tel,
-                                              pulse_templates,
-                                              charge_spe_cumulative_pdf,
-                                              pre_computed_multiplicity)
+                nsb_tuner = WaveformNsbTuner(nsb_per_tel,
+                                             pulse_templates,
+                                             charge_spe_cumulative_pdf,
+                                             pre_computed_multiplicity)
             else:
                 logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
                 nsb_tuning = False
