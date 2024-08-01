@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WaveformNsbTunner &mdash; lstchain 0.10.12.dev130+ga3da2c0c documentation</title>
+  <title>WaveformNsbTuner &mdash; lstchain 0.10.12.dev152+g378a4c3a documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/documentation_options.js?v=a8e9f6f8"></script>
+        <script src="../_static/documentation_options.js?v=e88f1e6d"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script>let toggleHintShow = 'Click to show';</script>
@@ -46,7 +46,7 @@
             lstchain
           </a>
               <div class="version">
-                0.10.12.dev130+ga3da2c0c
+                0.10.12.dev152+g378a4c3a
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -111,9 +111,9 @@
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
-      <li class="breadcrumb-item active">WaveformNsbTunner</li>
+      <li class="breadcrumb-item active">WaveformNsbTuner</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/lstchain.image.modifier.WaveformNsbTunner.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api/lstchain.image.modifier.WaveformNsbTuner.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -121,25 +121,25 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="waveformnsbtunner">
-<h1>WaveformNsbTunner<a class="headerlink" href="#waveformnsbtunner" title="Link to this heading">¶</a></h1>
+  <section id="waveformnsbtuner">
+<h1>WaveformNsbTuner<a class="headerlink" href="#waveformnsbtuner" title="Link to this heading">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="lstchain.image.modifier.WaveformNsbTunner">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.image.modifier.</span></span><span class="sig-name descname"><span class="pre">WaveformNsbTunner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">added_nsb_fraction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_nsb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pulse_template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_spe_cumulative_pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_computed_multiplicity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.WaveformNsbTunner" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="lstchain.image.modifier.WaveformNsbTuner">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.image.modifier.</span></span><span class="sig-name descname"><span class="pre">WaveformNsbTuner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">added_nsb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pulse_template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_spe_cumulative_pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_computed_multiplicity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.WaveformNsbTuner" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Handles the injection of additional NSB pulses in waveforms.</p>
 <p class="rubric">Methods Summary</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.image.modifier.WaveformNsbTunner.initialise_waveforms" title="lstchain.image.modifier.WaveformNsbTunner.initialise_waveforms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initialise_waveforms</span></code></a>(waveform, dt, tel_id)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.image.modifier.WaveformNsbTuner.initialise_waveforms" title="lstchain.image.modifier.WaveformNsbTuner.initialise_waveforms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initialise_waveforms</span></code></a>(waveform, dt, tel_id)</p></td>
 <td><p>Creates an array of nsb only waveforms later used to inject additional nsb in events.</p></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Methods Documentation</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="lstchain.image.modifier.WaveformNsbTunner.initialise_waveforms">
-<span class="sig-name descname"><span class="pre">initialise_waveforms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">waveform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tel_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.WaveformNsbTunner.initialise_waveforms" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="lstchain.image.modifier.WaveformNsbTuner.initialise_waveforms">
+<span class="sig-name descname"><span class="pre">initialise_waveforms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">waveform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tel_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.WaveformNsbTuner.initialise_waveforms" title="Link to this definition">¶</a></dt>
 <dd><p>Creates an array of nsb only waveforms later used to inject additional nsb in events.
 Called once for each telescope id at first encounter in <cite>self._tune_nsb_on_waveform_precomputed</cite>.</p>
 <dl class="field-list simple">
@@ -171,7 +171,7 @@ Called once for each telescope id at first encounter in <cite>self._tune_nsb_on_
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 30 Jul 2024 07:25.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 01 Aug 2024 14:38.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
