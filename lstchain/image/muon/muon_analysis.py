@@ -137,9 +137,7 @@ def fit_muon(x, y, image, geom, tailcuts=None):
         bins=bins[:-1]
 
         cumulative = np.cumsum(hist)
-        normalised_cumulative_hist = cumulative / cumulative[-1]
-
-        idx = (np.abs(normalised_cumulative_hist - 0.318)).argmin() #Find q closest to standard deviation
+        idx = (np.abs(cumulative - 0.318 * cumulative[-1])).argmin() #Find q closest to standard deviation
         dev = np.abs(bins[idx])
         # We want to get, from a single image, a quantity related to the width of the 
         # noise distribution, but only using the negative side of the distribution of pixel charges 
