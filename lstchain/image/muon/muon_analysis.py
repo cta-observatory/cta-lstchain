@@ -135,7 +135,7 @@ def fit_muon(x, y, image, geom, tailcuts=None):
         hist, bins = np.histogram(negative_Q,range=(-15,0),bins=30)
         bins=bins[:-1]
         
-        normalised_cumulative_hist = np.asarray(np.cumsum(hist)/np.sum(hist))
+        normalised_cumulative_hist = np.cumsum(hist)/np.sum(hist)
 
         idx = (np.abs(normalised_cumulative_hist - 0.318)).argmin() #Find q closest to standard deviation
         dev = np.abs(bins[idx])
