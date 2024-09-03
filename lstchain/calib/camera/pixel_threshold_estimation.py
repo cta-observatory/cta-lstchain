@@ -5,7 +5,6 @@ from lstchain.io.io import dl1_params_tel_mon_ped_key, dl1_params_tel_mon_cal_ke
 
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.config import get_cleaning_parameters
 
 ORIGINAL_CALIBRATION_ID = 0
 INTERLEAVED_CALIBRATION_ID = 1
@@ -24,10 +23,10 @@ def get_bias_and_std(dl1_file):
     """
     with tables.open_file(dl1_file) as f:
         ped = f.root[dl1_params_tel_mon_ped_key]
-        ped_charge_mean = np.array(ped.cols.charge_mean)
-        ped_charge_std = np.array(ped.cols.charge_std)
+        ped_charge_mean = ped.col('charge_mean')
+        ped_charge_std = ped.col('charge_std')
         calib = f.root[dl1_params_tel_mon_cal_key]
-        dc_to_pe = np.array(calib.cols.dc_to_pe[ORIGINAL_CALIBRATION_ID])
+        dc_to_pe = calib.col('dc_to_pe')[ORIGINAL_CALIBRATION_ID]
         ped_charge_mean_pe = ped_charge_mean * dc_to_pe
         ped_charge_std_pe = ped_charge_std * dc_to_pe
 
@@ -140,7 +139,6 @@ def find_safe_threshold_from_dl1_file(dl1_path, config_file=None,
         config = std_config
 
     cleaning_method = 'tailcuts_clean_with_pedestal_threshold'
-    picture_th, _, _, _ = get_cleaning_parameters(config, cleaning_method)
     sigma = config[cleaning_method]['sigma']
 
     # Obtain the picture thresholds of pixels based on the "clean with

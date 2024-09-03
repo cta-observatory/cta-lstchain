@@ -48,7 +48,7 @@ def read_sim_par(file):
     emin = simu_info.energy_range_min
     emax = simu_info.energy_range_max
     sp_idx = simu_info.spectral_index
-    sim_ev = simu_info.num_showers * simu_info.shower_reuse
+    sim_ev = simu_info.n_showers * simu_info.shower_reuse
     area_sim = (simu_info.max_scatter_range - simu_info.min_scatter_range) ** 2 * np.pi
     cone = simu_info.max_viewcone_radius
 

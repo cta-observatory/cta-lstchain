@@ -1,11 +1,16 @@
 import tempfile
-
+import json
+import math
 import numpy as np
 import pandas as pd
 import pytest
 import tables
 from astropy.table import Table, QTable
 from ctapipe.instrument import SubarrayDescription
+from lstchain.io import add_config_metadata
+from lstchain.io.io import get_resource_path
+from pathlib import PosixPath
+from traitlets.config.loader import DeferredConfigString, LazyConfigValue
 
 
 @pytest.fixture
@@ -22,7 +27,9 @@ def merged_h5file(tmp_path, simulated_dl1_file):
 
     merged_dl1_file_ = tmp_path / "dl1_merged_nocheck.h5"
     auto_merge_h5files(
-        [simulated_dl1_file, simulated_dl1_file], output_filename=merged_dl1_file_, run_checks=False
+        [simulated_dl1_file, simulated_dl1_file],
+        output_filename=merged_dl1_file_,
+        run_checks=False,
     )
 
     subarray_merged = SubarrayDescription.from_hdf(merged_dl1_file)
@@ -125,8 +132,8 @@ def test_read_simu_info_hdf5(simulated_dl1_file):
 
     mcheader = read_simu_info_hdf5(simulated_dl1_file)
     # simtel verion of the mc_gamma_testfile defined in test_lstchain
-    assert mcheader.simtel_version == 1462392225
-    assert mcheader.num_showers == 20000
+    assert mcheader.simtel_version == 1593356843
+    assert mcheader.n_showers == 10
 
 
 def test_read_simu_info_merged_hdf5(merged_h5file):
@@ -134,8 +141,8 @@ def test_read_simu_info_merged_hdf5(merged_h5file):
 
     mcheader = read_simu_info_merged_hdf5(merged_h5file)
     # simtel verion of the mc_gamma_testfile defined in test_lstchain
-    assert mcheader.simtel_version == 1462392225
-    assert mcheader.num_showers == 40000
+    assert mcheader.simtel_version == 1593356843
+    assert mcheader.n_showers == 20
 
 
 def test_trigger_type_in_dl1_params(simulated_dl1_file):
@@ -147,39 +154,91 @@ def test_trigger_type_in_dl1_params(simulated_dl1_file):
 
 def test_extract_simulation_nsb(mc_gamma_testfile):
     from lstchain.io.io import extract_simulation_nsb
+    import astropy.units as u
+
     nsb = extract_simulation_nsb(mc_gamma_testfile)
-    assert np.isclose(nsb[0], 0.317, rtol=0.1)
-    assert np.isclose(nsb[1], 0.276, rtol=0.1)
+    assert np.isclose(nsb[1].to_value(u.GHz), 0.246, rtol=0.1)
 
 
 def test_remove_duplicated_events():
     from lstchain.io.io import remove_duplicated_events
-    
-    d = {'event_id': [1, 2, 3,
-                      1, 2, 4,
-                      1, 2, 3], 
-         'gh_score': [0.1, 0.5, 0.7,
-                      0.5, 0.8, 0.1,
-                      0.9, 0.1, 0.5],
-         'alpha': range(9) 
-     }
+
+    d = {
+        "event_id": [1, 2, 3, 1, 2, 4, 1, 2, 3],
+        "gh_score": [0.1, 0.5, 0.7, 0.5, 0.8, 0.1, 0.9, 0.1, 0.5],
+        "alpha": range(9),
+    }
     df = pd.DataFrame(data=d)
     data1 = QTable.from_pandas(df)
     remove_duplicated_events(data1)
 
-    d2 = {'event_id': [3, 2, 4, 1], 
-          'gh_score': [0.7, 0.8, 0.1, 0.9],
-          'alpha': [2, 4, 5, 6]
-      }
+    d2 = {
+        "event_id": [3, 2, 4, 1],
+        "gh_score": [0.7, 0.8, 0.1, 0.9],
+        "alpha": [2, 4, 5, 6],
+    }
     df2 = pd.DataFrame(data=d2)
-    data2= QTable.from_pandas(df2)
+    data2 = QTable.from_pandas(df2)
 
-    assert np.all(data1==data2)
+    assert np.all(data1 == data2)
 
 
 def test_check_mc_type(simulated_dl1_file):
     from lstchain.io.io import check_mc_type
 
     mc_type = check_mc_type(simulated_dl1_file)
-    assert mc_type == 'diffuse'
+    assert mc_type == "diffuse"
 
+
+def test_add_config_metadata():
+    class Container:
+        meta = {}
+
+    lazy_value = LazyConfigValue()
+    lazy_value.update({"key": "new_value"})
+
+    config = {
+        "param1": 1,
+        "param2": "value2",
+        "param3": [1, 2, 3],
+        "param4": {"a": 1, "b": 2},
+        "param5": None,
+        "param6": lazy_value,
+        "param7": DeferredConfigString("some_string"),
+        "param8": PosixPath("/path/to/file"),
+        "param9": np.inf,
+        "param10": True,
+        "param11": False,
+        "param12": np.array([1, 2, 3]),
+    }
+
+    expected_config = {
+        "param1": 1,
+        "param2": "value2",
+        "param3": [1, 2, 3],
+        "param4": {"a": 1, "b": 2},
+        "param5": None,
+        "param6": {"update": {"key": "new_value"}},
+        "param7": "some_string",
+        "param8": "/path/to/file",
+        "param9": math.inf,
+        "param10": True,
+        "param11": False,
+        "param12": [1, 2, 3],
+    }
+
+    container = Container()
+    add_config_metadata(container, config)
+    assert json.loads(container.meta["config"]) == expected_config
+
+    # test also with standard config in case of future changes 
+    from lstchain.io.config import get_standard_config
+    config = get_standard_config()
+    container = Container()
+    add_config_metadata(container, config)
+    assert json.loads(container.meta["config"]) == config
+
+
+def test_get_resource_path():
+    filepath = get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")
+    assert filepath.is_file()

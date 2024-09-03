@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 import warnings
 from multiprocessing import Pool
 from contextlib import ExitStack
@@ -10,6 +9,10 @@ import pandas as pd
 import tables
 from tables import open_file
 from tqdm import tqdm
+import json
+from traitlets.config.loader import DeferredConfigString, LazyConfigValue
+from pathlib import PosixPath
+from importlib import resources
 
 import astropy.units as u
 from astropy.table import Table, vstack, QTable
@@ -18,9 +21,8 @@ from ctapipe.containers import SimulationConfigContainer
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableReader, HDF5TableWriter
 
-from eventio import Histograms, EventIOFile
-from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
-from eventio.simtel.objects import History, HistoryConfig
+from eventio import Histograms, SimTelFile
+from eventio.search_utils import yield_toplevel_of_type
 
 from pyirf.simulations import SimulatedEventsInfo
 
@@ -30,6 +32,7 @@ from .lstcontainers import (
     MetaData,
     ThrownEventsHistogram,
 )
+
 
 log = logging.getLogger(__name__)
 
@@ -47,13 +50,13 @@ __all__ = [
     'extract_simulation_nsb',
     'extract_observation_time',
     'get_dataset_keys',
+    'get_mc_fov_offset',
     'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'get_stacked_table',
     'global_metadata',
     'merge_dl2_runs',
     'merging_check',
-    'parse_cfg_bytestring',
     'read_data_dl2_to_QTable',
     'read_dl2_params',
     'read_mc_dl2_to_QTable',
@@ -71,12 +74,16 @@ __all__ = [
     'write_metadata',
     'write_simtel_energy_histogram',
     'write_subarray_tables',
-
+    'get_resource_path'
 ]
+
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
+dl1_mon_tel_catB_ped_key = "/dl1/monitoring/telescope/catB/pedestal"
+dl1_mon_tel_catB_cal_key = "/dl1/monitoring/telescope/catB/calibration"
+dl1_mon_tel_catB_flat_key = "/dl1/monitoring/telescope/catB/flatfield"
 dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
 dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
@@ -85,8 +92,9 @@ dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/L
 dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
 dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
+
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
+    complevel=1,  # enable compression, after some tests on DL1 data (images and parameters), complevel>1 does not improve compression very much but slows down IO significantly
     complib='blosc:zstd',  # compression using blosc/zstd
     fletcher32=True,  # attach a checksum to each chunk for error correction
     bitshuffle=False,  # for BLOSC, shuffle bits for better compression
@@ -108,7 +116,7 @@ def read_simu_info_hdf5(filename):
     """
 
     with HDF5TableReader(filename) as reader:
-        mc_reader = reader.read("/simulation/run_config", SimulationConfigContainer())
+        mc_reader = reader.read("/simulation/run_config", SimulationConfigContainer)
         mc = next(mc_reader)
 
     return mc
@@ -118,7 +126,7 @@ def read_simu_info_merged_hdf5(filename):
     """
     Read simu info from a merged hdf5 file.
     Check that simu info are the same for all runs from merged file
-    Combine relevant simu info such as num_showers (sum)
+    Combine relevant simu info such as n_showers (sum)
     Note: works for a single run file as well
 
     Parameters
@@ -133,13 +141,13 @@ def read_simu_info_merged_hdf5(filename):
     with open_file(filename) as file:
         simu_info = file.root["simulation/run_config"]
         colnames = simu_info.colnames
-        skip = {"num_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
+        skip = {"n_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
         for k in filter(lambda k: k not in skip, colnames):
             assert np.all(simu_info[:][k] == simu_info[0][k])
-        num_showers = simu_info[:]["num_showers"].sum()
+        n_showers = simu_info[:]["n_showers"].sum()
 
     combined_mcheader = read_simu_info_hdf5(filename)
-    combined_mcheader["num_showers"] = num_showers
+    combined_mcheader["n_showers"] = n_showers
 
     for k in combined_mcheader.keys():
         if (
@@ -294,6 +302,7 @@ def auto_merge_h5files(
         file_list,
         output_filename="merged.h5",
         nodes_keys=None,
+        keys_to_copy=None,
         merge_arrays=False,
         filters=HDF5_ZSTD_FILTERS,
         progress_bar=True,
@@ -309,6 +318,7 @@ def auto_merge_h5files(
     file_list: list of path
     output_filename: path
     nodes_keys: list of path
+    keys_to_copy: list of nodes that must be copied and not merged (because the same in all files)
     merge_arrays: bool
     filters
     progress_bar: bool
@@ -325,6 +335,17 @@ def auto_merge_h5files(
         keys = set(get_dataset_keys(file_list[0]))
     else:
         keys = set(nodes_keys)
+    
+    # Do not merge nor copy monitoring tables present in sub-run files
+    keys_to_remove = [
+        dl1_params_tel_mon_ped_key, 
+        dl1_params_tel_mon_cal_key, 
+        dl1_params_tel_mon_flat_key
+    ]
+    for key_to_remove in keys_to_remove:
+        keys.discard(key_to_remove)
+
+    keys_to_copy = set() if keys_to_copy is None else set(keys_to_copy).intersection(keys)
 
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
@@ -333,8 +354,19 @@ def auto_merge_h5files(
 
         bar.update(1)
         for filename in file_list[1:]:
+
             common_keys = keys.intersection(get_dataset_keys(filename))
+
+            # do not merge specific nodes with equal data in all files
+            common_keys=common_keys.difference(keys_to_copy)
+
             with open_file(filename) as file:
+                # check value of Table.nrow for keys copied from the first file
+                for k in keys_to_copy:
+                    first_node = merge_file.root[k]
+                    present_node = file.root[k]
+                    if first_node.nrows != present_node.nrows:
+                        raise ValueError("Length of key {} from file {} different than in file {}".format(k, filename, file_list[0]))
                 for k in common_keys:
                     in_node = file.root[k]
                     out_node = merge_file.root[k]
@@ -520,7 +552,7 @@ def check_mcheader(mcheader1, mcheader2):
     keys = list(mcheader1.keys())
     """keys that don't need to be checked: """
     for k in [
-        "num_showers",
+        "n_showers",
         "shower_reuse",
         "detector_prog_start",
         "detector_prog_id",
@@ -657,6 +689,50 @@ def add_global_metadata(container, metadata):
         container.meta[k] = item
 
 
+
+
+def serialize_config(obj):
+    """
+    Serialize an object to a JSON-serializable format.
+
+    Parameters
+    ----------
+    obj : object
+        The object to serialize.
+
+    Returns
+    -------
+    object
+        The serialized object.
+
+    Raises
+    ------
+    TypeError
+        If the object is not serializable.
+
+    Notes
+    -----
+    This function serializes an object to a JSON-serializable format. It supports the following types:
+    - LazyConfigValue
+    - DeferredConfigString
+    - PosixPath
+    - numpy.ndarray
+
+    If the object is not one of the above types, a TypeError is raised.
+
+    """
+    if isinstance(obj, LazyConfigValue):
+        return obj.to_dict()
+    elif isinstance(obj, DeferredConfigString):
+        return str(obj)
+    elif isinstance(obj, PosixPath):
+        return obj.as_posix()
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        raise TypeError(f"Type {type(obj).__name__} not serializable")
+
+
 def add_config_metadata(container, configuration):
     """
     Add configuration parameters to a container in container.meta.config
@@ -666,18 +742,7 @@ def add_config_metadata(container, configuration):
     container: `ctapipe.containers.Container`
     configuration: config dict
     """
-    linted_config = str(configuration)
-    linted_config = linted_config.replace("<LazyConfigValue {}>", "None")
-    linted_config = re.sub(r"<LazyConfigValue\svalue=(.*?)>", "\\1", linted_config)
-    linted_config = re.sub(r"DeferredConfigString\((.*?)\)", "\\1", linted_config)
-    linted_config = re.sub(r"PosixPath\((.*?)\)", "\\1", linted_config)
-    linted_config = linted_config.replace("\'", "\"")
-    linted_config = linted_config.replace("None", "\"None\"")
-    linted_config = linted_config.replace("inf", "\"inf\"")
-    linted_config = linted_config.replace("True", "true")
-    linted_config = linted_config.replace("False", "false")
-
-    container.meta["config"] = linted_config
+    container.meta["config"] = json.dumps(configuration, default=serialize_config)
 
 
 def write_subarray_tables(writer, event, metadata=None):
@@ -698,18 +763,33 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None, filters=HDF5_ZSTD_FILTERS):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    table_path: str
-        path to the table to write in the HDF5 file
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    table_path : str
+        The path to the table to write in the HDF5 file.
+    mode: str
+        If given a path for ``h5file``, it will be opened in this mode.
+        See the docs of ``tables.open_file``.
+    index : bool, optional
+        Whether to include the index of the dataframe in the output. Default is False.
+    config : dict, optional
+        Configuration metadata to be stored as an attribute of the output table. Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        Global metadata to be stored as attributes of the output table. Default is None.
+    filters : tables.Filters, optional
+        Filters to apply when writing the output table. Default is tables.Filters(complevel=1, complib='zstd', shuffle=True).
+
+    Returns
+    -------
+    None
     """
     if not table_path.startswith("/"):
         table_path = "/" + table_path
@@ -722,6 +802,7 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, confi
             table_name,
             dataframe.to_records(index=index),
             createparents=True,
+            filters=filters,
         )
         if config:
             t.attrs["config"] = config
@@ -736,10 +817,16 @@ def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
 
     Parameters
     ----------
-    dataframe: `pandas.DataFrame`
-    outfile: path
-    config: config metadata
-    meta: global metadata
+    dataframe : pandas.DataFrame
+        The DL2 dataframe to be written to the HDF5 file.
+    outfile : str
+        The path to the output HDF5 file.
+    config : dict, optional
+        A dictionary containing used configuration.
+        Default is None.
+    meta : `lstchain.io.lstcontainers.MetaData`, optional
+        global metadata.
+        Default is None.
     """
     write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
 
@@ -820,6 +907,7 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     mon_event.flatfield.prefix = ''
     mon_event.calibration.prefix = ''
     mon_index.prefix = ''
+    monitoring_table='telescope/monitoring'
 
     # update index
     if new_ped:
@@ -832,20 +920,20 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     if new_ped:
         # write ped container
         writer.write(
-            table_name="telescope/monitoring/pedestal",
+            table_name=f"{monitoring_table}/pedestal",
             containers=[mon_index, mon_event.pedestal],
         )
 
     if new_ff:
         # write calibration container
         writer.write(
-            table_name="telescope/monitoring/flatfield",
+            table_name=f"{monitoring_table}/flatfield",
             containers=[mon_index, mon_event.flatfield],
         )
 
         # write ff container
         writer.write(
-            table_name="telescope/monitoring/calibration",
+            table_name=f"{monitoring_table}/calibration",
             containers=[mon_index, mon_event.calibration],
         )
 
@@ -911,12 +999,13 @@ def read_mc_dl2_to_QTable(filename):
     ) * u.rad
 
     pyirf_simu_info = SimulatedEventsInfo(
-        n_showers=simu_info.num_showers * simu_info.shower_reuse,
+        n_showers=simu_info.n_showers * simu_info.shower_reuse,
         energy_min=simu_info.energy_range_min,
         energy_max=simu_info.energy_range_max,
         max_impact=simu_info.max_scatter_range,
         spectral_index=simu_info.spectral_index,
-        viewcone=simu_info.max_viewcone_radius
+        viewcone_min=simu_info.min_viewcone_radius,
+        viewcone_max=simu_info.max_viewcone_radius
     )
 
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
@@ -1172,37 +1261,34 @@ def remove_duplicated_events(data):
     data.remove_rows(remove_row_list)
 
 
-def parse_cfg_bytestring(bytestring):
-    """
-    Parse configuration as read by eventio
-    :param bytes bytestring: A ``Bytes`` object with configuration data for one parameter
-    :return: Tuple in form ``('parameter_name', 'value')``
-    """
-    line_decoded = bytestring.decode('utf-8').rstrip()
-    if 'ECHO' in line_decoded or '#' in line_decoded:
-        return None
-    line_list = line_decoded.split('%', 1)[0]  # drop comment
-    res = re.sub(' +', ' ', line_list).strip().split(' ', 1)  # remove extra whitespaces and split
-    return res[0].upper(), res[1]
-
-
 def extract_simulation_nsb(filename):
     """
-    Get current run NSB from configuration in simtel file
+    Get current run NSB from configuration in simtel file.
+
+    WARNING : In current MC, correct NSB are logged after 'STORE_PHOTOELECTRONS' entries
+    In any new production, behaviour needs to be verified.
+    New version of simtel will allow to use better metadata.
+
     :param str filename: Input file name
-    :return array of `float` by tel_id: NSB rate
+    :return dict of `float` by tel_id: NSB rate
     """
-    nsb = []
-    with EventIOFile(filename) as f:
-        for o in yield_all_subobjects(f, [History, HistoryConfig]):
-            if hasattr(o, 'parse'):
-                try:
-                    cfg_element = parse_cfg_bytestring(o.parse()[1])
-                    if cfg_element is not None:
-                        if cfg_element[0] == 'NIGHTSKY_BACKGROUND':
-                            nsb.append(float(cfg_element[1].strip('all:')))
-                except Exception as e:
-                    print('Unexpected end of %s,\n caught exception %s', filename, e)
+    nsb = {}
+    next_nsb = False
+    tel_id = 1
+    with SimTelFile(filename) as f:
+        for _, line in f.history:
+            line = line.decode('utf-8').strip().split(' ')
+            if next_nsb and line[0] == 'NIGHTSKY_BACKGROUND':
+                nsb[tel_id] = float(line[1].strip('all:')) * u.GHz
+                tel_id = tel_id+1
+            if line[0] == 'STORE_PHOTOELECTRONS':
+                next_nsb = True
+            else:
+                next_nsb = False
+    log.warning('Original MC night sky background extracted from the config history in the simtel file.\n'
+                'This is done for existing LST MC such as the one created using: '
+                'https://github.com/cta-observatory/lst-sim-config/tree/sim-tel_LSTProd2_MAGICST0316'
+                '\nExtracted values are: ' + str(np.asarray(nsb)) + '. Check that it corresponds to expectations.')
     return nsb
 
 
@@ -1235,3 +1321,36 @@ def check_mc_type(filename):
         raise ValueError('mc type cannot be identified')
 
     return mc_type
+
+
+def get_mc_fov_offset(filename):
+    """
+    Calculate the mean field of view offset (the "wobble-distance")
+    from the simulation info.
+
+    Parameters
+    ----------
+    filename:path (DL1/DL2 hdf file)
+
+    Returns
+    -------
+    mean_offset: float
+    """
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+
+    # Make sure we have full precision here
+    min_viewcone = simu_info.min_viewcone_radius.value.astype(float)
+    max_viewcone = simu_info.max_viewcone_radius.value.astype(float)
+
+    # This calculation is slightly more stable
+    mean_offset = min_viewcone + 0.5 * (max_viewcone - min_viewcone)
+
+    return mean_offset
+
+
+def get_resource_path(filename):
+    """
+    Get a resource data path in lstchain package
+    """
+    return resources.files("lstchain") / filename

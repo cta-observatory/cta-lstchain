@@ -7,7 +7,7 @@ from numba import njit
 
 
 @njit(cache=True)
-def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, n_peaks, weight):
+def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, n_peaks):
     """
     Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.
     The log likelihood is sum(pixels) sum(times) of the log single sample likelihood.
@@ -33,8 +33,6 @@ def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, n_pe
     n_peaks: int64
         Size of the factorial array and possible number of photo-electron
         in a pixel with relevant Poisson probability
-    weight : float 64 2D array
-        Weight to use in the likelihood for each sample
 
     Returns
     ----------
@@ -65,12 +63,11 @@ def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, n_pe
             if sumlh_k <= 0:
                 return -np.inf
             # Add the log single sample likelihood to the full log likelihood
-            # An optional weight increasing high signal sample importance is supported
-            sumlh += weight[i, j] * np.log(sumlh_k)
+            sumlh += np.log(sumlh_k)
     return sumlh
 
 @njit(cache=True)
-def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
+def log_pdf_hl(mu, waveform, error, crosstalk, templates):
     """
     Performs the sum log likelihood for high luminosity pixels in TimeWaveformFitter.log_pdf
     The log likelihood is sum(pixels) sum(times) of the log single sample likelihood.
@@ -88,8 +85,6 @@ def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
         Crosstalk factor for each pixel
     templates: float64 2D array
         Value of the pulse template evaluated in each pixel at each observed time
-    weight : float 64 2D array
-        Weight to use in the likelihood for each sample
 
     Returns
     ----------
@@ -109,8 +104,7 @@ def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
             log_gauss = (-(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma
                          - np.log(np.sqrt(2 * np.pi) * sigma))
             # Add the log single sample likelihood to the full log likelihood
-            # An optional weight increasing high signal sample importance is supported
-            sumlh += weight[i, j] * log_gauss
+            sumlh += log_gauss
     return sumlh
 
 
@@ -228,10 +222,76 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg):
 
 
 @njit(cache=True)
+def nsb_only_waveforms(time, is_high_gain, additional_nsb, amplitude, t_0,
+                        t0_template, dt_template, a_hg_template, a_lg_template):
+    """
+    Generate waveforms of pure NSB. NSB photons injected through a fast interpolator using a
+    uniformly sampled normalised template with known time of first value and time step.
+    The method requires as input the number of NSB events to inject per pixel,
+    the times of injection and the events normalisations.
+
+    Interpolation code duplicated from function template_interpolation.
+
+    Parameters
+    ----------
+    time: float64 1D array
+        Times of each waveform samples
+    is_high_gain: boolean 1D array
+        Gain channel used per pixel: True=hg, False=lg
+    additional_nsb: float64 1D array
+        Number of NSB photons to inject per pixel
+    amplitude: float 2D array
+        Normalisation factor to apply to the template per photon in each pixel
+    t_0: float 2D array
+        Shift in the origin of time per photon in each pixel
+    t0_template: float64
+        Time of the first value of the pulse template
+    dt_template: float 64
+        Time step between template values
+    a_hg_template: float64 1D array
+        Template values for the high gain channel
+    a_lg_template: float64 1D array
+        Template values for the low gain channel
+
+    Returns
+    -------
+    nsb_waveform: float64 2D array
+        Charge (p.e. / ns) in each pixel and sampled time of the injected NSB photons
+    """
+    n_pixels = additional_nsb.shape[0]
+    m = time.shape[0]
+    nsb_waveform = np.zeros((n_pixels, m), dtype=np.float64)
+    size = a_hg_template.shape[0]
+    single_spe_waveform = np.empty(m)
+
+    times = time / dt_template
+    t0 = (t_0 + t0_template) / dt_template
+    for i in range(n_pixels):
+        for j in range(additional_nsb[i]):
+            # Find the index before the requested time
+            a = times - t0[i, j]
+
+            for k in range(m):
+                t = int(a[k])
+
+                if 0 < t + 1 < size:
+                    # Select the gain and interpolate the pulse template at the requested time
+                    single_spe_waveform[k] = a_hg_template[t] * (1. - a[k] + t) + a_hg_template[t + 1] * (a[k] - t) if is_high_gain[i] else\
+                        a_lg_template[t] * (1. - a[k] + t) + a_lg_template[t + 1] * (a[k] - t)
+                else:
+                    # Assume 0 if outside the recorded range
+                    single_spe_waveform[k] = 0.0
+
+            nsb_waveform[i] += amplitude[i, j] * single_spe_waveform
+
+    return nsb_waveform
+
+
+@njit(cache=True)
 def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
             data, error, is_high_gain, sig_s, crosstalks, times, time_shift,
             p_x, p_y, pix_area,  template_dt, template_t0, template_lg,
-            template_hg, n_peaks, transition_charge, use_weight, factorial):
+            template_hg, n_peaks, transition_charge, factorial):
     """
     Compute the log likelihood of the model used for a set of input parameters.
 
@@ -278,8 +338,6 @@ def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
         Maximum number of p.e. term used in the low luminosity likelihood
     transition_charge: float32
         Model charge above which the Gaussian approximation (log_pdf_hl) is used
-    use_weight: bool
-        If True, the brightest sample are made more important in the likelihood computation
     factorial: unsigned int64
         Pre-computed table of factorials
 
@@ -318,11 +376,6 @@ def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
     mask_LL = (mu <= transition_charge) & (mu > 0)
     mask_HL = ~mask_LL
 
-    if use_weight:
-        weight = 1.0 + (data / np.max(data))
-    else:
-        weight = np.ones(data.shape)
-
     log_pdf_faint = log_pdf_ll(mu[mask_LL],
                                data[mask_LL],
                                error[mask_LL],
@@ -330,16 +383,14 @@ def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
                                sig_s[mask_LL],
                                templates[mask_LL],
                                factorial,
-                               n_peaks,
-                               weight[mask_LL])
+                               n_peaks)
 
     log_pdf_bright = log_pdf_hl(mu[mask_HL],
                                 data[mask_HL],
                                 error[mask_HL],
                                 crosstalks[mask_HL],
-                                templates[mask_HL],
-                                weight[mask_HL])
+                                templates[mask_HL])
 
-    log_lh = (log_pdf_faint + log_pdf_bright) / np.sum(weight)
+    log_lh = (log_pdf_faint + log_pdf_bright) / (data.shape[0] * data.shape[1])
 
     return log_lh

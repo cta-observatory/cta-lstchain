@@ -4,14 +4,8 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-from ctapipe.containers import (
-    FlatFieldContainer,
-    PedestalContainer,
-    WaveformCalibrationContainer,
-)
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.core import Tool, traits
-from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.visualization import CameraDisplay
 from ctapipe_io_lst import constants
 from ctapipe_io_lst import load_camera_geometry
@@ -20,6 +14,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MaxNLocator
 from scipy.optimize import curve_fit
 from traitlets import List, Int, Dict, Float
+from ..io import read_calibration_file
 
 __all__ = [
     'FitIntensityScan'
@@ -128,10 +123,6 @@ class FitIntensityScan(Tool):
         self.fit_error = np.zeros((constants.N_GAINS, constants.N_PIXELS))
 
     def setup(self):
-
-        ff_data = FlatFieldContainer()
-        ped_data = PedestalContainer()
-        calib_data = WaveformCalibrationContainer()
         channel = ["HG", "LG"]
 
         # loop on runs and memorize data
@@ -151,34 +142,33 @@ class FitIntensityScan(Tool):
                 if os.path.getsize(inp_file) < 100:
                     raise IOError(f"file size run {run} is too short \n")
 
-                if read_calibration_file(inp_file, ff_data, calib_data, ped_data):
-                    self.log.debug(f"Read file {inp_file}")
-                    for chan in self.gain_channels:
-                        # verify that the median signal is inside the asked range
-                        median_charge = np.nanmedian(ff_data.charge_median[chan])
+                self.log.debug(f"Read file {inp_file}")               
+                mon = read_calibration_file(inp_file)
+                
+                for chan in self.gain_channels:
+                    # verify that the median signal is inside the asked range
+                    median_charge = np.nanmedian(mon.flatfield.charge_median[chan])
 
-                        if median_charge > self.signal_range[chan][1] or median_charge < self.signal_range[chan][0]:
-                            self.log.debug(
-                                f"{channel[chan]}: skip run {run}, signal out of range {median_charge:6.1f} ADC")
-                            continue
+                    if median_charge > self.signal_range[chan][1] or median_charge < self.signal_range[chan][0]:
+                        self.log.debug(
+                            f"{channel[chan]}: skip run {run}, signal out of range {median_charge:6.1f} ADC")
+                        continue
 
-                        signal = ff_data.charge_median[chan] - ped_data.charge_median[chan]
-                        variance = ff_data.charge_std[chan] ** 2 - ped_data.charge_std[chan] ** 2
+                    signal = mon.flatfield.charge_median[chan] - mon.pedestal.charge_median[chan]
+                    variance = mon.flatfield.charge_std[chan] ** 2 - mon.pedestal.charge_std[chan] ** 2
 
-                        if self.signal[chan] is None:
-                            self.signal[chan] = signal
-                            self.variance[chan] = variance
-                            self.unusable_pixels[chan] = calib_data.unusable_pixels[chan]
+                    if self.signal[chan] is None:
+                        self.signal[chan] = signal
+                        self.variance[chan] = variance
+                        self.unusable_pixels[chan] = mon.calibration.unusable_pixels[chan]
 
-                        else:
-                            self.signal[chan] = np.column_stack((self.signal[chan], signal))
-                            self.variance[chan] = np.column_stack((self.variance[chan], variance))
-                            self.unusable_pixels[chan] = np.column_stack(
-                                (self.unusable_pixels[chan], calib_data.unusable_pixels[chan]))
-                        self.selected_runs[chan].append(run)
-                        self.log.info(f"{channel[chan]}: select run {run}, median charge {median_charge:6.1f} ADC\n")
-                else:
-                    raise IOError(f"--> Problem in reading {run}\n")
+                    else:
+                        self.signal[chan] = np.column_stack((self.signal[chan], signal))
+                        self.variance[chan] = np.column_stack((self.variance[chan], variance))
+                        self.unusable_pixels[chan] = np.column_stack(
+                            (self.unusable_pixels[chan], mon.calibration.unusable_pixels[chan]))
+                    self.selected_runs[chan].append(run)
+                    self.log.info(f"{channel[chan]}: select run {run}, median charge {median_charge:6.1f} ADC\n")
 
             # check to have enough selected runs
             for chan in self.gain_channels:
@@ -285,7 +275,7 @@ class FitIntensityScan(Tool):
                     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                     ax.yaxis.set_major_locator(plt.MultipleLocator(1))
 
-                    plt.plot(np.median(self.signal[chan], axis=0), self.selected_runs[chan], "o")
+                    plt.plot(np.nanmedian(self.signal[chan], axis=0), self.selected_runs[chan], "o")
                     plt.xlabel(r'$\mathrm{\overline{Q}-\overline{ped}}$ [ADC]')
                     plt.ylabel(r'Runs used in the fit')
 
@@ -357,30 +347,6 @@ class FitIntensityScan(Tool):
 
 def quadratic_fit(t, b=1, c=1, f2=1.222):
     return b * f2 * t + c ** 2 * t ** 2
-
-
-def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
-    """ read camera calibration file"""
-
-    status = True
-    with HDF5TableReader(file_name) as h5_table:
-
-        try:
-            table = f"/tel_{tel_id}/flatfield"
-            next(h5_table.read(table, ff_data))
-
-            table = f"/tel_{tel_id}/calibration"
-            next(h5_table.read(table, calib_data))
-
-            table = f"/tel_{tel_id}/pedestal"
-            next(h5_table.read(table, ped_data))
-
-        except Exception:
-            print(f"----> no correct tables {table} in {file_name}")
-            status = False
-
-    h5_table.close()
-    return status
 
 
 def main():

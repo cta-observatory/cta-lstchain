@@ -8,12 +8,13 @@ Usage:
 """
 
 import os
+import logging
 
 import astropy.units as u
 import joblib
 import numpy as np
 import pandas as pd
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Angle
 from astropy.time import Time
 from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -31,6 +32,10 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key, dl1_li
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
+from ctapipe.coordinates import CameraFrame, TelescopeFrame
+from ctapipe_io_lst import OPTICS
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'apply_models',
@@ -43,6 +48,7 @@ __all__ = [
     'train_energy',
     'train_reco',
     'train_sep',
+    'update_disp_with_effective_focal_length'
 ]
 
 
@@ -67,15 +73,16 @@ def train_energy(train, custom_config=None):
     features = config['energy_regression_features']
     model = RandomForestRegressor
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Regressor for Energy Reconstruction...")
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training Random Forest Regressor for Energy Reconstruction...")
 
     reg = model(**energy_regression_args)
     reg.fit(train[features],
-            train['log_mc_energy'])
+            train['log_mc_energy'],
+            sample_weight=train['weight'])
 
-    print("Model {} trained!".format(model))
+    logger.info("Model {} trained!".format(model))
     return reg
 
 
@@ -105,16 +112,16 @@ def train_disp_vector(train, custom_config=None, predict_features=None):
     features = config['disp_regression_features']
     model = RandomForestRegressor
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training model {} for disp vector regression".format(model))
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training model {} for disp vector regression".format(model))
 
     reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose([train[f] for f in predict_features])
-    reg.fit(x, y)
+    reg.fit(x, y, sample_weight=train['weight'])
 
-    print("Model {} trained!".format(model))
+    logger.info("Model {} trained!".format(model))
 
     return reg
 
@@ -139,16 +146,16 @@ def train_disp_norm(train, custom_config=None, predict_feature='disp_norm'):
     features = config['disp_regression_features']
     model = RandomForestRegressor
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training model {} for disp norm regression".format(model))
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training model {} for disp norm regression".format(model))
 
     reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
-    reg.fit(x, y)
+    reg.fit(x, y, sample_weight=train['weight'])
 
-    print("Model {} trained!".format(model))
+    logger.info("Model {} trained!".format(model))
 
     return reg
 
@@ -173,16 +180,16 @@ def train_disp_sign(train, custom_config=None, predict_feature='disp_sign'):
     features = config["disp_classification_features"]
     model = RandomForestClassifier
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training model {} for disp sign classification".format(model))
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training model {} for disp sign classification".format(model))
 
     clf = model(**classification_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
-    clf.fit(x, y)
+    clf.fit(x, y, sample_weight=train['weight'])
 
-    print("Model {} trained!".format(model))
+    logger.info("Model {} trained!".format(model))
 
     return clf
 
@@ -211,24 +218,26 @@ def train_reco(train, custom_config=None):
     disp_features = config['disp_regression_features']
     model = RandomForestRegressor
 
-    print("Given energy_features: ", energy_features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Regressor for Energy Reconstruction...")
+    logger.info("Given energy_features: ", energy_features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training Random Forest Regressor for Energy Reconstruction...")
 
     reg_energy = model(**energy_regression_args)
     reg_energy.fit(train[energy_features],
-                   train['log_mc_energy'])
+                   train['log_mc_energy'], sample_weight = train['weight']
+    )
 
-    print("Random Forest trained!")
-    print("Given disp_features: ", disp_features)
-    print("Training Random Forest Regressor for disp_norm Reconstruction...")
+    logger.info("Random Forest trained!")
+    logger.info("Given disp_features: ", disp_features)
+    logger.info("Training Random Forest Regressor for disp_norm Reconstruction...")
 
     reg_disp = RandomForestRegressor(**disp_regression_args)
     reg_disp.fit(train[disp_features],
-                 train['disp_norm'])
+                 train['disp_norm'],
+                 sample_weight=train['weight'])
 
-    print("Random Forest trained!")
-    print("Done!")
+    logger.info("Random Forest trained!")
+    logger.info("Done!")
     return reg_energy, reg_disp
 
 
@@ -253,16 +262,17 @@ def train_sep(train, custom_config=None):
     features = config["particle_classification_features"]
     model = RandomForestClassifier
 
-    print("Given features: ", features)
-    print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Classifier for",
+    logger.info("Given features: ", features)
+    logger.info("Number of events for training: ", train.shape[0])
+    logger.info("Training Random Forest Classifier for",
           "Gamma/Hadron separation...")
 
     clf = model(**classification_args)
 
     clf.fit(train[features],
-            train['mc_type'])
-    print("Random Forest trained!")
+            train['mc_type'],
+            sample_weight=train['weight'])
+    logger.info("Random Forest trained!")
     return clf
 
 
@@ -339,8 +349,32 @@ def build_models(filegammas, fileprotons,
     # Adding a filter on mc_type just for training
     events_filters['mc_type'] = [-9000, np.inf]
 
+    pointing_wise_weights = False
+    if 'random_forest_weight_settings' in config:
+        if config['random_forest_weight_settings']['pointing_wise_weights']:
+            logger.info("Pointing-wise event weighting activated")
+            pointing_wise_weights = True
+
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
+
+    # Update parameters related to target direction on camera frame for gamma MC
+    # taking into account of the aberration effect using effective focal length
+    try:
+        subarray_info = SubarrayDescription.from_hdf(filegammas)
+        tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+        effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
+    except OSError:
+        logger.warning("subarray table is not readable because of the version incompatibility.")
+        logger.warning("The effective focal length for the standard LST optics will be used.")
+        effective_focal_length = OPTICS.effective_focal_length
+
+    df_gamma = update_disp_with_effective_focal_length(df_gamma, effective_focal_length=effective_focal_length)
+    if 'lh_fit_config' in config.keys():
+        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
+        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
+        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
+        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
 
     if config['source_dependent']:
         # if source-dependent parameters are already in dl1 data, just read those data
@@ -349,10 +383,9 @@ def build_models(filegammas, fileprotons,
             src_dep_df_gamma = get_srcdep_params(filegammas)
 
         else:
-            subarray_info = SubarrayDescription.from_hdf(filegammas)
-            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
-            src_dep_df_gamma = get_source_dependent_parameters(df_gamma, config, focal_length=focal_length)
+            src_dep_df_gamma = get_source_dependent_parameters(
+                df_gamma, config, effective_focal_length=effective_focal_length
+            )
 
         df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)
 
@@ -362,19 +395,30 @@ def build_models(filegammas, fileprotons,
             src_dep_df_proton = get_srcdep_params(fileprotons)
 
         else:
-            subarray_info = SubarrayDescription.from_hdf(fileprotons)
-            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
-            src_dep_df_proton = get_source_dependent_parameters(df_proton, config, focal_length=focal_length)
+            try:
+                subarray_info = SubarrayDescription.from_hdf(fileprotons)
+                tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+                effective_focal_length = subarray_info.tel[tel_id].optics.effective_focal_length
+            except OSError:
+                logger.warning("subarray table is not readable because of the version incompatibility.")
+                logger.warning("The effective focal length for the standard LST optics will be used.")
+                effective_focal_length = OPTICS.effective_focal_length
+
+            src_dep_df_proton = get_source_dependent_parameters(
+                df_proton, config, effective_focal_length=effective_focal_length
+            )
 
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
-    if 'lh_fit_config' in config.keys():
-        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
-        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
+    # Normalize all azimuth angles to the range [0, 360) degrees
+    df_gamma.az_tel = Angle(df_gamma.az_tel, u.rad).wrap_at(360 * u.deg).rad
+    df_proton.az_tel = Angle(df_proton.az_tel, u.rad).wrap_at(360 * u.deg).rad
 
-        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
-        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
+    # Dealing with `sin_az_tel` missing data because of the former version of lstchain
+    if 'sin_az_tel' not in df_gamma.columns:
+        df_gamma['sin_az_tel'] = np.sin(df_gamma.az_tel)
+    if 'sin_az_tel' not in df_proton.columns:
+        df_proton['sin_az_tel'] = np.sin(df_proton.az_tel)
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
@@ -396,6 +440,14 @@ def build_models(filegammas, fileprotons,
     src_r_min = config['train_gamma_src_r_deg'][0]
     src_r_max = config['train_gamma_src_r_deg'][1]
     df_gamma = utils.apply_src_r_cut(df_gamma, src_r_min, src_r_max)
+
+    if pointing_wise_weights:
+        # Give same total weight to all events in every pointing node, by
+        # applying event-wise weights which depend on the statistics per node
+        # The weight is written to a new column of df_gamma, called 'weight'
+        _, _ = utils.compute_rf_event_weights(df_gamma)
+    else:
+        df_gamma['weight'] = np.ones(len(df_gamma))
 
     # Train regressors for energy and disp_norm reconstruction, only with gammas
     n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
@@ -457,6 +509,14 @@ def build_models(filegammas, fileprotons,
                 "The requested number of protons for the classifier training is not valid."
             ) from e
 
+    if pointing_wise_weights:
+        # Give same total weight to all events in every pointing node, by
+        # applying event-wise weights which depend on the statistics per node
+        # The weight is written to a new column of df_gamma, called 'weight'
+        _, _ = utils.compute_rf_event_weights(df_proton)
+    else:
+        df_proton['weight'] = np.ones(len(df_proton))
+
     test = pd.concat([testg, df_proton], ignore_index=True)
 
     temp_reg_energy = train_energy(train, custom_config=config)
@@ -512,9 +572,13 @@ def build_models(filegammas, fileprotons,
         train['reco_disp_sign_correctness'][select] = 1 - train['reco_disp_sign_correctness'][select]
 
         train['reco_disp_norm_diff'] = np.abs(train['dist'] - train['reco_disp_norm'])
-    
-    # Train the Classifier
 
+    # Check that any new features used in particle classification are finite
+    train = utils.filter_events(train,
+                                filters=events_filters,
+                                finite_params=config['particle_classification_features']
+                                )
+    # Train the Classifier
     cls_gh = train_sep(train, custom_config=config)
 
     if save_models:
@@ -536,7 +600,7 @@ def apply_models(dl1,
                  reg_disp_vector=None,
                  reg_disp_norm=None,
                  cls_disp_sign=None,
-                 focal_length=28 * u.m,
+                 effective_focal_length=29.30565 * u.m,
                  custom_config=None,
                  ):
     """
@@ -562,7 +626,7 @@ def apply_models(dl1,
     cls_disp_sign: string | Path | bytes | sklearn.ensemble.RandomForestClassifier
         Path to the random forest filename or file or pre-loaded RandomForestClassifier object
         for disp sign reconstruction
-    focal_length: `astropy.unit`
+    effective_focal_length: `astropy.unit`
     custom_config: dictionary
         Modified configuration to update the standard one
 
@@ -586,6 +650,17 @@ def apply_models(dl1,
                                             + config['particle_classification_features']
                                             + config['disp_classification_features'],
                               )
+    # if no events in dl2, e.g. for bad time interval from Cat-B calibration
+    if len(dl2) == 0:
+        logger.warning("No events in dl2.")
+        return dl2
+    
+    # Update parameters related to target direction on camera frame for MC data
+    # taking into account of the abrration effect using effective focal length
+    is_simu = 'disp_norm' in dl2.columns
+    if is_simu:
+        dl2 = update_disp_with_effective_focal_length(dl2, effective_focal_length = effective_focal_length)
+    
 
     # Reconstruction of Energy and disp_norm distance
     if isinstance(reg_energy, (str, bytes, Path)):
@@ -602,15 +677,16 @@ def apply_models(dl1,
     elif config['disp_method'] == 'disp_norm_sign':
         if isinstance(reg_disp_norm, (str, bytes, Path)):
             reg_disp_norm = joblib.load(reg_disp_norm)
+        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
+        del reg_disp_norm
+
         if isinstance(cls_disp_sign, (str, bytes, Path)):
             cls_disp_sign = joblib.load(cls_disp_sign)
-        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
         disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
         col = list(cls_disp_sign.classes_).index(1)
         disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
-
-        del reg_disp_norm
         del cls_disp_sign
+
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
         dl2['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
@@ -654,7 +730,7 @@ def apply_models(dl1,
                                                   dl2.y.values * u.m,
                                                   dl2.reco_disp_dx.values * u.m,
                                                   dl2.reco_disp_dy.values * u.m,
-                                                  focal_length,
+                                                  effective_focal_length,
                                                   alt_tel * u.rad,
                                                   az_tel * u.rad)
 
@@ -672,9 +748,7 @@ def apply_models(dl1,
     
     if isinstance(classifier, (str, bytes, Path)):
         classifier = joblib.load(classifier)
-    dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])
-    del classifier
 
     # This check is valid as long as we train on only two classes (gammas and protons)
     if probs.shape[1] > 2:
@@ -682,13 +756,17 @@ def apply_models(dl1,
                          "the predicted probabilty to assign as gammaness is unclear."
                          "Please check training data")
 
-    # gammaness is the prediction probability for the first class (0)
-    dl2['gammaness'] = probs[:, 0]
+    # gammaness is the prediction probability for the class 0 (proton: class 101)
+    mc_type_gamma, mc_type_proton = 0, 101
+    col = list(classifier.classes_).index(mc_type_gamma)
+    dl2['gammaness'] = probs[:, col]
+    dl2['reco_type'] = np.where(probs[:, col] > 0.5, mc_type_gamma, mc_type_proton)
+    del classifier
 
     return dl2
 
 
-def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
+def get_source_dependent_parameters(data, config, effective_focal_length=29.30565 * u.m):
     """Get parameters dict for source-dependent analysis.
 
     Parameters
@@ -704,8 +782,9 @@ def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
     else:
         data_type = 'real_data'
 
-    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config,
-                                                                         focal_length=focal_length)
+    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(
+        data, data_type, config, effective_focal_length=effective_focal_length
+    )
 
     src_dep_params = calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_pos_y_m)
     src_dep_params_dict = {'on': src_dep_params}
@@ -739,8 +818,6 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
     src_dep_params['expected_src_x'] = expected_src_pos_x_m
     src_dep_params['expected_src_y'] = expected_src_pos_y_m
 
-    src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m) ** 2 + (data['y'] - expected_src_pos_y_m) ** 2)
-
     disp, miss = camera_to_shower_coordinates(
         expected_src_pos_x_m,
         expected_src_pos_y_m,
@@ -750,12 +827,27 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
 
     src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(disp) * -1
     src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(disp) * -1
+
+    if 'lhfit_x' in data.keys():
+        # Use lhfit parameters for 'dist' and 'alpha'
+        disp, miss = camera_to_shower_coordinates(
+            expected_src_pos_x_m,
+            expected_src_pos_y_m,
+            data['lhfit_x'],
+            data['lhfit_y'],
+            data['lhfit_psi'])
+        src_dep_params['dist'] = np.sqrt((data['lhfit_x'] - expected_src_pos_x_m) ** 2 +
+                                         (data['lhfit_y'] - expected_src_pos_y_m) ** 2)
+    else:
+        src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m) ** 2 +
+                                         (data['y'] - expected_src_pos_y_m) ** 2)
+
     src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
 
     return src_dep_params
 
 
-def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
+def get_expected_source_pos(data, data_type, config, effective_focal_length=29.30565 * u.m):
     """Get expected source position for source-dependent analysis .
 
     Parameters
@@ -767,21 +859,21 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
 
     # For gamma MC, expected source position is actual one for each event
     if data_type == 'mc_gamma':
+        data = update_disp_with_effective_focal_length(data, effective_focal_length = effective_focal_length)
         expected_src_pos_x_m = data['src_x'].values
         expected_src_pos_y_m = data['src_y'].values
 
     # For proton MC, nominal source position is one written in config file
     if data_type == 'mc_proton':
-        expected_src_pos = utils.sky_to_camera(
-            u.Quantity(data['mc_alt_tel'].values + config['mc_nominal_source_x_deg'], u.deg, copy=False),
-            u.Quantity(data['mc_az_tel'].values + config['mc_nominal_source_y_deg'], u.deg, copy=False),
-            focal_length,
-            u.Quantity(data['mc_alt_tel'].values, u.deg, copy=False),
-            u.Quantity(data['mc_az_tel'].values, u.deg, copy=False)
+        source_pos = SkyCoord(
+            fov_lon = -1 * config['mc_nominal_source_y_deg'] * u.deg,
+            fov_lat = config['mc_nominal_source_x_deg'] * u.deg,
+            frame=TelescopeFrame()
         )
-
-        expected_src_pos_x_m = expected_src_pos.x.to_value(u.m)
-        expected_src_pos_y_m = expected_src_pos.y.to_value(u.m)
+        camera_frame = CameraFrame(focal_length=effective_focal_length)
+        source_camera = source_pos.transform_to(camera_frame)
+        expected_src_pos_x_m = source_camera.x.to_value(u.m)
+        expected_src_pos_y_m = source_camera.y.to_value(u.m)
 
     # For real data
     if data_type == 'real_data':
@@ -806,7 +898,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             obstime = Time(time, scale='utc', format='unix')
             pointing_alt = u.Quantity(data['alt_tel'], u.rad, copy=False)
             pointing_az = u.Quantity(data['az_tel'], u.rad, copy=False)
-            source_pos = utils.radec_to_camera(source_coord, obstime, pointing_alt, pointing_az, focal_length)
+            source_pos = utils.radec_to_camera(source_coord, obstime, pointing_alt, pointing_az, effective_focal_length)
 
             expected_src_pos_x_m = source_pos.x.to_value(u.m)
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
@@ -817,3 +909,43 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             )
 
     return expected_src_pos_x_m, expected_src_pos_y_m
+
+
+def update_disp_with_effective_focal_length(data, effective_focal_length=29.30565 * u.m):
+    """Update disp parameters using effective focal length
+
+    Parameters
+    ----------
+    data: Pandas DataFrame
+    config: dictionnary containing configuration
+    """
+
+    source_pos_in_camera = utils.sky_to_camera(
+        u.Quantity(data['mc_alt'].values, u.rad, copy=False),
+        u.Quantity(data['mc_az'].values, u.rad, copy=False),
+        effective_focal_length,
+        u.Quantity(data['mc_alt_tel'].values, u.rad, copy=False),
+        u.Quantity(data['mc_az_tel'].values, u.rad, copy=False)
+    )
+    
+    expected_src_pos_x_m = source_pos_in_camera.x.to_value(u.m)
+    expected_src_pos_y_m = source_pos_in_camera.y.to_value(u.m)
+    
+    data['src_x'] = expected_src_pos_x_m
+    data['src_y'] = expected_src_pos_y_m
+
+    disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp.disp(
+        data['x'].values,
+        data['y'].values,
+        expected_src_pos_x_m,
+        expected_src_pos_y_m,
+        data['psi'].values
+    )
+    
+    data['disp_dx'] = disp_dx
+    data['disp_dy'] = disp_dy
+    data['disp_norm'] = disp_norm
+    data['disp_angle'] = disp_angle
+    data['disp_sign'] = disp_sign
+
+    return data

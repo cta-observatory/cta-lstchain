@@ -13,13 +13,23 @@ from pyirf.io.gadf import (
     create_psf_table_hdu,
 )
 from pyirf.interpolation import (
-    interpolate_effective_area_per_energy_and_fov,
-    interpolate_energy_dispersion,
-    interpolate_psf_table,
-    # interpolate_rad_max,
+    GridDataInterpolator,
+    EnergyDispersionEstimator,
+    EffectiveAreaEstimator,
+    PSFTableEstimator,
+    RadMaxEstimator,
 )
 from scipy.spatial import Delaunay, distance, QhullError
-from scipy.interpolate import griddata
+
+__all__ = [
+    "check_in_delaunay_triangle",
+    "compare_irfs",
+    "get_nearest_az_node",
+    "interp_params",
+    "interpolate_cuts",
+    "interpolate_irf",
+    "load_irf_grid",
+]
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +62,7 @@ def interp_params(params_list, data):
     if "AZ_PNT" in params_list:
         mc_pars.append(u.Quantity(data["AZ_PNT"], "deg").to_value(u.rad))
 
-    return mc_pars
+    return np.array(mc_pars)
 
 
 def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
@@ -223,7 +233,7 @@ def compare_irfs(irfs):
     params = []
 
     # Collect the list of metadata and column names to compare the values/data
-    select_meta = ["HDUCLAS3", "INSTRUME", "G_OFFSET"]
+    select_meta = ["HDUCLAS3", "INSTRUME"]
     try:
         h = Table.read(irfs[0], hdu="EFFECTIVE AREA")
         h_meta = h.meta
@@ -232,7 +242,8 @@ def compare_irfs(irfs):
         energy_dependent_gh = "GH_EFF" in h_meta
         point_like = h_meta["HDUCLAS3"] == "POINT-LIKE"
         energy_dependent_theta = "TH_CONT" in h_meta
-        source_dep = "AL_CUT" in h_meta
+        source_dep = ("AL_CUT" in h_meta) or ("AL_CONT" in h_meta)
+        energy_dependent_al = "AL_CONT" in h_meta
 
         if energy_dependent_gh:
             select_meta.append("GH_EFF")
@@ -240,13 +251,17 @@ def compare_irfs(irfs):
             select_meta.append("GH_CUT")
 
         if point_like:
-            if energy_dependent_theta:
-                select_meta.append("TH_CONT")
-            else:
-                if source_dep:
-                    select_meta.append("AL_CUT")
+            if not source_dep:
+                if energy_dependent_theta:
+                    select_meta.append("TH_CONT")
                 else:
                     select_meta.append("RAD_MAX")
+            else:
+                if energy_dependent_al:
+                    select_meta.append("AL_CONT")
+                else:
+                    select_meta.append("AL_CUT")
+
     except KeyError:
         print(f"Effective Area is not present in {irfs[0]}")
 
@@ -311,74 +326,46 @@ def load_irf_grid(irfs, extname, interp_col, gadf_irf=True):
     return np.stack(irf_list)
 
 
-def interpolate_gh_cuts(
-    gh_cuts,
+def interpolate_cuts(
+    cuts,
     grid_points,
     target_point,
     method="linear",
 ):
     """
-    Interpolates a grid of GH CUTS tables to a target-point.
+    Interpolates a grid of GH_CUTS or AL_CUTS tables to a target-point.
+
     Wrapper around scipy.interpolate.griddata [1].
 
     Parameters
     ----------
-    gh_cuts: numpy.ndarray, shape=(N, M, ...)
-        Gammaness-cuts for all combinations of grid-points, energy and
-        fov_offset.
-        Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
+    cuts: numpy.ndarray, shape=(N, M, ...)
+        Gammaness-cuts or Alpha-cuts for all combinations of grid-points, like energy.
+        Shape (N:n_grid_points, M:n_energy_bins)
     grid_points: numpy.ndarray, shape=(N, O)
         Array of the N O-dimensional morphing parameter values corresponding
         to the N input templates.
     target_point: numpy.ndarray, shape=(O)
         Value for which the interpolation is performed (target point)
-    method: 'linear’, ‘nearest’, ‘cubic’
+    method: 'linear', 'nearest', 'cubic'
         Interpolation method for scipy.interpolate.griddata [1].
         Defaults to 'linear'.
 
     Returns
     -------
-    gh_cuts_interp: numpy.ndarray, shape=(1, M, ...)
-        Gammaness-cuts for the target grid-point,
-        shape (1, M:n_energy_bins, n_fov_offset_bins)
-    """
+    cuts_interp: numpy.ndarray, shape=(1, M, ...)
+        Gammaness-cuts or Alpha-cuts for the target grid-point, shape (1, M:n_energy_bins)
 
-    return griddata(grid_points, gh_cuts, target_point, method=method)
-
-
-def interpolate_rad_max(
-    rad_max,
-    grid_points,
-    target_point,
-    method="linear",
-):
-    """
-    Interpolates a grid of RAD_MAX tables to a target-point.
-    Wrapper around scipy.interpolate.griddata [1].
-
-    Parameters
+    References
     ----------
-    rad_max: numpy.ndarray, shape=(N, M, ...)
-        Theta-cuts for all combinations of grid-points, energy and
-        fov_offset.
-        Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
-    grid_points: numpy.ndarray, shape=(N, O)
-        Array of the N O-dimensional morphing parameter values corresponding
-        to the N input templates.
-    target_point: numpy.ndarray, shape=(O)
-        Value for which the interpolation is performed (target point)
-    method: 'linear’, ‘nearest’, ‘cubic’
-        Interpolation method for scipy.interpolate.griddata [1].
-        Defaults to 'linear'.
-
-    Returns
-    -------
-    rad_max_interp: numpy.ndarray, shape=(1, M, ...)
-        Theta-cuts for the target grid-point,
-        shape (1, M:n_energy_bins, n_fov_offset_bins)
+    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
     """
+    interp = GridDataInterpolator(
+        grid_points=grid_points, params=cuts, method=method
+    )
+    cuts_interp = interp(target_point)
 
-    return griddata(grid_points, rad_max, target_point, method=method)
+    return cuts_interp
 
 
 def interpolate_irf(irfs, data_pars, interp_method="linear"):
@@ -428,15 +415,13 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         "GH_CUT",
         "G_OFFSET",
         "RAD_MAX",
+        "AL_CUT",
         "B_TOTAL",
         "B_INC",
     ]
     main_headers = fits.open(irfs[0])[1].header
 
-    if main_headers["HDUCLAS3"] == "POINT-LIKE":
-        point_like = True
-    else:
-        point_like = False
+    point_like = main_headers["HDUCLAS3"] == "POINT-LIKE"
 
     # Update headers to be added to the final IRFs
     extra_headers = dict()
@@ -459,158 +444,146 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     interp_pars_sel = interp_params(params_sel, data_pars)
 
     # Keep interp_pars as a tuple to keep the right dimensions in interpolation
-    interp_pars_sel = tuple(interp_pars_sel)
     irf_interp = fits.HDUList(
         [
             fits.PrimaryHDU(),
         ]
     )
 
-    # Read select IRFs, for which interpolation is supported into lists and
-    # extract the necessary columns
-    hdus_interp = fits.open(irfs[0])
-
-    try:
-        hdus_interp["EFFECTIVE AREA"]
-        effarea_list = load_irf_grid(
-            irfs, extname="EFFECTIVE AREA", interp_col="EFFAREA"
-        )
-
-        temp_irf = QTable.read(irfs[0], hdu="EFFECTIVE AREA")
-        e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
-        fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
-
-        aeff_interp = interpolate_effective_area_per_energy_and_fov(
-            effarea_list, irf_pars_sel, interp_pars_sel, method=interp_method
-        )
-
-        aeff_hdu_interp = create_aeff2d_hdu(
-            aeff_interp.T,
-            true_energy_bins=e_true,
-            fov_offset_bins=fov_off,
-            point_like=point_like,
-            extname="EFFECTIVE AREA",
-            **extra_headers,
-        )
-
-        irf_interp.append(aeff_hdu_interp)
-
-    except KeyError:
-        log.error("Effective Area not present for IRF interpolation")
-
-    try:
-        hdus_interp["ENERGY DISPERSION"]
-        edisp_list = load_irf_grid(
-            irfs, extname="ENERGY DISPERSION", interp_col="MATRIX"
-        )
-        temp_irf = QTable.read(irfs[0], hdu="ENERGY DISPERSION")
-
-        # Check the units as well
-        e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
-        e_migra = np.append(temp_irf["MIGRA_LO"][0], temp_irf["MIGRA_HI"][0][-1])
-        fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
-
-        edisp_interp = interpolate_energy_dispersion(
-            e_migra, edisp_list, irf_pars_sel, interp_pars_sel, quantile_resolution=1e-3
-        )
-
-        edisp_hdu_interp = create_energy_dispersion_hdu(
-            edisp_interp,
-            true_energy_bins=e_true,
-            migration_bins=e_migra,
-            fov_offset_bins=fov_off,
-            point_like=point_like,
-            extname="ENERGY DISPERSION",
-            **extra_headers,
-        )
-
-        irf_interp.append(edisp_hdu_interp)
-
-    except KeyError:
-        log.error("Energy Dispersion not present for IRF interpolation")
-
-    try:
-        hdus_interp["GH_CUTS"]
-        gh_cuts_list = load_irf_grid(
-            irfs, extname="GH_CUTS", interp_col="cut", gadf_irf=False
-        )
-
-        temp_irf = QTable.read(irfs[0], hdu="GH_CUTS")
-
-        gh_cut_interp = interpolate_gh_cuts(
-            gh_cuts_list, irf_pars_sel, interp_pars_sel, method=interp_method
-        )
-
-        gh_header = fits.Header()
-        gh_header["CREATOR"] = f"lstchain v{__version__}"
-        gh_header["DATE"] = Time.now().utc.iso
-
-        for k, v in extra_headers.items():
-            gh_header[k] = v
-
-        temp_irf["cut"] = gh_cut_interp
-
-        gh_cut_hdu_interp = fits.BinTableHDU(temp_irf, header=gh_header, name="GH_CUTS")
-
-        irf_interp.append(gh_cut_hdu_interp)
-
-    except KeyError:
-        log.error("GH CUTS not present for IRF interpolation")
-
-    try:
-        hdus_interp["RAD_MAX"]
-        radmax_list = load_irf_grid(irfs, extname="RAD_MAX", interp_col="RAD_MAX")
-        temp_irf = QTable.read(irfs[0], hdu="RAD_MAX")
-
-        rad_max_interp = interpolate_rad_max(
-            radmax_list, irf_pars_sel, interp_pars_sel, method=interp_method
-        )
-
-        temp_irf["RAD_MAX"] = rad_max_interp.T[np.newaxis, ...] * u.deg
-
-        radmax_header = fits.Header()
-        radmax_header["CREATOR"] = f"lstchain v{__version__}"
-        radmax_header["DATE"] = Time.now().utc.iso
-
-        for k, v in extra_headers.items():
-            radmax_header[k] = v
-
-        rad_max_hdu_interp = fits.BinTableHDU(
-            temp_irf, header=radmax_header, name="RAD_MAX"
-        )
-        irf_interp.append(rad_max_hdu_interp)
-
-    except KeyError:
-        log.error("RAD_MAX not present for IRF interpolation")
-
+    # Prepare a list of expected columns depending on IRF types
+    hdu_names = ["EFFECTIVE AREA", "ENERGY DISPERSION"]
     if not point_like:
-        try:
-            hdus_interp["PSF"]
-            psf_list = load_irf_grid(irfs, extname="PSF", interp_col="RPSF")
-            temp_irf = QTable.read(irfs[0], hdu="PSF")
+        hdu_names.extend(["BACKGROUND", "PSF"])
+    if "GH_EFF" in main_headers:
+        hdu_names.append("GH_CUTS")
+    if "TH_CONT" in main_headers:
+        hdu_names.append("RAD_MAX")
+    if "AL_CONT" in main_headers:
+        hdu_names.append("AL_CUTS")
 
+    interp_col_keys = {
+        'EFFECTIVE AREA': 'EFFAREA',
+        'ENERGY DISPERSION': 'MATRIX',
+        'PSF': 'RPSF',
+        'GH_CUTS': 'cut',
+        'RAD_MAX': 'RAD_MAX',
+        'AL_CUTS': 'cut'
+    }
+
+    for hdu_name in hdu_names:
+
+        if hdu_name == "BACKGROUND":
+            log.warning("The interpolation of BACKGROUND is not yet supported")
+            continue
+
+        if interp_col_keys[hdu_name] == 'cut':
+            gadf_irf = False
+        else:
+            gadf_irf = True
+
+        irf_list = load_irf_grid(
+            irfs,
+            extname=hdu_name,
+            interp_col=interp_col_keys[hdu_name],
+            gadf_irf=gadf_irf
+        )
+        temp_irf = QTable.read(irfs[0], hdu=hdu_name)
+
+        if hdu_name in ['EFFECTIVE AREA', 'ENERGY DISPERSION', 'PSF']:
             e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
-            src_bins = np.append(temp_irf["RAD_LO"][0], temp_irf["RAD_HI"][0][-1])
             fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
-            psf_interp = interpolate_psf_table(
-                src_bins,
-                psf_list,
-                irf_pars_sel,
-                interp_pars_sel,
-                quantile_resolution=1e-3,
-            )
-            psf_hdu_interp = create_psf_table_hdu(
-                psf_interp,
-                true_energy=e_true,
-                source_offset_bins=src_bins,
-                fov_offset_bins=fov_off,
-                extname="PSF",
-                **extra_headers,
-            )
+            if hdu_name == "EFFECTIVE AREA":
+                aeff_estimator = EffectiveAreaEstimator(
+                    grid_points=irf_pars_sel,
+                    effective_area=irf_list,
+                    interpolator_kwargs={"method": interp_method},
+                )
+                aeff_interp = aeff_estimator(interp_pars_sel)
 
-            irf_interp.append(psf_hdu_interp)
-        except KeyError:
-            log.error("PSF HDU not present for IRF interpolation")
+                aeff_hdu_interp = create_aeff2d_hdu(
+                    effective_area=aeff_interp[0],
+                    true_energy_bins=e_true,
+                    fov_offset_bins=fov_off,
+                    point_like=point_like,
+                    extname=hdu_name,
+                    **extra_headers,
+                )
+                irf_interp.append(aeff_hdu_interp)
+
+            elif hdu_name == "ENERGY DISPERSION":
+                e_migra = np.append(temp_irf["MIGRA_LO"][0], temp_irf["MIGRA_HI"][0][-1])
+                edisp_estimator = EnergyDispersionEstimator(
+                    grid_points=irf_pars_sel,
+                    migra_bins=e_migra,
+                    energy_dispersion=irf_list,
+                )
+                edisp_interp = edisp_estimator(interp_pars_sel)
+
+                edisp_hdu_interp = create_energy_dispersion_hdu(
+                    energy_dispersion=edisp_interp[0],
+                    true_energy_bins=e_true,
+                    migration_bins=e_migra,
+                    fov_offset_bins=fov_off,
+                    point_like=point_like,
+                    extname=hdu_name,
+                    **extra_headers,
+                )
+                irf_interp.append(edisp_hdu_interp)
+
+            elif hdu_name == "PSF":
+                src_bins = np.append(temp_irf["RAD_LO"][0], temp_irf["RAD_HI"][0][-1])
+                psf_estimator = PSFTableEstimator(
+                    grid_points=irf_pars_sel,
+                    source_offset_bins=src_bins,
+                    psf=irf_list,
+                )
+                psf_interp = psf_estimator(interp_pars_sel)
+
+                psf_hdu_interp = create_psf_table_hdu(
+                    psf=psf_interp[0],
+                    true_energy_bins=e_true,
+                    source_offset_bins=src_bins,
+                    fov_offset_bins=fov_off,
+                    extname=hdu_name,
+                    **extra_headers,
+                )
+                irf_interp.append(psf_hdu_interp)
+
+        # energy-dependent cuts
+        elif hdu_name in ["GH_CUTS", "RAD_MAX", "AL_CUTS"]:
+
+            cut_header = fits.Header()
+            cut_header["CREATOR"] = f"lstchain v{__version__}"
+            cut_header["DATE"] = Time.now().utc.iso
+
+            for k, v in extra_headers.items():
+                cut_header[k] = v
+
+            if hdu_name in ["GH_CUTS", "AL_CUTS"]:
+                cut_interp = interpolate_cuts(
+                    cuts=irf_list,
+                    grid_points=irf_pars_sel,
+                    target_point=interp_pars_sel,
+                    method=interp_method,
+                )
+                if hdu_name == "GH_CUTS":
+                    temp_irf["cut"] = cut_interp
+                elif hdu_name == "AL_CUTS":
+                    temp_irf["cut"] = cut_interp * u.deg
+
+            elif hdu_name == "RAD_MAX":
+                rad_max_estimator = RadMaxEstimator(
+                    grid_points=irf_pars_sel,
+                    rad_max=irf_list,
+                    interpolator_kwargs={"method": interp_method},
+                )
+                rad_max_interp = rad_max_estimator(interp_pars_sel)
+                temp_irf["RAD_MAX"] = rad_max_interp[0].T[np.newaxis, ...] * u.deg
+
+            cut_hdu_interp = fits.BinTableHDU(
+                temp_irf, header=cut_header, name=hdu_name
+            )
+            irf_interp.append(cut_hdu_interp)
 
     return irf_interp

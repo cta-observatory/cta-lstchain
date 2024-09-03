@@ -1,14 +1,13 @@
-import copy
 import logging
 from bokeh.layouts import gridplot
 from bokeh.models import HoverTool
 from bokeh.models import ColumnDataSource, CustomJS, Slider
-from bokeh.models import Range1d, RangeSlider
+from bokeh.models import Range1d, RangeSlider, Div
 from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry, PixelShape
-from pkg_resources import resource_filename
+from ..io.io import get_resource_path
 
 import numpy as np
 import bokeh
@@ -81,7 +80,7 @@ class CameraDisplay:
             data=dict(
                 poly_xs=xs,
                 poly_ys=ys,
-                image=np.ones_like(geom.pix_x.value).astype(np.float)
+                image=np.ones_like(geom.pix_x.value).astype(float)
             )
         )
 
@@ -153,7 +152,7 @@ class CameraDisplay:
         self.update()
 
 
-def show_camera(content, geom, pad_width, pad_height, label, titles=None,
+def show_camera(content, camgeom, pad_width, label, titles=None,
                 showlog=True, display_range=None,
                 content_lowlim=None, content_upplim=None):
     """
@@ -166,6 +165,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     be just (number_of_pixels), in case a single camera display is to be shown
 
     geom: camera geometry
+
     pad_width: width in pixels of each of the 3 pads in the plot
     pad_height: height in pixels of each of the 3 pads in the plot
     label: string to label the quantity which is displayed, the same for the N
@@ -196,9 +196,6 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
         # Nothing to plot...
         return [None]
 
-    # patch to reduce gaps between bokeh's cam circular pixels:
-    camgeom = copy.deepcopy(geom)
-
     numsets = 1
     if np.ndim(content) > 1:
         numsets = content.shape[0]
@@ -222,6 +219,11 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     if display_range is not None:
         display_min = display_range[0]
         display_max = display_range[1]
+
+    if display_min == display_max:
+        # Avoid problems with bokeh display
+        display_min *= 0.99
+        display_max *= 1.01
 
     cam = CameraDisplay(camgeom, display_min, display_max,
                         label, titles[0], use_notebook=False, autoshow=False)
@@ -274,7 +276,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
         # c.add_colorbar()
         c.figure.plot_width = pad_width
-        c.figure.plot_height = int(pad_height * 0.85)
+        c.figure.plot_height = int(pad_width * 0.9)
         c.figure.grid.visible = False
         c.figure.axis.visible = True
         c.figure.xaxis.axis_label = 'X position (m)'
@@ -298,8 +300,9 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                 y_range=(display_min, display_max),
                 x_axis_label='Pixel id',
                 y_axis_label=label)
-    p2.min_border_top = 60
-    p2.min_border_bottom = 70
+    p2.min_border_top = 40
+    p2.min_border_bottom = 50
+    p2.plot_width = pad_width
 
     source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                          value=cam.image))
@@ -356,6 +359,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top='top', bottom='bottom', left='left', right='right',
             source=source3)
+    p3.plot_width = pad_width
 
     if titles is None:
         titles = [None] * len(allimages)
@@ -383,48 +387,64 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                         code="""
         var slider_value = cb_obj.value
         var z = zz.data['z']
-        varzlow = zz.data['lowlim']
-        varzupp = zz.data['upplim']
+        var zlog = zz.data['zlog']
+        var zlow = zz.data['lowlim']
+        var zupp = zz.data['upplim']
         var edges = zz.data['edges']
         var hist = zz.data['hist']
         for (var i = 0; i < source1.data['image'].length; i++) {
-             source1.data['image'][i] = z[slider_value-1][i]
-             if (showlog) {
-                 var zlog = zz.data['zlog']
-                 source1log.data['image'][i] = zlog[slider_value-1][i]
-             }
-             source2.data['value'][i] = source1.data['image'][i]
-             source2_lowlim.data['value'][i] = varzlow[slider_value-1][i]
-             source2_upplim.data['value'][i] = varzupp[slider_value-1][i]
+            source1.data['image'][i] = z[slider_value-1][i]
+            if (showlog) {
+                source1log.data['image'][i] = zlog[slider_value-1][i]
+            }
+            source2.data['value'][i] = source1.data['image'][i]
+            source2_lowlim.data['value'][i] = zlow[slider_value-1][i]
+            source2_upplim.data['value'][i] = zupp[slider_value-1][i]
         }
         for (var j = 0; j < source3.data['top'].length; j++) {
             source3.data['top'][j] = hist[slider_value-1][j]
             source3.data['left'][j] = edges[slider_value-1][j]
             source3.data['right'][j] = edges[slider_value-1][j+1]
         }
-
         title.text = zz.data['titles'][slider_value-1]
         source1.change.emit()
-        if (showlog) {
-            titlelog.text = title.text
-            source1log.change.emit()
-        }
         source2.change.emit()
         source2_lowlim.change.emit()
         source2_upplim.change.emit()
         source3.change.emit()
+        if (showlog) {
+            titlelog.text = title.text
+            source1log.change.emit()
+        }
     """)
+
+
+    # https://github.com/bokeh/bokeh/issues/10444
+    slider_height = 300
+    slider_style = Div(text=f"""<style>
+    .fixed-length-slider .bk-input-group {{
+        height: {slider_height}px;
+    }}
+    .custom-length-slider .bk-input-group {{
+        height: {100*(numsets+1)}px;
+    }}
+    </style>
+    """)
+
 
     slider = None
     if numsets > 1:
-        slider_height = 300
-        # WARNING: the html won't look nice for number of sets much larger
-        # than 300! But in this way we avoid that the slider skips elements:
+        sstyle = ["fixed-length-slider"]
+        
+        # WARNING: the page won't look nice for number of sets much larger
+        # than 300! (=very long slider) But in this way we avoid that the
+        # run slider skips elements:
         if numsets > 299:
-            slider_height = numsets+1
+            sstyle = ["custom-length-slider"]
+
         slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
-                        orientation='vertical', show_value=False,
-                        height=slider_height)
+                        show_value=False,
+                        orientation='vertical', css_classes=sstyle)
 
         slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
@@ -447,13 +467,13 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     step = (display_max - display_min) / 100.
     range_slider = RangeSlider(start=display_min, end=display_max,
                                value=(display_min, display_max), step=step,
-                               title="z_range", orientation='vertical',
-                               direction='rtl', height=300,
+                               title="z_range",
+                               orientation='vertical', direction='rtl',
+                               css_classes=["fixed-length-slider"],
                                show_value=False)
     range_slider.js_on_change('value', callback2)
 
-    return [slider, p1, range_slider, p2, p3]
-
+    return [slider, p1, range_slider, p2, p3, slider_style]
 
 def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     """
@@ -525,8 +545,7 @@ def get_pixel_location(pix_id):
         return pixel_hardware_info[pix_id]
 
     # The first time we read in the data stored in the resources directory:
-    infilename = resource_filename('lstchain',
-                                   'resources/LST_pixid_to_cluster.txt')
+    infilename = get_resource_path('resources/LST_pixid_to_cluster.txt')
     data = np.genfromtxt(infilename, comments='#', dtype='int')
 
     pixel_hardware_info.extend([None] * (1 + data[:, 0].max()))

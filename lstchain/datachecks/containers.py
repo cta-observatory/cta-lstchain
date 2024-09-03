@@ -7,11 +7,12 @@ import numpy as np
 from astropy import units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz
-from lstchain.reco.utils import location
+
 import warnings
 from ctapipe.core import Container, Field
 from ctapipe.utils import get_bright_stars
 from ctapipe.coordinates import CameraFrame, TelescopeFrame
+from ctapipe_io_lst.constants import LST1_LOCATION
 
 __all__ = [
     'DL1DataCheckContainer',
@@ -131,9 +132,9 @@ class DL1DataCheckContainer(Container):
         self.trigger_type = \
             count_trig_types(table['trigger_type'][mask])
         if 'ucts_jump' in table.columns:
-            # After one (or n) genuine UCTS jumps in a run, the first event (or n events) 
-            # of every subsequent subrun file (if analyzed on its own) will have ucts_jump=True, 
-            # but these are not new jumps, just the ones from previous subruns, so they should 
+            # After one (or n) genuine UCTS jumps in a run, the first event (or n events)
+            # of every subsequent subrun file (if analyzed on its own) will have ucts_jump=True,
+            # but these are not new jumps, just the ones from previous subruns, so they should
             # not be counted.
             uj = table['ucts_jump'].data.copy()
             # find the first False value, and set to False also all the earlier ones:
@@ -156,7 +157,7 @@ class DL1DataCheckContainer(Container):
         telescope_pointing = SkyCoord(alt=self.mean_alt_tel,
                                       az=self.mean_az_tel,
                                       frame=AltAz(obstime=time_utc,
-                                                  location=location))
+                                                  location=LST1_LOCATION))
         self.tel_ra = telescope_pointing.icrs.ra.to(u.deg)
         self.tel_dec = telescope_pointing.icrs.dec.to(u.deg)
 
@@ -324,7 +325,7 @@ class DL1DataCheckContainer(Container):
         sampled_times = self.dragon_time
         obstime = Time(sampled_times[int(len(sampled_times)/2)],
                        scale='utc', format='unix')
-        horizon_frame = AltAz(location=location, obstime=obstime)
+        horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
         pointing = SkyCoord(az=self.mean_az_tel,
                             alt=self.mean_alt_tel,
                             frame=horizon_frame)
@@ -336,8 +337,8 @@ class DL1DataCheckContainer(Container):
         camera_frame = CameraFrame(telescope_pointing=pointing,
                                    focal_length=focal_length*relative_shift,
                                    obstime=obstime,
-                                   location=location)
-        telescope_frame = TelescopeFrame(obstime=obstime, location=location)
+                                   location=LST1_LOCATION)
+        telescope_frame = TelescopeFrame(obstime=obstime, location=LST1_LOCATION)
 
         # radius around star within which we consider the pixel may be affected
         # (hence we will later not raise a flag if e.g. its pedestal std dev is
@@ -422,49 +423,79 @@ def count_trig_types(array):
 
 
 
-class DL1DataCheckHistogramBins(Container):
-    """
-    Histogram bins for the DL1 Datacheck
-    """
-    
-    # delta_t between consecutive events (ms)
-    hist_delta_t = Field(np.linspace(-1.e-2, 2., 200),
-                         'hist_delta_t binning')
-    # pixel charge and image intensity (units: p.e):
-    hist_pixelchargespectrum = Field(np.logspace(-1., 4.7, 121),
-                                     'hist_pixelchargespectrum binning')
-    hist_intensity = Field(np.logspace(1., 6., 101), 'hist_intensity binning')
+with np.printoptions(threshold=3, precision=3, edgeitems=1):
+    class DL1DataCheckHistogramBins(Container):
+        """
+        Histogram bins for the DL1 Datacheck
+        """
 
-    # dist0, width and length (units: degrees):
-    hist_dist0 = Field(np.linspace(0., 2.5, 50), 'hist_dist0 binning')
-    hist_dist0_intensity_gt_200 = Field(np.linspace(0., 2.5, 50),
-                                        'hist_dist0_intensity_gt_200 binning')
-    hist_psi = Field(np.linspace(-100., 100., 101), 'hist_psi binning')
-    hist_psi_intensity_gt_200 = Field(np.linspace(-100., 100., 101),
-                                      'hist_psi_intensity_gt_200 binning')
+        # delta_t between consecutive events (ms)
+        hist_delta_t = Field(
+            default_factory=lambda: np.linspace(-1.e-2, 2., 200),
+            description='hist_delta_t binning',
+        )
+        # pixel charge and image intensity (units: p.e):
+        hist_pixelchargespectrum = Field(
+            default_factory=lambda: np.logspace(-1., 4.7, 121),
+            description='hist_pixelchargespectrum binning',
+        )
+        hist_intensity = Field(
+            default_factory=lambda: np.logspace(1., 6., 101),
+            description='hist_intensity binning',
+        )
 
-    hist_nislands = Field(np.linspace(-0.5, 29.5, 31), 'hist_nislands binning')
-    hist_npixels = Field(np.linspace(0.5, 2000.5, 400), 'hist_npixels binning')
+        # dist0, width and length (units: degrees):
+        hist_dist0 = Field(
+            default_factory=lambda: np.linspace(0., 2.5, 50),
+            description='hist_dist0 binning',
+        )
+        hist_dist0_intensity_gt_200 = Field(
+            default_factory=lambda: np.linspace(0., 2.5, 50),
+            description='hist_dist0_intensity_gt_200 binning',
+        )
+        hist_psi = Field(
+            default_factory=lambda: np.linspace(-100., 100., 101),
+            description='hist_psi binning',
+        )
+        hist_psi_intensity_gt_200 = Field(
+            default_factory=lambda: np.linspace(-100., 100., 101),
+            description='hist_psi_intensity_gt_200 binning'
+        )
 
-    # 2d histograms
-    # width and length vs. image intensity:
-    hist_width = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                 np.linspace(0., 0.8, 101)]),
-                       'hist_width binning')
-    hist_length = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                  np.linspace(0., 1., 101)]),
-                        'hist_length binning')
-    hist_skewness = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                    np.linspace(-4., 4., 101)]),
-                          'hist_skewness binning')
-    # time gradient vs. length:
-    hist_tgrad_vs_length = Field(np.array([np.linspace(0., 1.0, 101),
-                                           np.linspace(0., 200., 101)]),
-                                 'hist_tgrad_vs_length binning')
-    hist_tgrad_vs_length_intensity_gt_200 = \
-        Field(np.array([np.linspace(0., 1.0, 101), np.linspace(0., 50., 101)]),
-              'hist_tgrad_vs_length_intensity_gt_200 binning')
-    # time intercept (image time @ charge c.o.g.) vs. image intensity:
-    hist_intercept = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                     np.linspace(-30., 40., 101)]),
-                           'hist_intercept binning')
+        hist_nislands = Field(
+            default_factory=lambda: np.linspace(-0.5, 29.5, 31),
+            description='hist_nislands binning'
+        )
+        hist_npixels = Field(
+            default_factory=lambda: np.linspace(0.5, 2000.5, 400),
+            description='hist_npixels binning',
+        )
+
+        # 2d histograms
+        # width and length vs. image intensity:
+        hist_width = Field(
+            default_factory=lambda: np.array([np.logspace(0.7, 5.7, 101), np.linspace(0., 0.8, 101)]),
+            description='hist_width binning'
+        )
+        hist_length = Field(
+            default_factory=lambda: np.array([np.logspace(0.7, 5.7, 101), np.linspace(0., 1., 101)]),
+            description='hist_length binning'
+        )
+        hist_skewness = Field(
+            default_factory=lambda: np.array([np.logspace(0.7, 5.7, 101), np.linspace(-4., 4., 101)]),
+            description='hist_skewness binning',
+        )
+        # time gradient vs. length:
+        hist_tgrad_vs_length = Field(
+            default_factory=lambda: np.array([np.linspace(0., 1.0, 101), np.linspace(0., 200., 101)]),
+            description='hist_tgrad_vs_length binning',
+        )
+        hist_tgrad_vs_length_intensity_gt_200 = Field(
+            default_factory=lambda: np.array([np.linspace(0., 1.0, 101), np.linspace(0., 50., 101)]),
+            description='hist_tgrad_vs_length_intensity_gt_200 binning',
+        )
+        # time intercept (image time @ charge c.o.g.) vs. image intensity:
+        hist_intercept = Field(
+            default_factory=lambda: np.array([np.logspace(0.7, 5.7, 101), np.linspace(-30., 40., 101)]),
+            description='hist_intercept binning'
+        )

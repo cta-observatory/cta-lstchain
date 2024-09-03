@@ -15,10 +15,7 @@ from ctapipe.image.muon import (
     MuonIntensityFitter,
     MuonRingFitter
 )
-from ctapipe.image.muon.features import (
-    ring_completeness,
-    ring_containment,
-)
+from ctapipe.image.muon.features import ring_containment, ring_completeness
 
 from lstchain.image.muon import plot_muon_event
 
@@ -170,7 +167,7 @@ def fit_muon(x, y, image, geom, tailcuts=None):
     # with very few additional non-ring bright pixels.
     for _ in (0, 0):  # just to iterate the fit twice more
         dist = np.sqrt(
-            (x - ring.center_x) ** 2 + (y - ring.center_y) ** 2
+            (x - ring.center_fov_lon) ** 2 + (y - ring.center_fov_lat) ** 2
         )
         ring_dist = np.abs(dist - ring.radius)
 
@@ -251,17 +248,14 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
                                  (params['ring_integration_width'] + params['outer_ring_width']))
     pix_ring_2 = image[dist_mask_2]
 
-    #    nom_dist = np.sqrt(np.power(muonringparam.center_x,2)
-    #                    + np.power(muonringparam.center_y, 2))
-
     muonparameters = MuonParametersContainer()
     muonparameters.containment = ring_containment(
         muonringparam.radius,
-        muonringparam.center_x, muonringparam.center_y, cam_rad)
+        muonringparam.center_fov_lon, muonringparam.center_fov_lat, cam_rad)
 
     radial_distribution = radial_light_distribution(
-        muonringparam.center_x,
-        muonringparam.center_y,
+        muonringparam.center_fov_lon,
+        muonringparam.center_fov_lat,
         x[clean_mask], y[clean_mask],
         image[clean_mask])
 
@@ -283,14 +277,15 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
         # version of ctapipe:
         pedestal_stddev = 1.1 * np.ones(len(image))
 
-        muonintensityoutput = \
-            intensity_fitter(tel_id,
-                             muonringparam.center_x,
-                             muonringparam.center_y,
-                             muonringparam.radius,
-                             image,
-                             pedestal_stddev,
-                             dist_mask)
+        muonintensityoutput = intensity_fitter(
+            tel_id,
+            muonringparam.center_fov_lon,
+            muonringparam.center_fov_lat,
+            muonringparam.radius,
+            image,
+            pedestal_stddev,
+            dist_mask,
+        )
 
         dist_ringwidth_mask = np.abs(dist - muonringparam.radius) < \
                               muonintensityoutput.width
@@ -301,8 +296,8 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
             x[dist_ringwidth_mask], y[dist_ringwidth_mask],
             image[dist_ringwidth_mask],
             muonringparam.radius,
-            muonringparam.center_x,
-            muonringparam.center_y,
+            muonringparam.center_fov_lon,
+            muonringparam.center_fov_lat,
             threshold=params['ring_completeness_threshold'],
             bins=30)
 
@@ -358,8 +353,8 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
 
     if (plot_rings and plots_path and good_ring):
         focal_length = equivalent_focal_length
-        ring_telescope = SkyCoord(muonringparam.center_x,
-                                  muonringparam.center_y,
+        ring_telescope = SkyCoord(muonringparam.center_fov_lon,
+                                  muonringparam.center_fov_lat,
                                   TelescopeFrame())
 
         ring_camcoord = ring_telescope.transform_to(CameraFrame(
@@ -590,8 +585,8 @@ def fill_muon_event(mc_energy, output_parameters, good_ring, event_id,
 
     output_parameters['ring_size'].append(size)
     output_parameters['size_outside'].append(size_outside_ring)
-    output_parameters['ring_center_x'].append(muonringparam.center_x.value)
-    output_parameters['ring_center_y'].append(muonringparam.center_y.value)
+    output_parameters['ring_center_x'].append(muonringparam.center_fov_lon.value)
+    output_parameters['ring_center_y'].append(muonringparam.center_fov_lat.value)
     output_parameters['ring_radius'].append(muonringparam.radius.value)
     output_parameters['ring_width'].append(muonintensityparam.width.value)
     output_parameters['good_ring'].append(good_ring)

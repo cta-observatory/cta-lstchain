@@ -69,7 +69,7 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "traitlets": ("https://traitlets.readthedocs.io/en/stable/", None),
-    "ctapipe": ("https://ctapipe.readthedocs.io/en/stable/", None)
+    "ctapipe": ("https://ctapipe.readthedocs.io/en/v0.19.2/", None)
 }
 
 # These links are ignored in the checks, necessary due to broken intersphinx for
@@ -81,6 +81,17 @@ nitpick_ignore = [
     ("py:class", "ctapipe.core.container.Container"),
     ("py:class", "ctapipe.calib.camera.flatfield.FlatFieldCalculator"),
     ("py:class", "ctapipe.calib.camera.pedestals.PedestalCalculator"),
+    # coming from inherited traitlets docs
+    ("py:class", "t.Union"),
+    ("py:class", "t.Dict"),
+    ("py:class", "t.Tuple"),
+    ("py:class", "t.List"),
+    ("py:class", "t.Any"),
+    ("py:class", "t.Type"),
+    ("py:class", "Config"),
+    ("py:class", "Unicode"),
+    ("py:class", "StrDict"),
+    ("py:class", "ClassesType")
 ]
 
 # The suffix(es) of source filenames.

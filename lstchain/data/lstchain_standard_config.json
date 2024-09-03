@@ -65,6 +65,10 @@
     "fraction_cleaning_intensity": 0.03
   },
 
+  "random_forest_weight_settings": {
+    "pointing_wise_weights": true
+  },
+
   "random_forest_energy_regressor_args": {
     "max_depth": 30,
     "min_samples_leaf": 10,
@@ -72,14 +76,13 @@
     "n_estimators": 150,
     "bootstrap": true,
     "criterion": "squared_error",
-    "max_features": "auto",
+    "max_features": 1.0,
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
     "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
-    "verbose": 0,
     "warm_start": false
   },
 
@@ -90,14 +93,13 @@
     "n_estimators": 150,
     "bootstrap": true,
     "criterion": "squared_error",
-    "max_features": "auto",
+    "max_features": 1.0,
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
     "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
-    "verbose": 0,
     "warm_start": false
   },
 
@@ -109,13 +111,12 @@
     "criterion": "gini",
     "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
-    "max_features": "auto",
+    "max_features": 1.0,
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
     "bootstrap": true,
     "oob_score": false,
     "random_state": 42,
-    "verbose": 0.0,
     "warm_start": false,
     "class_weight": null
   },
@@ -128,13 +129,12 @@
     "criterion": "gini",
     "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
-    "max_features": "auto",
+    "max_features": 1.0,
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
     "bootstrap": true,
     "oob_score": false,
     "random_state": 42,
-    "verbose": 0.0,
     "warm_start": false,
     "class_weight": null
   },
@@ -274,7 +274,20 @@
   },
   "waveform_nsb_tuning":{
     "nsb_tuning": false,
-    "nsb_tuning_ratio": 0.52,
-    "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
+    "nsb_tuning_rate_GHz": 0.15,
+    "spe_location": null,
+    "pre_computed_multiplicity": 10
+  },
+  "write_interleaved_events":{
+    "DataWriter": {
+      "overwrite":  true,
+      "write_images": false,
+      "write_parameters": false,
+      "write_waveforms": true,
+      "transform_waveform": true,
+      "waveform_dtype": "uint16",
+      "waveform_offset": 400,
+      "waveform_scale": 80  
+    }
   }
 }

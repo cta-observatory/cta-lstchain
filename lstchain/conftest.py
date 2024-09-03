@@ -1,7 +1,6 @@
 from ctapipe_io_lst import LSTEventSource
 import pandas as pd
 import pytest
-from ctapipe.utils import get_dataset_path
 from ctapipe.instrument import SubarrayDescription
 import os
 
@@ -21,10 +20,6 @@ from lstchain.tests.test_lstchain import (
 # add a marker for the tests that need private data and don't run them
 # by default
 def pytest_configure(config):
-    config.addinivalue_line(
-        "markers", "private_data: mark tests that needs the private test data"
-    )
-
     if "private_data" not in config.option.markexpr:
         if config.option.markexpr:
             config.option.markexpr += " and "
@@ -33,7 +28,7 @@ def pytest_configure(config):
 
 @pytest.fixture(scope="session")
 def lst1_subarray():
-    return LSTEventSource.create_subarray(geometry_version=4)
+    return LSTEventSource.create_subarray(tel_id=1)
 
 
 @pytest.fixture(scope="session")
@@ -64,13 +59,13 @@ def temp_dir_observed_srcdep_files(tmp_path_factory):
 @pytest.fixture(scope="session")
 def mc_gamma_testfile():
     """Get a simulated test file."""
-    return get_dataset_path("gamma_test_large.simtel.gz")
+    return test_data / "mc/simtel_theta_20_az_180_gdiffuse_10evts.simtel.gz"
 
 
 @pytest.fixture(scope="session")
 def simulated_dl1_file(temp_dir_simulated_files, mc_gamma_testfile):
     """Produce a dl1 file from simulated data."""
-    output_dl1_path = temp_dir_simulated_files / "dl1_gamma_test_large.h5"
+    output_dl1_path = temp_dir_simulated_files / "dl1_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     run_program(
         "lstchain_mc_r0_to_dl1", "-f", mc_gamma_testfile, "-o", temp_dir_simulated_files
     )
@@ -111,11 +106,13 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     datacheck_file1 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0000.h5"
     dvr_file1 = temp_dir_observed_files / "DVR_settings_LST-1.Run02008.h5"
     pixmasks_file1 = temp_dir_observed_files / "Pixel_selection_LST-1.Run02008.0000.h5"
-
+    interleaved_file1 = temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02008.0000.h5"
+ 
     # Second set of files
     dl1_output_path2 = temp_dir_observed_files / "dl1_LST-1.Run02008.0100.h5"
     muons_file2 = temp_dir_observed_files / "muons_LST-1.Run02008.0100.fits"
     datacheck_file2 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0100.h5"
+    interleaved_file2 = temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02008.0100.h5"
 
     run_program(
         "lstchain_data_r0_to_dl1",
@@ -203,10 +200,40 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         'datacheck1': datacheck_file1,
         'dvr_file1': dvr_file1,
         'pixmasks_file1': pixmasks_file1,
+        'interleaved_file1': interleaved_file1,
         'dl1_file2': dl1_output_path2,
         'muons2': muons_file2,
-        'datacheck2': datacheck_file2
+        'datacheck2': datacheck_file2,
+        'interleaved_file2': interleaved_file2
     }
+
+
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def interleaved_r1_file(temp_dir_observed_files, run_summary_path):
+    test_pedcal_run = test_data / 'real/R0/20200218/LST-1.1.Run02006.0000_first50.fits.fz'
+
+    run_program(
+        "lstchain_data_r0_to_dl1",
+        "-f",
+        test_pedcal_run,
+        "-o",
+        temp_dir_observed_files,
+        "--pedestal-file",
+        test_drs4_pedestal_path,
+        "--calibration-file",
+        test_calib_path,
+        "--time-calibration-file",
+        test_time_calib_path,
+        "--pointing-file",
+        test_drive_report,
+        '--run-summary-path',
+        run_summary_path,
+        "--default-trigger-type=tib"
+    )
+
+    return temp_dir_observed_files / "interleaved/interleaved_LST-1.Run02006.0000.h5"
 
 
 @pytest.fixture(scope="session")
@@ -215,7 +242,7 @@ def simulated_dl2_file(temp_dir_simulated_files, simulated_dl1_file, rf_models):
     Produce the test dl2 file from the simulated dl1 test file
     using the random forest test models.
     """
-    dl2_file = temp_dir_simulated_files / "dl2_gamma_test_large.h5"
+    dl2_file = temp_dir_simulated_files / "dl2_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     run_program(
         "lstchain_dl1_to_dl2",
         "--input-file",
@@ -234,7 +261,7 @@ def simulated_srcdep_dl2_file(temp_dir_simulated_srcdep_files, simulated_dl1_fil
     Produce the test source-dependent dl2 file from the simulated dl1 test file
     using the random forest test models.
     """
-    srcdep_dl2_file = temp_dir_simulated_srcdep_files / "dl2_gamma_test_large.h5"
+    srcdep_dl2_file = temp_dir_simulated_srcdep_files / "dl2_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
     run_program(
         "lstchain_dl1_to_dl2",
@@ -374,7 +401,7 @@ def observed_srcdep_dl2_file(temp_dir_observed_srcdep_files, observed_dl1_files,
 
 
 @pytest.fixture(scope="session")
-def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
+def simulated_irf_file(simulated_dl2_file):
     """
     Produce test irf file from the simulated dl2 test file.
     Using the same test file for gamma, proton and electron inputs
@@ -396,12 +423,12 @@ def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
 
 
 @pytest.fixture(scope="session")
-def simulated_srcdep_irf_file(temp_dir_simulated_srcdep_files, simulated_srcdep_dl2_file):
+def simulated_srcdep_irf_file(simulated_srcdep_dl2_file):
     """
     Produce test source-dependent irf file from the simulated dl2 test file.
     """
 
-    srcdep_irf_file = simulated_srcdep_dl2_file.parent / "irf.fits.gz"
+    srcdep_irf_file = simulated_srcdep_dl2_file.parent / "srcdep_irf.fits.gz"
     run_program(
         "lstchain_create_irf_files",
         "--input-gamma-dl2",

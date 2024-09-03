@@ -3,6 +3,7 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
+from ctapipe.containers import EventType
 import numpy as np
 import pandas as pd
 
@@ -144,13 +145,20 @@ def test_get_obstime_real():
     n_cosmics = np.random.poisson(cosmics_rate * t_obs)
 
     timestamps = np.random.uniform(0, t_obs, n_cosmics)
+    event_types = EventType.SUBARRAY.value * np.ones(n_cosmics)
     timestamps = np.append(timestamps, np.arange(t0_pedestal, t_obs, 1 / pedestal_rate))
+    n_pedestals = len(timestamps) - n_cosmics
+    event_types = np.append(event_types,  EventType.SKY_PEDESTAL.value * np.ones(n_pedestals))
     timestamps = np.append(
         timestamps, np.arange(t0_flatfield, t_obs, 1 / flatfield_rate)
     )
-    # sort events by timestamp:
-    timestamps.sort()
+    n_flatfield = len(timestamps) - n_cosmics - n_pedestals
+    event_types = np.append(event_types, EventType.FLATFIELD.value * np.ones(n_flatfield))
 
+    # sort events by timestamp:
+    sorted_event_types = event_types[np.argsort(timestamps)]
+    timestamps.sort()
+    
     # time to previous event:
     delta_t = np.insert(np.diff(timestamps), 0, 0)
 
@@ -169,6 +177,7 @@ def test_get_obstime_real():
         {
             "delta_t": delta_t[recorded_events][cut],
             "dragon_time": timestamps[recorded_events][cut],
+            "event_type": sorted_event_types[recorded_events][cut],
         }
     )
     t_eff, t_elapsed = utils.get_effective_time(events)
@@ -179,7 +188,8 @@ def test_get_obstime_real():
     # now test with a QTable:
     a = delta_t[recorded_events][cut] * u.s
     b = timestamps[recorded_events][cut] * u.s
-    events = QTable([a, b], names=("delta_t", "dragon_time"))
+    c = sorted_event_types[recorded_events][cut]
+    events = QTable([a, b, c], names=("delta_t", "dragon_time", "event_type"))
     t_eff, t_elapsed = utils.get_effective_time(events)
     print(t_obs, t_elapsed, true_t_eff, t_eff)
     # test accuracy to 0.05%:
@@ -220,10 +230,21 @@ def test_apply_src_r_cut(simulated_dl1_file):
     from lstchain.io.io import dl1_params_lstcam_key
     from lstchain.reco.utils import apply_src_r_cut
     from lstchain.io.config import get_srcdep_config
-    
+
     params = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     srcdep_config = get_srcdep_config()
     src_r_min = srcdep_config['train_gamma_src_r_deg'][0]
     src_r_max = srcdep_config['train_gamma_src_r_deg'][1]
     params = apply_src_r_cut(params, src_r_min, src_r_max)
-    assert (params.event_id.values == np.array([998705, 1680619])).all()
+    assert (params.event_id.values == np.arange(100, 110, 1)).all()
+
+def test_compute_rf_event_weights():
+    from lstchain.reco.utils import compute_rf_event_weights
+
+    alt_tel = np.append(3*[0.41109], 6*[0.53508])
+    az_tel = np.append(3*[1.32615], 6*[1.38195])
+
+    df = pd.DataFrame({"alt_tel": alt_tel, "az_tel": az_tel})
+    _, _ = compute_rf_event_weights(df)
+    np.testing.assert_array_equal(df['weight'],
+                                  np.append(3*[4.5/3], 6*[4.5/6]))
