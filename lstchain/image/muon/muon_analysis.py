@@ -131,7 +131,7 @@ def fit_muon(x, y, image, geom, tailcuts=None):
         negative_Q = np.sort(image[image <= 0])
         
         hist, bins = np.histogram(negative_Q,range=(-15,0),bins=30)
-        bins=bins[:-1]
+        bins = bins[:-1]
 
         cumulative = np.cumsum(hist)
         idx = (np.abs(cumulative - 0.318 * cumulative[-1])).argmin() #Find q closest to standard deviation
@@ -233,7 +233,6 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
 
     x, y = pixel_coords_to_telescope(geom, equivalent_focal_length)
     muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom)
-                                                            # params['tailcuts'])
 
     mirror_radius = np.sqrt(mirror_area / np.pi)  # meters
     dist_mask = np.abs(dist - muonringparam.radius
