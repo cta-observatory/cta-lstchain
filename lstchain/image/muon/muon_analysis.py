@@ -139,11 +139,13 @@ def fit_muon(x, y, image, geom, tailcuts=None):
 
         idx = (np.abs(normalised_cumulative_hist - 0.318)).argmin() #Find q closest to standard deviation
         dev = np.abs(bins[idx])
-        #MORALEJO: we want to get, from a single image, a quantity related to the width of the noise distribution, 
-        #but only using the negative side of the distribution of pixel charges (because the positive side includes actual signal, 
-        #i.e. the light from the muon). So we look for the value of q below which we find 31.8% of the pixels in the image. 
-        #We consider that "1 sigma" to use it as a reference to determine the image cleaning.
-        #"dev" is just the absolute value of that (it would correspond to the standard deviation in case the distribution was gaussian).
+        # We want to get, from a single image, a quantity related to the width of the 
+        # noise distribution, but only using the negative side of the distribution of pixel charges 
+        # (because the positive side includes actual signal, i.e. the light from the muon). 
+        # So we look for the value of q below which we find 31.8% of the pixels in the image. 
+        # We consider that "1 sigma" to use it as a reference to determine the image cleaning.
+        # "dev" is just the absolute value of that (it would correspond to the standard deviation 
+        # in case the distribution was gaussian).
 
         tailcuts = [4*dev,2*dev]   # tailcuts are placed at 4*dev of each image.
         
