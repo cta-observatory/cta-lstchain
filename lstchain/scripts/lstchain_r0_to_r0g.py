@@ -205,7 +205,8 @@ def main():
     if num_FF_like > 0:
         frac_untagged_ff_like = num_FF_like_with_no_FF_type / num_FF_like
         if frac_untagged_ff_like > max_frac:
-            log.warn('%d percent of FlatField(FF)-like events are not tagged as FF', int(100*max_frac))
+            log.warn('%d percent of FlatField(FF)-like events are not tagged as FF', 
+                     int(100*frac_untagged_ff_like))
             log.warn('This may be due to anomalous events, like car flashes or LIDAR shots')
             log.warn('More rarely, it could result from mis-tagging of FF events')
             log.warn('A thorough inspection of the data check plots is recommended\n')
