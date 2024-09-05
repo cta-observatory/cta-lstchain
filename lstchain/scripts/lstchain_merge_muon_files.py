@@ -53,10 +53,10 @@ def main():
         run = f'Run{args.run_number:05d}'
         file_list = sorted(filter(
             lambda f: run in f,
-            glob(os.path.join(args.srcdir, args.pattern))
+            glob(os.path.join(args.srcdir, args.pattern), recursive=True)
         ))
     else:
-        file_list = sorted(glob(os.path.join(args.srcdir, args.pattern)))
+        file_list = sorted(glob(os.path.join(args.srcdir, args.pattern), recursive=True))
 
     if not file_list:
         raise IOError(f'No muon files in {args.srcdir} with the parameters requested')
