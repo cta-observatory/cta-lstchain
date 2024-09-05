@@ -188,8 +188,8 @@ def main():
         log.info('FF-like events tagged as FF: %d', 
                  num_FF_like_with_FF_type)
     else:
-        log.warn('FF-like events tagged as FF: %d !!', 
-                 num_FF_like_with_FF_type)
+        log.warning('FF-like events tagged as FF: %d !!', 
+                    num_FF_like_with_FF_type)
 
     log.info('FF-like events not tagged as FF: %d', 
              num_FF_like_with_no_FF_type)
