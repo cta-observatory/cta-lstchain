@@ -96,10 +96,10 @@ def main():
         run = f'Run{args.run_number:05d}'
         file_list = sorted(filter(
             lambda f: run in f,
-            glob(os.path.join(args.input_dir, args.pattern))
+            glob(os.path.join(args.input_dir, args.pattern), recursive=True)
         ))
     else:
-        file_list = sorted(glob(os.path.join(args.input_dir, args.pattern)))
+        file_list = sorted(glob(os.path.join(args.input_dir, args.pattern), recursive=True))
 
     if args.no_image:
         keys = get_dataset_keys(file_list[0])
