@@ -65,6 +65,10 @@
     "fraction_cleaning_intensity": 0.03
   },
 
+  "random_forest_weight_settings": {
+    "pointing_wise_weights": true
+  },
+
   "random_forest_energy_regressor_args": {
     "max_depth": 30,
     "min_samples_leaf": 10,
@@ -270,8 +274,9 @@
   },
   "waveform_nsb_tuning":{
     "nsb_tuning": false,
-    "nsb_tuning_ratio": 0.52,
-    "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
+    "nsb_tuning_rate_GHz": 0.15,
+    "spe_location": null,
+    "pre_computed_multiplicity": 10
   },
   "write_interleaved_events":{
     "DataWriter": {

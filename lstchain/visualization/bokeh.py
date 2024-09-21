@@ -7,7 +7,7 @@ from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry, PixelShape
-from pkg_resources import resource_filename
+from ..io.io import get_resource_path
 
 import numpy as np
 import bokeh
@@ -545,8 +545,7 @@ def get_pixel_location(pix_id):
         return pixel_hardware_info[pix_id]
 
     # The first time we read in the data stored in the resources directory:
-    infilename = resource_filename('lstchain',
-                                   'resources/LST_pixid_to_cluster.txt')
+    infilename = get_resource_path('resources/LST_pixid_to_cluster.txt')
     data = np.genfromtxt(infilename, comments='#', dtype='int')
 
     pixel_hardware_info.extend([None] * (1 + data[:, 0].max()))

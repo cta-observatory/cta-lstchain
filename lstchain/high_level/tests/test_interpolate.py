@@ -251,11 +251,37 @@ def test_interp_irf(
 
         else:
             if not "srcdep" in irf.name:
+
+                # Change the PSF for different angular pointings
+                psf_1 = Table.read(irf, hdu="PSF")
+                psf_1_meta = fits.open(irf)["PSF"].header
+                psf_2 = psf_1.copy()
+                psf_2_meta = psf_1_meta.copy()
+
+                psf_1["RPSF"][0] *= factor_czd
+                psf_2["RPSF"][0] *= factor_czd * factor_sd
+
+                psf_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+                psf_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
+                psf_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
+                psf_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+                psf_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
+                psf_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
+
+                psf_hdu_1 = fits.BinTableHDU(
+                    psf_1, header=psf_1_meta, name="PSF"
+                )
+                psf_hdu_2 = fits.BinTableHDU(
+                    psf_2, header=psf_2_meta, name="PSF"
+                )
+
                 hdus_2_g.append(aeff_hdu_1)
                 hdus_2_g.append(edisp_hdu_1)
+                hdus_2_g.append(psf_hdu_1)
 
                 hdus_3_g.append(aeff_hdu_2)
                 hdus_3_g.append(edisp_hdu_2)
+                hdus_3_g.append(psf_hdu_2)
 
             else:
                 hdus_2_g_srcdep.append(aeff_hdu_1)
@@ -307,10 +333,14 @@ def test_interp_irf(
     hdu_en_srcdep = interpolate_irf(irfs_en_srcdep, data_pars)
     hdu_en_srcdep.writeto(irf_file_en_srcdep_final, overwrite=True)
 
+    aeff_shape_final = Table.read(irf_file_g_final, hdu=1)["EFFAREA"].shape
+    aeff_shape_2 = Table.read(irf_file_g_2, hdu=1)["EFFAREA"].shape
+
     assert hdu_g[1].header["ZEN_PNT"] == zen_t
     assert irf_file_g_2.exists()
     assert irf_file_g_3.exists()
     assert irf_file_g_final.exists()
+    assert aeff_shape_final == aeff_shape_2
 
     assert hdu_en[1].header["ZEN_PNT"] == zen_t
     assert irf_file_en_2.exists()
@@ -548,8 +578,8 @@ def test_get_nearest_az_node():
     assert mc_closest_az == az_check
 
 
-def test_interpolate_gh_cuts():
-    from lstchain.high_level.interpolate import interpolate_gh_cuts
+def test_interpolate_cuts():
+    from lstchain.high_level.interpolate import interpolate_cuts
 
     # linear test case
     gh_cuts_1 = np.array([[0, 0], [0.1, 0], [0.2, 0.1], [0.3, 0.2]])
@@ -559,8 +589,8 @@ def test_interpolate_gh_cuts():
     grid_points = np.array([[0], [0.1]])
     target_point = np.array([0.05])
 
-    interp = interpolate_gh_cuts(
-        gh_cuts=gh_cut,
+    interp = interpolate_cuts(
+        cuts=gh_cut,
         grid_points=grid_points,
         target_point=target_point,
         method="linear",

@@ -28,6 +28,15 @@ For source-dependent analysis, alpha cut can be used instead of theta cut.
 If you want to generate source-dependent IRFs, source-dep flag should be activated.
 The global alpha cut used to generate IRFs is stored as AL_CUT in the HDU header.
 
+Modified IRFs with true energy scaled by a given factor can be created to evaluate 
+the systematic uncertainty in the light collection efficiency. This can be done by 
+setting a value different from one for the "scale_true_energy" argument present in 
+the DataBinning Component of the configuration file of the IRF creation Tool.
+(The true energy of the MC events will be scaled before filling the IRFs histograms 
+when pyirf commands are used. The effects expected are a non-diagonal energy dispersion
+matrix and a different spectrum).
+                
+
 """
 
 from astropy import table
@@ -136,7 +145,12 @@ class IRFFITSWriter(Tool):
         --global-alpha-cut 10
         --source-dep
 
-    """
+    To build modified IRFs by specifying a scaling factor applying to the true energy (without using a config file):
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -o /path/to/irf.fits.gz
+        --scale-true-energy 1.15
+        """
 
     input_gamma_dl2 = traits.Path(
         help="Input MC gamma DL2 file",
@@ -221,6 +235,7 @@ class IRFFITSWriter(Tool):
         "global-alpha-cut": "DL3Cuts.global_alpha_cut",
         "allowed-tels": "DL3Cuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
+        "scale-true-energy": "DataBinning.scale_true_energy"
     }
 
     flags = {
@@ -316,6 +331,12 @@ class IRFFITSWriter(Tool):
                 p["simulation_info"],
                 p["geomag_params"],
             ) = read_mc_dl2_to_QTable(p["file"])
+
+            
+            if self.data_bin.scale_true_energy != 1.0:
+                p["events"]["true_energy"] *= self.data_bin.scale_true_energy
+                p["simulation_info"].energy_min *= self.data_bin.scale_true_energy
+                p["simulation_info"].energy_max *= self.data_bin.scale_true_energy
 
             p["mc_type"] = check_mc_type(p["file"])
 
@@ -527,7 +548,10 @@ class IRFFITSWriter(Tool):
             geomag_params["GEOMAG_DELTA"].to_value(u.deg),
             "deg",
         )
-
+        extra_headers["ETRUE_SCALE"]= (
+            self.data_bin.scale_true_energy
+        )
+      
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
         else:

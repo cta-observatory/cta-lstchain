@@ -23,20 +23,15 @@ from glob import glob
 from lstchain.io import auto_merge_h5files
 from lstchain.io import get_dataset_keys
 from lstchain.io.io import (
-    dl1_params_tel_mon_ped_key,
-    dl1_params_tel_mon_cal_key,
-    dl1_params_tel_mon_flat_key,
     dl1_mon_tel_catB_cal_key,
     dl1_mon_tel_catB_ped_key,
     dl1_mon_tel_catB_flat_key
 )
 
-default_keys_to_copy = [dl1_params_tel_mon_ped_key, 
-                       dl1_params_tel_mon_cal_key,
-                       dl1_params_tel_mon_flat_key,
-                       dl1_mon_tel_catB_cal_key,
-                       dl1_mon_tel_catB_ped_key,
-                       dl1_mon_tel_catB_flat_key
+default_keys_to_copy = [
+    dl1_mon_tel_catB_cal_key,
+    dl1_mon_tel_catB_ped_key,
+    dl1_mon_tel_catB_flat_key
 ]
 
 parser = argparse.ArgumentParser(description='Merge HDF5 files')
@@ -101,10 +96,10 @@ def main():
         run = f'Run{args.run_number:05d}'
         file_list = sorted(filter(
             lambda f: run in f,
-            glob(os.path.join(args.input_dir, args.pattern))
+            glob(os.path.join(args.input_dir, args.pattern), recursive=True)
         ))
     else:
-        file_list = sorted(glob(os.path.join(args.input_dir, args.pattern)))
+        file_list = sorted(glob(os.path.join(args.input_dir, args.pattern), recursive=True))
 
     if args.no_image:
         keys = get_dataset_keys(file_list[0])

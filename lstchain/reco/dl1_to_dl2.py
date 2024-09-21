@@ -79,7 +79,8 @@ def train_energy(train, custom_config=None):
 
     reg = model(**energy_regression_args)
     reg.fit(train[features],
-            train['log_mc_energy'])
+            train['log_mc_energy'],
+            sample_weight=train['weight'])
 
     logger.info("Model {} trained!".format(model))
     return reg
@@ -118,7 +119,7 @@ def train_disp_vector(train, custom_config=None, predict_features=None):
     reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose([train[f] for f in predict_features])
-    reg.fit(x, y)
+    reg.fit(x, y, sample_weight=train['weight'])
 
     logger.info("Model {} trained!".format(model))
 
@@ -152,7 +153,7 @@ def train_disp_norm(train, custom_config=None, predict_feature='disp_norm'):
     reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
-    reg.fit(x, y)
+    reg.fit(x, y, sample_weight=train['weight'])
 
     logger.info("Model {} trained!".format(model))
 
@@ -186,7 +187,7 @@ def train_disp_sign(train, custom_config=None, predict_feature='disp_sign'):
     clf = model(**classification_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
-    clf.fit(x, y)
+    clf.fit(x, y, sample_weight=train['weight'])
 
     logger.info("Model {} trained!".format(model))
 
@@ -223,7 +224,8 @@ def train_reco(train, custom_config=None):
 
     reg_energy = model(**energy_regression_args)
     reg_energy.fit(train[energy_features],
-                   train['log_mc_energy'])
+                   train['log_mc_energy'], sample_weight = train['weight']
+    )
 
     logger.info("Random Forest trained!")
     logger.info("Given disp_features: ", disp_features)
@@ -231,7 +233,8 @@ def train_reco(train, custom_config=None):
 
     reg_disp = RandomForestRegressor(**disp_regression_args)
     reg_disp.fit(train[disp_features],
-                 train['disp_norm'])
+                 train['disp_norm'],
+                 sample_weight=train['weight'])
 
     logger.info("Random Forest trained!")
     logger.info("Done!")
@@ -267,7 +270,8 @@ def train_sep(train, custom_config=None):
     clf = model(**classification_args)
 
     clf.fit(train[features],
-            train['mc_type'])
+            train['mc_type'],
+            sample_weight=train['weight'])
     logger.info("Random Forest trained!")
     return clf
 
@@ -344,6 +348,12 @@ def build_models(filegammas, fileprotons,
 
     # Adding a filter on mc_type just for training
     events_filters['mc_type'] = [-9000, np.inf]
+
+    pointing_wise_weights = False
+    if 'random_forest_weight_settings' in config:
+        if config['random_forest_weight_settings']['pointing_wise_weights']:
+            logger.info("Pointing-wise event weighting activated")
+            pointing_wise_weights = True
 
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
@@ -431,6 +441,14 @@ def build_models(filegammas, fileprotons,
     src_r_max = config['train_gamma_src_r_deg'][1]
     df_gamma = utils.apply_src_r_cut(df_gamma, src_r_min, src_r_max)
 
+    if pointing_wise_weights:
+        # Give same total weight to all events in every pointing node, by
+        # applying event-wise weights which depend on the statistics per node
+        # The weight is written to a new column of df_gamma, called 'weight'
+        _, _ = utils.compute_rf_event_weights(df_gamma)
+    else:
+        df_gamma['weight'] = np.ones(len(df_gamma))
+
     # Train regressors for energy and disp_norm reconstruction, only with gammas
     n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
     if n_gamma_regressors not in [1.0, None]:
@@ -490,6 +508,14 @@ def build_models(filegammas, fileprotons,
             raise ValueError(
                 "The requested number of protons for the classifier training is not valid."
             ) from e
+
+    if pointing_wise_weights:
+        # Give same total weight to all events in every pointing node, by
+        # applying event-wise weights which depend on the statistics per node
+        # The weight is written to a new column of df_gamma, called 'weight'
+        _, _ = utils.compute_rf_event_weights(df_proton)
+    else:
+        df_proton['weight'] = np.ones(len(df_proton))
 
     test = pd.concat([testg, df_proton], ignore_index=True)
 

@@ -129,6 +129,10 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     config['lh_fit_config']["spatial_selection"] = 'dvr'
     config['lh_fit_config']["use_interleaved"] = True
     config['waveform_nsb_tuning']['nsb_tuning'] = True
+    config['waveform_nsb_tuning']['pre_computed_multiplicity'] = 10  # default value
+    r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
+    os.remove(tmp_path / "tmp.h5")
+    config['waveform_nsb_tuning']['pre_computed_multiplicity'] = 0
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 

@@ -8,6 +8,7 @@ import tables
 from astropy.table import Table, QTable
 from ctapipe.instrument import SubarrayDescription
 from lstchain.io import add_config_metadata
+from lstchain.io.io import get_resource_path
 from pathlib import PosixPath
 from traitlets.config.loader import DeferredConfigString, LazyConfigValue
 
@@ -153,10 +154,10 @@ def test_trigger_type_in_dl1_params(simulated_dl1_file):
 
 def test_extract_simulation_nsb(mc_gamma_testfile):
     from lstchain.io.io import extract_simulation_nsb
+    import astropy.units as u
 
     nsb = extract_simulation_nsb(mc_gamma_testfile)
-    assert np.isclose(nsb[0], 0.246, rtol=0.1)
-    assert np.isclose(nsb[1], 0.217, rtol=0.1)
+    assert np.isclose(nsb[1].to_value(u.GHz), 0.246, rtol=0.1)
 
 
 def test_remove_duplicated_events():
@@ -236,3 +237,8 @@ def test_add_config_metadata():
     container = Container()
     add_config_metadata(container, config)
     assert json.loads(container.meta["config"]) == config
+
+
+def test_get_resource_path():
+    filepath = get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")
+    assert filepath.is_file()
