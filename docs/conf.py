@@ -163,7 +163,7 @@ if os.path.exists(example_notebooks_output):
 shutil.copytree(example_notebooks_input, example_notebooks_output)
 
 # Always build notebooks
-nbsphinx_execute = "auto"  # "never" | "always" | "auto" (build a notebook if its cell outputs are empty)
+nbsphinx_execute = "never"  # "never" | "always" | "auto" (build a notebook if its cell outputs are empty)
 notebooks = [f for f in os.listdir(example_notebooks_output) if f.endswith('.ipynb')]
 with open('notebooks.rst', 'w') as rst_file:
     rst_file.write('Example notebooks\n=================\n\n')
