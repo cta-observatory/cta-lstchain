@@ -81,12 +81,6 @@ def test_r0_available():
     assert test_r0_path2.is_file()
 
 
-def test_lhfit_numba_compiled():
-    from lstchain.reco.reconstructorCC import log_pdf_hl
-    log_pdf_hl(np.float64([0]), np.float32([[0]]), np.float32([1]),
-               np.float64([0]), np.float64([[1]]), np.float64([[1]]))
-
-
 def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
     config = deepcopy(standard_config)
@@ -101,6 +95,9 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
             ["type", "*", 0.0],
             ["type", "LST_LST_LSTCam", 0.0]
         ],
+        "spatial_selection": "hillas",
+        "dvr_pic_threshold": 8,
+        "dvr_pix_for_full_image": 500,
         "sigma_space": 3,
         "sigma_time": 4,
         "time_before_shower": [
@@ -113,7 +110,7 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
         ],
         "n_peaks": 20,
         "no_asymmetry": False,
-        "use_weight": False,
+        "use_interleaved": False,
         "verbose": 4
     }
     os.makedirs('./event', exist_ok=True)
@@ -126,8 +123,16 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
 
     config['source_config']['EventSource']['allowed_tels'] = [1]
     config['lh_fit_config']["no_asymmetry"] = True
-    config['lh_fit_config']["use_weight"] = True
     config['lh_fit_config']["verbose"] = 0
+    r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
+    os.remove(tmp_path / "tmp.h5")
+    config['lh_fit_config']["spatial_selection"] = 'dvr'
+    config['lh_fit_config']["use_interleaved"] = True
+    config['waveform_nsb_tuning']['nsb_tuning'] = True
+    config['waveform_nsb_tuning']['pre_computed_multiplicity'] = 10  # default value
+    r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
+    os.remove(tmp_path / "tmp.h5")
+    config['waveform_nsb_tuning']['pre_computed_multiplicity'] = 0
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 
@@ -146,6 +151,9 @@ def test_r0_to_dl1_lhfit_observed(tmp_path):
             ["type", "*", 0.0],
             ["type", "LST_LST_LSTCam", 0.0]
         ],
+        "spatial_selection": "hillas",
+        "dvr_pic_threshold": 8,
+        "dvr_pix_for_full_image": 500,
         "sigma_space": 3,
         "sigma_time": 4,
         "time_before_shower": [
@@ -158,9 +166,13 @@ def test_r0_to_dl1_lhfit_observed(tmp_path):
         ],
         "n_peaks": 0,
         "no_asymmetry": False,
-        "use_weight": False,
+        # test data doesn't contain interleaved events
+        "use_interleaved": False,
         "verbose": 0
     }
+    r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
+    os.remove(tmp_path / "tmp2.h5")
+    config['lh_fit_config']["spatial_selection"] = 'dvr'
     r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
 
 

@@ -215,7 +215,6 @@ def test_create_dl3_energy_dependent_cuts(temp_dir_observed_files, observed_dl2_
                 f"--output-dl3-path={temp_dir_observed_files}",
                 f"--input-irf-path={temp_dir_observed_files}",
                 "--irf-file-pattern=pnt_irf.fits.gz",
-                "--final-irf-file=final_pnt_irf.fits.gz",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
@@ -246,7 +245,6 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_fi
                 f"--output-dl3-path={temp_dir_observed_files}",
                 f"--input-irf-path={simulated_irf_file.parent}",
                 f"--irf-file-pattern={simulated_irf_file.name}",
-                f"--final-irf-file={simulated_irf_file.name}",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
@@ -306,7 +304,6 @@ def test_create_srcdep_dl3(
                 f"--output-dl3-path={temp_dir_observed_srcdep_files}",
                 f"--input-irf-path={simulated_srcdep_irf_file.parent}",
                 f"--irf-file-pattern={simulated_srcdep_irf_file.name}",
-                f"--final-irf-file={simulated_srcdep_irf_file.name}",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
@@ -382,3 +379,153 @@ def test_index_dl3_files(temp_dir_observed_files):
     data = DataStore.from_dir(temp_dir_observed_files)
 
     assert 2008 in data.obs_table["OBS_ID"]
+
+    for hdu_name in [
+        "EVENTS",
+        "GTI",
+        "POINTING",
+        "EFFECTIVE AREA",
+        "ENERGY DISPERSION",
+        "BACKGROUND",
+        "PSF",
+    ]:
+        assert hdu_name in data.hdu_table["HDU_NAME"]
+
+
+@pytest.mark.private_data
+def test_index_srcdep_dl3_files(temp_dir_observed_srcdep_files):
+    """
+    Generating Index files from a given path and glob pattern for srcdep DL3 files
+    """
+    from lstchain.tools.lstchain_create_dl3_index_files import FITSIndexWriter
+    from gammapy.data import DataStore
+
+    assert (
+        run_tool(
+            FITSIndexWriter(),
+            argv=[
+                f"--input-dl3-dir={temp_dir_observed_srcdep_files}",
+                "--overwrite",
+            ],
+            cwd=temp_dir_observed_srcdep_files,
+        )
+        == 0
+    )
+    data = DataStore.from_dir(temp_dir_observed_srcdep_files)
+
+    assert 2008 in data.obs_table["OBS_ID"]
+
+    for hdu_name in [
+        "EVENTS",
+        "GTI",
+        "POINTING",
+        "EFFECTIVE AREA",
+        "ENERGY DISPERSION",
+    ]:
+        assert hdu_name in data.hdu_table["HDU_NAME"]
+
+
+@pytest.mark.private_data
+def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_file):
+    """
+    Checking the validity of modified IRFs after scaling the True Energy by a factor.
+    """
+
+    import astropy.units as u
+    from gammapy.irf import EffectiveAreaTable2D, EnergyDispersion2D
+    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
+
+    irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
+    irf_file_mod = temp_dir_observed_files / "mod_irf.fits.gz"
+    config_file = os.path.join(os.getcwd(), "docs/examples/irf_dl3_tool_config.json")
+
+    assert (
+        run_tool(
+            IRFFITSWriter(),
+            argv=[
+                f"--input-gamma-dl2={simulated_dl2_file}",
+                f"--input-proton-dl2={simulated_dl2_file}",
+                f"--input-electron-dl2={simulated_dl2_file}",
+                f"--output-irf-file={irf_file}",
+                f"--config={config_file}",
+                "--overwrite",
+                "--DataBinning.true_energy_n_bins=2",
+                "--DataBinning.reco_energy_n_bins=2",
+                "--DataBinning.true_energy_min: 0.2",
+                "--DataBinning.true_energy_max: 0.3",
+                "--DL3Cuts.min_event_p_en_bin=2",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+    assert (
+        run_tool(
+            IRFFITSWriter(),
+            argv=[
+                f"--input-gamma-dl2={simulated_dl2_file}",
+                f"--input-proton-dl2={simulated_dl2_file}",
+                f"--input-electron-dl2={simulated_dl2_file}",
+                f"--output-irf-file={irf_file_mod}",
+                f"--config={config_file}",
+                "--overwrite",
+                "--DataBinning.true_energy_n_bins=2",
+                "--DataBinning.reco_energy_n_bins=2",
+                "--DataBinning.true_energy_min: 0.2",
+                "--DataBinning.true_energy_max: 0.3",
+                "--DL3Cuts.min_event_p_en_bin=2",
+                "--DataBinning.scale_true_energy=1.5",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+
+    aeff_hdu = EffectiveAreaTable2D.read(irf_file, hdu="EFFECTIVE AREA")
+    aeff_mod_hdu = EffectiveAreaTable2D.read(irf_file_mod, hdu="EFFECTIVE AREA")
+
+    edisp_hdu = EnergyDispersion2D.read(irf_file, hdu="ENERGY DISPERSION")
+    edisp_mod_hdu = EnergyDispersion2D.read(irf_file_mod, hdu="ENERGY DISPERSION")
+
+    assert aeff_mod_hdu.data.shape == aeff_hdu.data.shape
+    assert edisp_mod_hdu.data.shape == edisp_hdu.data.shape
+
+    edisp = EnergyDispersion2D.read(irf_file)
+    edisp_mod = EnergyDispersion2D.read(irf_file_mod)
+
+    e_migra = edisp.axes["migra"].center
+    e_migra_mod = edisp_mod.axes["migra"].center
+
+    e_true_list = [0.2, 2, 20]
+    e_migra_prob = []
+    e_migra_prob_mod = []
+
+    for i in e_true_list:
+        e_true = i * u.TeV
+        e_migra_prob.append(
+            edisp.evaluate(
+                offset=0.4 * u.deg,
+                energy_true=e_true,
+                migra=e_migra,
+            )
+        )
+        e_migra_prob_mod.append(
+            edisp_mod.evaluate(
+                offset=0.4 * u.deg,
+                energy_true=e_true,
+                migra=e_migra_mod,
+            )
+        )
+
+    # Check that the maximum of the density probability of the migration has shifted
+    order_max = []
+    order_max_mod = []
+    for idx, _ in enumerate(e_true_list):
+        for j in range(len(e_migra)):
+            if e_migra_prob[idx][j] > e_migra_prob[idx][j - 1]:
+                order_max.append(j)
+            if e_migra_prob_mod[idx][j] > e_migra_prob_mod[idx][j - 1]:
+                order_max_mod.append(j)
+
+    for i in range(len(order_max)):
+        assert order_max[i] != order_max_mod[i]

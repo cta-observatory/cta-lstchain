@@ -7,11 +7,12 @@ import numpy as np
 from astropy import units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz
-from lstchain.reco.utils import location
+
 import warnings
 from ctapipe.core import Container, Field
 from ctapipe.utils import get_bright_stars
 from ctapipe.coordinates import CameraFrame, TelescopeFrame
+from ctapipe_io_lst.constants import LST1_LOCATION
 
 __all__ = [
     'DL1DataCheckContainer',
@@ -131,9 +132,9 @@ class DL1DataCheckContainer(Container):
         self.trigger_type = \
             count_trig_types(table['trigger_type'][mask])
         if 'ucts_jump' in table.columns:
-            # After one (or n) genuine UCTS jumps in a run, the first event (or n events) 
-            # of every subsequent subrun file (if analyzed on its own) will have ucts_jump=True, 
-            # but these are not new jumps, just the ones from previous subruns, so they should 
+            # After one (or n) genuine UCTS jumps in a run, the first event (or n events)
+            # of every subsequent subrun file (if analyzed on its own) will have ucts_jump=True,
+            # but these are not new jumps, just the ones from previous subruns, so they should
             # not be counted.
             uj = table['ucts_jump'].data.copy()
             # find the first False value, and set to False also all the earlier ones:
@@ -156,7 +157,7 @@ class DL1DataCheckContainer(Container):
         telescope_pointing = SkyCoord(alt=self.mean_alt_tel,
                                       az=self.mean_az_tel,
                                       frame=AltAz(obstime=time_utc,
-                                                  location=location))
+                                                  location=LST1_LOCATION))
         self.tel_ra = telescope_pointing.icrs.ra.to(u.deg)
         self.tel_dec = telescope_pointing.icrs.dec.to(u.deg)
 
@@ -324,7 +325,7 @@ class DL1DataCheckContainer(Container):
         sampled_times = self.dragon_time
         obstime = Time(sampled_times[int(len(sampled_times)/2)],
                        scale='utc', format='unix')
-        horizon_frame = AltAz(location=location, obstime=obstime)
+        horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
         pointing = SkyCoord(az=self.mean_az_tel,
                             alt=self.mean_alt_tel,
                             frame=horizon_frame)
@@ -336,8 +337,8 @@ class DL1DataCheckContainer(Container):
         camera_frame = CameraFrame(telescope_pointing=pointing,
                                    focal_length=focal_length*relative_shift,
                                    obstime=obstime,
-                                   location=location)
-        telescope_frame = TelescopeFrame(obstime=obstime, location=location)
+                                   location=LST1_LOCATION)
+        telescope_frame = TelescopeFrame(obstime=obstime, location=LST1_LOCATION)
 
         # radius around star within which we consider the pixel may be affected
         # (hence we will later not raise a flag if e.g. its pedestal std dev is
@@ -427,7 +428,7 @@ with np.printoptions(threshold=3, precision=3, edgeitems=1):
         """
         Histogram bins for the DL1 Datacheck
         """
-        
+
         # delta_t between consecutive events (ms)
         hist_delta_t = Field(
             default_factory=lambda: np.linspace(-1.e-2, 2., 200),

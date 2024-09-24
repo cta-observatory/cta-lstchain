@@ -15,13 +15,23 @@ from astropy.table import Table
 from astropy.time import Time
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import read_table
+from ctapipe.io import EventSource
+from ctapipe.containers import EventType
+
 
 from lstchain.io.config import get_srcdep_config, get_standard_config
-from lstchain.io.io import (dl1_images_lstcam_key, dl1_params_lstcam_key,
-                            dl1_params_tel_mon_cal_key,
-                            dl1_params_tel_mon_flat_key,
-                            dl1_params_tel_mon_ped_key, dl2_params_lstcam_key,
-                            get_dataset_keys, get_srcdep_params)
+from lstchain.io.io import (
+    dl1_images_lstcam_key,
+    dl1_params_lstcam_key,
+    dl1_params_tel_mon_cal_key,
+    dl1_params_tel_mon_flat_key,
+    dl1_params_tel_mon_ped_key,
+    dl2_params_lstcam_key,
+    get_dataset_keys,
+    get_srcdep_params,
+    get_resource_path
+)
+
 
 
 def find_entry_points(package_name):
@@ -83,6 +93,41 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
 def test_lstchain_mc_r0_to_dl1(simulated_dl1_file):
     assert simulated_dl1_file.is_file()
 
+@pytest.mark.private_data
+def test_lstchain_r0_to_r0g(tmp_path, temp_dir_observed_files):
+    test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+    input_file = test_data / "real/R0/20231214/LST-1.1.Run16102.0000_first50" \
+                             ".fits.fz"
+    output_dir = temp_dir_observed_files / "R0G"
+    output_dir.mkdir()
+    run_program("lstchain_r0_to_r0g", "-f", input_file, "-o", output_dir)
+    output_file = output_dir / input_file.name
+    assert output_file.is_file()
+
+    src = EventSource(input_url=output_file)
+    src.pointing_information = False
+    src.trigger_information = False
+    src.apply_drs4_corrections = False
+    # Check number of gains for first event of each type:
+    for evtype, ngains in zip([EventType.FLATFIELD, EventType.SKY_PEDESTAL, 
+                               EventType.SUBARRAY], [2, 2, 1]):
+        for event in src:
+            if event.trigger.event_type == evtype:
+                break
+        assert(event.r0.tel[1].waveform.shape[0] == ngains)  
+
+@pytest.mark.private_data
+def test_lstchain_r0g_to_r0v(tmp_path, temp_dir_observed_files):
+    test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+    input_file = temp_dir_observed_files / "R0G/LST-1.1.Run16102.0000_first50" \
+                                           ".fits.fz"
+    pixel_selection_file = test_data / "real/R0DVR/Pixel_selection_LST-1.Run16102.0000.h5"
+    output_dir = temp_dir_observed_files / "R0V"
+    output_dir.mkdir()
+    run_program("lstchain_r0g_to_r0v", "-f", input_file, "-o", output_dir,
+                "--pixselection-file", pixel_selection_file)
+    output_file = output_dir / input_file.name
+    assert output_file.is_file()
 
 @pytest.mark.private_data
 def test_lstchain_data_r0_to_dl1(observed_dl1_files):
@@ -160,6 +205,20 @@ def tune_nsb(mc_gamma_testfile, observed_dl1_files):
     )
 
 
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def tune_nsb_waveform(mc_gamma_testfile, observed_dl1_files):
+    return run_program(
+        "lstchain_tune_nsb_waveform",
+        "--config",
+        "lstchain/data/lstchain_standard_config.json",
+        "--input-mc",
+        mc_gamma_testfile,
+        "--input-data",
+        observed_dl1_files["dl1_file1"],
+    )
+
+
 def test_validity_tune_nsb(tune_nsb):
     output_lines = tune_nsb.stdout.splitlines()
     for line in output_lines:
@@ -173,6 +232,22 @@ def test_validity_tune_nsb(tune_nsb):
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
             assert line == '  "extra_noise_in_bright_pixels": 0.0'
+
+
+def test_validity_tune_nsb_waveform(tune_nsb_waveform):
+    """
+    The resulting nsb_tuning_rate value of -1 expected in this test is
+    meaningless because the input data do not allow a full test of the
+    functionality. This test is only a formal check that the script runs.
+    """
+    output_lines = tune_nsb_waveform.stdout.splitlines()
+    for line in output_lines:
+        if '"nsb_tuning"' in line:
+            assert line == '  "nsb_tuning": true,'
+        if '"nsb_tuning_rate"' in line:
+            assert line == '  "nsb_tuning_rate": -1.0,'
+        if '"spe_location"' in line:
+            assert line == f'  "spe_location": "{get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")}"'
 
 
 def test_lstchain_mc_trainpipe(rf_models):

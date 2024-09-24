@@ -19,10 +19,11 @@ import logging
 import sys
 import numpy as np
 from pathlib import Path
+from traitlets.config import Config
 
 from lstchain.image.modifier import calculate_required_additional_nsb
 from lstchain.io.config import dump_config, read_configuration_file
-from traitlets.config import Config
+from lstchain.io.io import get_resource_path
 
 log = logging.getLogger(__name__)
 
@@ -81,14 +82,14 @@ def main():
 
     config = read_configuration_file(args.config)
 
-    nsb_correction_ratio, data_ped_variance, mc_ped_variance = \
+    extra_nsb_rate, data_ped_variance, mc_ped_variance = \
         calculate_required_additional_nsb(args.input_mc, args.input_data,
                                           config=Config(config))
 
     dict_nsb = {
         "nsb_tuning": True,
-        "nsb_tuning_ratio": np.round(nsb_correction_ratio, decimals=2),
-        "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
+        "nsb_tuning_rate_GHz": np.round(extra_nsb_rate, decimals=3),
+        "spe_location": str(get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
     }
 
     log.info(f'\ndata_ped_stdev: {data_ped_variance**0.5:.3f} p.e.')

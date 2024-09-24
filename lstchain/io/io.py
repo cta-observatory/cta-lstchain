@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 import warnings
 from multiprocessing import Pool
 from contextlib import ExitStack
@@ -13,6 +12,7 @@ from tqdm import tqdm
 import json
 from traitlets.config.loader import DeferredConfigString, LazyConfigValue
 from pathlib import PosixPath
+from importlib import resources
 
 import astropy.units as u
 from astropy.table import Table, vstack, QTable
@@ -21,9 +21,8 @@ from ctapipe.containers import SimulationConfigContainer
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableReader, HDF5TableWriter
 
-from eventio import Histograms, EventIOFile
-from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
-from eventio.simtel.objects import History, HistoryConfig
+from eventio import Histograms, SimTelFile
+from eventio.search_utils import yield_toplevel_of_type
 
 from pyirf.simulations import SimulatedEventsInfo
 
@@ -58,7 +57,6 @@ __all__ = [
     'global_metadata',
     'merge_dl2_runs',
     'merging_check',
-    'parse_cfg_bytestring',
     'read_data_dl2_to_QTable',
     'read_dl2_params',
     'read_mc_dl2_to_QTable',
@@ -76,6 +74,7 @@ __all__ = [
     'write_metadata',
     'write_simtel_energy_histogram',
     'write_subarray_tables',
+    'get_resource_path'
 ]
 
 
@@ -336,6 +335,15 @@ def auto_merge_h5files(
         keys = set(get_dataset_keys(file_list[0]))
     else:
         keys = set(nodes_keys)
+    
+    # Do not merge nor copy monitoring tables present in sub-run files
+    keys_to_remove = [
+        dl1_params_tel_mon_ped_key, 
+        dl1_params_tel_mon_cal_key, 
+        dl1_params_tel_mon_flat_key
+    ]
+    for key_to_remove in keys_to_remove:
+        keys.discard(key_to_remove)
 
     keys_to_copy = set() if keys_to_copy is None else set(keys_to_copy).intersection(keys)
 
@@ -353,14 +361,12 @@ def auto_merge_h5files(
             common_keys=common_keys.difference(keys_to_copy)
 
             with open_file(filename) as file:
-
                 # check value of Table.nrow for keys copied from the first file
                 for k in keys_to_copy:
                     first_node = merge_file.root[k]
                     present_node = file.root[k]
                     if first_node.nrows != present_node.nrows:
                         raise ValueError("Length of key {} from file {} different than in file {}".format(k, filename, file_list[0]))
-
                 for k in common_keys:
                     in_node = file.root[k]
                     out_node = merge_file.root[k]
@@ -1255,37 +1261,34 @@ def remove_duplicated_events(data):
     data.remove_rows(remove_row_list)
 
 
-def parse_cfg_bytestring(bytestring):
-    """
-    Parse configuration as read by eventio
-    :param bytes bytestring: A ``Bytes`` object with configuration data for one parameter
-    :return: Tuple in form ``('parameter_name', 'value')``
-    """
-    line_decoded = bytestring.decode('utf-8').rstrip()
-    if 'ECHO' in line_decoded or '#' in line_decoded:
-        return None
-    line_list = line_decoded.split('%', 1)[0]  # drop comment
-    res = re.sub(' +', ' ', line_list).strip().split(' ', 1)  # remove extra whitespaces and split
-    return res[0].upper(), res[1]
-
-
 def extract_simulation_nsb(filename):
     """
-    Get current run NSB from configuration in simtel file
+    Get current run NSB from configuration in simtel file.
+
+    WARNING : In current MC, correct NSB are logged after 'STORE_PHOTOELECTRONS' entries
+    In any new production, behaviour needs to be verified.
+    New version of simtel will allow to use better metadata.
+
     :param str filename: Input file name
-    :return array of `float` by tel_id: NSB rate
+    :return dict of `float` by tel_id: NSB rate
     """
-    nsb = []
-    with EventIOFile(filename) as f:
-        for o in yield_all_subobjects(f, [History, HistoryConfig]):
-            if hasattr(o, 'parse'):
-                try:
-                    cfg_element = parse_cfg_bytestring(o.parse()[1])
-                    if cfg_element is not None:
-                        if cfg_element[0] == 'NIGHTSKY_BACKGROUND':
-                            nsb.append(float(cfg_element[1].strip('all:')))
-                except Exception as e:
-                    print('Unexpected end of %s,\n caught exception %s', filename, e)
+    nsb = {}
+    next_nsb = False
+    tel_id = 1
+    with SimTelFile(filename) as f:
+        for _, line in f.history:
+            line = line.decode('utf-8').strip().split(' ')
+            if next_nsb and line[0] == 'NIGHTSKY_BACKGROUND':
+                nsb[tel_id] = float(line[1].strip('all:')) * u.GHz
+                tel_id = tel_id+1
+            if line[0] == 'STORE_PHOTOELECTRONS':
+                next_nsb = True
+            else:
+                next_nsb = False
+    log.warning('Original MC night sky background extracted from the config history in the simtel file.\n'
+                'This is done for existing LST MC such as the one created using: '
+                'https://github.com/cta-observatory/lst-sim-config/tree/sim-tel_LSTProd2_MAGICST0316'
+                '\nExtracted values are: ' + str(np.asarray(nsb)) + '. Check that it corresponds to expectations.')
     return nsb
 
 
@@ -1345,3 +1348,9 @@ def get_mc_fov_offset(filename):
 
     return mean_offset
 
+
+def get_resource_path(filename):
+    """
+    Get a resource data path in lstchain package
+    """
+    return resources.files("lstchain") / filename
