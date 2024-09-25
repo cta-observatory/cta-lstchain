@@ -125,7 +125,7 @@ def fit_muon(x, y, image, geom, tailcuts=None):
         Image after cleaning
     """
     
-    if tailcuts == None:
+    if tailcuts is None:
         # We want to quantify the noise of the image. To do so, we will use the 
         # negative Q cumulative distribution.
         negative_Q = np.sort(image[image <= 0])
