@@ -3,14 +3,15 @@ from ctapipe.core import run_tool
 import os
 from astropy.io import fits
 import numpy as np
+import astropy.units as u
+from gammapy.irf import EffectiveAreaTable2D, EnergyDispersion2D
+from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
 
 def test_create_irf_full_enclosure(temp_dir_observed_files, simulated_dl2_file):
     """
     Generating full enclosure IRF file from a test DL2 files
     """
-    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
-
     irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
 
     assert (
@@ -33,8 +34,6 @@ def test_create_irf_point_like(temp_dir_observed_files, simulated_dl2_file):
     """
     Generating point-like IRF file from a test DL2 files
     """
-    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
-
     irf_file = temp_dir_observed_files / "pnt_irf.fits.gz"
 
     assert (
@@ -66,7 +65,6 @@ def test_create_irf_full_enclosure_with_config(
     Generating full enclosure IRF file from a test DL2 files, using
     a config file
     """
-    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
     irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
     config_file = os.path.join(os.getcwd(), "./docs/examples/irf_dl3_tool_config.json")
@@ -94,7 +92,6 @@ def test_create_irf_point_like_srcdep(
     """
     Generating point-like source-dependent IRF file from a test DL2 files
     """
-    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
     irf_file = temp_dir_observed_srcdep_files / "irf.fits.gz"
 
@@ -126,7 +123,6 @@ def test_create_irf_point_like_energy_dependent_cuts(
     Generating point-like IRF file from a test DL2 files, using
     energy-dependent cuts
     """
-    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
     from gammapy.irf import RadMax2D
 
     irf_file = temp_dir_observed_files / "pnt_irf.fits.gz"
@@ -162,7 +158,6 @@ def test_create_irf_point_like_srcdep_energy_dependent_cuts(
     Generating point-like source-dependent IRF file from a test DL2 files,
     using energy-dependent cuts
     """
-    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
     from astropy.table import QTable
 
     irf_file = temp_dir_observed_srcdep_files / "irf_edep.fits.gz"
@@ -426,15 +421,19 @@ def test_index_srcdep_dl3_files(temp_dir_observed_srcdep_files):
 
 
 @pytest.mark.private_data
-def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_file):
-    """
-    Checking the validity of modified IRFs after scaling the True Energy by a factor.
-    """
-
-    import astropy.units as u
-    from gammapy.irf import EffectiveAreaTable2D, EnergyDispersion2D
-    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
-
+@pytest.mark.parametrize(
+    "e_true, scale_factor",
+    [
+        (0.2 * u.TeV, 1.2),
+        (2 * u.TeV, 1.2),
+        (20 * u.TeV, 1.2),
+        (0.2 * u.TeV, 0.8),
+        (2 * u.TeV, 0.8),
+        (20 * u.TeV, 0.8)
+    ]
+)
+def test_scale_true_energy_irf(temp_dir_observed_files, simulated_dl2_file, e_true, scale_factor):
+    """Check the validity of modified IRFs after scaling the True Energy by a factor."""
     irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
     irf_file_mod = temp_dir_observed_files / "mod_irf.fits.gz"
     config_file = os.path.join(os.getcwd(), "docs/examples/irf_dl3_tool_config.json")
@@ -474,7 +473,7 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
                 "--DataBinning.true_energy_min: 0.2",
                 "--DataBinning.true_energy_max: 0.3",
                 "--DL3Cuts.min_event_p_en_bin=2",
-                "--DataBinning.scale_true_energy=1.5",
+                f"--DataBinning.scale_true_energy={scale_factor}",
             ],
             cwd=temp_dir_observed_files,
         )
@@ -496,36 +495,19 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
     e_migra = edisp.axes["migra"].center
     e_migra_mod = edisp_mod.axes["migra"].center
 
-    e_true_list = [0.2, 2, 20]
-    e_migra_prob = []
-    e_migra_prob_mod = []
+    e_migra_prob = edisp.evaluate(
+        offset=0.4 * u.deg,
+        energy_true=e_true,
+        migra=e_migra
+    )
 
-    for i in e_true_list:
-        e_true = i * u.TeV
-        e_migra_prob.append(
-            edisp.evaluate(
-                offset=0.4 * u.deg,
-                energy_true=e_true,
-                migra=e_migra,
-            )
-        )
-        e_migra_prob_mod.append(
-            edisp_mod.evaluate(
-                offset=0.4 * u.deg,
-                energy_true=e_true,
-                migra=e_migra_mod,
-            )
-        )
+    e_migra_prob_mod = edisp_mod.evaluate(
+        offset=0.4 * u.deg,
+        energy_true=e_true,
+        migra=e_migra_mod,
+    )
 
-    # Check that the maximum of the density probability of the migration has shifted
-    order_max = []
-    order_max_mod = []
-    for idx, _ in enumerate(e_true_list):
-        for j in range(len(e_migra)):
-            if e_migra_prob[idx][j] > e_migra_prob[idx][j - 1]:
-                order_max.append(j)
-            if e_migra_prob_mod[idx][j] > e_migra_prob_mod[idx][j - 1]:
-                order_max_mod.append(j)
-
-    for i in range(len(order_max)):
-        assert order_max[i] != order_max_mod[i]
+    # Check that the maximum of the probability distribution has shifted between the two EDISP
+    order_max = np.argmax(e_migra_prob)
+    order_max_mod = np.argmax(e_migra_prob_mod)
+    assert order_max != order_max_mod, f"Index of maximum did not shift for energy {e_true}"
