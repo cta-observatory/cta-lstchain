@@ -329,11 +329,10 @@ def r0_to_dl1(
     -------
 
     """
-
     # using None as default and using `get_dataset_path` only inside the function
     # prevents downloading at import time.
     if input_filename is None:
-        get_dataset_path('gamma_test_large.simtel.gz')
+        get_dataset_path('gamma_lstprod2.simtel.gz')
 
     if output_filename is None:
         try:

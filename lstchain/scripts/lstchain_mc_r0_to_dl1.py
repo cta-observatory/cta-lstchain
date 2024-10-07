@@ -52,10 +52,10 @@ def main():
     args = parser.parse_args()
 
     # using a default of None and only using get_dataset_path here
-    # prevents downloading gamma_test_large when an input file is actually given
+    # prevents downloading when an input file is actually given
     # or just --help is called.
     if args.input_file is None:
-        args.input_file = get_dataset_path('gamma_test_large.simtel.gz')
+        args.input_file = get_dataset_path('gamma_lstprod2.simtel.gz')
 
     output_dir = args.output_dir.absolute()
     output_dir.mkdir(exist_ok=True, parents=True)
