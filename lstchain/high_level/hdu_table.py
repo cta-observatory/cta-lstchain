@@ -275,23 +275,35 @@ def get_pointing_params(data, source_pos, time_utc, exclude_fraction=0.2):
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
 
+    max_median_angle = 0.05 * u.deg # Is this a reasonable limit?
+    # If median of the angle between the pointing directions and their mean in the run
+    # is larger than max_median_angle a warning will be displayed about unstable pointing.
+    
     first_event = int(exclude_fraction * len(data))
     with erfa_astrom.set(ErfaAstromInterpolator(300 * u.s)):
         evtwise_pnt_icrs = SkyCoord(
-            alt=pointing_alt[first_event:],
-            az=pointing_az[first_event:],
-            frame=AltAz(obstime=time_utc[first_event:], location=LST1_LOCATION),
+            alt=pointing_alt,
+            az=pointing_az,
+            frame=AltAz(obstime=time_utc, location=LST1_LOCATION),
         ).transform_to(frame="icrs")
-    
-    mean_ra = circmean(evtwise_pnt_icrs.ra)
-    mean_dec = np.mean(evtwise_pnt_icrs.dec)
-    
+
+    mean_ra = circmean(evtwise_pnt_icrs[first_event:].ra)
+    mean_dec = np.mean(evtwise_pnt_icrs[first_event:].dec)
     pnt_icrs = SkyCoord(ra=mean_ra, dec=mean_dec, frame="icrs")
+
+    median_angle_wrt_mean_pointing = np.median(pnt_icrs.separation(evtwise_pnt_icrs))
+    median_angle_wrt_mean_pointing_2 = np.median(pnt_icrs.separation(evtwise_pnt_icrs[first_event:]))
+    
+    log.info("Median of angle between pointing direction and mean pointing:")
+    log.info(f"  All events: {median_angle_wrt_mean_pointing:.3f}")
+    if median_angle_wrt_mean_pointing > max_median_angle:
+        log.warn(f"   ==> The telescope pointing seems to be unstable during the Run!")
+    log.info(f"  Excluding the first {100*exclude_fraction:.1f}% of events: {median_angle_wrt_mean_pointing_2:.3f}")
 
     source_pointing_diff = source_pos.separation(pnt_icrs)
 
     log.info(
-        f"Source pointing difference with camera pointing is {source_pointing_diff:.3f}"
+        f"Angle between source direction and mean telescope pointing is {source_pointing_diff:.3f}"
     )
 
     return pnt_icrs
