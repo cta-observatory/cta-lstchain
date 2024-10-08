@@ -297,7 +297,7 @@ def get_pointing_params(data, source_pos, time_utc, exclude_fraction=0.2):
     log.info("Median of angle between pointing direction and mean pointing:")
     log.info(f"  All events: {median_angle_wrt_mean_pointing:.3f}")
     if median_angle_wrt_mean_pointing > max_median_angle:
-        log.warn(f"   ==> The telescope pointing seems to be unstable during the Run!")
+        log.warn("   ==> The telescope pointing seems to be unstable during the Run!")
     log.info(f"  Excluding the first {100*exclude_fraction:.1f}% of events: {median_angle_wrt_mean_pointing_2:.3f}")
 
     source_pointing_diff = source_pos.separation(pnt_icrs)
