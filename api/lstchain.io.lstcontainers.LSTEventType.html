@@ -1,32 +1,32 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LSTEventType &mdash; lstchain 0.10.13.dev12+gcc1441f8 documentation</title>
+  <title>LSTEventType &mdash; lstchain 0.10.13.dev25+g538ca800 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/documentation_options.js?v=2c33937c"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script>let toggleHintShow = 'Click to show';</script>
-        <script>let toggleHintHide = 'Click to hide';</script>
-        <script>let toggleOpenOnPrint = 'true';</script>
-        <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
-        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-        <script src="../_static/custom.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=11b4b873"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script src="../_static/custom.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -45,9 +45,6 @@
           <a href="../index.html" class="icon icon-home">
             lstchain
           </a>
-              <div class="version">
-                0.10.13.dev12+gcc1441f8
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -121,10 +118,10 @@
            <div itemprop="articleBody">
              
   <section id="lsteventtype">
-<h1>LSTEventType<a class="headerlink" href="#lsteventtype" title="Link to this heading">¶</a></h1>
+<h1>LSTEventType<a class="headerlink" href="#lsteventtype" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.io.lstcontainers.</span></span><span class="sig-name descname"><span class="pre">LSTEventType</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.io.lstcontainers.</span></span><span class="sig-name descname"><span class="pre">LSTEventType</span></span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class to recognize event type from trigger bits
 bit 0: Mono
@@ -170,47 +167,47 @@ bit 7: busy</p>
 <p class="rubric">Methods Documentation</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_busy">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_busy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_busy" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_busy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_busy" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_calibration">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_calibration" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_calibration" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_mono">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_mono</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_mono" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_mono</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_mono" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_pedestal">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_pedestal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_pedestal" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_pedestal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_pedestal" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_single_pe">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_single_pe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_single_pe" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_single_pe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_single_pe" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_slow_control">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_slow_control</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_slow_control" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_slow_control</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_slow_control" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_soft_trig">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_soft_trig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_soft_trig" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_soft_trig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_soft_trig" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_stereo">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_stereo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_stereo" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_stereo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_stereo" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.io.lstcontainers.LSTEventType.is_unknown">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_unknown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_unknown" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_unknown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.lstcontainers.LSTEventType.is_unknown" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -228,7 +225,7 @@ bit 7: busy</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 01 Oct 2024 14:40.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 08 Oct 2024 12:33.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

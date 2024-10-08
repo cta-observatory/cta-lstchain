@@ -1,32 +1,32 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LST-1 data analysis workflow &mdash; lstchain 0.10.13.dev12+gcc1441f8 documentation</title>
+  <title>LST-1 data analysis workflow &mdash; lstchain 0.10.13.dev25+g538ca800 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
       <link rel="stylesheet" type="text/css" href="_static/custom.css" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/documentation_options.js?v=2c33937c"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script>let toggleHintShow = 'Click to show';</script>
-        <script>let toggleHintHide = 'Click to hide';</script>
-        <script>let toggleOpenOnPrint = 'true';</script>
-        <script src="_static/togglebutton.js?v=4a39c7ea"></script>
-        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-        <script src="_static/custom.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=11b4b873"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="_static/togglebutton.js?v=4a39c7ea"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script src="_static/custom.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -45,9 +45,6 @@
           <a href="index.html" class="icon icon-home">
             lstchain
           </a>
-              <div class="version">
-                0.10.13.dev12+gcc1441f8
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -111,15 +108,16 @@
            <div itemprop="articleBody">
              
   <section id="lst-1-data-analysis-workflow">
-<h1>LST-1 data analysis workflow<a class="headerlink" href="#lst-1-data-analysis-workflow" title="Link to this heading">¶</a></h1>
+<h1>LST-1 data analysis workflow<a class="headerlink" href="#lst-1-data-analysis-workflow" title="Link to this heading"></a></h1>
 <section id="pipeline">
-<h2>Pipeline<a class="headerlink" href="#pipeline" title="Link to this heading">¶</a></h2>
+<h2>Pipeline<a class="headerlink" href="#pipeline" title="Link to this heading"></a></h2>
 <p>Here is a simplified version of the LST-1 data analysis pipeline and the different tools used for each step:</p>
-<a class="reference internal image-reference" href="https://mermaid.ink/img/pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs?type=png)](https://mermaid.live/edit#pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs"><img alt="LST-1 data analysis pipeline" class="align-center" src="https://mermaid.ink/img/pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs?type=png)](https://mermaid.live/edit#pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs" style="width: 1080px;" /></a>
+<a class="reference internal image-reference" href="https://mermaid.ink/img/pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs?type=png)](https://mermaid.live/edit#pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs"><img alt="LST-1 data analysis pipeline" class="align-center" src="https://mermaid.ink/img/pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs?type=png)](https://mermaid.live/edit#pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs" style="width: 1080px;" />
+</a>
 <p>The steps marked with lstchain must be run by the analysers using the corresponding lstchain command (see <a class="reference internal" href="introduction.html#introduction"><span class="std std-ref">the Analysis Steps</span></a>) .
 Other tools are described below.</p>
 <section id="lstmcpipe">
-<h3>lstmcpipe<a class="headerlink" href="#lstmcpipe" title="Link to this heading">¶</a></h3>
+<h3>lstmcpipe<a class="headerlink" href="#lstmcpipe" title="Link to this heading"></a></h3>
 <p>lstmcpipe handles the analysis of MC data on the cluster at La Palma.
 It produces the trained models and the MC DL2 files required for data analysis.
 Its usage is recommended in order to:
@@ -132,7 +130,7 @@ Its usage is recommended in order to:
 <p>documentation: <a class="reference external" href="https://cta-observatory.github.io/lstmcpipe">https://cta-observatory.github.io/lstmcpipe</a></p>
 </section>
 <section id="lstosa">
-<h3>lstosa<a class="headerlink" href="#lstosa" title="Link to this heading">¶</a></h3>
+<h3>lstosa<a class="headerlink" href="#lstosa" title="Link to this heading"></a></h3>
 <p>lstosa handles the analysis of real data on the cluster at La Palma.
 It automatically produces the DL1 files required for data analysis.
 Analysers should not need to use this package directly (it is maintained and handled by LSTOSA team), but use the DL1 files it produces.</p>
@@ -141,11 +139,11 @@ Analysers should not need to use this package directly (it is maintained and han
 </section>
 </section>
 <section id="files-and-configuration">
-<h2>Files and configuration<a class="headerlink" href="#files-and-configuration" title="Link to this heading">¶</a></h2>
+<h2>Files and configuration<a class="headerlink" href="#files-and-configuration" title="Link to this heading"></a></h2>
 <p>The DL1 files to use obviously depend on the source you want to analyse.
 Unless you have a good reason, the latest version of the DL1 files should be used.</p>
 <section id="selection-of-the-real-data-dl1-files">
-<h3>Selection of the real-data DL1 files<a class="headerlink" href="#selection-of-the-real-data-dl1-files" title="Link to this heading">¶</a></h3>
+<h3>Selection of the real-data DL1 files<a class="headerlink" href="#selection-of-the-real-data-dl1-files" title="Link to this heading"></a></h3>
 <p>The selection of the DL1 files (run-wise, i.e. those produced by lstosa by merging the subrun-wise DL1 files) for a
 specific analysis (i.e., a given source and time period) can be performed using the notebook
 <code class="docutils literal notranslate"><span class="pre">cta_lstchain/notebooks/data_quality.ipynb</span></code>. The selection also takes into account the quality of the data, mostly in
@@ -154,7 +152,7 @@ conditions will not be included in the list of selected runs. Instructions and f
 notebook.</p>
 </section>
 <section id="rf-models">
-<h3>RF models<a class="headerlink" href="#rf-models" title="Link to this heading">¶</a></h3>
+<h3>RF models<a class="headerlink" href="#rf-models" title="Link to this heading"></a></h3>
 <p>The list of available trained RF models can be found in the lstmcpipe documentation and production list,
 along with a description of each production:
 <a class="reference external" href="https://cta-observatory.github.io/lstmcpipe/productions.html">https://cta-observatory.github.io/lstmcpipe/productions.html</a></p>
@@ -162,7 +160,7 @@ along with a description of each production:
 <code class="docutils literal notranslate"><span class="pre">/fefs/aswg/data/models/...</span></code></p>
 </section>
 <section id="tuning-of-mc-dl1-files-and-rf-models">
-<h3>Tuning of MC DL1 files and RF models<a class="headerlink" href="#tuning-of-mc-dl1-files-and-rf-models" title="Link to this heading">¶</a></h3>
+<h3>Tuning of MC DL1 files and RF models<a class="headerlink" href="#tuning-of-mc-dl1-files-and-rf-models" title="Link to this heading"></a></h3>
 <p>The default MC production is generated with a level of noise in the images which corresponds to the level of diffuse
 night-sky background (“NSB”) in a “dark” field of view (i.e. for observations with moon below the horizon, at not-too-low
 galactic latitudes and not affected by other sources of noise, like the zodiacal light). In general, observations of
@@ -196,7 +194,7 @@ script <a class="reference internal" href="lstchain_api/scripts/index.html#modul
 the .json configuration file produced following the steps above.</p>
 </section>
 <section id="keeping-track-of-lstchain-configurations">
-<h3>Keeping track of lstchain configurations<a class="headerlink" href="#keeping-track-of-lstchain-configurations" title="Link to this heading">¶</a></h3>
+<h3>Keeping track of lstchain configurations<a class="headerlink" href="#keeping-track-of-lstchain-configurations" title="Link to this heading"></a></h3>
 <p>The lstchain configuration file used to process the  simulations and produce the RF models of a given MC production is
 provided in the lstmcpipe repository, as well as in the models directory.</p>
 <p>It is important that the software version, and the configuration used for processing real data and MC are the same. For a
@@ -204,7 +202,7 @@ given lstchain version, this should be guaranteed by following the procedure abo
 <a class="reference internal" href="lstchain_api/scripts/index.html#module-lstchain.scripts.lstchain_dump_config" title="lstchain.scripts.lstchain_dump_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lstchain_dump_config</span></code></a>.</p>
 </section>
 <section id="dl3-irf-config-files">
-<h3>DL3/IRF config files<a class="headerlink" href="#dl3-irf-config-files" title="Link to this heading">¶</a></h3>
+<h3>DL3/IRF config files<a class="headerlink" href="#dl3-irf-config-files" title="Link to this heading"></a></h3>
 <p>An example config file for IRF/DL3 creation is provided in <cite>docs/example</cite>:</p>
 <blockquote>
 <div><ul class="simple">
@@ -215,12 +213,12 @@ given lstchain version, this should be guaranteed by following the procedure abo
 </section>
 </section>
 <section id="environment">
-<h2>Environment<a class="headerlink" href="#environment" title="Link to this heading">¶</a></h2>
+<h2>Environment<a class="headerlink" href="#environment" title="Link to this heading"></a></h2>
 <p>Conda environment are used to manage the dependencies of the analysis on the cluster at La Palma.
 <strong>It is recommended to use the same environment for all the analysis steps.</strong></p>
 <p>To use the main conda, add this to your <cite>.bashrc</cite>:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text">conda setup</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">conda setup</span><a class="headerlink" href="#id1" title="Link to this code"></a></div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span># &gt;&gt;&gt; conda initialize &gt;&gt;&gt;
 # !! Contents within this block are managed by &#39;conda init&#39; !!
 __conda_setup=&quot;$(&#39;/fefs/aswg/software/virtual_env/anaconda3/bin/conda&#39; &#39;shell.bash&#39; &#39;hook&#39; 2&gt; /dev/null)&quot;
@@ -258,7 +256,7 @@ unset __conda_setup
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 01 Oct 2024 14:40.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 08 Oct 2024 12:33.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
