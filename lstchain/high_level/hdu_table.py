@@ -14,6 +14,7 @@ import numpy as np
 from astropy.coordinates import AltAz, SkyCoord
 from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.io import fits
+from astropy.stats import circmean
 from astropy.table import QTable, Table
 from astropy.time import Time
 
@@ -257,21 +258,35 @@ def get_timing_params(data, epoch=LST_EPOCH):
     return time_pars, time_utc
 
 
-def get_pointing_params(data, source_pos, time_utc):
+def get_pointing_params(data, source_pos, time_utc, exclude_fraction=0.2):
     """
-    Convert the telescope pointing position for the first event from AltAz
-    into ICRS frame of reference.
+    Convert the telescope pointing directions into ICRS frame of reference,
+    and average them for the run (excluding the first events, for which there
+    may be some mispointing due to not-yet-stable tracking).
+
+    exclude_fraction: fraction of the run that will me excluded from the 
+    averaging (the excluded events are the ones at the beginning of the run)
 
     Note: The angular difference from the source is just used for logging here.
+
+    Returns the average pointing in ICRS frame
     """
+    
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
 
-    pnt_icrs = SkyCoord(
-        alt=pointing_alt[0],
-        az=pointing_az[0],
-        frame=AltAz(obstime=time_utc[0], location=LST1_LOCATION),
-    ).transform_to(frame="icrs")
+    first_event = int(exclude_fraction * len(data))
+    with erfa_astrom.set(ErfaAstromInterpolator(300 * u.s)):
+        evtwise_pnt_icrs = SkyCoord(
+            alt=pointing_alt[first_event:],
+            az=pointing_az[first_event:],
+            frame=AltAz(obstime=time_utc[first_event:], location=LST1_LOCATION),
+        ).transform_to(frame="icrs")
+    
+    mean_ra = circmean(evtwise_pnt_icrs.ra)
+    mean_dec = np.mean(evtwise_pnt_icrs.dec)
+    
+    pnt_icrs = SkyCoord(ra=mean_ra, dec=mean_dec, frame="icrs")
 
     source_pointing_diff = source_pos.separation(pnt_icrs)
 
