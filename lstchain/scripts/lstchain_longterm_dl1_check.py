@@ -829,7 +829,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     # Flat field pixel charges (just for the mean; the std dev may be strongly
     # affected by stars), in pe.
-    ff_charge = 73.5
+    ff_charge = 69
     ff_charge_tolerance = 0.1  # relative tolerance
 
     # Limits of FF mean pixel time (ns) w.r.t. camera average:
