@@ -548,7 +548,10 @@ class IRFFITSWriter(Tool):
             geomag_params["GEOMAG_DELTA"].to_value(u.deg),
             "deg",
         )
-        extra_headers["ETRUE_SCALE"]= (
+        # To avoid an astropy warning, we use HIERARCH cards for keywords longer
+        # than eight characters. Later, they can be accessed like any other
+        # (e.g. hdu.header['ETRUE_SCALE']).
+        extra_headers["HIERARCH ETRUE_SCALE"]= (
             self.data_bin.scale_true_energy
         )
       
