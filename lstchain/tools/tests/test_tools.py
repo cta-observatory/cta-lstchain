@@ -521,11 +521,10 @@ def test_add_scale_true_energy_in_irfs(temp_dir_observed_files, simulated_dl2_fi
     order_max = []
     order_max_mod = []
     for idx, _ in enumerate(e_true_list):
-        for j in range(len(e_migra)):
-            if e_migra_prob[idx][j] > e_migra_prob[idx][j - 1]:
-                order_max.append(j)
-            if e_migra_prob_mod[idx][j] > e_migra_prob_mod[idx][j - 1]:
-                order_max_mod.append(j)
+        if (e_migra_prob[idx].sum() <= 0) or (e_migra_prob_mod[idx].sum() <= 0):
+            continue
+        order_max.append(np.argmax(e_migra_prob[idx]))
+        order_max_mod.append(np.argmax(e_migra_prob_mod[idx]))
 
-    for i in range(len(order_max)):
-        assert order_max[i] != order_max_mod[i]
+    for a, b in zip(order_max, order_max_mod):
+        assert a != b
