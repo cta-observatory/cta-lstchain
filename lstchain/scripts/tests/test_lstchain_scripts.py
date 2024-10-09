@@ -191,7 +191,6 @@ def test_pixmasks_file_validity(observed_dl1_files):
     pixmasks = pixmasks_file.root.selected_pixels_masks.col('pixmask')
     assert pixmasks.sum() < 0.1 * len(pixmasks.flatten())
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def tune_nsb(mc_gamma_testfile, observed_dl1_files):
     return run_program(
@@ -205,7 +204,6 @@ def tune_nsb(mc_gamma_testfile, observed_dl1_files):
     )
 
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def tune_nsb_waveform(mc_gamma_testfile, observed_dl1_files):
     return run_program(

@@ -560,15 +560,20 @@ def r0_to_dl1(
                     # gain select the events
                     source.r0_r1_calibrator.select_gain = True
 
+
+                    # perform gain selection after events have been written out so
+                    # they can be processed like regular events
                     r1 = event.r1.tel[tel_id]
-                    r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
-                    r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX]
+                    if r1.selected_gain_channel is None:
+                        waveform = event.r0.tel[tel_id].waveform
+                        if waveform is None:
+                            waveform = r1.waveform
 
-                    event.calibration.tel[tel_id].dl1.time_shift = \
-                        event.calibration.tel[tel_id].dl1.time_shift[r1.selected_gain_channel, PIXEL_INDEX]
-
-                    event.calibration.tel[tel_id].dl1.relative_factor = \
-                        event.calibration.tel[tel_id].dl1.relative_factor[r1.selected_gain_channel, PIXEL_INDEX]
+                        r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(waveform)
+                        r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX]
+                        dl1_calib = event.calibration.tel[tel_id].dl1
+                        dl1_calib.time_shift = dl1_calib.time_shift[r1.selected_gain_channel, PIXEL_INDEX]
+                        dl1_calib.relative_factor = dl1_calib.relative_factor[r1.selected_gain_channel, PIXEL_INDEX]
 
             # Option to add nsb in waveforms
             if nsb_tuning:
