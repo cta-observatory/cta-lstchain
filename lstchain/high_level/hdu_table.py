@@ -264,7 +264,7 @@ def get_pointing_params(data, source_pos, time_utc, exclude_fraction=0.2):
     and average them for the run (excluding the first events, for which there
     may be some mispointing due to not-yet-stable tracking).
 
-    exclude_fraction: fraction of the run that will me excluded from the 
+    exclude_fraction: fraction of the events that will be excluded from the 
     averaging (the excluded events are the ones at the beginning of the run)
 
     Note: The angular difference from the source is just used for logging here.
