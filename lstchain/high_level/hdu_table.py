@@ -275,7 +275,10 @@ def get_pointing_params(data, source_pos, time_utc, exclude_fraction=0.2):
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
 
-    max_median_angle = 0.05 * u.deg # Is this a reasonable limit?
+    max_off_angle = 0.05 * u.deg 
+    # Keep track of how often pointing is beyond max_off_angle w.r.t. the median
+    # run pointing
+    
     # If median of the angle between the pointing directions and their mean in the run
     # is larger than max_median_angle a warning will be displayed about unstable pointing.
     
@@ -291,14 +294,11 @@ def get_pointing_params(data, source_pos, time_utc, exclude_fraction=0.2):
     mean_dec = np.mean(evtwise_pnt_icrs[first_event:].dec)
     pnt_icrs = SkyCoord(ra=mean_ra, dec=mean_dec, frame="icrs")
 
-    median_angle_wrt_mean_pointing = np.median(pnt_icrs.separation(evtwise_pnt_icrs))
-    median_angle_wrt_mean_pointing_2 = np.median(pnt_icrs.separation(evtwise_pnt_icrs[first_event:]))
+    off_fraction = ((pnt_icrs.separation(evtwise_pnt_icrs) > max_off_angle).sum() / 
+                    len(evtwise_pnt_icrs))
     
-    log.info("Median of angle between pointing direction and mean pointing:")
-    log.info(f"  All events: {median_angle_wrt_mean_pointing:.3f}")
-    if median_angle_wrt_mean_pointing > max_median_angle:
-        log.warning("   ==> The telescope pointing seems to be unstable during the Run!")
-    log.info(f"  Excluding the first {exclude_fraction:.1%} of events: {median_angle_wrt_mean_pointing_2:.3f}")
+    log.info(f"Mean pointing RA: {mean_ra.to(u.deg):.3f},  Dec: {mean_dec.to(u.deg):.3f}")
+    log.info(f"Fraction of events with pointing beyond {max_off_angle:.3f} of mean pointing: {off_fraction:.6f}")
 
     source_pointing_diff = source_pos.separation(pnt_icrs)
 
