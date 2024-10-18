@@ -279,9 +279,6 @@ def get_pointing_params(data, source_pos, time_utc, exclude_fraction=0.2):
     # Keep track of how often pointing is beyond max_off_angle w.r.t. the mean
     # run pointing (computed excluding the beginning of run - see exclude_fraction)
     
-    # If median of the angle between the pointing directions and their mean in the run
-    # is larger than max_median_angle a warning will be displayed about unstable pointing.
-    
     first_event = int(exclude_fraction * len(data))
     with erfa_astrom.set(ErfaAstromInterpolator(300 * u.s)):
         evtwise_pnt_icrs = SkyCoord(
