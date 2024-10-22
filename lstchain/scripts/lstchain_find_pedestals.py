@@ -11,7 +11,7 @@ import argparse
 from pathlib import Path
 
 import numpy as np
-import tables
+s
 from ctapipe.io import read_table
 
 from lstchain.paths import parse_dl1_filename

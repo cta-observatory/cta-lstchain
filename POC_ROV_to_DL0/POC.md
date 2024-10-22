@@ -2,12 +2,16 @@
 
 ## Overview
 
+![overview Image](images/overview.svg)
+
 This project aims to convert LST-1 data from R0V format to the standardized DL0 format for long-term storage and future analysis within the CTA Data Processing Pipeline System (DPPS). This PoC outlines the necessary changes in the `cta-lstchain` repository, focusing on waveform calibration, muon event identification, and adhering to the DL0 naming scheme.
+
+
 
 ---
 
 ## Goals
-
+![goals Image](images/goals.svg)
 1. **R0V to DL0 Converter:**
    - Convert R0V data to DL0 format, including waveform calibration and pixel retention.
    - Ensure compatibility with future reanalysis by DPPS, using "level-A" calibration.
@@ -19,6 +23,8 @@ This project aims to convert LST-1 data from R0V format to the standardized DL0 
 3. **DL0 Naming Scheme:**
    - Implement the file naming scheme outlined in the ACADA-to-DPPS ICD (page 17 of "ACADA-DPPS-I-160 DL0 naming scheme").
 
+
+
 ---
 
 ## Key Features
@@ -29,8 +35,11 @@ This project aims to convert LST-1 data from R0V format to the standardized DL0 
 - **High-Level Calibration**: Convert calibrated waveforms to photoelectrons (similar to producing R1 waveforms).
 - **Existing Resource**: Modify and adapt the example notebook [`get_LST_R1.ipynb`](https://github.com/cta-observatory/cta-lstchain/blob/master/lstchain/scripts/lstchain_dvr_pixselector.py#L227-L233) to output DL0 waveforms.
 
+![waveform Image](images/waveform.svg)
+
 ### 2. Muon Event Identification
 
+![Muon Image](images/muon.svg)
 **Two Methods:**
 - **Method 1 (Faster)**:
   - Use the existing muon `.fits` file (e.g., `/fefs/aswg/data/real/DL1/20240914/v0.10/muons/muons_LST-1.Run19072.0000.fits`).
@@ -56,6 +65,8 @@ This project aims to convert LST-1 data from R0V format to the standardized DL0 
 ---
 
 ## Implementation Plan
+
+![road_map Image](images/road_map.svg)
 
 ### Step 1: Implement Waveform Calibration
 
