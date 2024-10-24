@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>get_pointing_params &mdash; lstchain 0.10.13.dev35+g8ebab95d documentation</title>
+  <title>get_pointing_params &mdash; lstchain 0.10.13.dev48+gcfd9a7f9 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=5d3670a7"></script>
+      <script src="../_static/documentation_options.js?v=dc09e819"></script>
       <script src="../_static/doctools.js?v=9a2dae69"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -118,10 +118,14 @@
 <h1>get_pointing_params<a class="headerlink" href="#get-pointing-params" title="Link to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="lstchain.high_level.hdu_table.get_pointing_params">
-<span class="sig-prename descclassname"><span class="pre">lstchain.high_level.hdu_table.</span></span><span class="sig-name descname"><span class="pre">get_pointing_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_utc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.high_level.hdu_table.get_pointing_params" title="Link to this definition"></a></dt>
-<dd><p>Convert the telescope pointing position for the first event from AltAz
-into ICRS frame of reference.</p>
+<span class="sig-prename descclassname"><span class="pre">lstchain.high_level.hdu_table.</span></span><span class="sig-name descname"><span class="pre">get_pointing_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_utc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.high_level.hdu_table.get_pointing_params" title="Link to this definition"></a></dt>
+<dd><p>Convert the telescope pointing directions into ICRS frame of reference,
+and average them for the run (excluding the first events, for which there
+may be some mispointing due to not-yet-stable tracking).</p>
+<p>exclude_fraction: fraction of the events that will be excluded from the 
+averaging (the excluded events are the ones at the beginning of the run)</p>
 <p>Note: The angular difference from the source is just used for logging here.</p>
+<p>Returns the average pointing in ICRS frame</p>
 </dd></dl>
 
 </section>
@@ -137,7 +141,7 @@ into ICRS frame of reference.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 18 Oct 2024 09:36.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 24 Oct 2024 10:03.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

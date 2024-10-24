@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>High Level Analysis (high_level) &mdash; lstchain 0.10.13.dev35+g8ebab95d documentation</title>
+  <title>High Level Analysis (high_level) &mdash; lstchain 0.10.13.dev48+gcfd9a7f9 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -16,7 +16,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=5d3670a7"></script>
+      <script src="../../_static/documentation_options.js?v=dc09e819"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -147,7 +147,7 @@ following recommendations from GADF v0.3</p>
 <td><p>Retrieve some timing parameters for the DL3 event list as a dict and also have a common time_utc object for use in other functions.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.get_pointing_params.html#lstchain.high_level.hdu_table.get_pointing_params" title="lstchain.high_level.hdu_table.get_pointing_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_pointing_params</span></code></a>(data, source_pos, time_utc)</p></td>
-<td><p>Convert the telescope pointing position for the first event from AltAz into ICRS frame of reference.</p></td>
+<td><p>Convert the telescope pointing directions into ICRS frame of reference, and average them for the run (excluding the first events, for which there may be some mispointing due to not-yet-stable tracking).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.high_level.hdu_table.get_timing_params.html#lstchain.high_level.hdu_table.get_timing_params" title="lstchain.high_level.hdu_table.get_timing_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_timing_params</span></code></a>(data[, epoch])</p></td>
 <td><p>Retrieve some timing parameters for the DL3 event list as a dict and also have a common time_utc object for use in other functions.</p></td>
@@ -221,7 +221,7 @@ following recommendations from GADF v0.3</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 18 Oct 2024 09:36.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 24 Oct 2024 10:03.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
