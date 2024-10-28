@@ -32,6 +32,6 @@ dependencies:
   - pandas>=2
   - pymongo
   - seaborn
-  - ctapipe_io_lst=0.23
+  - ctapipe_io_lst=0.24
   - pytest
   - pyirf~=0.10.0
