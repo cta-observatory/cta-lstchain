@@ -42,7 +42,7 @@ setup(
     install_requires=[
         'astropy~=5.0',
         'bokeh~=2.0',
-        'ctapipe~=0.19.2',
+        'ctapipe~=0.21.2',
         'ctapipe_io_lst~=0.24.0',
         'ctaplot~=0.6.4',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
