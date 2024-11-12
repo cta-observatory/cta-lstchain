@@ -90,10 +90,10 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
     return merged_dl1_file
 
 
-def test_lstchain_mc_r0_to_dl1_default_mc_file(temp_dir_simulated_files):
+def test_lstchain_mc_r0_to_dl1_default_mc_file(tmp_path):
     """Run R0 to DL1 script for the default MC file without specifying an input file."""
-    output_file = temp_dir_simulated_files / "dl1_gamma_lstprod2.h5"
-    run_program("lstchain_mc_r0_to_dl1", "-o", temp_dir_simulated_files)
+    output_file = tmp_path / "dl1_gamma_lstprod2.h5"
+    run_program("lstchain_mc_r0_to_dl1", "-o", tmp_path)
     assert output_file.is_file()
 
 
