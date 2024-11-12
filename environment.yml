@@ -6,7 +6,8 @@ dependencies:
   - numpy
   - astropy=5
   - pip
-  - ctapipe=0.19.2
+  - ctapipe=0.22.0
+  - ctapipe_io_lst=0.25
   - ctaplot~=0.6.4
   - gammapy=1.1
   - h5py
@@ -17,9 +18,8 @@ dependencies:
   - iminuit>=2
   - joblib~=1.2.0
   - toml
-  - protozfits=2.5
   - pyparsing
-  - scipy~=1.11.4
+  - scipy <1.14
   - scikit-learn=1.2
   - sphinx
   - sphinx-automodapi
@@ -32,6 +32,5 @@ dependencies:
   - pandas>=2
   - pymongo
   - seaborn
-  - ctapipe_io_lst=0.24
   - pytest
   - pyirf~=0.10.0

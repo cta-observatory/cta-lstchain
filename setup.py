@@ -41,9 +41,9 @@ setup(
     packages=find_packages(exclude="lstchain._dev_version"),
     install_requires=[
         'astropy~=5.0',
-        'bokeh~=2.0',
-        'ctapipe~=0.19.2',
-        'ctapipe_io_lst~=0.24.0',
+        'bokeh~=3.0',
+        'ctapipe~=0.22.0',
+        'ctapipe_io_lst~=0.25.0',
         'ctaplot~=0.6.4',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=1.1',
@@ -55,7 +55,7 @@ setup(
         'numpy',
         'pandas',
         'pyirf~=0.10.0',
-        'scipy>=1.8,<1.12',
+        'scipy>=1.8,<1.14',
         'seaborn',
         'scikit-learn~=1.2',
         'tables',

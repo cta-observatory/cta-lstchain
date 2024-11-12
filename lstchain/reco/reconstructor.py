@@ -215,7 +215,7 @@ class TimeWaveformFitter(TelescopeComponent):
         if dl1_calib.pedestal_offset is not None:
             waveform = waveform - dl1_calib.pedestal_offset[:, np.newaxis]
 
-        n_pixels, n_samples = waveform.shape
+        n_samples = waveform.shape[2]
         times = np.arange(0, n_samples) * dt
         selected_gains = event.r1.tel[telescope_id].selected_gain_channel
         is_high_gain = (selected_gains == 0)
@@ -289,7 +289,7 @@ class TimeWaveformFitter(TelescopeComponent):
         p_y = pix_y[mask_pixel]
         pix_area = geometry.pix_area[mask_pixel].to_value(unit ** 2)
 
-        data = waveform
+        data = waveform[0]
         error = self.error
 
         filter_pixels = np.nonzero(~mask_pixel)
