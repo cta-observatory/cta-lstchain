@@ -42,7 +42,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
-    'sphinx.ext.githubpages', 
+    "sphinx.ext.githubpages", 
     "numpydoc",
     "nbsphinx",
     "sphinx_automodapi.automodapi",
@@ -52,7 +52,6 @@ extensions = [
 ]
 
 numpydoc_show_class_members = False
-nbsphinx_allow_errors = True
 autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -151,13 +150,33 @@ html_theme = 'sphinx_rtd_theme'
 #
 # html_theme_options = {}
 
+
+# NbSphinx
+nbsphinx_allow_errors = True
+example_notebooks_input = "../notebooks/"
+# the same path is used in index.rst
+example_notebooks_output = "example_notebooks"
+
+import shutil
+if os.path.exists(example_notebooks_output):
+    shutil.rmtree(example_notebooks_output)
+shutil.copytree(example_notebooks_input, example_notebooks_output)
+
+# Always build notebooks
+nbsphinx_execute = "never"  # "never" | "always" | "auto" (build a notebook if its cell outputs are empty)
+notebooks = [f for f in os.listdir(example_notebooks_output) if f.endswith('.ipynb')]
+with open('notebooks.rst', 'w') as rst_file:
+    rst_file.write('Example notebooks\n=================\n\n')
+    rst_file.write('.. toctree::\n')
+    rst_file.write('   :maxdepth: 1\n\n')
+    for nb in notebooks:
+        rst_file.write(f"   {example_notebooks_output}/{nb}\n")
+
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-html_js_files = ['custom.js']
-html_css_files = ['custom.css']
-
 html_extra_path = ['examples']
 
 
@@ -216,3 +235,6 @@ texinfo_documents = [
      author, 'lstchain', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+
