@@ -362,6 +362,8 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
         charges_biased = event.dl1.tel[tel_id].image
         mc_ped_charges_biased.append(charges_biased[true_image == 0])
 
+    mc_reader.close()
+
     # All pixels behave (for now) in the same way in MC, just put them together
     mc_ped_charges = np.concatenate(mc_ped_charges)
     mc_ped_charges_biased = np.concatenate(mc_ped_charges_biased)
@@ -608,6 +610,8 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
             modified_integrated_charge[ii + 1].extend(
                     event.dl1.tel[1].image[pedmask])
 
+    mc_reader.close()
+
     modified_integrated_charge = np.array(modified_integrated_charge)
     # Fit the total added NSB rate vs. the average pixel charge:
     params, _ = curve_fit(custom_function,
@@ -647,6 +651,8 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
         tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
         r1_dl1_calibrator(event)
         final_mc_qped.extend(event.dl1.tel[tel_id].image[pedmask])
+
+    mc_reader.close()
 
     data_ped_variance = median_ped_stdpixq**2
     mc_ped_variance = np.std(final_mc_qped)**2
