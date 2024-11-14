@@ -599,10 +599,10 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
             for ii, tuner in enumerate(nsb_tuner[1:]):
                 waveform = event.r1.tel[tel_id].waveform
 
-            # NOTE!! The line below modifies the waveform in event.r1
-            tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
-            r1_dl1_calibrator(event)
-            modified_integrated_charge[ii + 1].extend(
+                # NOTE!! The line below modifies the waveform in event.r1
+                tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
+                r1_dl1_calibrator(event)
+                modified_integrated_charge[ii + 1].extend(
                     event.dl1.tel[1].image[pedmask])
 
     modified_integrated_charge = np.array(modified_integrated_charge)
