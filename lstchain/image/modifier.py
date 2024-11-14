@@ -582,28 +582,28 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
             if numevents > maxmcevents:
                 break
 
-    # Calibrate the event to get the integrated charges (DL1a):
-    r1_dl1_calibrator(event)
+            # Calibrate the event to get the integrated charges (DL1a):
+            r1_dl1_calibrator(event)
 
-    selected_gains = event.r1.tel[tel_id].selected_gain_channel
-    mask_high = (selected_gains == 0)
-    true_image = event.simulation.tel[tel_id].true_image
-    # Use only pixels with no Cherenkov signal, just noise:
-    pedmask = mask_high & (true_image == 0)
+            selected_gains = event.r1.tel[tel_id].selected_gain_channel
+            mask_high = (selected_gains == 0)
+            true_image = event.simulation.tel[tel_id].true_image
+            # Use only pixels with no Cherenkov signal, just noise:
+            pedmask = mask_high & (true_image == 0)
+        
+            # First store the charges with no added NSB:
+            modified_integrated_charge[0].extend(event.dl1.tel[tel_id].image[
+                                                     pedmask])
+        
+            # Now add the different levels of NSB and recompute charges:
+            for ii, tuner in enumerate(nsb_tuner[1:]):
+                waveform = event.r1.tel[tel_id].waveform
 
-    # First store the charges with no added NSB:
-    modified_integrated_charge[0].extend(event.dl1.tel[tel_id].image[
-                                             pedmask])
-
-    # Now add the different levels of NSB and recompute charges:
-    for ii, tuner in enumerate(nsb_tuner[1:]):
-        waveform = event.r1.tel[tel_id].waveform
-
-        # NOTE!! The line below modifies the waveform in event.r1
-        tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
-        r1_dl1_calibrator(event)
-        modified_integrated_charge[ii + 1].extend(
-                event.dl1.tel[1].image[pedmask])
+            # NOTE!! The line below modifies the waveform in event.r1
+            tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
+            r1_dl1_calibrator(event)
+            modified_integrated_charge[ii + 1].extend(
+                    event.dl1.tel[1].image[pedmask])
 
     modified_integrated_charge = np.array(modified_integrated_charge)
     # Fit the total added NSB rate vs. the average pixel charge:
