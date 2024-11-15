@@ -303,64 +303,63 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     mode_data = xx[np.argmax(func(xx))]
 
     # Event reader for simtel file:
-    mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
+    with EventSource(input_url=simtel_filename, config=Config(config)) as mc_reader:
+        # Obtain the configuration with which the pedestal calculations were
+        # performed:
+        ped_config = config['LSTCalibrationCalculator']['PedestalIntegrator']
+        tel_id = ped_config['tel_id']
+        # Obtain the (unbiased) extractor used for pedestal calculations:
+        pedestal_extractor_type = ped_config['charge_product']
+        pedestal_calibrator = CameraCalibrator(
+            image_extractor_type=pedestal_extractor_type,
+            config=Config(ped_config),
+            subarray=mc_reader.subarray
+        )
 
-    # Obtain the configuration with which the pedestal calculations were
-    # performed:
-    ped_config = config['LSTCalibrationCalculator']['PedestalIntegrator']
-    tel_id = ped_config['tel_id']
-    # Obtain the (unbiased) extractor used for pedestal calculations:
-    pedestal_extractor_type = ped_config['charge_product']
-    pedestal_calibrator = CameraCalibrator(
-        image_extractor_type=pedestal_extractor_type,
-        config=Config(ped_config),
-        subarray=mc_reader.subarray
-    )
+        # Obtain the (usually biased) extractor used for shower images:
+        shower_extractor_type = config['image_extractor']
+        shower_calibrator = CameraCalibrator(
+            image_extractor_type=shower_extractor_type,
+            config=Config(config),
+            subarray=mc_reader.subarray
+        )
+    
+        # Since these extractors are now for use on MC, we have to apply the pulse
+        # integration correction (in data that is currently, as of
+        # lstchain v0.7.5, replaced by an empirical (hard-coded) correction of the
+        # adc to pe conversion factors )
+        pedestal_calibrator.image_extractors[ped_config['charge_product']].apply_integration_correction = True
+        shower_calibrator.image_extractors[shower_extractor_type].apply_integration_correction = True
 
-    # Obtain the (usually biased) extractor used for shower images:
-    shower_extractor_type = config['image_extractor']
-    shower_calibrator = CameraCalibrator(
-        image_extractor_type=shower_extractor_type,
-        config=Config(config),
-        subarray=mc_reader.subarray
-    )
+        # Pulse integration window width of the (biased) extractor for showers:
+        shower_extractor_window_width = config[config['image_extractor']]['window_width']
+    
+        # Pulse integration window width for the pedestal estimation:
+        pedestal_extractor_config = ped_config[pedestal_extractor_type]
+        pedestal_extractor_window_width = pedestal_extractor_config['window_width']
+    
+        # MC pedestals integrated with the unbiased pedestal extractor
+        mc_ped_charges = []
+        # MC pedestals integrated with the biased shower extractor
+        mc_ped_charges_biased = []
 
-    # Since these extractors are now for use on MC, we have to apply the pulse
-    # integration correction (in data that is currently, as of
-    # lstchain v0.7.5, replaced by an empirical (hard-coded) correction of the
-    # adc to pe conversion factors )
-    pedestal_calibrator.image_extractors[ped_config['charge_product']].apply_integration_correction = True
-    shower_calibrator.image_extractors[shower_extractor_type].apply_integration_correction = True
-
-    # Pulse integration window width of the (biased) extractor for showers:
-    shower_extractor_window_width = config[config['image_extractor']]['window_width']
-
-    # Pulse integration window width for the pedestal estimation:
-    pedestal_extractor_config = ped_config[pedestal_extractor_type]
-    pedestal_extractor_window_width = pedestal_extractor_config['window_width']
-
-    # MC pedestals integrated with the unbiased pedestal extractor
-    mc_ped_charges = []
-    # MC pedestals integrated with the biased shower extractor
-    mc_ped_charges_biased = []
-
-    for event in mc_reader:
-        if tel_id not in event.trigger.tels_with_trigger:
-            continue
-        # Extract the signals as we do for pedestals (unbiased fixed window
-        # extractor):
-        pedestal_calibrator(event)
-        charges = event.dl1.tel[tel_id].image
-
-        # True number of pe's from Cherenkov photons (to identify noise-only pixels)
-        true_image = event.simulation.tel[tel_id].true_image
-        mc_ped_charges.append(charges[true_image == 0])
-
-        # Now extract the signal as we would do for shower events (usually
-        # with a biased extractor, e.g. LocalPeakWindowSum):
-        shower_calibrator(event)
-        charges_biased = event.dl1.tel[tel_id].image
-        mc_ped_charges_biased.append(charges_biased[true_image == 0])
+        for event in mc_reader:
+            if tel_id not in event.trigger.tels_with_trigger:
+                continue
+            # Extract the signals as we do for pedestals (unbiased fixed window
+            # extractor):
+            pedestal_calibrator(event)
+            charges = event.dl1.tel[tel_id].image
+    
+            # True number of pe's from Cherenkov photons (to identify noise-only pixels)
+            true_image = event.simulation.tel[tel_id].true_image
+            mc_ped_charges.append(charges[true_image == 0])
+    
+            # Now extract the signal as we would do for shower events (usually
+            # with a biased extractor, e.g. LocalPeakWindowSum):
+            shower_calibrator(event)
+            charges_biased = event.dl1.tel[tel_id].image
+            mc_ped_charges_biased.append(charges_biased[true_image == 0])
 
     # All pixels behave (for now) in the same way in MC, just put them together
     mc_ped_charges = np.concatenate(mc_ped_charges)
@@ -518,94 +517,92 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
 
     # Now we process the Monte Carlo:
     # Event reader for simtel file:
-    mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
+    with EventSource(input_url=simtel_filename, config=Config(config)) as mc_reader:
+        subarray = mc_reader.subarray
+    
+        # Get the single-pe response fluctuations:
+        spe_location = (config['waveform_nsb_tuning']['spe_location']
+                        if 'spe_location' in config['waveform_nsb_tuning']
+                           and config['waveform_nsb_tuning']['spe_location']
+                           is not None
+                        else get_resource_path(
+                "data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
+        spe = np.loadtxt(spe_location).T
+        spe_integral = np.cumsum(spe[1])
+        charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
+                                             bounds_error=False, fill_value=0.,
+                                             assume_sorted=True)
+        # Pulse template shape for a single p.e.:
+        pulse_templates = {tel_id: NormalizedPulseTemplate.load_from_eventsource(
+                subarray.tel[tel_id].camera.readout, resample=True) for tel_id in
+            config['source_config']['LSTEventSource']['allowed_tels']}
+    
+        # Since the pulse integrator will now be used on MC, we have to apply the
+        # pulse integration correction (in data that is currently, as of
+        # lstchain v0.10, replaced by an empirical (hard-coded) correction of the
+        # adc to pe conversion factors )
+        config['LocalPeakWindowSum']['apply_integration_correction'] = True
+        r1_dl1_calibrator = CameraCalibrator(image_extractor_type=config[
+            'image_extractor'], config=Config(config), subarray=subarray)
+    
+        numevents = 0
+        maxmcevents = 200 # Enough statistics to determine the right NSB level
+    
+        # Simulated levels of additional NSB, rate in p.e./ns (a.k.a. GHz):
+        total_added_nsb = np.array([0, 0.125, 0.25, 0.5, 1, 2, 4])
+    
+        # Just the product of added_nsb and original_nsb (first two arguments
+        # below) is relevant! Units "GHz" (p.e./ns)
+        nsb_tuner = [None]
+        # We now create the instances of WaveformNsbTuner to add the different
+        # levels of noise to the MC waveforms.
+        # NOTE: the waveform gets updated every time, the noise addition is
+        # cumulative (hence the np.diff):
+    
+        for nsb_rate in np.diff(total_added_nsb):
+            # Create a dict to put the NSB value for each tel_id. It is an array for
+            # the future case in which there are more telescopes, but for now it
+            # just creates it with a single value, for tel_id
+            nsb = {tel_id: nsb_rate * u.GHz for tel_id in
+                   config['source_config']['LSTEventSource']['allowed_tels']}
+            nsb_tuner.append(WaveformNsbTuner(nsb, pulse_templates,
+                                              charge_spe_cumulative_pdf,
+                                              pre_computed_multiplicity=10))
+        # last argument means it will precompute 10 * 1855 (pixels) * 2 (gains)
+        # noise waveforms to pick from during the actual introduction of the noise
+    
+        # List of lists to keep the integrated pixel charges for different NSB
+        # levels:
+        modified_integrated_charge = [[] for i in range(len(nsb_tuner))]
 
-    subarray = mc_reader.subarray
+        for event in mc_reader:
+            if tel_id not in event.trigger.tels_with_trigger:
+                continue
+            numevents += 1
+            if numevents > maxmcevents:
+                break
 
-    # Get the single-pe response fluctuations:
-    spe_location = (config['waveform_nsb_tuning']['spe_location']
-                    if 'spe_location' in config['waveform_nsb_tuning']
-                       and config['waveform_nsb_tuning']['spe_location']
-                       is not None
-                    else get_resource_path(
-            "data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
-    spe = np.loadtxt(spe_location).T
-    spe_integral = np.cumsum(spe[1])
-    charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
-                                         bounds_error=False, fill_value=0.,
-                                         assume_sorted=True)
-    # Pulse template shape for a single p.e.:
-    pulse_templates = {tel_id: NormalizedPulseTemplate.load_from_eventsource(
-            subarray.tel[tel_id].camera.readout, resample=True) for tel_id in
-        config['source_config']['LSTEventSource']['allowed_tels']}
-
-    # Since the pulse integrator will now be used on MC, we have to apply the
-    # pulse integration correction (in data that is currently, as of
-    # lstchain v0.10, replaced by an empirical (hard-coded) correction of the
-    # adc to pe conversion factors )
-    config['LocalPeakWindowSum']['apply_integration_correction'] = True
-    r1_dl1_calibrator = CameraCalibrator(image_extractor_type=config[
-        'image_extractor'], config=Config(config), subarray=subarray)
-
-    numevents = 0
-    maxmcevents = 200 # Enough statistics to determine the right NSB level
-
-    # Simulated levels of additional NSB, rate in p.e./ns (a.k.a. GHz):
-    total_added_nsb = np.array([0, 0.125, 0.25, 0.5, 1, 2, 4])
-
-    # Just the product of added_nsb and original_nsb (first two arguments
-    # below) is relevant! Units "GHz" (p.e./ns)
-    nsb_tuner = [None]
-    # We now create the instances of WaveformNsbTuner to add the different
-    # levels of noise to the MC waveforms.
-    # NOTE: the waveform gets updated every time, the noise addition is
-    # cumulative (hence the np.diff):
-
-
-    for nsb_rate in np.diff(total_added_nsb):
-        # Create a dict to put the NSB value for each tel_id. It is an array for
-        # the future case in which there are more telescopes, but for now it
-        # just creates it with a single value, for tel_id
-        nsb = {tel_id: nsb_rate * u.GHz for tel_id in
-               config['source_config']['LSTEventSource']['allowed_tels']}
-        nsb_tuner.append(WaveformNsbTuner(nsb, pulse_templates,
-                                          charge_spe_cumulative_pdf,
-                                          pre_computed_multiplicity=10))
-    # last argument means it will precompute 10 * 1855 (pixels) * 2 (gains)
-    # noise waveforms to pick from during the actual introduction of the noise
-
-    # List of lists to keep the integrated pixel charges for different NSB
-    # levels:
-    modified_integrated_charge = [[] for i in range(len(nsb_tuner))]
-
-    for event in mc_reader:
-        if tel_id not in event.trigger.tels_with_trigger:
-            continue
-        numevents += 1
-        if numevents > maxmcevents:
-            break
-
-        # Calibrate the event to get the integrated charges (DL1a):
-        r1_dl1_calibrator(event)
-
-        selected_gains = event.r1.tel[tel_id].selected_gain_channel
-        mask_high = (selected_gains == 0)
-        true_image = event.simulation.tel[tel_id].true_image
-        # Use only pixels with no Cherenkov signal, just noise:
-        pedmask = mask_high & (true_image == 0)
-
-        # First store the charges with no added NSB:
-        modified_integrated_charge[0].extend(event.dl1.tel[tel_id].image[
-                                                 pedmask])
-
-        # Now add the different levels of NSB and recompute charges:
-        for ii, tuner in enumerate(nsb_tuner[1:]):
-            waveform = event.r1.tel[tel_id].waveform
-
-            # NOTE!! The line below modifies the waveform in event.r1
-            tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
+            # Calibrate the event to get the integrated charges (DL1a):
             r1_dl1_calibrator(event)
-            modified_integrated_charge[ii + 1].extend(
+
+            selected_gains = event.r1.tel[tel_id].selected_gain_channel
+            mask_high = (selected_gains == 0)
+            true_image = event.simulation.tel[tel_id].true_image
+            # Use only pixels with no Cherenkov signal, just noise:
+            pedmask = mask_high & (true_image == 0)
+        
+            # First store the charges with no added NSB:
+            modified_integrated_charge[0].extend(event.dl1.tel[tel_id].image[
+                                                     pedmask])
+        
+            # Now add the different levels of NSB and recompute charges:
+            for ii, tuner in enumerate(nsb_tuner[1:]):
+                waveform = event.r1.tel[tel_id].waveform
+
+                # NOTE!! The line below modifies the waveform in event.r1
+                tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
+                r1_dl1_calibrator(event)
+                modified_integrated_charge[ii + 1].extend(
                     event.dl1.tel[1].image[pedmask])
 
     modified_integrated_charge = np.array(modified_integrated_charge)
@@ -624,29 +621,29 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     extra_nsb = max(extra_nsb, 0)
 
     # Now open the MC file again and test that the tuning was successful:
-    mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
-    nsb = {tel_id: extra_nsb * u.GHz for tel_id in
-           config['source_config']['LSTEventSource']['allowed_tels']}
-    tuner = WaveformNsbTuner(nsb, pulse_templates,
-                             charge_spe_cumulative_pdf,
-                             pre_computed_multiplicity=10)
-    final_mc_qped = []
-    numevents = 0
-    for event in mc_reader:
-        if tel_id not in event.trigger.tels_with_trigger:
-            continue
-        numevents += 1
-        if numevents > maxmcevents:
-            break
-        selected_gains = event.r1.tel[tel_id].selected_gain_channel
-        mask_high = (selected_gains == 0)
-        true_image = event.simulation.tel[tel_id].true_image
-        pedmask = mask_high & (true_image == 0)
-
-        waveform = event.r1.tel[tel_id].waveform
-        tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
-        r1_dl1_calibrator(event)
-        final_mc_qped.extend(event.dl1.tel[tel_id].image[pedmask])
+    with EventSource(input_url=simtel_filename, config=Config(config)) as mc_reader:
+        nsb = {tel_id: extra_nsb * u.GHz for tel_id in
+               config['source_config']['LSTEventSource']['allowed_tels']}
+        tuner = WaveformNsbTuner(nsb, pulse_templates,
+                                 charge_spe_cumulative_pdf,
+                                 pre_computed_multiplicity=10)
+        final_mc_qped = []
+        numevents = 0
+        for event in mc_reader:
+            if tel_id not in event.trigger.tels_with_trigger:
+                continue
+            numevents += 1
+            if numevents > maxmcevents:
+                break
+            selected_gains = event.r1.tel[tel_id].selected_gain_channel
+            mask_high = (selected_gains == 0)
+            true_image = event.simulation.tel[tel_id].true_image
+            pedmask = mask_high & (true_image == 0)
+    
+            waveform = event.r1.tel[tel_id].waveform
+            tuner.tune_nsb_on_waveform(waveform, tel_id, mask_high, subarray)
+            r1_dl1_calibrator(event)
+            final_mc_qped.extend(event.dl1.tel[tel_id].image[pedmask])
 
     data_ped_variance = median_ped_stdpixq**2
     mc_ped_variance = np.std(final_mc_qped)**2
