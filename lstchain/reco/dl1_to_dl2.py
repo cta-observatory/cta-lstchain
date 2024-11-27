@@ -199,7 +199,7 @@ def predict_with_zd_interpolation(rf, param_array, features, is_proba=False):
 
     features: list of the names of the image features used by the RF
 
-    is_proba: if True predict_proba will be called instead of predict 
+    is_proba: if True predict_proba will be called instead of predict
 
     Return: event-wise 1d array of interpolated RF predictions (e.g. log
     energy, or gammaness, etc depending on the RF)
@@ -210,18 +210,27 @@ def predict_with_zd_interpolation(rf, param_array, features, is_proba=False):
 
     # Set alt_tel to closest MC training node's alt:
     param_array.rename(columns={"alt0": "alt_tel"}, inplace=True)
-    prediction_0 = rf.predict(param_array[features])
+    if is_proba:
+        prediction_0 = rf.predict_proba(param_array[features])
+    else:
+        prediction_0 = rf.predict(param_array[features])
+
     param_array.rename(columns={"alt_tel": "alt0"}, inplace=True)
 
     # set alt_tel value to that of second closest node:
     param_array.rename(columns={"alt1": "alt_tel"}, inplace=True)
-    prediction_1 = rf.predict(param_array[features])
+    if is_proba:
+        prediction_1 = rf.predict_proba(param_array[features])
+    else:
+        prediction_1 = rf.predict(param_array[features])
+
     param_array.rename(columns={"alt_tel": "alt1"}, inplace=True)
 
     # Put back original value of alt_tel:
     param_array.rename(columns={"original_alt_tel": "alt_tel"}, inplace=True)
 
     # Interpolated RF prediction:
+
     prediction = (prediction_0 * param_array['w0'] +
                   prediction_1 * param_array['w1'])
 
@@ -886,7 +895,8 @@ def apply_models(dl1,
             cls_disp_sign = joblib.load(cls_disp_sign)
         if coszd_interpolated_RF:
             disp_sign_proba = predict_with_zd_interpolation(cls_disp_sign, dl2,
-                                                            disp_classification_features)
+                                                            disp_classification_features,
+                                                            is_proba=True)
         else:
             disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
 
@@ -957,7 +967,8 @@ def apply_models(dl1,
         classifier = joblib.load(classifier)
     if coszd_interpolated_RF:
         probs = predict_with_zd_interpolation(classifier, dl2,
-                                              classification_features)
+                                              classification_features,
+                                              is_proba=True)
     else:
         probs = classifier.predict_proba(dl2[classification_features])
 
