@@ -199,8 +199,8 @@ def predict_with_zd_interpolation(rf, param_array, features):
 
     features: list of the names of the image features used by the RF
 
-    Return: event-wise 1d array of interpolated RF predictions (e.g. log
-    energy, or gammaness, etc depending on the RF)
+    Return: interpolated RF predictions. 1D array for regressors (log energy,
+    or disp_norm), 2D (events, # of classes) for classifiers
 
     """
 
@@ -233,7 +233,7 @@ def predict_with_zd_interpolation(rf, param_array, features):
 
     # Interpolated RF prediction:
     if is_classifier:
-        prediction = (prediction_0.T * param_array['w0'].values+
+        prediction = (prediction_0.T * param_array['w0'].values +
                       prediction_1.T * param_array['w1'].values).T
     else:
         prediction = (prediction_0 * param_array['w0'] +
