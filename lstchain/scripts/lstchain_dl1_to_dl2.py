@@ -78,7 +78,11 @@ parser.add_argument('--dl1_training_dir', '-t',
                     action='store',
                     type=Path,
                     dest='dl1_training_dir',
-                    help='Path to parent directory of DL1 training folders',
+                    help='Path to parent directory of DL1 training folders. '
+                         'If given, the pointings of the training sample will be '
+                         'obtained, and RF predictions will be interpolated '
+                         '(lineary in cos(zenith) to the instantaneous '
+                         'telescope pointing for each event',
                     default=None,
                     required=False)
 
