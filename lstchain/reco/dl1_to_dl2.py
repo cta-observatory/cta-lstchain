@@ -164,7 +164,7 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
     return dl2table
 
 
-def predict_with_zd_interpolation(rf, param_array, features, is_proba=False):
+def predict_with_zd_interpolation(rf, param_array, features):
     """
     Obtain a RF prediction which takes into account the difference between
     the telescope elevation (alt_tel, i.e. 90 deg - zenith) and those of the
@@ -199,18 +199,20 @@ def predict_with_zd_interpolation(rf, param_array, features, is_proba=False):
 
     features: list of the names of the image features used by the RF
 
-    is_proba: if True predict_proba will be called instead of predict
-
     Return: event-wise 1d array of interpolated RF predictions (e.g. log
     energy, or gammaness, etc depending on the RF)
 
     """
+
+    # Type of RF (classifier or regressor):
+    is_classifier = isinstance(rf, RandomForestClassifier)
+
     # keep original alt_tel values:
     param_array.rename(columns={"alt_tel": "original_alt_tel"}, inplace=True)
 
     # Set alt_tel to closest MC training node's alt:
     param_array.rename(columns={"alt0": "alt_tel"}, inplace=True)
-    if is_proba:
+    if is_classifier:
         prediction_0 = rf.predict_proba(param_array[features])
     else:
         prediction_0 = rf.predict(param_array[features])
@@ -219,7 +221,7 @@ def predict_with_zd_interpolation(rf, param_array, features, is_proba=False):
 
     # set alt_tel value to that of second closest node:
     param_array.rename(columns={"alt1": "alt_tel"}, inplace=True)
-    if is_proba:
+    if is_classifier:
         prediction_1 = rf.predict_proba(param_array[features])
     else:
         prediction_1 = rf.predict(param_array[features])
@@ -230,8 +232,7 @@ def predict_with_zd_interpolation(rf, param_array, features, is_proba=False):
     param_array.rename(columns={"original_alt_tel": "alt_tel"}, inplace=True)
 
     # Interpolated RF prediction:
-
-    if is_proba:
+    if is_classifier:
         prediction = (prediction_0.T * param_array['w0'].values+
                       prediction_1.T * param_array['w1'].values).T
     else:
@@ -899,8 +900,7 @@ def apply_models(dl1,
             cls_disp_sign = joblib.load(cls_disp_sign)
         if coszd_interpolated_RF:
             disp_sign_proba = predict_with_zd_interpolation(cls_disp_sign, dl2,
-                                                            disp_classification_features,
-                                                            is_proba=True)
+                                                            disp_classification_features)
         else:
             disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
 
@@ -971,8 +971,7 @@ def apply_models(dl1,
         classifier = joblib.load(classifier)
     if coszd_interpolated_RF:
         probs = predict_with_zd_interpolation(classifier, dl2,
-                                              classification_features,
-                                              is_proba=True)
+                                              classification_features)
     else:
         probs = classifier.predict_proba(dl2[classification_features])
 
