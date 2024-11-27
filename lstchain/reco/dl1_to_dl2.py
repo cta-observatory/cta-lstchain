@@ -231,8 +231,12 @@ def predict_with_zd_interpolation(rf, param_array, features, is_proba=False):
 
     # Interpolated RF prediction:
 
-    prediction = (prediction_0 * param_array['w0'] +
-                  prediction_1 * param_array['w1'])
+    if is_proba:
+        prediction = (prediction_0.T * param_array['w0'] +
+                      prediction_1.T * param_array['w1']).T
+    else:
+        prediction = (prediction_0 * param_array['w0'] +
+                      prediction_1 * param_array['w1'])
 
     return prediction.values
 
