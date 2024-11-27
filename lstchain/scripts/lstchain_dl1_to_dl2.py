@@ -286,8 +286,9 @@ def main():
             pass
 
     if args.dl1_training_dir is not None:
-        logger.info('Cos(zenith) interpolation will be used in Random Forests')
-        logger.info('DL1 training directory:', args.dl1_training_dir)
+        logger.warning('Cos(zenith) interpolation will be used in Random '
+                       'Forests')
+        logger.warning('DL1 training directory: ' + str(args.dl1_training_dir))
 
     config = replace_config(standard_config, custom_config)
 

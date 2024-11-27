@@ -102,7 +102,6 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
     between the zenith pointings of the MC data in the training sample on
     which the RFs were trained.
 
-
     Parameters:
     -----------
     dl2table: pandas dataframe. Four columns will be added: alt0, alt1, w0, w1
@@ -114,12 +113,16 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
 
     training_zd_deg: array containing the zenith distances (in deg) for the
     MC training nodes
+
     training_az_deg: array containing the azimuth angles (in deg) for the
     MC training nodes (a given index in bith arrays corresponds to a given MC
     pointing)
 
-    """
+    Returns:
+    -------
+    DL2 pandas dataframe with additional columns alt0, alt1, w0, w1
 
+    """
     pd.options.mode.copy_on_write = True
 
     alt_tel = dl2table['alt_tel']
@@ -158,10 +161,10 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
                                w0=pd.Series(w0).values,
                                w1=pd.Series(w1).values)
 
-    return dl2table, ['alt0', 'alt1', 'w0', 'w1']
+    return dl2table
 
 
-def predict_with_zd_interpolation(rf, param_array, features):
+def predict_with_zd_interpolation(rf, param_array, features, is_proba=False):
     """
     Obtain a RF prediction which takes into account the difference between
     the telescope elevation (alt_tel, i.e. 90 deg - zenith) and those of the
@@ -195,6 +198,8 @@ def predict_with_zd_interpolation(rf, param_array, features):
     add_zd_interpolation_info
 
     features: list of the names of the image features used by the RF
+
+    is_proba: if True predict_proba will be called instead of predict 
 
     Return: event-wise 1d array of interpolated RF predictions (e.g. log
     energy, or gammaness, etc depending on the RF)
@@ -838,13 +843,13 @@ def apply_models(dl1,
 
     # If dl1_training_dir was provided (containing folders for each fo the MC
     # training pointing nodes), obtain the training pointings, and update the
-    # DL2 table with the additiona info needed for the interpolation:
+    # DL2 table with the additional info needed for the interpolation:
 
     coszd_interpolated_RF = False
     if dl1_training_dir is not None:
         coszd_interpolated_RF = True
         training_az_deg, training_zd_deg = get_training_directions(dl1_training_dir)
-        add_zd_interpolation_info(dl2, training_zd_deg, training_az_deg)
+        dl2 = add_zd_interpolation_info(dl2, training_zd_deg, training_az_deg)
 
     # Reconstruction of Energy and disp_norm distance
     if isinstance(reg_energy, (str, bytes, Path)):
