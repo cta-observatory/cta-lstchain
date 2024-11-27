@@ -74,8 +74,15 @@ parser.add_argument('--config', '-c',
                     default=None,
                     required=False)
 
+parser.add_argument('--dl1_training_dir', '-t',
+                    action='store',
+                    type=Path,
+                    dest='dl1_training_dir',
+                    help='Path to parent directory of DL1 training folders',
+                    default=None,
+                    required=False)
 
-def apply_to_file(filename, models_dict, output_dir, config):
+def apply_to_file(filename, models_dict, output_dir, config, dl1_training_dir):
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
@@ -134,7 +141,8 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                           models_dict['reg_energy'],
                                           reg_disp_vector=models_dict['reg_disp_vector'],
                                           effective_focal_length=effective_focal_length,
-                                          custom_config=config)
+                                          custom_config=config,
+                                          dl1_training_dir=dl1_training_dir)
         elif config['disp_method'] == 'disp_norm_sign':
             dl2 = dl1_to_dl2.apply_models(data,
                                           models_dict['cls_gh'],
@@ -142,7 +150,8 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                           reg_disp_norm=models_dict['reg_disp_norm'],
                                           cls_disp_sign=models_dict['cls_disp_sign'],
                                           effective_focal_length=effective_focal_length,
-                                          custom_config=config)
+                                          custom_config=config,
+                                          dl1_training_dir=dl1_training_dir)
 
     # Source-dependent analysis
     if config['source_dependent']:
@@ -175,7 +184,8 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                                  models_dict['reg_energy'],
                                                  reg_disp_vector=models_dict['reg_disp_vector'],
                                                  effective_focal_length=effective_focal_length,
-                                                 custom_config=config)
+                                                 custom_config=config,
+                                                 dl1_training_dir=dl1_training_dir)
             elif config['disp_method'] == 'disp_norm_sign':
                 dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
                                                  models_dict['cls_gh'],
@@ -183,7 +193,8 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                                  reg_disp_norm=models_dict['reg_disp_norm'],
                                                  cls_disp_sign=models_dict['cls_disp_sign'],
                                                  effective_focal_length=effective_focal_length,
-                                                 custom_config=config)
+                                                 custom_config=config,
+                                                 dl1_training_dir=dl1_training_dir)
 
             dl2_srcdep = dl2.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
@@ -270,6 +281,10 @@ def main():
         except("Custom configuration could not be loaded !!!"):
             pass
 
+    if args.dl1_training_dir is not None:
+        logger.info('Cos(zenith) interpolation will be used in Random Forests')
+        logger.info('DL1 training directory:', args.dl1_training_dir)
+
     config = replace_config(standard_config, custom_config)
 
     models_keys = ['reg_energy', 'cls_gh']
@@ -291,7 +306,8 @@ def main():
             models_dict[models_key] = joblib.load(models_path)
 
     for filename in args.input_files:
-        apply_to_file(filename, models_dict, args.output_dir, config)
+        apply_to_file(filename, models_dict, args.output_dir, config,
+                      args.dl1_training_dir)
 
 
 

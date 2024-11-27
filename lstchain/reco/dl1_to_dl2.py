@@ -7,6 +7,7 @@ Usage:
 "import dl1_to_dl2"
 """
 
+import glob
 import os
 import logging
 
@@ -14,7 +15,7 @@ import astropy.units as u
 import joblib
 import numpy as np
 import pandas as pd
-from astropy.coordinates import SkyCoord, Angle
+from astropy.coordinates import SkyCoord, Angle, angular_separation
 from astropy.time import Time
 from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -38,10 +39,13 @@ from ctapipe_io_lst import OPTICS
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    'add_zd_interpolation_info',
     'apply_models',
     'build_models',
     'get_expected_source_pos',
     'get_source_dependent_parameters',
+    'get_training_directions',
+    'predict_with_zd_interpolation',
     'train_disp_norm',
     'train_disp_sign',
     'train_disp_vector',
@@ -51,6 +55,172 @@ __all__ = [
     'update_disp_with_effective_focal_length'
 ]
 
+
+def get_training_directions(training_dir):
+    """
+    This function obtains the pointings of the telescope in the RF training
+    sample.
+
+    Parameters:
+    -----------
+    training_dir: pathlib.Path, path to the directory under which the folders
+    containing the DL1 files used in the training are found.
+    The folders' names are assumed to follow this pattern:
+
+    node_corsika_theta_34.367_az_69.537_
+
+    (theta is zenith; az is azimuth. Units are degrees, note that the values'
+    field lengths are not fixed)
+
+    Returns: training_az_deg, training_zd_deg arrays containing the azimuth and
+    zenith of the training nodes (in degrees)
+
+    """
+
+    dirs = glob.glob(str(training_dir) + '/node_corsika*')
+
+    training_zd_deg = []
+    training_az_deg = []
+
+    for dir in dirs:
+        c1 = dir.find('_theta_') + 7
+        c2 = dir.find('_az_', c1) + 4
+        c3 = dir.find('_', c2)
+        training_zd_deg.append(float(dir[c1:c2 - 4]))
+        training_az_deg.append(float(dir[c2:c3]))
+
+    training_zd_deg = np.array(training_zd_deg)
+    training_az_deg = np.array(training_az_deg)
+    # The order of the pointings is irrelevant
+
+    return training_az_deg, training_zd_deg
+
+
+def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
+    """
+    Compute necessary parameters for the interpolation of RF predictions
+    between the zenith pointings of the MC data in the training sample on
+    which the RFs were trained.
+
+
+    Parameters:
+    -----------
+    dl2table: pandas dataframe. Four columns will be added: alt0, alt1, w0, w1
+    alt0 and alt1 are the alt_tel (in rad) values (telescope elevation) for
+    the closest and second-closest training MC pointing for each event in the
+    table. The values w0 and w1 are the corresponding weights that, multiplied
+    by the RF predictions at those two pointings, provide the interpolated
+    result for each event's pointing
+
+    training_zd_deg: array containing the zenith distances (in deg) for the
+    MC training nodes
+    training_az_deg: array containing the azimuth angles (in deg) for the
+    MC training nodes (a given index in bith arrays corresponds to a given MC
+    pointing)
+
+    """
+
+    pd.options.mode.copy_on_write = True
+
+    alt_tel = dl2table['alt_tel']
+    az_tel  = dl2table['az_tel']
+
+    training_alt_rad = np.pi / 2 - np.deg2rad(training_zd_deg)
+    training_az_rad = np.deg2rad(training_az_deg)
+
+    tiled_az = np.tile(az_tel,
+                       len(training_az_rad)).reshape(len(training_az_rad),
+                                                     len(dl2table)).T
+    tiled_alt = np.tile(alt_tel,
+                       len(training_alt_rad)).reshape(len(training_alt_rad),
+                                                      len(dl2table)).T
+
+    angular_distance = angular_separation(training_az_rad, training_alt_rad,
+                                          tiled_az, tiled_alt)
+    # indices ordered in angular distance to each event:
+    sorted_indices = np.argsort(angular_distance, axis=1)
+
+    closest_alt = training_alt_rad[sorted_indices[:, 0]]
+    second_closest_alt = training_alt_rad[sorted_indices[:, 1]]
+
+    c0 = np.cos(np.pi / 2 - closest_alt)
+    c1 = np.cos(np.pi / 2 - second_closest_alt)
+    cos_tel_zd = np.cos(np.pi / 2 - alt_tel)
+
+    # Compute the weights that multiplied times the RF predictions at the
+    # closest (0) and 2nd-closest (1) nodes result in the interpolated value:
+    w0 = 1 - (cos_tel_zd - c0) / (c1 - c0)
+    w1 = (cos_tel_zd - c0) / (c1 - c0)
+
+    # Update the dataframe:
+    dl2table = dl2table.assign(alt0=pd.Series(closest_alt).values,
+                               alt1=pd.Series(second_closest_alt).values,
+                               w0=pd.Series(w0).values,
+                               w1=pd.Series(w1).values)
+
+    return dl2table, ['alt0', 'alt1', 'w0', 'w1']
+
+
+def predict_with_zd_interpolation(rf, param_array, features):
+    """
+    Obtain a RF prediction which takes into account the difference between
+    the telescope elevation (alt_tel, i.e. 90 deg - zenith) and those of the
+    MC training nodes. The dependence of image parameters (for a shower of
+    given characteristics) with zenith is strong at angles beyond ~50 deg,
+    due to the change in airmass. Given the way Random Forests work, if the
+    training is performed with a discrete distribution of pointings,
+    the prediction of the RF will be biased for pointings in between those
+    used in training. If zenith is used as one of the RF features, there will
+    be a sudden jump in the predictions halfway between the training nodes.
+
+    To solve this, we compute here two predictions for each event, one using
+    the elevation (alt_tel) of the training pointing which is closest to the
+    telescope pointing, and another one usimg the elevation of the
+    sceond-closest pointing. Then the values are interpolated (linearly in
+    cos(zenith)) to the actual zenith pointing (90 deg - alt_tel) of the event.
+
+    rf: sklearn.ensemble.RandomForestRegressor or RandomForestClassifier,
+    the random forest we want to apply (must contain alt_tel among the
+    training parameters)
+
+    param_array: pandas dataframe containing the features needed by theRF
+    It must also contain four additional columns: alt0, alt1, w0, w1, which
+    can be added with the function add_zd_interpolation_info. These are the
+    event-wise telescope elevations for the closest and 2nd-closest training
+    pointings (alt0 and alt1), and the event-wise weights (w0 and w1) which
+    must be applied to the RF prediction at the two pointings to obtain the
+    interpolated value at the actual telescope pointing. Since the weights
+    are the same (for a given event) for different RFs, it does not make
+    sense to compute them here - they are pre-calculated by
+    add_zd_interpolation_info
+
+    features: list of the names of the image features used by the RF
+
+    Return: event-wise 1d array of interpolated RF predictions (e.g. log
+    energy, or gammaness, etc depending on the RF)
+
+    """
+    # keep original alt_tel values:
+    param_array.rename(columns={"alt_tel": "original_alt_tel"}, inplace=True)
+
+    # Set alt_tel to closest MC training node's alt:
+    param_array.rename(columns={"alt0": "alt_tel"}, inplace=True)
+    prediction_0 = rf.predict(param_array[features])
+    param_array.rename(columns={"alt_tel": "alt0"}, inplace=True)
+
+    # set alt_tel value to that of second closest node:
+    param_array.rename(columns={"alt1": "alt_tel"}, inplace=True)
+    prediction_1 = rf.predict(param_array[features])
+    param_array.rename(columns={"alt_tel": "alt1"}, inplace=True)
+
+    # Put back original value of alt_tel:
+    param_array.rename(columns={"original_alt_tel": "alt_tel"}, inplace=True)
+
+    # Interpolated RF prediction:
+    prediction = (prediction_0 * param_array['w0'] +
+                  prediction_1 * param_array['w1'])
+
+    return prediction.values
 
 def train_energy(train, custom_config=None):
     """
@@ -602,6 +772,7 @@ def apply_models(dl1,
                  cls_disp_sign=None,
                  effective_focal_length=29.30565 * u.m,
                  custom_config=None,
+                 dl1_training_dir=None,
                  ):
     """
     Apply previously trained Random Forests to a set of data
@@ -629,6 +800,9 @@ def apply_models(dl1,
     effective_focal_length: `astropy.unit`
     custom_config: dictionary
         Modified configuration to update the standard one
+    dl1_training_dir: pathlib.Path, path to the directory under which the
+    folders containing the DL1 MC training data are kept (only folder names
+    are needed, not the actual DL1 files)
 
     Returns
     -------
@@ -642,6 +816,7 @@ def apply_models(dl1,
     disp_classification_features = config["disp_classification_features"]
     classification_features = config["particle_classification_features"]
     events_filters = config["events_filters"]
+
 
     dl2 = utils.filter_events(dl1,
                               filters=events_filters,
@@ -660,29 +835,56 @@ def apply_models(dl1,
     is_simu = 'disp_norm' in dl2.columns
     if is_simu:
         dl2 = update_disp_with_effective_focal_length(dl2, effective_focal_length = effective_focal_length)
-    
+
+    # If dl1_training_dir was provided (containing folders for each fo the MC
+    # training pointing nodes), obtain the training pointings, and update the
+    # DL2 table with the additiona info needed for the interpolation:
+
+    coszd_interpolated_RF = False
+    if dl1_training_dir is not None:
+        coszd_interpolated_RF = True
+        training_az_deg, training_zd_deg = get_training_directions(dl1_training_dir)
+        add_zd_interpolation_info(dl2, training_zd_deg, training_az_deg)
 
     # Reconstruction of Energy and disp_norm distance
     if isinstance(reg_energy, (str, bytes, Path)):
         reg_energy = joblib.load(reg_energy)
-    dl2['log_reco_energy'] = reg_energy.predict(dl2[energy_regression_features])
+    if coszd_interpolated_RF:
+        # Interpolation of RF predictions (linear in cos(zenith)):
+        dl2['log_reco_energy'] = predict_with_zd_interpolation(reg_energy, dl2,
+                                                               energy_regression_features)
+    else:
+        dl2['log_reco_energy'] = reg_energy.predict(dl2[energy_regression_features])
     del reg_energy
     dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
 
     if config['disp_method'] == 'disp_vector':
         if isinstance(reg_disp_vector, (str, bytes, Path)):
             reg_disp_vector = joblib.load(reg_disp_vector)
-        disp_vector = reg_disp_vector.predict(dl2[disp_regression_features])
+        if coszd_interpolated_RF:
+            disp_vector = predict_with_zd_interpolation(reg_disp_vector, dl2,
+                                                        disp_regression_features)
+        else:
+            disp_vector = reg_disp_vector.predict(dl2[disp_regression_features])
         del reg_disp_vector
     elif config['disp_method'] == 'disp_norm_sign':
         if isinstance(reg_disp_norm, (str, bytes, Path)):
             reg_disp_norm = joblib.load(reg_disp_norm)
-        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
+        if coszd_interpolated_RF:
+            disp_norm = predict_with_zd_interpolation(reg_disp_norm, dl2,
+                                                      disp_regression_features)
+        else:
+            disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
         del reg_disp_norm
 
         if isinstance(cls_disp_sign, (str, bytes, Path)):
             cls_disp_sign = joblib.load(cls_disp_sign)
-        disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
+        if coszd_interpolated_RF:
+            disp_sign_proba = predict_with_zd_interpolation(cls_disp_sign, dl2,
+                                                            disp_classification_features)
+        else:
+            disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
+
         col = list(cls_disp_sign.classes_).index(1)
         disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
         del cls_disp_sign
@@ -748,7 +950,11 @@ def apply_models(dl1,
     
     if isinstance(classifier, (str, bytes, Path)):
         classifier = joblib.load(classifier)
-    probs = classifier.predict_proba(dl2[classification_features])
+    if coszd_interpolated_RF:
+        probs = predict_with_zd_interpolation(classifier, dl2,
+                                              classification_features)
+    else:
+        probs = classifier.predict_proba(dl2[classification_features])
 
     # This check is valid as long as we train on only two classes (gammas and protons)
     if probs.shape[1] > 2:
