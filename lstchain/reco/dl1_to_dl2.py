@@ -860,17 +860,16 @@ def apply_models(dl1,
     # taking into account of the abrration effect using effective focal length
     is_simu = 'disp_norm' in dl2.columns
     if is_simu:
-        dl2 = update_disp_with_effective_focal_length(dl2, effective_focal_length = effective_focal_length)
+        dl2 = update_disp_with_effective_focal_length(dl2,
+                                                      effective_focal_length=effective_focal_length)
 
     # If dl1_training_dir was provided (containing folders for each fo the MC
     # training pointing nodes), obtain the training pointings, and update the
     # DL2 table with the additional info needed for the interpolation:
-
-    if dl1_training_dir is not None:
+    if dl1_training_dir is not None and dl1_training_dir.is_dir():
         training_az_deg, training_zd_deg = get_training_directions(dl1_training_dir)
         dl2 = add_zd_interpolation_info(dl2, training_zd_deg, training_az_deg)
-
-    if not dl1_training_dir.is_dir():
+    else:
         logger.warning('DL1 training directory not found...')
         logger.warning('Switching off RF interpolation with zenith!')
         interpolate_rf['energy_regression'] = False
