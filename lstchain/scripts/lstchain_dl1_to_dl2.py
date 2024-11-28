@@ -74,21 +74,49 @@ parser.add_argument('--config', '-c',
                     default=None,
                     required=False)
 
-parser.add_argument('--dl1_training_dir', '-t',
-                    action='store',
-                    type=Path,
-                    dest='dl1_training_dir',
-                    help='Path to parent directory of DL1 training folders. '
-                         'If given, the pointings of the training sample will be '
-                         'obtained, and RF predictions will be interpolated '
-                         '(lineary in cos(zenith) to the instantaneous '
-                         'telescope pointing for each event',
-                    default=None,
-                    required=False)
-
-def apply_to_file(filename, models_dict, output_dir, config, dl1_training_dir):
+def apply_to_file(filename, models_dict, output_dir, config):
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+
+    interpolate_energy = False
+    interpolate_gammaness = False
+    interpolate_direction = False
+    dl1_training_dir = None
+    # Read in the settings for the interpolation of Random Forest predictions
+    # in cos(zd). If activated this avoids the jumps of performance produced
+    # by the discrete set of pointings in the RF training sample.
+    if 'random_forest_zd_interpolation' in config.keys():
+        zdinter = config['random_forest_zd_interpolation']
+        if 'interpolate_energy' in zdinter.keys():
+            interpolate_energy = zdinter['interpolate_energy']
+        if 'interpolate_gammaness' in zdinter.keys():
+            interpolate_gammaness = zdinter['interpolate_gammaness']
+        if 'interpolate_direction' in zdinter.keys():
+            interpolate_direction = zdinter['interpolate_direction']
+        if 'DL1_training_dir' in zdinter.keys():
+            dl1_training_dir = zdinter['DL1_training_dir']
+
+    interpolate_rf = {'energy_regression': interpolate_energy,
+                      'particle_classification': interpolate_gammaness,
+                      'disp': interpolate_direction
+                      }
+    if dl1_training_dir is None:
+        # Build name of DL1 MC training files assuming standard pattern:
+        models_dir = models_dict['reg_energy'].parent()
+        dummy = models_dir.as_posix().replace('/data/models', '/data/mc/DL1')
+        dl1_training_dir = Path(dummy[:dummy.rfind('/dec')] +
+                                '/TrainingDataset/GammaDiffuse/' +
+                                dummy[dummy.rfind('/dec')+1:])
+
+
+    if interpolate_energy or interpolate_gammaness or interpolate_direction:
+        logger.warning('Cos(zenith) interpolation will be used in:')
+        if interpolate_energy:
+            logger.warning('   energy reconstruction Random Forest')
+        if interpolate_gammaness:
+            logger.warning('   g/h classification Random Forest')
+        if interpolate_direction:
+            logger.warning('   direction reconstruction Random Forest')
 
     if 'lh_fit_config' in config.keys():
         lhfit_data = pd.read_hdf(filename, key=dl1_likelihood_params_lstcam_key)
@@ -146,6 +174,7 @@ def apply_to_file(filename, models_dict, output_dir, config, dl1_training_dir):
                                           reg_disp_vector=models_dict['reg_disp_vector'],
                                           effective_focal_length=effective_focal_length,
                                           custom_config=config,
+                                          interpolate_rf=interpolate_rf,
                                           dl1_training_dir=dl1_training_dir)
         elif config['disp_method'] == 'disp_norm_sign':
             dl2 = dl1_to_dl2.apply_models(data,
@@ -155,6 +184,7 @@ def apply_to_file(filename, models_dict, output_dir, config, dl1_training_dir):
                                           cls_disp_sign=models_dict['cls_disp_sign'],
                                           effective_focal_length=effective_focal_length,
                                           custom_config=config,
+                                          interpolate_rf=interpolate_rf,
                                           dl1_training_dir=dl1_training_dir)
 
     # Source-dependent analysis
@@ -189,6 +219,7 @@ def apply_to_file(filename, models_dict, output_dir, config, dl1_training_dir):
                                                  reg_disp_vector=models_dict['reg_disp_vector'],
                                                  effective_focal_length=effective_focal_length,
                                                  custom_config=config,
+                                                 interpolate_rf=interpolate_rf,
                                                  dl1_training_dir=dl1_training_dir)
             elif config['disp_method'] == 'disp_norm_sign':
                 dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
@@ -198,6 +229,7 @@ def apply_to_file(filename, models_dict, output_dir, config, dl1_training_dir):
                                                  cls_disp_sign=models_dict['cls_disp_sign'],
                                                  effective_focal_length=effective_focal_length,
                                                  custom_config=config,
+                                                 interpolate_rf=interpolate_rf,
                                                  dl1_training_dir=dl1_training_dir)
 
             dl2_srcdep = dl2.drop(srcindep_keys, axis=1)
@@ -285,11 +317,6 @@ def main():
         except("Custom configuration could not be loaded !!!"):
             pass
 
-    if args.dl1_training_dir is not None:
-        logger.warning('Cos(zenith) interpolation will be used in Random '
-                       'Forests')
-        logger.warning('DL1 training directory: ' + str(args.dl1_training_dir))
-
     config = replace_config(standard_config, custom_config)
 
     models_keys = ['reg_energy', 'cls_gh']
@@ -311,9 +338,7 @@ def main():
             models_dict[models_key] = joblib.load(models_path)
 
     for filename in args.input_files:
-        apply_to_file(filename, models_dict, args.output_dir, config,
-                      args.dl1_training_dir)
-
+        apply_to_file(filename, models_dict, args.output_dir, config)
 
 
 if __name__ == '__main__':

@@ -791,6 +791,9 @@ def apply_models(dl1,
                  cls_disp_sign=None,
                  effective_focal_length=29.30565 * u.m,
                  custom_config=None,
+                 interpolate_rf={'energy_regression':False,
+                                 'particle_classification':False,
+                                 'disp':False},
                  dl1_training_dir=None,
                  ):
     """
@@ -819,9 +822,13 @@ def apply_models(dl1,
     effective_focal_length: `astropy.unit`
     custom_config: dictionary
         Modified configuration to update the standard one
+    interpolate_rf: dictionary. Contains three booleans, 'energy_regression',
+        'particle_classification', 'disp', indicating which RF predictions
+        should be interpolated linearly in cos(zenith)
     dl1_training_dir: pathlib.Path, path to the directory under which the
-    folders containing the DL1 MC training data are kept (only folder names
-    are needed, not the actual DL1 files)
+        folders containing the DL1 MC training data are kept (only folder
+        names are needed, not the actual DL1 files). Needed for interpolation
+        of RF predictions, if activated by user via interpolate_rf
 
     Returns
     -------
@@ -859,16 +866,21 @@ def apply_models(dl1,
     # training pointing nodes), obtain the training pointings, and update the
     # DL2 table with the additional info needed for the interpolation:
 
-    coszd_interpolated_RF = False
     if dl1_training_dir is not None:
-        coszd_interpolated_RF = True
         training_az_deg, training_zd_deg = get_training_directions(dl1_training_dir)
         dl2 = add_zd_interpolation_info(dl2, training_zd_deg, training_az_deg)
+
+    if not dl1_training_dir.is_dir():
+        logger.warning('DL1 training directory not found...')
+        logger.warning('Switching off RF interpolation with zenith!')
+        interpolate_rf['energy_regression'] = False
+        interpolate_rf['particle_classification'] = False
+        interpolate_rf['disp'] = False
 
     # Reconstruction of Energy and disp_norm distance
     if isinstance(reg_energy, (str, bytes, Path)):
         reg_energy = joblib.load(reg_energy)
-    if coszd_interpolated_RF:
+    if interpolate_rf['energy_regression']:
         # Interpolation of RF predictions (linear in cos(zenith)):
         dl2['log_reco_energy'] = predict_with_zd_interpolation(reg_energy, dl2,
                                                                energy_regression_features)
@@ -880,7 +892,7 @@ def apply_models(dl1,
     if config['disp_method'] == 'disp_vector':
         if isinstance(reg_disp_vector, (str, bytes, Path)):
             reg_disp_vector = joblib.load(reg_disp_vector)
-        if coszd_interpolated_RF:
+        if interpolate_rf['disp']:
             disp_vector = predict_with_zd_interpolation(reg_disp_vector, dl2,
                                                         disp_regression_features)
         else:
@@ -889,7 +901,7 @@ def apply_models(dl1,
     elif config['disp_method'] == 'disp_norm_sign':
         if isinstance(reg_disp_norm, (str, bytes, Path)):
             reg_disp_norm = joblib.load(reg_disp_norm)
-        if coszd_interpolated_RF:
+        if interpolate_rf['disp']:
             disp_norm = predict_with_zd_interpolation(reg_disp_norm, dl2,
                                                       disp_regression_features)
         else:
@@ -898,7 +910,7 @@ def apply_models(dl1,
 
         if isinstance(cls_disp_sign, (str, bytes, Path)):
             cls_disp_sign = joblib.load(cls_disp_sign)
-        if coszd_interpolated_RF:
+        if interpolate_rf['disp']:
             disp_sign_proba = predict_with_zd_interpolation(cls_disp_sign, dl2,
                                                             disp_classification_features)
         else:
@@ -969,7 +981,7 @@ def apply_models(dl1,
     
     if isinstance(classifier, (str, bytes, Path)):
         classifier = joblib.load(classifier)
-    if coszd_interpolated_RF:
+    if interpolate_rf['particle_classification']:
         probs = predict_with_zd_interpolation(classifier, dl2,
                                               classification_features)
     else:
