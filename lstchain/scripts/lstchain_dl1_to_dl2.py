@@ -164,6 +164,7 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
         if dl1_training_dir.is_dir():
             dirs = glob.glob(str(dl1_training_dir) + '/node_corsika*')
             training_az_deg, training_zd_deg = get_training_directions(dirs)
+            training_pointings = np.array([training_az_deg, training_zd_deg]).T
         else:
             logger.warning('DL1 training directory not found...')
             logger.warning('Switching off RF interpolation with zenith!')
@@ -171,7 +172,6 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
             interpolate_rf['particle_classification'] = False
             interpolate_rf['disp'] = False
 
-        training_pointings = np.array([training_az_deg, training_zd_deg]).T
 
 
     if 'lh_fit_config' in config.keys():
