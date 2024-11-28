@@ -7,7 +7,6 @@ Usage:
 "import dl1_to_dl2"
 """
 
-import glob
 import os
 import logging
 
