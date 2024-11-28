@@ -74,6 +74,44 @@ parser.add_argument('--config', '-c',
                     default=None,
                     required=False)
 
+def get_training_directions(training_dirs):
+    """
+    This function obtains the pointings of the telescope in the RF training
+    sample.
+
+    Parameters:
+    -----------
+    training_dirs: array of strings, each element is the name of one of the
+    folders containing the DL1 files used in the training. Order is
+    irrelevant. The folders' names are assumed to follow this pattern:
+
+    node_corsika_theta_34.367_az_69.537_
+
+    (theta is zenith; az is azimuth. Units are degrees, note that the values'
+    field lengths are not fixed)
+
+    Returns: training_az_deg, training_zd_deg arrays containing the azimuth and
+    zenith of the training nodes (in degrees)
+
+    """
+
+    training_zd_deg = []
+    training_az_deg = []
+
+    for dir in training_dirs:
+        c1 = dir.find('_theta_') + 7
+        c2 = dir.find('_az_', c1) + 4
+        c3 = dir.find('_', c2)
+        training_zd_deg.append(float(dir[c1:c2 - 4]))
+        training_az_deg.append(float(dir[c2:c3]))
+
+    training_zd_deg = np.array(training_zd_deg)
+    training_az_deg = np.array(training_az_deg)
+    # The order of the pointings is irrelevant
+
+    return training_az_deg, training_zd_deg
+
+
 def apply_to_file(filename, models_dict, output_dir, config, models_path):
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
