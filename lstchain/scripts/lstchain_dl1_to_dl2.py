@@ -336,7 +336,7 @@ def main():
         else:
             models_dict[models_key] = joblib.load(models_path)
 
-    for filename in args.input_files:pply_to_file
+    for filename in args.input_files:
         apply_to_file(filename, models_dict, args.output_dir, config,
                       args.path_models)
 
