@@ -56,16 +56,16 @@ __all__ = [
 ]
 
 
-def get_training_directions(training_dir):
+def get_training_directions(training_dirs):
     """
     This function obtains the pointings of the telescope in the RF training
     sample.
 
     Parameters:
     -----------
-    training_dir: pathlib.Path, path to the directory under which the folders
-    containing the DL1 files used in the training are found.
-    The folders' names are assumed to follow this pattern:
+    training_dirs: array of strings, each element is the name of one of the
+    folders containing the DL1 files used in the training. Order is
+    irrelevant. The folders' names are assumed to follow this pattern:
 
     node_corsika_theta_34.367_az_69.537_
 
@@ -77,12 +77,10 @@ def get_training_directions(training_dir):
 
     """
 
-    dirs = glob.glob(str(training_dir) + '/node_corsika*')
-
     training_zd_deg = []
     training_az_deg = []
 
-    for dir in dirs:
+    for dir in training_dirs:
         c1 = dir.find('_theta_') + 7
         c2 = dir.find('_az_', c1) + 4
         c3 = dir.find('_', c2)
@@ -795,10 +793,10 @@ def apply_models(dl1,
                  cls_disp_sign=None,
                  effective_focal_length=29.30565 * u.m,
                  custom_config=None,
-                 interpolate_rf={'energy_regression':False,
-                                 'particle_classification':False,
-                                 'disp':False},
-                 dl1_training_dir=None,
+                 interpolate_rf={'energy_regression': False,
+                                 'particle_classification': False,
+                                 'disp': False},
+                 training_pointings=None
                  ):
     """
     Apply previously trained Random Forests to a set of data
@@ -829,10 +827,9 @@ def apply_models(dl1,
     interpolate_rf: dictionary. Contains three booleans, 'energy_regression',
         'particle_classification', 'disp', indicating which RF predictions
         should be interpolated linearly in cos(zenith)
-    dl1_training_dir: pathlib.Path, path to the directory under which the
-        folders containing the DL1 MC training data are kept (only folder
-        names are needed, not the actual DL1 files). Needed for interpolation
-        of RF predictions, if activated by user via interpolate_rf
+    training_pointings: array (# of pointings, 2) azimuth, zenith in degrees;
+         pointings of the MC sample used in the training. Needed for the
+         interpolation of RF predictions.
 
     Returns
     -------
@@ -867,18 +864,11 @@ def apply_models(dl1,
         dl2 = update_disp_with_effective_focal_length(dl2,
                                                       effective_focal_length=effective_focal_length)
 
-    # If dl1_training_dir was provided (containing folders for each fo the MC
-    # training pointing nodes), obtain the training pointings, and update the
-    # DL2 table with the additional info needed for the interpolation:
-    if dl1_training_dir is not None and dl1_training_dir.is_dir():
-        training_az_deg, training_zd_deg = get_training_directions(dl1_training_dir)
+    if True in interpolate_rf.values():
+        # Interpolation of RF predictions is switched on
+        training_az_deg = training_pointings[:, 0]
+        training_zd_deg = training_pointings[:, 1]
         dl2 = add_zd_interpolation_info(dl2, training_zd_deg, training_az_deg)
-    else:
-        logger.warning('DL1 training directory not found...')
-        logger.warning('Switching off RF interpolation with zenith!')
-        interpolate_rf['energy_regression'] = False
-        interpolate_rf['particle_classification'] = False
-        interpolate_rf['disp'] = False
 
     # Reconstruction of Energy and disp_norm distance
     if isinstance(reg_energy, (str, bytes, Path)):
