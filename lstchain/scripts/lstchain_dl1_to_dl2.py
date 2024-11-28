@@ -74,7 +74,7 @@ parser.add_argument('--config', '-c',
                     default=None,
                     required=False)
 
-def apply_to_file(filename, models_dict, output_dir, config):
+def apply_to_file(filename, models_dict, output_dir, config, models_path):
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
@@ -102,8 +102,7 @@ def apply_to_file(filename, models_dict, output_dir, config):
                       }
     if dl1_training_dir is None:
         # Build name of DL1 MC training files assuming standard pattern:
-        models_dir = models_dict['reg_energy'].parent()
-        dummy = models_dir.as_posix().replace('/data/models', '/data/mc/DL1')
+        dummy = models_path.as_posix().replace('/data/models', '/data/mc/DL1')
         dl1_training_dir = Path(dummy[:dummy.rfind('/dec')] +
                                 '/TrainingDataset/GammaDiffuse/' +
                                 dummy[dummy.rfind('/dec')+1:])
@@ -337,8 +336,9 @@ def main():
         else:
             models_dict[models_key] = joblib.load(models_path)
 
-    for filename in args.input_files:
-        apply_to_file(filename, models_dict, args.output_dir, config)
+    for filename in args.input_files:pply_to_file
+        apply_to_file(filename, models_dict, args.output_dir, config,
+                      args.path_models)
 
 
 if __name__ == '__main__':
