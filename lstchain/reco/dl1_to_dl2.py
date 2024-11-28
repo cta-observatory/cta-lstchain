@@ -151,9 +151,13 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
     cos_tel_zd = np.cos(np.pi / 2 - alt_tel)
 
     # Compute the weights that multiplied times the RF predictions at the
-    # closest (0) and 2nd-closest (1) nodes result in the interpolated value:
-    w0 = 1 - (cos_tel_zd - c0) / (c1 - c0)
-    w1 = (cos_tel_zd - c0) / (c1 - c0)
+    # closest (0) and 2nd-closest (1) nodes result in the interpolated value.
+    # Take care of cases in which the two closest nodes happen to have the
+    # same zenith (or very close)! (if so, both nodes are set to have equal
+    # weight in the interpolation)
+    w1 = np.where(np.isclose(closest_alt, second_closest_alt, atol=1e-4, rtol=0),
+                  0.5, (cos_tel_zd - c0) / (c1 - c0))
+    w0 = 1 - w1
 
     # Update the dataframe:
     dl2table = dl2table.assign(alt0=pd.Series(closest_alt).values,
