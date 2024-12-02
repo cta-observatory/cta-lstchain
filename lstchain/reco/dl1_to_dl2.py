@@ -14,7 +14,7 @@ import astropy.units as u
 import joblib
 import numpy as np
 import pandas as pd
-from astropy.coordinates import SkyCoord, Angle, angular_separation
+from astropy.coordinates import SkyCoord, Angle
 from astropy.time import Time
 from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -62,11 +62,12 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
     Parameters:
     -----------
     dl2table: pandas dataframe. Four columns will be added: alt0, alt1, w0, w1
-    alt0 and alt1 are the alt_tel (in rad) values (telescope elevation) for
-    the closest and second-closest training MC pointing for each event in the
-    table. The values w0 and w1 are the corresponding weights that, multiplied
-    by the RF predictions at those two pointings, provide the interpolated
-    result for each event's pointing
+    alt0 and alt1 are the alt_tel values (telescope elevation, in radians) of
+    the closest and second-closest training MC pointings (closest in elevation,
+    on the same side of culmination) for each event in the table. The values
+    w0 and w1 are the corresponding weights that, multiplied by the RF
+    predictions at those two pointings, provide the interpolated result for
+    each event's pointing
 
     training_zd_deg: array containing the zenith distances (in deg) for the
     MC training nodes
@@ -95,11 +96,15 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
                        len(training_alt_rad)).reshape(len(training_alt_rad),
                                                       len(dl2table)).T
 
-    angular_distance = angular_separation(training_az_rad, training_alt_rad,
-                                          tiled_az, tiled_alt)
-    # indices ordered in angular distance to each event:
-    sorted_indices = np.argsort(angular_distance, axis=1)
-
+    delta_alt = np.abs(training_alt_rad - tiled_alt)
+    # mask to select training nodes only on the same side of the source
+    # culmination as the event:
+    same_side_of_culmination = np.sign(np.sin(training_az_rad) *
+                                       np.sin(tiled_az)) > 0
+    # Just fill a large value for pointings on the other side of culmination:
+    delta_alt = np.where(same_side_of_culmination, delta_alt, np.pi/2)
+    # indices ordered according to distance in telescope elevation
+    sorted_indices = np.argsort(delta_alt, axis=1)
     closest_alt = training_alt_rad[sorted_indices[:, 0]]
     second_closest_alt = training_alt_rad[sorted_indices[:, 1]]
 
@@ -108,10 +113,10 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
     cos_tel_zd = np.cos(np.pi / 2 - alt_tel)
 
     # Compute the weights that multiplied times the RF predictions at the
-    # closest (0) and 2nd-closest (1) nodes result in the interpolated value.
-    # Take care of cases in which the two closest nodes happen to have the
-    # same zenith (or very close)! (if so, both nodes are set to have equal
-    # weight in the interpolation)
+    # closest (0) and 2nd-closest (1) nodes (in alt_tel) result in the
+    # interpolated value. Take care of cases in which the two closest nodes
+    # happen to have the same zenith (or very close)! (if so, both nodes are
+    # set to have equal weight in the interpolation)
     w1 = np.where(np.isclose(closest_alt, second_closest_alt, atol=1e-4, rtol=0),
                   0.5, (cos_tel_zd - c0) / (c1 - c0))
     w0 = 1 - w1
