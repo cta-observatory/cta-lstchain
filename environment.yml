@@ -8,11 +8,11 @@ dependencies:
   - pip
   - ctapipe=0.19.2
   - ctaplot~=0.6.4
-  - gammapy=1.1
+  - gammapy~=1.1
   - h5py
   - ipython
   - jupyter
-  - matplotlib=3.7
+  - matplotlib
   - notebook
   - iminuit>=2
   - joblib~=1.2.0
