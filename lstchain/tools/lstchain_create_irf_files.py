@@ -410,9 +410,9 @@ class IRFFITSWriter(Tool):
             if np.max(fov_offset_bins) > gammas["true_source_fov_offset"].max():
                 self.log.warning(f'The highest FoV offset bin ({np.max(fov_offset_bins)}) is larger than the maximum offset simulated ({gammas["true_source_fov_offset"].max()})')
 
-
         gammas = self.event_sel.filter_cut(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
+        gammas = gammas[gammas['true_source_fov_offset'] <= np.max(fov_offset_bins)]
 
         if self.energy_dependent_gh:
             self.gh_cuts_gamma = self.cuts.energy_dependent_gh_cuts(
