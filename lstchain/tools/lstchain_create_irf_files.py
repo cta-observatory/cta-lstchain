@@ -398,6 +398,15 @@ class IRFFITSWriter(Tool):
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
 
+        if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
+            # The 4 is semi-arbitray. This keeps the same precision as the previous code
+            mean_fov_offset = np.round(get_mc_fov_offset(self.mc_particle["gamma"]["file"]), 4)
+            self.log.info(f"Single offset for point like gamma MC with offset {mean_fov_offset}")
+            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
+        else:
+            fov_offset_bins = self.data_bin.fov_offset_bins()
+            self.log.info("Multiple offset for diffuse gamma MC")
+
         gammas = self.event_sel.filter_cut(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
 
@@ -455,29 +464,6 @@ class IRFFITSWriter(Tool):
                         "Using a global Alpha cut of "
                         f"{self.cuts.global_alpha_cut} for point like IRF"
                     )
-
-        if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
-            # The 4 is semi-arbitray. This keeps the same precision as the previous code
-            mean_fov_offset = np.round(get_mc_fov_offset(self.mc_particle["gamma"]["file"]), 4)
-            self.log.info(f"Single offset for point like gamma MC with offset {mean_fov_offset}")
-            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
-        else:
-            fov_offset_bins = self.data_bin.fov_offset_bins()
-            self.log.info("Multiple offset for diffuse gamma MC")
-
-            if self.energy_dependent_theta:
-                fov_offset_bins = [
-                    round(
-                        gammas["true_source_fov_offset"].min().to_value(), 3
-                    ),
-                    round(
-                        gammas["true_source_fov_offset"].max().to_value(), 3
-                    )
-                ] * u.deg
-                self.log.info(
-                    "For RAD MAX, FoV where we have all of the reconstructed "
-                    f"events, is used, {fov_offset_bins}"
-                )
 
         if not self.only_gamma_irf:
             background = table.vstack(
