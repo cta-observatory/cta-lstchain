@@ -407,6 +407,10 @@ class IRFFITSWriter(Tool):
             fov_offset_bins = self.data_bin.fov_offset_bins()
             self.log.info("Multiple offset for diffuse gamma MC")
 
+            if np.max(fov_offset_bins) > gammas["true_source_fov_offset"].max():
+                self.log.warning(f'The highest FoV offset bin ({np.max(fov_offset_bins)}) is larger than the maximum offset simulated ({gammas["true_source_fov_offset"].max()})')
+
+
         gammas = self.event_sel.filter_cut(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
 
