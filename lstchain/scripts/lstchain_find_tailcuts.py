@@ -116,11 +116,11 @@ def main():
     median_ped_mean_pix_charge = np.array(median_ped_mean_pix_charge)
     number_of_pedestals = np.array(number_of_pedestals)
 
-    # Now compute the mean for all processed subruns (weighted with the
-    # number of pedestals in each subrun)
-
-    qped = np.sum(number_of_pedestals *
-                  median_ped_mean_pix_charge) / np.sum(number_of_pedestals)
+    # Now compute the median for all processed subruns, which is more robust
+    # against e.g. subruns affected by car flashes. We also exclude subruns
+    # which have less than half of the median statistics per subrun.
+    good_stats = number_of_pedestals > 0.5 * np.median(number_of_pedestals)
+    qped = np.median(median_ped_mean_pix_charge[good_stats])
 
     picture_threshold = pic_th(qped)
     boundary_threshold = picture_threshold / 2
