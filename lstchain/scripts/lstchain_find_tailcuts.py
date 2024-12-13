@@ -91,11 +91,6 @@ def main():
     for dl1_file in dl1_files:
         log.info('\nInput file: %s', dl1_file)
 
-        run_info = parse_dl1_filename(dl1_file)
-        run_id, subrun_id = run_info.run, run_info.subrun
-        summary_info.run_id = run_id
-        summary_info.subrun_id = subrun_id
-
         data_parameters = read_table(dl1_file, dl1_params_lstcam_key)
         event_type_data = data_parameters['event_type'].data
         pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
@@ -135,8 +130,11 @@ def main():
     newconfig = get_standard_config()['tailcuts_clean_with_pedestal_threshold']
     newconfig['picture_thresh'] = picture_threshold
     newconfig['boundary_thresh'] = boundary_threshold
-    run = int(file.name[file.name.find('Run')+3:-3])
-    json_filename = Path(output_dir, f'dl1ab_Run{run:05d}.json')
+
+    run_info = parse_dl1_filename(dl1_files[0])
+    run_id = run_info.run
+
+    json_filename = Path(output_dir, f'dl1ab_Run{run_id:05d}.json')
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
                  'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
                 json_filename, overwrite=True)
