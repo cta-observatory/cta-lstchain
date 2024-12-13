@@ -128,8 +128,9 @@ def main():
     # We now create a .json files with recommended image cleaning
     # settings for lstchain_dl1ab.
     newconfig = get_standard_config()['tailcuts_clean_with_pedestal_threshold']
-    newconfig['picture_thresh'] = picture_threshold
-    newconfig['boundary_thresh'] = boundary_threshold
+    # casts below are needed, json does not like numpy's int64:
+    newconfig['picture_thresh'] = int(picture_threshold)
+    newconfig['boundary_thresh'] = int(boundary_threshold)
 
     run_info = parse_dl1_filename(dl1_files[0])
     run_id = run_info.run
