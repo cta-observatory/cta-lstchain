@@ -62,11 +62,16 @@ def main():
     input_dir = args.input_dir.absolute()
 
     run_id = args.run_number
-    newconfig = find_tailcuts(input_dir, run_id)
+    additional_nsb_rate, newconfig = find_tailcuts(input_dir, run_id)
 
     json_filename = Path(output_dir, f'dl1ab_Run{run_id:05d}.json')
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
                  'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
                 json_filename, overwrite=True)
     log.info(json_filename)
+    log.info(f'Additional NSB rate (over dark MC): {additional_nsb_rate:.3f} '
+             f'p.e./s')
+
     log.info('lstchain_find_tailcuts finished successfully!')
+
+    return additional_nsb_rate
