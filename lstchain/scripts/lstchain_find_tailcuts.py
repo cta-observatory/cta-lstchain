@@ -74,7 +74,7 @@ def main():
     dl1_filenames = Path(input_dir,
                          run_to_dl1_filename(1, args.run_number, 0).replace(
                                  '.0000.h5', '.????.h5'))
-    all_dl1_files = glob.glob(dl1_filenames)
+    all_dl1_files = glob.glob(dl1_filenames.absolute())
     all_dl1_files.sort()
 
     log_file = args.log_file
