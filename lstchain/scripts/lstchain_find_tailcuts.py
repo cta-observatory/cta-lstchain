@@ -69,6 +69,6 @@ def main():
     log.info('\nWritten to:')
     log.info(json_filename)
     log.info(f'\nAdditional NSB rate (over dark MC): {additional_nsb_rate:.4f} '
-             f'p.e./s')
+             f'p.e./ns')
 
     log.info('lstchain_find_tailcuts finished successfully!')

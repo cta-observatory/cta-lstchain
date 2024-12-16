@@ -165,6 +165,10 @@ def find_tailcuts(input_dir, run_number):
     not_outlier = (np.abs(median_ped_median_pix_charge - qped) /
                    qped_dev) < mad_max
 
+    if (~good_stats).sum() > 0:
+        log.info(f'\nNumber of subruns with low statistics: '
+                 f'{(~good_stats).sum()} - removed from pedestal median '
+                 f'calculation')
     if (~not_outlier).sum() > 0:
         log.info(f'\nRemoved {(~not_outlier).sum()} outlier subruns '
                  f'(out of {not_outlier.size}) from pedestal median '
