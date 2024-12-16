@@ -91,6 +91,15 @@ def find_tailcuts(input_dir, run_number):
     all_dl1_files = glob.glob(str(dl1_filenames))
     all_dl1_files.sort()
 
+    # Number of median absolute deviations (mad) away from the median that a
+    # pixel value has to be to be considered an outlier:
+    mad_pixels = 5  # would exclude 8e-4 of the pdf for a gaussian
+
+    # Number of median absolute deviations (mad) away from the median that a
+    # subrun value has to be to be considered an outlier:
+    mad_subruns = 3  # would exclude 0.043 of the pdf for a gaussian
+
+
     # Aprox. maximum number of subruns (uniformly distributed through the
     # run) to be processed:
     max_number_of_processed_subruns = 10
@@ -101,7 +110,7 @@ def find_tailcuts(input_dir, run_number):
 
     number_of_pedestals = []
     usable_pixels = []
-    median_ped_mean_pix_charge = []
+    median_ped_median_pix_charge = []
 
     for dl1_file in dl1_files:
         log.info('\nInput file: %s', dl1_file)
@@ -124,18 +133,47 @@ def find_tailcuts(input_dir, run_number):
 
         charges_data = data_images['image']
         charges_pedestals = charges_data[pedestal_mask]
-        mean_ped_charge = np.mean(charges_pedestals, axis=0)
-        median_ped_mean_pix_charge.append(np.median(mean_ped_charge[
-                                                        reliable_pixels]))
+        # pixel-wise median charge through the subrun:
+        median_pix_charge = np.nanmedian(charges_pedestals, axis=0)
+        median_pix_charge_dev = median_abs_deviation(charges_pedestals,
+                                                     axis=0,
+                                                     nan_policy='omit')
+        # Just a cut to remove outliers:
+        outliers = (np.abs(charges_pedestals - median_pix_charge) /
+                    median_pix_charge_dev) > mad_pixels
+        if outliers.sum() > 0:
+            log.info(f'    Removed {outliers.sum()} outlier pixels from '
+                     f'pedestal median calculation')
+            # Replace outliers by nans:
+            charges_pedestals = np.where(outliers, np.nan, charges_pedestals)
+            # Recompute the pixel-wise medians ignoring the outliers:
+            median_pix_charge = np.nanmedian(charges_pedestals, axis=0)
 
-    median_ped_mean_pix_charge = np.array(median_ped_mean_pix_charge)
+        # Now compute the median (for the whole camera) of the medians (for
+        # each pixel) of the charges in pedestal events. Use only reliable
+        # pixels for this:
+        median_ped_median_pix_charge.append(np.nanmedian(median_pix_charge[
+                                                             reliable_pixels]))
+
+    # convert to ndarray:
+    median_ped_median_pix_charge = np.array(median_ped_median_pix_charge)
     number_of_pedestals = np.array(number_of_pedestals)
 
     # Now compute the median for all processed subruns, which is more robust
-    # against e.g. subruns affected by car flashes. We also exclude subruns
+    # against e.g. subruns affected by car flashes. We exclude subruns
     # which have less than half of the median statistics per subrun.
     good_stats = number_of_pedestals > 0.5 * np.median(number_of_pedestals)
-    qped = np.median(median_ped_mean_pix_charge[good_stats])
+    qped = np.nanmedian(median_ped_median_pix_charge[good_stats])
+    # Now we also remove outliers if any:
+    qped_dev = median_abs_deviation(median_ped_median_pix_charge[good_stats])
+    not_outlier = (np.abs(median_ped_median_pix_charge - qped) /
+                   qped_dev) < mad_subruns
+
+    if (~not_outlier).sum() > 0:
+        log.info(f'    Removed {(~not_outlier).sum()} outlier subruns from '
+                 f'pedestal median calculation')
+        # recompute without outliers:
+        qped = np.nanmedian(median_ped_median_pix_charge[good_stats & not_outlier])
 
     picture_threshold = pic_th(qped)
     boundary_threshold = picture_threshold / 2

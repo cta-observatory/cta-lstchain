@@ -3,23 +3,19 @@
 """
 This script uses DL1 files to determine tailcuts which are adequate for the
 bulk of the pixels in a given run. It does so simply based on the median (for
-the whole camera) of the average pixel charge for pedestal events.
+the whole camera) of the median pixel charge for pedestal events.
 
 For reasons of stability & simplicity of analysis, we cannot decide the
 cleaning levels on a subrun-by-subrun basis. We select values which are ok
 for the whole run.
 
-The script also returns the suggested NSB adjustment needed in the "dark-sky" MC
-to match the data.
+The script writes out the cleaning settings to a json file,
+e.g. dl1ab_Run13181.json
+It also returns the suggested NSB adjustment needed in the "dark-sky" MC
+to match the data, in units of p.e./ns.
 
-The script will process a maximum of 10 subruns of those provided as input,
-distributed uniformly through the run - just for speed reasons: the result
-would hardly change if all subruns are used.
-
-lstchain_find_tailcuts -f "/.../dl1_LST-1.Run12469.????.h5"
-
-The program creates in the output directory a .json file containing the
-cleaning configuration.
+lstchain_find_tailcuts -d "/..../DL1/YYYYMMDD/v0.10/tailcut84 -r 13181 --log
+out.log "
 
 """
 
