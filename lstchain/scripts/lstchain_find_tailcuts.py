@@ -74,6 +74,13 @@ def main():
     dl1_filenames = Path(input_dir,
                          run_to_dl1_filename(1, args.run_number, 0).replace(
                                  '.0000.h5', '.????.h5'))
+    # Aprox. maximum number of subruns (uniformly distributed through the
+    # run) to be processed:
+    max_number_of_processed_subruns = 10
+    # Keep only ~max_number_of_processed_subruns subruns, distributed
+    # along the run:
+    dl1_filenames = dl1_filenames[::int(1+max_number_of_processed_subruns)]
+
     all_dl1_files = glob.glob(str(dl1_filenames))
     all_dl1_files.sort()
 
@@ -82,11 +89,6 @@ def main():
         handler = logging.FileHandler(log_file, mode='w')
         logging.getLogger().addHandler(handler)
 
-    # Number of subruns (uniformly distributed through the run) to be processed:
-    max_number_of_processed_subruns = 10
-
-    # process at most max_number_of_processed_subruns for each run:
-    dl1_files = get_input_files(all_dl1_files, max_number_of_processed_subruns)
     number_of_pedestals = []
     usable_pixels = []
     median_ped_mean_pix_charge = []
@@ -144,31 +146,6 @@ def main():
                 json_filename, overwrite=True)
     log.info(json_filename)
     log.info('lstchain_find_tailcuts finished successfully!')
-
-
-def get_input_files(all_dl1_files, max_number_of_processed_subruns):
-    """
-    Reduce the number of DL1 files in all_dl1_files to a maximum of
-    max_number_of_processed_subruns per run
-    """
-
-    runlist = np.unique([parse_dl1_filename(f).run for f in all_dl1_files])
-
-    dl1_files = []
-    for run in runlist:
-        file_list = [f for f in all_dl1_files 
-                     if f.find(f'dl1_LST-1.Run{run:05d}')>0]
-        if len(file_list) <= max_number_of_processed_subruns:
-            dl1_files.extend(file_list)
-            continue
-        step = len(file_list) / max_number_of_processed_subruns
-        k = 0
-        while np.round(k) < len(file_list):
-            dl1_files.append(file_list[int(np.round(k))])
-            k += step
-
-    return dl1_files
-
 
 def pic_th(mean_ped):
     """
