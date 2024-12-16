@@ -57,7 +57,7 @@ setup(
         'pyirf~=0.10.0',
         'scipy>=1.8,<1.12',
         'seaborn',
-        'scikit-learn~=1.2',
+        'scikit-learn~=1.2.2',
         'tables',
         'toml',
         'protozfits>=2.5,<3',
