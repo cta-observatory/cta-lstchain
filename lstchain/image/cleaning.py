@@ -133,7 +133,7 @@ def find_tailcuts(input_dir, run_number):
         median_pix_charge_dev = median_abs_deviation(charges_pedestals,
                                                      axis=0,
                                                      nan_policy='omit')
-        # Just a cut to remove outliers:
+        # Just a cut to remove outliers (pixels):
         outliers = (np.abs(charges_pedestals - median_pix_charge) /
                     median_pix_charge_dev) > mad_max
         if outliers.sum() > 0:
@@ -160,13 +160,13 @@ def find_tailcuts(input_dir, run_number):
     # which have less than half of the median statistics per subrun.
     good_stats = number_of_pedestals > 0.5 * np.median(number_of_pedestals)
     qped = np.nanmedian(median_ped_median_pix_charge[good_stats])
-    # Now we also remove outliers if any:
+    # Now we also remove outliers (subruns) if any:
     qped_dev = median_abs_deviation(median_ped_median_pix_charge[good_stats])
     not_outlier = (np.abs(median_ped_median_pix_charge - qped) /
                    qped_dev) < mad_max
 
     if (~not_outlier).sum() > 0:
-        log.info(f'    Removed {(~not_outlier).sum()} outlier subruns '
+        log.info(f'\nRemoved {(~not_outlier).sum()} outlier subruns '
                  f'(out of {not_outlier.size}) from pedestal median '
                  f'calculation')
         # recompute without outliers:
