@@ -74,15 +74,16 @@ def main():
     dl1_filenames = Path(input_dir,
                          run_to_dl1_filename(1, args.run_number, 0).replace(
                                  '.0000.h5', '.????.h5'))
+    all_dl1_files = glob.glob(str(dl1_filenames))
+    all_dl1_files.sort()
+
     # Aprox. maximum number of subruns (uniformly distributed through the
     # run) to be processed:
     max_number_of_processed_subruns = 10
     # Keep only ~max_number_of_processed_subruns subruns, distributed
     # along the run:
-    dl1_filenames = dl1_filenames[::int(1+max_number_of_processed_subruns)]
-
-    all_dl1_files = glob.glob(str(dl1_filenames))
-    all_dl1_files.sort()
+    dl1_files = all_dl1_files[::int(1+len(all_dl1_files) /
+                                    max_number_of_processed_subruns)]
 
     log_file = args.log_file
     if log_file is not None:
