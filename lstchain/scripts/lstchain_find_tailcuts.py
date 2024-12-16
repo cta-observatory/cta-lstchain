@@ -33,7 +33,7 @@ import numpy as np
 import time
 import sys
 
-from lstchain.paths import parse_dl1_filename
+from lstchain.paths import parse_dl1_filename, run_to_dl1_filename
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.io import dl1_params_tel_mon_cal_key
 from lstchain.io.config import get_standard_config, dump_config
@@ -46,9 +46,11 @@ from ctapipe_io_lst import LSTEventSource
 
 parser = argparse.ArgumentParser(description="Tailcut finder")
 
-parser.add_argument('-f', '--dl1-files', dest='dl1_files',
-                    type=str, default='',
-                    help='Input DL1 file names')
+parser.add_argument('-d', '--input-dir', dest='input_dir',
+                    type=Path, default='./',
+                    help='Input DL1 directory')
+parser.add_argument('-r', '--run', dest='run_number',
+                    type=int, help='Run number')
 parser.add_argument('-o', '--output-dir', dest='output_dir',
                     type=Path, default='./',
                     help='Path to the output directory (default: %(default)s)')
@@ -67,11 +69,12 @@ def main():
     output_dir = args.output_dir.absolute()
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    if args.dl1_files == '':
-        log.error('Please use --dl1-files to provide a valid set of DL1 files!')
-        sys.exit(1)
-
-    all_dl1_files = glob.glob(args.dl1_files)
+    input_dir = args.input_dir.absolute()
+    # subrun-wise dl1 file names:
+    dl1_filenames = Path(input_dir,
+                         run_to_dl1_filename(1, args.run_number, 0).replace(
+                                 '.0000.h5', '.????.h5'))
+    all_dl1_files = glob.glob(dl1_filenames)
     all_dl1_files.sort()
 
     log_file = args.log_file
