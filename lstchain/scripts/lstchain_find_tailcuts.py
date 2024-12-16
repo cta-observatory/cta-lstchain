@@ -68,10 +68,11 @@ def main():
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
                  'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
                 json_filename, overwrite=True)
+    log.info('\nCleaning settings:')
+    log.info(newconfig)
+    log.info('\nWritten to:')
     log.info(json_filename)
-    log.info(f'Additional NSB rate (over dark MC): {additional_nsb_rate:.3f} '
+    log.info(f'\nAdditional NSB rate (over dark MC): {additional_nsb_rate:.4f} '
              f'p.e./s')
 
     log.info('lstchain_find_tailcuts finished successfully!')
-
-    return additional_nsb_rate
