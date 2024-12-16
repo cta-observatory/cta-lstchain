@@ -92,13 +92,8 @@ def find_tailcuts(input_dir, run_number):
     all_dl1_files.sort()
 
     # Number of median absolute deviations (mad) away from the median that a
-    # pixel value has to be to be considered an outlier:
-    mad_pixels = 5  # would exclude 8e-4 of the pdf for a gaussian
-
-    # Number of median absolute deviations (mad) away from the median that a
-    # subrun value has to be to be considered an outlier:
-    mad_subruns = 3  # would exclude 0.043 of the pdf for a gaussian
-
+    # value has to be to be considered an outlier:
+    mad_max = 5  # would exclude 8e-4 of the pdf for a gaussian
 
     # Aprox. maximum number of subruns (uniformly distributed through the
     # run) to be processed:
@@ -140,10 +135,11 @@ def find_tailcuts(input_dir, run_number):
                                                      nan_policy='omit')
         # Just a cut to remove outliers:
         outliers = (np.abs(charges_pedestals - median_pix_charge) /
-                    median_pix_charge_dev) > mad_pixels
+                    median_pix_charge_dev) > mad_max
         if outliers.sum() > 0:
-            log.info(f'    Removed {outliers.sum()} outlier pixels from '
-                     f'pedestal median calculation')
+            removed_fraction = outliers.sum() / outliers.size
+            log.info(f'    Removed {removed_fraction:.2%} of pixels (outliers) '
+                     f'from pedestal median calculation')
             # Replace outliers by nans:
             charges_pedestals = np.where(outliers, np.nan, charges_pedestals)
             # Recompute the pixel-wise medians ignoring the outliers:
@@ -167,11 +163,12 @@ def find_tailcuts(input_dir, run_number):
     # Now we also remove outliers if any:
     qped_dev = median_abs_deviation(median_ped_median_pix_charge[good_stats])
     not_outlier = (np.abs(median_ped_median_pix_charge - qped) /
-                   qped_dev) < mad_subruns
+                   qped_dev) < mad_max
 
     if (~not_outlier).sum() > 0:
-        log.info(f'    Removed {(~not_outlier).sum()} outlier subruns from '
-                 f'pedestal median calculation')
+        log.info(f'    Removed {(~not_outlier).sum()} outlier subruns '
+                 f'(out of {not_outlier.size}) from pedestal median '
+                 f'calculation')
         # recompute without outliers:
         qped = np.nanmedian(median_ped_median_pix_charge[good_stats & not_outlier])
 
