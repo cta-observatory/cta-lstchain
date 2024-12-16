@@ -53,6 +53,8 @@ def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
 
 def find_tailcuts(input_dir, run_number):
 
+    log.setLevel(logging.INFO)
+
     # subrun-wise dl1 file names:
     dl1_filenames = Path(input_dir,
                          run_to_dl1_filename(1, run_number, 0).replace(
