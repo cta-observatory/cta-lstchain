@@ -188,7 +188,7 @@ def find_tailcuts(input_dir, run_number):
 
     additional_nsb_rate = get_nsb(qped)
 
-    return additional_nsb_rate, newconfig
+    return qped, additional_nsb_rate, newconfig
 
 
 def pic_th(mean_ped):

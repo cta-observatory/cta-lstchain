@@ -58,12 +58,14 @@ def main():
     input_dir = args.input_dir.absolute()
 
     run_id = args.run_number
-    additional_nsb_rate, newconfig = find_tailcuts(input_dir, run_id)
+    median_qped, additional_nsb_rate, newconfig = find_tailcuts(input_dir,
+                                                                run_id)
 
     json_filename = Path(output_dir, f'dl1ab_Run{run_id:05d}.json')
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
                  'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
                 json_filename, overwrite=True)
+    log.info('\nMedian pedestal charge: {median_qped:.3f} p.e.')
     log.info('\nCleaning settings:')
     log.info(newconfig)
     log.info('\nWritten to:')
