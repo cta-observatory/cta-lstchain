@@ -65,7 +65,7 @@ def main():
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
                  'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
                 json_filename, overwrite=True)
-    log.info('\nMedian pedestal charge: {median_qped:.3f} p.e.')
+    log.info(f'\nMedian pedestal charge: {median_qped:.3f} p.e.')
     log.info('\nCleaning settings:')
     log.info(newconfig)
     log.info('\nWritten to:')
