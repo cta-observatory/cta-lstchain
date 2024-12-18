@@ -95,7 +95,11 @@ def find_tailcuts(input_dir, run_number):
     # value has to be to be considered an outlier:
     mad_max = 5  # would exclude 8e-4 of the pdf for a gaussian
 
-    # minimum number of valid pixels to consider the calculation of NSB level
+    # Minimum number of interleaved pedestals in subrun to proceed with
+    # calculation:
+    min_number_of_ped_events = 10
+
+    # Minimum number of valid pixels to consider the calculation of NSB level
     # acceptable:
     min_number_of_valid_pixels = 1000
 
@@ -117,6 +121,11 @@ def find_tailcuts(input_dir, run_number):
         data_parameters = read_table(dl1_file, dl1_params_lstcam_key)
         event_type_data = data_parameters['event_type'].data
         pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
+
+        num_pedestals = pedestal_mask.sum()
+        if  num_pedestals < min_number_of_ped_events:
+            log.warning(f'    Too few interleaved pedestals ('
+                        f'{num_pedestals}) - skipped subrun!')
 
         number_of_pedestals.append(pedestal_mask.sum())
         data_images = read_table(dl1_file, dl1_images_lstcam_key)
