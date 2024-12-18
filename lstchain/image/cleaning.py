@@ -95,6 +95,10 @@ def find_tailcuts(input_dir, run_number):
     # value has to be to be considered an outlier:
     mad_max = 5  # would exclude 8e-4 of the pdf for a gaussian
 
+    # minimum number of valid pixels to consider the calculation of NSB level
+    # acceptable:
+    min_number_of_valid_pixels = 1000
+
     # Aprox. maximum number of subruns (uniformly distributed through the
     # run) to be processed:
     max_number_of_processed_subruns = 10
@@ -148,8 +152,14 @@ def find_tailcuts(input_dir, run_number):
         # Now compute the median (for the whole camera) of the medians (for
         # each pixel) of the charges in pedestal events. Use only reliable
         # pixels for this:
-        median_ped_median_pix_charge.append(np.nanmedian(median_pix_charge[
-                                                             reliable_pixels]))
+        n_valid_pixels = np.isfinite(median_pix_charge[reliable_pixels]).sum()
+        if n_valid_pixels < min_number_of_valid_pixels:
+            logging.warning(f'    Too few valid pixels ({n_valid_pixels}) for '
+                            f'calculation!')
+            median_ped_median_pix_charge.append(np.nan)
+        else:
+            median_ped_median_pix_charge.append(np.nanmedian(
+                    median_pix_charge[reliable_pixels]))
 
     # convert to ndarray:
     median_ped_median_pix_charge = np.array(median_ped_median_pix_charge)
@@ -173,8 +183,11 @@ def find_tailcuts(input_dir, run_number):
         log.info(f'\nRemoved {(~not_outlier).sum()} outlier subruns '
                  f'(out of {not_outlier.size}) from pedestal median '
                  f'calculation')
-        # recompute without outliers:
-        qped = np.nanmedian(median_ped_median_pix_charge[good_stats & not_outlier])
+
+    # recompute with good-statistics and well-behaving runs:
+    qped = np.nanmedian(median_ped_median_pix_charge[good_stats & not_outlier])
+    log.info(f'\nNumber of subruns used in calculations: '
+             f'{(good_stats & not_outlier).sum()}')
 
     picture_threshold = pic_th(qped)
     boundary_threshold = picture_threshold / 2
