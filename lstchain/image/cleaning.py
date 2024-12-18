@@ -126,6 +126,7 @@ def find_tailcuts(input_dir, run_number):
         if  num_pedestals < min_number_of_ped_events:
             log.warning(f'    Too few interleaved pedestals ('
                         f'{num_pedestals}) - skipped subrun!')
+            continue
 
         number_of_pedestals.append(pedestal_mask.sum())
         data_images = read_table(dl1_file, dl1_images_lstcam_key)
