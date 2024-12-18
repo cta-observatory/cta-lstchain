@@ -57,6 +57,14 @@ def main():
     output_dir.mkdir(exist_ok=True, parents=True)
     input_dir = args.input_dir.absolute()
 
+    if not input_dir.exists():
+        logging.error('Input directory does not exist')
+        sys.exit(1)
+
+    if not input_dir.is_dir():
+        logging.error('Input directory is not a directory!')
+        sys.exit(1)
+
     run_id = args.run_number
     median_qped, additional_nsb_rate, newconfig = find_tailcuts(input_dir,
                                                                 run_id)
