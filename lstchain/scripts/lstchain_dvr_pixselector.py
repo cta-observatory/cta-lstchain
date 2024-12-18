@@ -63,7 +63,6 @@ import sys
 from lstchain.paths import parse_dl1_filename
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.io import dl1_params_tel_mon_cal_key
-from lstchain.io.config import get_standard_config, dump_config
 
 from ctapipe.io import read_table
 from ctapipe.core import Container, Field
