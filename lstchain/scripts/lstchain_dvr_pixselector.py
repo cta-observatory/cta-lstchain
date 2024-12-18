@@ -27,12 +27,7 @@ settings for the whole run, and a few subruns are enough to determine them).
 The program creates in the output directory (which is the current by default) 
 a file DVR_settings_LST-1.Run12469.h5 which contains a table "run_summary" 
 which includes the DVR algorithm parameters determined for each processed 
-subrun. It also creates a file with recommended cleaning settings for running 
-DL1ab, based on the NSB level measured in the processed runs. We use
-as picture threshold the closest even number not smaller than the charge 
-"min_charge_for_certain_selection" (averaged for all subruns and rounded) 
-which is the value from which a pixel will be certainly kept by the Data Volume 
-Reduction.
+subrun.
 
 Then we run again the script over all subruns, and using the option to create
 the pixel maks (this can also be done subrun by subrun, to parallelize the
@@ -505,34 +500,6 @@ def main():
                             number_of_writing_attempts)
                 time.sleep(300)
                 continue
-
-  
-    # We now create also .json files with recommended image cleaning
-    # settings for lstchain_dl1ab. We determine the picture threshold 
-    # from the values of min_charge_for_certain_selection:
-  
-    if not write_pixel_masks:
-        log.info('Output files:')
-        for file in list_of_output_files:
-            log.info(file)
-            dvrtable = read_table(file, "/run_summary")
-            picture_threshold = get_typical_dvr_min_charge(dvrtable)
-
-            # we round it to an even number of p.e., just to limit the amount 
-            # of different settings in the analysis (i.e. we change 
-            # picture_threshold in steps of 2 p.e.):
-            if picture_threshold % 2 != 0:
-                picture_threshold += 1
-            boundary_threshold = picture_threshold / 2
-            newconfig = get_standard_config()['tailcuts_clean_with_pedestal_threshold']
-            newconfig['picture_thresh'] = picture_threshold
-            newconfig['boundary_thresh'] = boundary_threshold
-            run = int(file.name[file.name.find('Run')+3:-3])
-            json_filename = Path(output_dir, f'dl1ab_Run{run:05d}.json')
-            dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
-                         'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
-                        json_filename, overwrite=True)
-            log.info(json_filename)
 
     log.info('lstchain_dvr_pixselector finished successfully!')
 
