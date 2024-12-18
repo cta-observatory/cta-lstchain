@@ -147,6 +147,9 @@ def find_tailcuts(input_dir, run_number):
         median_pix_charge_dev = median_abs_deviation(charges_pedestals,
                                                      axis=0,
                                                      nan_policy='omit')
+        # Avoid later warnings from empty pixels:
+        median_pix_charge_dev = np.where(median_pix_charge_dev > 0,
+                                         median_pix_charge_dev, np.nan)
         # Just a cut to remove outliers (pixels):
         outliers = (np.abs(charges_pedestals - median_pix_charge) /
                     median_pix_charge_dev) > mad_max
