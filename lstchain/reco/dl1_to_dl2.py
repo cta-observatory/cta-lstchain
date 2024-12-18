@@ -215,7 +215,7 @@ def train_energy(train, custom_config=None):
     Parameters
     ----------
     train: `pandas.DataFrame`
-    custom_config: dictionnary
+    custom_config: dictionary
         Modified configuration to update the standard one
 
     Returns
