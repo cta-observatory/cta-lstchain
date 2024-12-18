@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Command line Scripts (scripts) &mdash; lstchain 0.10.14.dev2+g9aaa78b0 documentation</title>
+  <title>Command line Scripts (scripts) &mdash; lstchain 0.10.15.dev9+ga328e441 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=3cbed419"></script>
-      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/documentation_options.js?v=5c06d88a"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
       <script>let toggleHintHide = 'Click to hide';</script>
@@ -232,35 +232,35 @@ type).</p>
                           <span class="p">[</span><span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">cores</span> <span class="n">MAX_CORES</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">omit</span><span class="o">-</span><span class="n">pdf</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="required-arguments">
-<h4>required arguments<a class="headerlink" href="#required-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_check_dl1-parser-required-arguments">
+<h4>required arguments<a class="headerlink" href="#lstchain.scripts.lstchain_check_dl1-parser-required-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file</kbd></dt>
 <dd><p>Path to DL1 data file(s) (containing pixel-wise charge information and image parameters) OR to datacheck_dl1_*.h5 files (only plotting part is executed in that case)</p>
 </dd>
 </dl>
 </section>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_check_dl1-parser-optional-arguments">
+<h4>optional arguments<a class="headerlink" href="#lstchain.scripts.lstchain_check_dl1-parser-optional-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--output-dir</kbd></dt>
 <dd><p>Directory where the output files will be written</p>
-<p>Default: “.”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'.'</span></code></p>
 </dd>
 <dt><kbd>--muons-dir</kbd></dt>
 <dd><p>Directory where the muon .fits files are located</p>
 </dd>
 <dt><kbd>--max-cores</kbd></dt>
 <dd><p>Maximum number of processes spawned</p>
-<p>Default: 4</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">4</span></code></p>
 </dd>
 <dt><kbd>--omit-pdf</kbd></dt>
 <dd><p>Do NOT create the data check pdf file</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--batch, -b</kbd></dt>
 <dd><p>Run the script without plotting output</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 </dl>
 </section>
@@ -280,27 +280,27 @@ the reference timestamp and counter of the run.</p>
                                    <span class="p">[</span><span class="o">-</span><span class="n">t</span> <span class="n">TCU_SERVER</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_create_run_summary-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_create_run_summary-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>-d, --date</kbd></dt>
 <dd><p>Date for the creation of the run summary in format YYYYMMDD</p>
 </dd>
 <dt><kbd>--r0-path</kbd></dt>
 <dd><p>Path to the R0 files. Default is /fefs/aswg/data/real/R0</p>
-<p>Default: /fefs/aswg/data/real/R0</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">/fefs/aswg/data/real/R0</span></code></p>
 </dd>
 <dt><kbd>-o, --output-dir</kbd></dt>
 <dd><p>Directory in which Run Summary file is written</p>
-<p>Default: /fefs/aswg/data/real/monitoring/RunSummary</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">/fefs/aswg/data/real/monitoring/RunSummary</span></code></p>
 </dd>
 <dt><kbd>--overwrite</kbd></dt>
 <dd><p>Overwrite existing Run Summary file</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>-t, --tcu-server</kbd></dt>
 <dd><p>TCU database server</p>
-<p>Default: “lst101-int”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'lst101-int'</span></code></p>
 </dd>
 </dl>
 </section>
@@ -332,8 +332,8 @@ $&gt; python lstchain_data_create_time_calibration_file.py
                                                   <span class="p">[</span><span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">flatfield</span><span class="o">-</span><span class="n">heuristic</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_data_create_time_calibration_file-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_data_create_time_calibration_file-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file</kbd></dt>
 <dd><p>Path to fits.fz file used to create the time calibration file.                     Allowed to use regular expression in given path to process subruns</p>
@@ -343,7 +343,7 @@ $&gt; python lstchain_data_create_time_calibration_file.py
 </dd>
 <dt><kbd>--max-events</kbd></dt>
 <dd><p>Maximum numbers of events to read. Default = 20000</p>
-<p>Default: 20000</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">20000</span></code></p>
 </dd>
 <dt><kbd>--config, -c</kbd></dt>
 <dd><p>Path to a configuration file. If none is given, a standard configuration is applied</p>
@@ -356,7 +356,7 @@ $&gt; python lstchain_data_create_time_calibration_file.py
 </dd>
 <dt><kbd>--no-progress</kbd></dt>
 <dd><p>Do not display a progress bar during event processing</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--flatfield-heuristic</kbd></dt>
 <dd><p>If given, try to identify flatfield events from the raw data. Should be used only for data from before 2022</p>
@@ -403,15 +403,15 @@ calibration files
                                <span class="p">[</span><span class="o">--</span><span class="n">default</span><span class="o">-</span><span class="n">trigger</span><span class="o">-</span><span class="nb">type</span> <span class="n">DEFAULT_TRIGGER_TYPE</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_data_r0_to_dl1-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_data_r0_to_dl1-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>-f, --input-file</kbd></dt>
 <dd><p>Path to the .fits.fz file with the raw events</p>
 </dd>
 <dt><kbd>-o, --output-dir</kbd></dt>
 <dd><p>Path where to store the reco dl1 events</p>
-<p>Default: ./dl1_data/</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./dl1_data/</span></code></p>
 </dd>
 <dt><kbd>-p, --pedestal-file, -p</kbd></dt>
 <dd><p>Path to a pedestal file</p>
@@ -482,8 +482,8 @@ calibration files
                                   <span class="p">[</span><span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">muons</span> <span class="n">MAX_MUONS</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_dl1_muon_analysis-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_dl1_muon_analysis-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file, -f</kbd></dt>
 <dd><p>Path to DL1a data file (containing charge information).</p>
@@ -496,7 +496,7 @@ calibration files
 </dd>
 <dt><kbd>--plot-rings</kbd></dt>
 <dd><p>Plot figures of the stored rings</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--plots-path</kbd></dt>
 <dd><p>Path to the plots</p>
@@ -526,19 +526,19 @@ Run lstchain_dl1_to_dl2 –help to see the options.</p>
                            <span class="p">[</span><span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="n">OUTPUT_DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">config</span> <span class="n">CONFIG_FILE</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_dl1_to_dl2-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_dl1_to_dl2-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-files, -f</kbd></dt>
 <dd><p>Path (or list of paths) to a DL1 HDF5 file</p>
 </dd>
 <dt><kbd>--path-models, -p</kbd></dt>
 <dd><p>Path where to find the trained RF</p>
-<p>Default: ./trained_models</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./trained_models</span></code></p>
 </dd>
 <dt><kbd>--output-dir, -o</kbd></dt>
 <dd><p>Path where to store the reco dl2 events</p>
-<p>Default: ./dl2_data</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./dl2_data</span></code></p>
 </dd>
 <dt><kbd>--config, -c</kbd></dt>
 <dd><p>Path to a configuration file. If none is given, a standard configuration is applied</p>
@@ -568,8 +568,8 @@ $&gt; python lstchain_dl1ab.py
                       <span class="p">[</span><span class="o">-</span><span class="n">c</span> <span class="n">CONFIG_FILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">image</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">pedestal</span><span class="o">-</span><span class="n">cleaning</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_dl1ab-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_dl1ab-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>-f, --input-file</kbd></dt>
 <dd><p>path to the DL1a file</p>
@@ -582,18 +582,18 @@ $&gt; python lstchain_dl1ab.py
 </dd>
 <dt><kbd>--max-unusable-pixels</kbd></dt>
 <dd><p>Maximum accepted number of unusable pixels. Default: 70 (= 10 modules)</p>
-<p>Default: 70</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">70</span></code></p>
 </dd>
 <dt><kbd>-c, --config</kbd></dt>
 <dd><p>Path to a configuration file. If none is given, a standard configuration is applied</p>
 </dd>
 <dt><kbd>--no-image</kbd></dt>
 <dd><p>Pass this argument to avoid writing the images in the new DL1 files.</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--no-pedestal-cleaning</kbd></dt>
 <dd><p>Disable pedestal cleaning. This is also done automatically for simulations.</p>
-<p>Default: True</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
 </dd>
 </dl>
 </section>
@@ -612,20 +612,20 @@ which contains a single table with one column, ‘event_id’</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lstchain_find_pedestals</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">d</span> <span class="n">SRCDIR</span><span class="p">]</span> <span class="n">output</span><span class="o">-</span><span class="nb">dir</span>
 </pre></div>
 </div>
-<section id="positional-arguments">
-<h4>Positional Arguments<a class="headerlink" href="#positional-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_find_pedestals-parser-positional-arguments">
+<h4>Positional Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_find_pedestals-parser-positional-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>output-dir</kbd></dt>
 <dd><p>Path where to store the output hdf5 files</p>
 </dd>
 </dl>
 </section>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_find_pedestals-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_find_pedestals-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>-d, --input-dir</kbd></dt>
 <dd><p>path to the directory of the DL1 files</p>
-<p>Default: ./</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./</span></code></p>
 </dd>
 </dl>
 </section>
@@ -654,24 +654,24 @@ which are beyond certain limits.</p>
                                    <span class="p">[</span><span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">file</span> <span class="n">OUTPUT_FILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_longterm_dl1_check-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_longterm_dl1_check-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-dir, -d</kbd></dt>
 <dd><p>path to the datacheck_dl1_LST-1.RunXXXXX.h5 files</p>
-<p>Default: ./</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./</span></code></p>
 </dd>
 <dt><kbd>--muons-dir</kbd></dt>
 <dd><p>path to the muons_LST-1.RunXXXXX.YYYY.fits files</p>
-<p>Default: ./</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./</span></code></p>
 </dd>
 <dt><kbd>--output-file, -o</kbd></dt>
 <dd><p>.h5 output file name</p>
-<p>Default: ./longterm_dl1_check.h5</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./longterm_dl1_check.h5</span></code></p>
 </dd>
 <dt><kbd>--batch, -b</kbd></dt>
 <dd><p>Run the script without opening html output</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 </dl>
 </section>
@@ -694,15 +694,15 @@ level for MC.
                              <span class="p">[</span><span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="n">OUTPUT_DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">config</span> <span class="n">CONFIG_FILE</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_mc_r0_to_dl1-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_mc_r0_to_dl1-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file, -f</kbd></dt>
 <dd><p>Path to the simtelarray file</p>
 </dd>
 <dt><kbd>--output-dir, -o</kbd></dt>
 <dd><p>Path where to store the reco dl1 events</p>
-<p>Default: ./dl1_data/</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./dl1_data/</span></code></p>
 </dd>
 <dt><kbd>--config, -c</kbd></dt>
 <dd><p>Path to a configuration file. If none is given, a standard configuration is applied</p>
@@ -730,23 +730,23 @@ Output is a dataframe with DL2 data.</p>
                              <span class="p">[</span><span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="n">OUTPUT_DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">config</span> <span class="n">CONFIG_FILE</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_mc_r0_to_dl2-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_mc_r0_to_dl2-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file, -f</kbd></dt>
 <dd><p>path to the file with simtelarray events</p>
 </dd>
 <dt><kbd>--path-models, -p</kbd></dt>
 <dd><p>Path where to find the trained RF</p>
-<p>Default: “./trained_models”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'./trained_models'</span></code></p>
 </dd>
 <dt><kbd>--no-dl1</kbd></dt>
 <dd><p>If given, the dl1 file is removed after creating the dl2 output</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--output-dir, -o</kbd></dt>
 <dd><p>Path where to store the reco dl2 events</p>
-<p>Default: ./dl2_data</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">./dl2_data</span></code></p>
 </dd>
 <dt><kbd>--config, -c</kbd></dt>
 <dd><p>Path to a configuration file. If none is given, a standard configuration is applied</p>
@@ -777,8 +777,8 @@ Outputs are the RF trained models</p>
                                  <span class="p">[</span><span class="o">--</span><span class="n">config</span> <span class="n">CONFIG_FILE</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_mc_rfperformance-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_mc_rfperformance-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file-gamma-train, --g-train</kbd></dt>
 <dd><p>path to the dl1 file of gamma events for training</p>
@@ -794,15 +794,15 @@ Outputs are the RF trained models</p>
 </dd>
 <dt><kbd>--no-save-models</kbd></dt>
 <dd><p>Disable storing trained models</p>
-<p>Default: True</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
 </dd>
 <dt><kbd>--batch, -b</kbd></dt>
 <dd><p>Boolean. True for running it without plotting output</p>
-<p>Default: True</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
 </dd>
 <dt><kbd>--output_dir, -o</kbd></dt>
 <dd><p>Path to store the resulting RF</p>
-<p>Default: “./saved_models/”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'./saved_models/'</span></code></p>
 </dd>
 <dt><kbd>--config, -c</kbd></dt>
 <dd><p>Path to a configuration file. If none is given, a standard configuration is applied</p>
@@ -830,8 +830,8 @@ Outputs are the RF trained models</p>
                                <span class="p">[</span><span class="o">--</span><span class="n">output_path</span> <span class="n">OUTPUT_PATH</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_mc_sensitivity-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_mc_sensitivity-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file-gamma-dl2, --gdl2</kbd></dt>
 <dd><p>path to reconstructed gammas dl2 file</p>
@@ -869,8 +869,8 @@ Outputs are RF trained models</p>
                              <span class="p">[</span><span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="n">PATH_MODELS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">config</span> <span class="n">CONFIG_FILE</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_mc_trainpipe-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_mc_trainpipe-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-file-gamma, --fg</kbd></dt>
 <dd><p>Path to the dl1 file of gamma events for training</p>
@@ -880,11 +880,11 @@ Outputs are RF trained models</p>
 </dd>
 <dt><kbd>--no-save-models</kbd></dt>
 <dd><p>Disable storing trained models</p>
-<p>Default: True</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
 </dd>
 <dt><kbd>--output-dir, -o</kbd></dt>
 <dd><p>Path to store the resulting RF</p>
-<p>Default: “./trained_models/”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'./trained_models/'</span></code></p>
 </dd>
 <dt><kbd>--config, -c</kbd></dt>
 <dd><p>Path to a configuration file. If none is given, a standard configuration is applied</p>
@@ -916,38 +916,38 @@ readable with pandas.</p>
                                  <span class="p">[</span><span class="o">--</span><span class="n">keys</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">copy</span> <span class="p">[</span><span class="n">KEYS_TO_COPY</span> <span class="o">...</span><span class="p">]]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_merge_hdf5_files-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_merge_hdf5_files-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>-d, --input-dir</kbd></dt>
 <dd><p>path to the source directory of files</p>
 </dd>
 <dt><kbd>-o, --output-file</kbd></dt>
 <dd><p>Path of the resulting merged file</p>
-<p>Default: “merge.h5”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'merge.h5'</span></code></p>
 </dd>
 <dt><kbd>--no-image</kbd></dt>
 <dd><p>Do not include images in output file</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>-r, --run-number</kbd></dt>
 <dd><p>Merge files run-wise if a run number is passedotherwise merge all files in the directory</p>
 </dd>
 <dt><kbd>-p, --pattern</kbd></dt>
 <dd><p>Glob pattern to match files</p>
-<p>Default: “<a href="#id1"><span class="problematic" id="id2">*</span></a>.h5”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'*.h5'</span></code></p>
 </dd>
 <dt><kbd>--no-progress</kbd></dt>
 <dd><p>Do not display the progress bar during event processing</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--skip-checks</kbd></dt>
 <dd><p>Skip checks when merging files</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--keys-to-copy</kbd></dt>
 <dd><p>List of duplicated keys to be copied and not to be merged</p>
-<p>Default: []</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
 </dd>
 </dl>
 </section>
@@ -975,22 +975,22 @@ directory.</p>
                                  <span class="p">[</span><span class="o">--</span><span class="n">run</span><span class="o">-</span><span class="n">number</span> <span class="n">RUN_NUMBER</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">pattern</span> <span class="n">PATTERN</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_merge_muon_files-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_merge_muon_files-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--input-dir, -d</kbd></dt>
 <dd><p>path to the source directory of files</p>
 </dd>
 <dt><kbd>--output-file, -o</kbd></dt>
 <dd><p>Path of the resulting merged file</p>
-<p>Default: “merge.fits”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'merge.fits'</span></code></p>
 </dd>
 <dt><kbd>--run-number, -r</kbd></dt>
 <dd><p>Merge files run-wise if a run number is passed,                           otherwise merge all files in the directory</p>
 </dd>
 <dt><kbd>--pattern, -p</kbd></dt>
 <dd><p>Glob pattern to match files</p>
-<p>Default: “<a href="#id1"><span class="problematic" id="id2">*</span></a>.fits”</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'*.fits'</span></code></p>
 </dd>
 </dl>
 </section>
@@ -1013,8 +1013,8 @@ DL1ab stage) to the level of NSB in a given data file</p>
                          <span class="n">INPUT_DATA</span> <span class="p">[</span><span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">file</span> <span class="n">OUTPUT_FILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">overwrite</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_tune_nsb-parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_tune_nsb-parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>--config</kbd></dt>
 <dd><p>Path to the configuration file for the production (must be the one used for calibration and DL1 creation)</p>
@@ -1030,7 +1030,7 @@ DL1ab stage) to the level of NSB in a given data file</p>
 </dd>
 <dt><kbd>--overwrite</kbd></dt>
 <dd><p>Use to overwrite output-file</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 </dl>
 </section>
@@ -1046,27 +1046,27 @@ DL1ab stage) to the level of NSB in a given data file</p>
                             <span class="p">[</span><span class="o">--</span><span class="n">mc</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src</span><span class="o">-</span><span class="n">dep</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">overwrite</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="named-arguments">
-<h4>Named Arguments<a class="headerlink" href="#named-arguments" title="Link to this heading"></a></h4>
+<section id="lstchain.scripts.lstchain_dump_config-build_parser-named-arguments">
+<h4>Named Arguments<a class="headerlink" href="#lstchain.scripts.lstchain_dump_config-build_parser-named-arguments" title="Link to this heading"></a></h4>
 <dl class="option-list">
 <dt><kbd>-o, --output-file</kbd></dt>
 <dd><p>path to the output file containing the config</p>
-<p>Default: lstchain_config.json</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">lstchain_config.json</span></code></p>
 </dd>
 <dt><kbd>--update-with</kbd></dt>
 <dd><p>Path to a partial config to update the full config with</p>
 </dd>
 <dt><kbd>--mc</kbd></dt>
 <dd><p>Use to dump a modified standard configuration for Monte-Carlo analysis</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--src-dep</kbd></dt>
 <dd><p>Use to dump a modified standard configuration for source dependent analysis</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--overwrite</kbd></dt>
 <dd><p>Overwrite existing output file</p>
-<p>Default: False</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 </dl>
 </section>
@@ -1085,7 +1085,7 @@ DL1ab stage) to the level of NSB in a given data file</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 27 Nov 2024 05:40.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 18 Dec 2024 10:01.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
