@@ -12,7 +12,8 @@ for the whole run.
 The script writes out the cleaning settings to a json file,
 e.g. dl1ab_Run13181.json
 It also returns the suggested NSB adjustment needed in the "dark-sky" MC
-to match the data, in units of p.e./ns.
+to match the data, in units of p.e./ns, to be applied at the waveforms level,
+i.e  with lstchain_tune_nsb_waveform.py
 
 lstchain_find_tailcuts -d "/..../DL1/YYYYMMDD/v0.10/tailcut84 -r 13181 --log
 out.log "
