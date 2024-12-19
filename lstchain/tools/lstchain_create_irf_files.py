@@ -709,7 +709,8 @@ class IRFFITSWriter(Tool):
                 self.hdus.append(
                     create_rad_max_hdu(
                         self.theta_cuts["cut"][:, np.newaxis],
-                        reco_energy_bins, fov_offset_bins,
+                        reco_energy_bins, fov_offset_bins[[fov_offset_bins.argmin(),
+                                                           fov_offset_bins.argmax()]],
                         **extra_headers
                     )
                 )
