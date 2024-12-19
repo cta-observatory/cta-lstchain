@@ -231,7 +231,7 @@ def pic_th(mean_ped):
         recommended picture threshold for image cleaning (from a table)
 
     """
-    mp_edges = np.array([2.4, 3.1, 3.8, 4.5, 5.2])
+    mp_edges = [2.23, 2.88, 3.53, 4.19, 4.84]
     picture_threshold = np.array([8, 10, 12, 14, 16, 18])
 
     if mean_ped >= mp_edges[-1]:
