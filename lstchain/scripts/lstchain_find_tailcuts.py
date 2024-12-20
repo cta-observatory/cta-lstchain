@@ -44,6 +44,7 @@ parser.add_argument('--log', dest='log_file',
 
 log = logging.getLogger(__name__)
 
+
 def main():
     args = parser.parse_args()
     log.setLevel(logging.INFO)
@@ -67,14 +68,15 @@ def main():
         sys.exit(1)
 
     run_id = args.run_number
-    median_qped, additional_nsb_rate, newconfig = find_tailcuts(input_dir,
-                                                                run_id)
+    median_qt95_qped, additional_nsb_rate, newconfig = find_tailcuts(input_dir,
+                                                                     run_id)
 
     json_filename = Path(output_dir, f'dl1ab_Run{run_id:05d}.json')
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
                  'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
                 json_filename, overwrite=True)
-    log.info(f'\nMedian pedestal charge: {median_qped:.3f} p.e.')
+    log.info(f'\nMedian of 95% quantile of pedestal charge:'
+             f' {median_qt95_qped:.3f} p.e.')
     log.info('\nCleaning settings:')
     log.info(newconfig)
     log.info('\nWritten to:')

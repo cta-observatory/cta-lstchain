@@ -54,15 +54,19 @@ def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
 
 def find_tailcuts(input_dir, run_number):
     """
-    This functions uses DL1 files to determine tailcuts which are adequate
-    for the bulk of the pixels in a given run. It does so simply based on the
-    median (for the whole camera) of the median pixel charge for pedestal
-    events.
+    This function uses DL1 files to determine tailcuts which are adequate
+    for the bulk of the pixels in a given run. The script also returns the
+    suggested NSB adjustment needed in the "dark-sky" MC to match the data.
+    The function uses the median (for the whole camera, excluding outliers)
+    of the 95% quantile of the pixel charge for pedestal events to deduce the
+    NSB level. It is good to use a large quantile of the pixel charge
+    distribution (vs. e.g. using the median) because what matters for having
+    a relaistic noise simulation is the tail on the right-side, i.e. for
+    large pulses.
     For reasons of stability & simplicity of analysis, we cannot decide the
-    cleaning levels on a subrun-by-subrun basis. We select values which are
-    valid for the whole run.
-    The script also returns the suggested NSB adjustment needed in the
-    "dark-sky" MC to match the data.
+    cleaning levels (or the NSB tuning) on a subrun-by-subrun basis. We select
+    values which are more or less valid for the whole run.
+
     The script will process a subset of the subruns (~10, hardcoded) of the run,
     distributed uniformly through it.
 
@@ -97,7 +101,7 @@ def find_tailcuts(input_dir, run_number):
 
     # Minimum number of interleaved pedestals in subrun to proceed with
     # calculation:
-    min_number_of_ped_events = 10
+    min_number_of_ped_events = 100
 
     # Minimum number of valid pixels to consider the calculation of NSB level
     # acceptable:
@@ -113,7 +117,7 @@ def find_tailcuts(input_dir, run_number):
 
     number_of_pedestals = []
     usable_pixels = []
-    median_ped_median_pix_charge = []
+    median_ped_qt95_pix_charge = []
 
     for dl1_file in dl1_files:
         log.info('\nInput file: %s', dl1_file)
@@ -123,7 +127,7 @@ def find_tailcuts(input_dir, run_number):
         pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
 
         num_pedestals = pedestal_mask.sum()
-        if  num_pedestals < min_number_of_ped_events:
+        if num_pedestals < min_number_of_ped_events:
             log.warning(f'    Too few interleaved pedestals ('
                         f'{num_pedestals}) - skipped subrun!')
             continue
@@ -142,50 +146,50 @@ def find_tailcuts(input_dir, run_number):
 
         charges_data = data_images['image']
         charges_pedestals = charges_data[pedestal_mask]
-        # pixel-wise median charge through the subrun (#pixels):
-        median_pix_charge = np.nanmedian(charges_pedestals, axis=0)
+        # pixel-wise 95% quantile of ped pix charge through the subrun
+        # (#pixels):
+        qt95_pix_charge = np.nanquantile(charges_pedestals, 0.95, axis=0)
         # ignore pixels with 0 signal:
-        median_pix_charge = np.where(median_pix_charge > 0,
-                                     median_pix_charge, np.nan)
+        qt95_pix_charge = np.where(qt95_pix_charge > 0, qt95_pix_charge, np.nan)
         # median of medians accross camera:
-        median_median_pix_charge = np.nanmedian(median_pix_charge)
-        # mean abs deviation of pixel medians:
-        median_pix_charge_dev = median_abs_deviation(median_pix_charge,
-                                                     nan_policy='omit')
+        median_qt95_pix_charge = np.nanmedian(qt95_pix_charge)
+        # mean abs deviation of pixel qt95 values:
+        qt95_pix_charge_dev = median_abs_deviation(qt95_pix_charge,
+                                                   nan_policy='omit')
 
         # Just a cut to remove outliers (pixels):
-        outliers = (np.abs(median_pix_charge - median_median_pix_charge) /
-                    median_pix_charge_dev) > mad_max
+        outliers = (np.abs(qt95_pix_charge - median_qt95_pix_charge) /
+                    qt95_pix_charge_dev) > mad_max
 
         if outliers.sum() > 0:
             removed_fraction = outliers.sum() / outliers.size
             log.info(f'    Removed {removed_fraction:.2%} of pixels (outliers) '
                      f'from pedestal median calculation')
 
-        # Now compute the median (for the whole camera) of the medians (for
+        # Now compute the median (for the whole camera) of the qt95's (for
         # each pixel) of the charges in pedestal events. Use only reliable
         # pixels for this, and exclude outliers:
-        n_valid_pixels = np.isfinite(median_pix_charge[reliable_pixels]).sum()
+        n_valid_pixels = np.isfinite(qt95_pix_charge[reliable_pixels]).sum()
         if n_valid_pixels < min_number_of_valid_pixels:
             logging.warning(f'    Too few valid pixels ({n_valid_pixels}) for '
                             f'calculation!')
-            median_ped_median_pix_charge.append(np.nan)
+            median_ped_qt95_pix_charge.append(np.nan)
         else:
-            median_ped_median_pix_charge.append(np.nanmedian(
-                    median_pix_charge[reliable_pixels & ~outliers]))
-
+            median_ped_qt95_pix_charge.append(np.nanmedian(qt95_pix_charge[
+                                                               reliable_pixels &
+                                                               ~outliers]))
     # convert to ndarray:
-    median_ped_median_pix_charge = np.array(median_ped_median_pix_charge)
+    median_ped_qt95_pix_charge = np.array(median_ped_qt95_pix_charge)
     number_of_pedestals = np.array(number_of_pedestals)
 
     # Now compute the median for all processed subruns, which is more robust
     # against e.g. subruns affected by car flashes. We exclude subruns
     # which have less than half of the median statistics per subrun.
     good_stats = number_of_pedestals > 0.5 * np.median(number_of_pedestals)
-    qped = np.nanmedian(median_ped_median_pix_charge[good_stats])
+    qped = np.nanmedian(median_ped_qt95_pix_charge[good_stats])
     # Now we also remove outliers (subruns) if any:
-    qped_dev = median_abs_deviation(median_ped_median_pix_charge[good_stats])
-    not_outlier = (np.abs(median_ped_median_pix_charge - qped) /
+    qped_dev = median_abs_deviation(median_ped_qt95_pix_charge[good_stats])
+    not_outlier = (np.abs(median_ped_qt95_pix_charge - qped) /
                    qped_dev) < mad_max
 
     if (~good_stats).sum() > 0:
@@ -198,7 +202,7 @@ def find_tailcuts(input_dir, run_number):
                  f'calculation')
 
     # recompute with good-statistics and well-behaving runs:
-    qped = np.nanmedian(median_ped_median_pix_charge[good_stats & not_outlier])
+    qped = np.nanmedian(median_ped_qt95_pix_charge[good_stats & not_outlier])
     log.info(f'\nNumber of subruns used in calculations: '
              f'{(good_stats & not_outlier).sum()}')
 
@@ -217,12 +221,12 @@ def find_tailcuts(input_dir, run_number):
     return qped, additional_nsb_rate, newconfig
 
 
-def pic_th(mean_ped):
+def pic_th(qt95_ped):
     """
     Parameters
     ----------
-    mean_ped: `float`
-        mean pixel charge in pedestal events (for the standard
+    qt95_ped: `float`
+        95% quantile of pixel charge in pedestal events (for the standard
         LocalPeakWindowSearch algo & settings in lstchain)
 
     Returns
@@ -231,30 +235,30 @@ def pic_th(mean_ped):
         recommended picture threshold for image cleaning (from a table)
 
     """
-    mp_edges = [2.23, 2.88, 3.53, 4.19, 4.84]
+    mp_edges = np.array([5.85, 7.25, 8.75, 10.3, 11.67])
     picture_threshold = np.array([8, 10, 12, 14, 16, 18])
 
-    if mean_ped >= mp_edges[-1]:
+    if qt95_ped >= mp_edges[-1]:
         return picture_threshold[-1]
-    return picture_threshold[np.where(mp_edges > mean_ped)[0][0]]
+    return picture_threshold[np.where(mp_edges > qt95_ped)[0][0]]
 
 
-def get_nsb(median_ped):
+def get_nsb(qt95_ped):
     """
     Parameters
     ----------
-    median_ped: `float`
-        median pixel charge in pedestal events
+    qt95_ped: `float`
+        95% quantile of pixel charge in pedestal events
 
     Returns
     -------
         `float`
         (from a parabolic parametrization) the recommended additional NSB
         (in p.e. / ns) that has to be added to the "dark MC" waveforms in
-        order to match the data for which the median pedestal charge is
-        median_ped
+        order to match the data for which the 95% quantile of pedestal pixel
+        charge is qt95_ped
 
     """
-    params = [1.43121978, 0.31553277, 0.07626393]
-    return (params[1] * (median_ped - params[0]) +
-            params[2] * (median_ped - params[0]) ** 2)
+    params = [3.95147396, 0.12642504, 0.01718627]
+    return (params[1] * (qt95_ped - params[0]) +
+            params[2] * (qt95_ped - params[0]) ** 2)
