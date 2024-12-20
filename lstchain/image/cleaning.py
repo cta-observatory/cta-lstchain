@@ -255,6 +255,6 @@ def get_nsb(median_ped):
         median_ped
 
     """
-    params = [1.39498756, 0.28761336, 0.0858798 ]
+    params = [1.43121978, 0.31553277, 0.07626393]
     return (params[1] * (median_ped - params[0]) +
             params[2] * (median_ped - params[0]) ** 2)
