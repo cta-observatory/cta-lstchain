@@ -142,29 +142,29 @@ def find_tailcuts(input_dir, run_number):
 
         charges_data = data_images['image']
         charges_pedestals = charges_data[pedestal_mask]
-        # pixel-wise median charge through the subrun:
+        # pixel-wise median charge through the subrun (#pixels):
         median_pix_charge = np.nanmedian(charges_pedestals, axis=0)
-        median_pix_charge_dev = median_abs_deviation(charges_pedestals,
-                                                     axis=0,
+        # ignore pixels with 0 signal:
+        median_pix_charge = np.where(median_pix_charge > 0,
+                                     median_pix_charge, np.nan)
+        # median of medians accross camera:
+        median_median_pix_charge = np.nanmedian(median_pix_charge)
+        # mean abs deviation of pixel medians:
+        median_pix_charge_dev = median_abs_deviation(median_pix_charge,
                                                      nan_policy='omit')
-        # Avoid later warnings from empty pixels:
-        median_pix_charge_dev = np.where(median_pix_charge_dev > 0,
-                                         median_pix_charge_dev, np.nan)
+
         # Just a cut to remove outliers (pixels):
-        outliers = (np.abs(charges_pedestals - median_pix_charge) /
+        outliers = (np.abs(median_pix_charge - median_median_pix_charge) /
                     median_pix_charge_dev) > mad_max
+
         if outliers.sum() > 0:
             removed_fraction = outliers.sum() / outliers.size
             log.info(f'    Removed {removed_fraction:.2%} of pixels (outliers) '
                      f'from pedestal median calculation')
-            # Replace outliers by nans:
-            charges_pedestals = np.where(outliers, np.nan, charges_pedestals)
-            # Recompute the pixel-wise medians ignoring the outliers:
-            median_pix_charge = np.nanmedian(charges_pedestals, axis=0)
 
         # Now compute the median (for the whole camera) of the medians (for
         # each pixel) of the charges in pedestal events. Use only reliable
-        # pixels for this:
+        # pixels for this, and exclude outliers:
         n_valid_pixels = np.isfinite(median_pix_charge[reliable_pixels]).sum()
         if n_valid_pixels < min_number_of_valid_pixels:
             logging.warning(f'    Too few valid pixels ({n_valid_pixels}) for '
@@ -172,7 +172,7 @@ def find_tailcuts(input_dir, run_number):
             median_ped_median_pix_charge.append(np.nan)
         else:
             median_ped_median_pix_charge.append(np.nanmedian(
-                    median_pix_charge[reliable_pixels]))
+                    median_pix_charge[reliable_pixels & ~outliers]))
 
     # convert to ndarray:
     median_ped_median_pix_charge = np.array(median_ped_median_pix_charge)
