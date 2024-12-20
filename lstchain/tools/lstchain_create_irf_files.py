@@ -401,11 +401,11 @@ class IRFFITSWriter(Tool):
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
             # The 4 is semi-arbitray. This keeps the same precision as the previous code
             mean_fov_offset = np.round(get_mc_fov_offset(self.mc_particle["gamma"]["file"]), 4)
-            self.log.info(f"Single offset for point like gamma MC with offset {mean_fov_offset}")
             fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
+            self.log.info(f"Single offset for point like gamma MC with offset {mean_fov_offset}")
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
-            self.log.info("Multiple offset for diffuse gamma MC")
+            self.log.info(f"Multiple offset for diffuse gamma MC : {fov_offset_bins}")
 
             if np.max(fov_offset_bins) > gammas["true_source_fov_offset"].max():
                 self.log.warning(f'The highest FoV offset bin ({np.max(fov_offset_bins)}) is larger than the maximum offset simulated ({gammas["true_source_fov_offset"].max()})')
