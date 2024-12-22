@@ -50,13 +50,18 @@ def main():
     log.setLevel(logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
-    log_file = args.log_file
-    if log_file is not None:
-        handler = logging.FileHandler(log_file, mode='w')
-        logging.getLogger().addHandler(handler)
-
+    run_id = args.run_number
     output_dir = args.output_dir.absolute()
     output_dir.mkdir(exist_ok=True, parents=True)
+
+    log_file = args.log_file
+    if log_file is None:
+        log_file = f'log_find_tailcuts_Run{run_id:05d}.log'
+
+    log_file = Path(output_dir, log_file)
+    handler = logging.FileHandler(log_file, mode='w')
+    logging.getLogger().addHandler(handler)
+
     input_dir = args.input_dir.absolute()
 
     if not input_dir.exists():
@@ -67,7 +72,6 @@ def main():
         logging.error('Input directory is not a directory!')
         sys.exit(1)
 
-    run_id = args.run_number
     median_qt95_qped, additional_nsb_rate, newconfig = find_tailcuts(input_dir,
                                                                      run_id)
 
