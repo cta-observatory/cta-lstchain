@@ -6,8 +6,8 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Code snippets &mdash; lstchain 0.10.15.dev15+g289b0326 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+  <title>Code snippets &mdash; lstchain 0.10.15.dev18+gd8d30dd9 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
@@ -16,7 +16,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=5d335e72"></script>
+      <script src="_static/documentation_options.js?v=36ec9412"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -103,7 +103,7 @@
 <h2>Print lstchain version used to produce a file<a class="headerlink" href="#print-lstchain-version-used-to-produce-a-file" title="Link to this heading"></a></h2>
 <p>The lstchain version is stored in the file metadata. You can print it with the following command:</p>
 <p>In python:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tables</span>
 <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
 <span class="n">file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">[</span><span class="s1">&#39;LSTCHAIN_VERSION&#39;</span><span class="p">])</span>
@@ -124,8 +124,8 @@ You can print them with the same commands, replacing LSTCHAIN_VERSION by CTAPIPE
 <p>The configuration file used by a given script/tool is stored in the metadata of the output file. Note that the
 configuration file can contain more parameters than the ones used in a given analysis stage as the same configuration
 file can be used for several stages.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
-<span class="kn">import</span> <span class="nn">yaml</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tables</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
 <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
 <span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dl1</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">telescope</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">LST_LSTCam</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">])</span>
@@ -139,8 +139,8 @@ file can be used for several stages.</p>
 <h2>Print calibration and auxiliary files used by the script/tool<a class="headerlink" href="#print-calibration-and-auxiliary-files-used-by-the-script-tool" title="Link to this heading"></a></h2>
 <p>For observed data, the calibration and auxiliary files used to produce DL1 data are stored
 in the metadata of the DL1 files. You can print them with the following command:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
-<span class="kn">import</span> <span class="nn">yaml</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tables</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
 <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
 <span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dl1</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">telescope</span><span class="o">.</span><span class="n">monitoring</span><span class="o">.</span><span class="n">calibration</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">])</span>
@@ -168,7 +168,7 @@ in the metadata of the DL1 files. You can print them with the following command:
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 23 Dec 2024 10:21.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 08 Jan 2025 15:41.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
