@@ -230,8 +230,8 @@ def main():
         optics = subarray_info.tel[tel_id].optics
         camera_geom = subarray_info.tel[tel_id].camera.geometry
     except OSError:
-        print("Subarray description table is not readable because of version incompatibility.")
-        print("The standard LST optics and camera geometry will be used.")
+        log.warning("Subarray description table is not readable because of version incompatibility.")
+        log.warning("The standard LST optics and camera geometry will be used.")
         optics = OPTICS
         camera_geom = load_camera_geometry()
 
