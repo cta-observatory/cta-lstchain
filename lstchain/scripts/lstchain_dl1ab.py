@@ -27,7 +27,8 @@ from ctapipe.image import (
     apply_time_delta_cleaning,
 )
 from ctapipe.instrument import SubarrayDescription
-from ctapipe_io_lst import constants
+from ctapipe_io_lst import constants, OPTICS, load_camera_geometry
+
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.image.cleaning import apply_dynamic_cleaning
@@ -223,10 +224,16 @@ def main():
     if "delta_time" in config[clean_method_name]:
         delta_time = config[clean_method_name]["delta_time"]
 
-    subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-    optics = subarray_info.tel[tel_id].optics
-    camera_geom = subarray_info.tel[tel_id].camera.geometry
+    try:
+        subarray_info = SubarrayDescription.from_hdf(args.input_file)
+        optics = subarray_info.tel[tel_id].optics
+        camera_geom = subarray_info.tel[tel_id].camera.geometry
+    except OSError:
+        log.warning("Subarray description table is not readable because of version incompatibility.")
+        log.warning("The standard LST optics and camera geometry will be used.")
+        optics = OPTICS
+        camera_geom = load_camera_geometry()
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = {
