@@ -69,6 +69,13 @@
     "pointing_wise_weights": true
   },
 
+  "random_forest_zd_interpolation": {
+    "interpolate_energy": true,
+    "interpolate_gammaness": true,
+    "interpolate_direction": true,
+    "DL1_training_dir": null
+  },
+
   "random_forest_energy_regressor_args": {
     "max_depth": 30,
     "min_samples_leaf": 10,
