@@ -195,7 +195,7 @@ def find_tailcuts(input_dir, run_number):
         qped = np.nan
         qped_dev = np.nan
         additional_nsb_rate = np.nan
-        log.error('No valid computation was possible with any of the processed subruns!')
+        log.error('No valid computation was possible for run {run_number} with any of the processed subruns!')
         return qped, additional_nsb_rate, None
 
     qped = np.nanmedian(median_ped_qt95_pix_charge[good_stats])
