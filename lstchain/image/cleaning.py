@@ -116,7 +116,6 @@ def find_tailcuts(input_dir, run_number):
                                     max_number_of_processed_subruns)]
 
     number_of_pedestals = []
-    usable_pixels = []
     median_ped_qt95_pix_charge = []
 
     for dl1_file in dl1_files:
@@ -141,8 +140,12 @@ def find_tailcuts(input_dir, run_number):
         unusable_hg = data_calib['unusable_pixels'][0][0]
         unusable_lg = data_calib['unusable_pixels'][0][1]
 
-        reliable_pixels = ~(unusable_hg | unusable_lg)
-        usable_pixels.append(reliable_pixels)
+        unreliable_pixels = unusable_hg | unusable_lg
+        if unreliable_pixels.sum() > 0:
+            log.info(f'    Removed {unreliable_pixels.sum()/unreliable_pixels.size:.2%} of pixels '
+                     f'    due to unreliable calibration!')
+        
+        reliable_pixels = ~unreliable_pixels
 
         charges_data = data_images['image']
         charges_pedestals = charges_data[pedestal_mask]
