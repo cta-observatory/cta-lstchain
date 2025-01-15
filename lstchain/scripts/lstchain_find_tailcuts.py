@@ -74,7 +74,10 @@ def main():
 
     median_qt95_qped, additional_nsb_rate, newconfig = find_tailcuts(input_dir,
                                                                      run_id)
-
+    if newconfig is None:
+        logging.error('lstchain_find_tailcuts failed!')
+        sys.exit(1)
+  
     json_filename = Path(output_dir, f'dl1ab_Run{run_id:05d}.json')
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
                  'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
