@@ -143,7 +143,7 @@ def find_tailcuts(input_dir, run_number):
         unreliable_pixels = unusable_hg | unusable_lg
         if unreliable_pixels.sum() > 0:
             log.info(f'    Removed {unreliable_pixels.sum()/unreliable_pixels.size:.2%} of pixels '
-                     f'    due to unreliable calibration!')
+                     f'due to unreliable calibration!')
         
         reliable_pixels = ~unreliable_pixels
 
