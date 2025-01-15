@@ -186,7 +186,17 @@ def find_tailcuts(input_dir, run_number):
     # against e.g. subruns affected by car flashes. We exclude subruns
     # which have less than half of the median statistics per subrun.
     good_stats = number_of_pedestals > 0.5 * np.median(number_of_pedestals)
+
+    # First check if we have any valid subruns at all:
+    if np.isfinite(median_ped_qt95_pix_charge[good_stats]).sum() ==  0:
+        qped = np.nan
+        qped_dev = np.nan
+        additional_nsb_rate = np.nan
+        log.error('No valid computation was possible with any of the processed subruns!')
+        return qped, additional_nsb_rate, None
+
     qped = np.nanmedian(median_ped_qt95_pix_charge[good_stats])
+    not_outlier = np.zeros(len(median_ped_qt95_pix_charge), dtype='bool')
     # Now we also remove outliers (subruns) if any:
     qped_dev = median_abs_deviation(median_ped_qt95_pix_charge[good_stats])
     not_outlier = (np.abs(median_ped_qt95_pix_charge - qped) /
