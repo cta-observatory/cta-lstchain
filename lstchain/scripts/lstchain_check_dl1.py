@@ -85,6 +85,11 @@ def main():
     geomlogger = logging.getLogger('ctapipe.instrument.camera')
     geomlogger.setLevel(logging.ERROR)
 
+    # Avoid provenance info messages ("call start_activity") from call 
+    # to load_camera_geometry:
+    provlogger = logging.getLogger('ctapipe.core.provenance')
+    provlogger.setLevel(logging.WARNING)
+
     if len(unknown) > 0:
         ukn = ''
         for s in unknown:
