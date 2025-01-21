@@ -97,6 +97,7 @@ def main():
         logger.error('Unknown options: ' + ukn)
         exit(-1)
 
+    logger.info('Executing {}'.format(__name__))
     logger.info('input files: {}'.format(args.input_file))
     logger.info('output directory: {}'.format(args.output_dir))
 
