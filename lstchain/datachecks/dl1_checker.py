@@ -50,7 +50,7 @@ from lstchain.paths import (
 )
 
 
-def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False):
+def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False, muons_dir=None):
     """
     Check DL1 files
 
@@ -177,15 +177,18 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
                         [trigger_source.encode('ascii')])
     file.close()
 
-    # do the plots and save them to a pdf file. We will look for the muons fits
-    # files in the same directory as the DL1 files (assuming all of them are
-    # in the same directory as the first one!)
+    # do the plots and save them to a pdf file
     if create_pdf:
+        if muons_dir is None:
+            # if not provided, assume muons .fits files are in the 
+            # same directory as the DL1 files:
+            muons_dir = os.path.dirname(filenames[0])
+        
         plot_datacheck(
             datacheck_filename,
             output_path,
             batch,
-            muons_dir=os.path.dirname(filenames[0]),
+            muons_dir=muons_dir,
             tel_id=first_file.tel_id
         )
 

@@ -114,7 +114,8 @@ def main():
 
     # otherwise, do the full analysis to produce the dl1_datacheck h5 file
     # and the associated pdf:
-    check_dl1(filenames, args.output_dir, args.max_cores, not args.omit_pdf, args.batch)
+    check_dl1(filenames, args.output_dir, args.max_cores, not args.omit_pdf, 
+              args.batch, args.muons_dir)
 
 
 if __name__ == '__main__':
