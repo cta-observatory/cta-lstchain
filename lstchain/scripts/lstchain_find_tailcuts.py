@@ -80,7 +80,8 @@ def main():
   
     json_filename = Path(output_dir, f'dl1ab_Run{run_id:05d}.json')
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
-                 'dynamic_cleaning': get_standard_config()['dynamic_cleaning']},
+                 'dynamic_cleaning': get_standard_config()['dynamic_cleaning'],
+                 'tailcut': {}},
                 json_filename, overwrite=True)
     log.info(f'\nMedian of 95% quantile of pedestal charge:'
              f' {median_qt95_qped:.3f} p.e.')
