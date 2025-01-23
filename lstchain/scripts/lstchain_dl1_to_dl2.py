@@ -165,8 +165,8 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
             dirs = glob.glob(str(dl1_training_dir) + '/node_corsika*')
             training_az_deg, training_zd_deg = get_training_directions(dirs)
             training_pointings = np.array([training_az_deg, training_zd_deg]).T
-            logger.warning('RF training pointings (az_deg, zd_deg):')
-            logger.warning(training_pointings)
+            logger.info('RF training pointings (az_deg, zd_deg):')
+            logger.info(training_pointings)
         else:
             logger.warning('DL1 training directory not found...')
             logger.warning('Switching off RF interpolation with zenith!')
