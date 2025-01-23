@@ -214,6 +214,15 @@ def find_tailcuts(input_dir, run_number):
                  f'(out of {not_outlier.size}) from pedestal median '
                  f'calculation')
 
+    # If less than half of the processed files are valid for the final calculation,
+    # we declare it unsuccessful (data probably have problems):
+    if (good_stats & not_outlier).sum() < 0.5 * len(dl1_files):
+        qped = np.nan
+        additional_nsb_rate = np.nan
+        log.error(f'Calculation failed for more than half of the processed subruns!')
+        return qped, additional_nsb_rate, None
+
+           
     # recompute with good-statistics and well-behaving runs:
     qped = np.nanmedian(median_ped_qt95_pix_charge[good_stats & not_outlier])
     log.info(f'\nNumber of subruns used in calculations: '
