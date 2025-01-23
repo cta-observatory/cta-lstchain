@@ -79,20 +79,14 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
-    interpolate_energy = False
-    interpolate_gammaness = False
-    interpolate_direction = False
     # Read in the settings for the interpolation of Random Forest predictions
     # in cos(zd). If activated this avoids the jumps of performance produced
     # by the discrete set of pointings in the RF training sample.
     if 'random_forest_zd_interpolation' in config.keys():
         zdinter = config['random_forest_zd_interpolation']
-        if 'interpolate_energy' in zdinter.keys():
-            interpolate_energy = zdinter['interpolate_energy']
-        if 'interpolate_gammaness' in zdinter.keys():
-            interpolate_gammaness = zdinter['interpolate_gammaness']
-        if 'interpolate_direction' in zdinter.keys():
-            interpolate_direction = zdinter['interpolate_direction']
+        interpolate_energy = zdinter.get('interpolate_energy', False)
+        interpolate_gammaness = zdinter.get('interpolate_gammaness', False)
+        interpolate_direction = zdinter.get('interpolate_direction', False)
 
     interpolate_rf = {'energy_regression': interpolate_energy,
                       'particle_classification': interpolate_gammaness,
