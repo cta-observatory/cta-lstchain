@@ -219,7 +219,7 @@ def find_tailcuts(input_dir, run_number):
     if (good_stats & not_outlier).sum() < 0.5 * len(dl1_files):
         qped = np.nan
         additional_nsb_rate = np.nan
-        log.error(f'Calculation failed for more than half of the processed subruns!')
+        log.error(f'Calculation failed for more than half of the processed subruns of run {run_number}!')
         return qped, additional_nsb_rate, None
 
            
