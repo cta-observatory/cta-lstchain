@@ -14,6 +14,7 @@ import logging
 import numpy as np
 import pandas as pd
 import astropy.units as u
+from astropy.table import Table
 from astropy.coordinates import Angle
 from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
@@ -75,44 +76,6 @@ parser.add_argument('--config', '-c',
                     default=None,
                     required=False)
 
-def get_training_directions(training_dirs):
-    """
-    This function obtains the pointings of the telescope in the RF training
-    sample.
-
-    Parameters:
-    -----------
-    training_dirs: array of strings, each element is the name of one of the
-    folders containing the DL1 files used in the training. Order is
-    irrelevant. The folders' names are assumed to follow this pattern:
-
-    node_corsika_theta_34.367_az_69.537_
-
-    (theta is zenith; az is azimuth. Units are degrees, note that the values'
-    field lengths are not fixed)
-
-    Returns: training_az_deg, training_zd_deg arrays containing the azimuth and
-    zenith of the training nodes (in degrees)
-
-    """
-
-    training_zd_deg = []
-    training_az_deg = []
-
-    for dir in training_dirs:
-        c1 = dir.find('_theta_') + 7
-        c2 = dir.find('_az_', c1) + 4
-        c3 = dir.find('_', c2)
-        training_zd_deg.append(float(dir[c1:c2 - 4]))
-        training_az_deg.append(float(dir[c2:c3]))
-
-    training_zd_deg = np.array(training_zd_deg)
-    training_az_deg = np.array(training_az_deg)
-    # The order of the pointings is irrelevant
-
-    return training_az_deg, training_zd_deg
-
-
 def apply_to_file(filename, models_dict, output_dir, config, models_path):
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
@@ -137,7 +100,6 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
                       'disp': interpolate_direction
                       }
 
-    dl1_training_dir = None
     training_pointings = None
     if True in interpolate_rf.values():
         logger.info('Cos(zenith) interpolation will be used in:')
@@ -148,33 +110,18 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
         if interpolate_direction:
             logger.info('   direction reconstruction Random Forest')
 
-        if 'random_forest_zd_interpolation' in config.keys():
-            zdinter = config['random_forest_zd_interpolation']
-            if 'dl1_training_dir' in zdinter.keys():
-                dl1_training_dir = zdinter['dl1_training_dir']
-
-        if dl1_training_dir is None:
-            # Build name of DL1 MC training files assuming standard pattern:
-            dummy = models_path.as_posix().replace('/data/models', '/data/mc/DL1')
-            dl1_training_dir = (Path(dummy[:dummy.rfind('/dec')] +
-                                     '/TrainingDataset/GammaDiffuse/' +
-                                     dummy[dummy.rfind('/dec') + 1:]))
-
         # Obtain the training pointings, needed for the RF interpolation:
-        if dl1_training_dir.is_dir():
-            dirs = glob.glob(str(dl1_training_dir) + '/node_corsika*')
-            training_az_deg, training_zd_deg = get_training_directions(dirs)
-            training_pointings = np.array([training_az_deg, training_zd_deg]).T
-            logger.info('RF training pointings (az_deg, zd_deg):')
+        training_pointings_path = Path(models_path, 'training_dirs.ecsv')
+        if training_pointings_path.is_file():
+            training_pointings = Table.read(training_pointings_path)
+            logger.info('RF training pointings:')
             logger.info(training_pointings)
         else:
-            logger.warning('DL1 training directory not found...')
+            logger.warning(f'{training_pointings_path} not found!')
             logger.warning('Switching off RF interpolation with zenith!')
             interpolate_rf['energy_regression'] = False
             interpolate_rf['particle_classification'] = False
             interpolate_rf['disp'] = False
-
-
 
     if 'lh_fit_config' in config.keys():
         lhfit_data = pd.read_hdf(filename, key=dl1_likelihood_params_lstcam_key)

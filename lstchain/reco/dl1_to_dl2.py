@@ -791,7 +791,7 @@ def apply_models(dl1,
     interpolate_rf: dictionary. Contains three booleans, 'energy_regression',
         'particle_classification', 'disp', indicating which RF predictions
         should be interpolated linearly in cos(zenith)
-    training_pointings: array (# of pointings, 2) azimuth, zenith in degrees;
+    training_pointings: astropy Table azimuth (az), zenith (zd)
          pointings of the MC sample used in the training. Needed for the
          interpolation of RF predictions.
 
@@ -830,8 +830,8 @@ def apply_models(dl1,
 
     if True in interpolate_rf.values():
         # Interpolation of RF predictions is switched on
-        training_az_deg = training_pointings[:, 0]
-        training_zd_deg = training_pointings[:, 1]
+        training_az_deg = training_pointings['az'].to(u.deg).value
+        training_zd_deg = training_pointings['zd'].to(u.deg).value
         dl2 = add_zd_interpolation_info(dl2, training_zd_deg, training_az_deg)
 
     # Reconstruction of Energy and disp_norm distance
