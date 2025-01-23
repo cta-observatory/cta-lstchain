@@ -72,16 +72,11 @@ def add_zd_interpolation_info(dl2table, training_pointings):
     training_pointings: astropy Table containing the pointings (zd,
     az) of the MC training nodes
 
-    training_az_deg: array containing the azimuth angles (in deg) for the
-    MC training nodes (a given index in bith arrays corresponds to a given MC
-    pointing)
-
     Returns:
     -------
     DL2 pandas dataframe with additional columns alt0, alt1, w0, w1
 
     """
-    pd.options.mode.copy_on_write = True
 
     alt_tel = dl2table['alt_tel']
     az_tel  = dl2table['az_tel']
@@ -110,8 +105,8 @@ def add_zd_interpolation_info(dl2table, training_pointings):
     c1 = np.cos(np.pi / 2 - second_closest_alt)
     cos_tel_zd = np.cos(np.pi / 2 - alt_tel)
 
-    # Compute the weights that multiplied times the RF predictions at the
-    # closest (0) and 2nd-closest (1) nodes (in alt_tel) result in the
+    # Compute the weights w0, w1 that multiplied times the RF predictions at
+    # the closest (0) and 2nd-closest (1) nodes (in alt_tel) result in the
     # interpolated value. Take care of cases in which the two closest nodes
     # happen to have the same zenith (or very close)! (if so, both nodes are
     # set to have equal weight in the interpolation)
@@ -120,10 +115,11 @@ def add_zd_interpolation_info(dl2table, training_pointings):
     w0 = 1 - w1
 
     # Update the dataframe:
-    dl2table = dl2table.assign(alt0=pd.Series(closest_alt).values,
-                               alt1=pd.Series(second_closest_alt).values,
-                               w0=pd.Series(w0).values,
-                               w1=pd.Series(w1).values)
+    with pd.option_context('mode.copy_on_write', True):
+        dl2table = dl2table.assign(alt0=pd.Series(closest_alt).values,
+                                   alt1=pd.Series(second_closest_alt).values,
+                                   w0=pd.Series(w0).values,
+                                   w1=pd.Series(w1).values)
 
     return dl2table
 
@@ -171,29 +167,20 @@ def predict_with_zd_interpolation(rf, param_array, features):
     # Type of RF (classifier or regressor):
     is_classifier = isinstance(rf, RandomForestClassifier)
 
-    # keep original alt_tel values:
-    param_array.rename(columns={"alt_tel": "original_alt_tel"}, inplace=True)
-
-    # Set alt_tel to closest MC training node's alt:
-    param_array.rename(columns={"alt0": "alt_tel"}, inplace=True)
+    features_copy = features.copy()
+    alt_index_in_features = features_copy.index('alt_tel')
+    # First use alt_tel of closest MC training node:
+    features_copy[alt_index_in_features] = 'alt0'
     if is_classifier:
-        prediction_0 = rf.predict_proba(param_array[features])
+        prediction_0 = rf.predict_proba(param_array[features_copy])
     else:
-        prediction_0 = rf.predict(param_array[features])
-
-    param_array.rename(columns={"alt_tel": "alt0"}, inplace=True)
-
-    # set alt_tel value to that of second closest node:
-    param_array.rename(columns={"alt1": "alt_tel"}, inplace=True)
+        prediction_0 = rf.predict(param_array[features_copy])
+    # Now the alt_tel value of the second-closest node:
+    features_copy[alt_index_in_features] = 'alt1'
     if is_classifier:
-        prediction_1 = rf.predict_proba(param_array[features])
+        prediction_1 = rf.predict_proba(param_array[features_copy])
     else:
-        prediction_1 = rf.predict(param_array[features])
-
-    param_array.rename(columns={"alt_tel": "alt1"}, inplace=True)
-
-    # Put back original value of alt_tel:
-    param_array.rename(columns={"original_alt_tel": "alt_tel"}, inplace=True)
+        prediction_1 = rf.predict(param_array[features_copy])
 
     # Interpolated RF prediction:
     if is_classifier:
