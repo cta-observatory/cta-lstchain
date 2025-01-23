@@ -14,6 +14,7 @@ import astropy.units as u
 import joblib
 import numpy as np
 import pandas as pd
+import warnings
 from astropy.coordinates import SkyCoord, Angle
 from astropy.time import Time
 from pathlib import Path
@@ -78,8 +79,8 @@ def add_zd_interpolation_info(dl2table, training_pointings):
 
     """
 
-    alt_tel = dl2table['alt_tel']
-    az_tel  = dl2table['az_tel']
+    alt_tel = np.array(dl2table['alt_tel'])
+    az_tel  = np.array(dl2table['az_tel'])
 
     training_alt_rad = np.pi / 2 - training_pointings['zd'].to(u.rad).value
     training_az_rad = training_pointings['az'].to(u.rad).value
@@ -169,18 +170,24 @@ def predict_with_zd_interpolation(rf, param_array, features):
 
     features_copy = features.copy()
     alt_index_in_features = features_copy.index('alt_tel')
-    # First use alt_tel of closest MC training node:
-    features_copy[alt_index_in_features] = 'alt0'
-    if is_classifier:
-        prediction_0 = rf.predict_proba(param_array[features_copy])
-    else:
-        prediction_0 = rf.predict(param_array[features_copy])
-    # Now the alt_tel value of the second-closest node:
-    features_copy[alt_index_in_features] = 'alt1'
-    if is_classifier:
-        prediction_1 = rf.predict_proba(param_array[features_copy])
-    else:
-        prediction_1 = rf.predict(param_array[features_copy])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        # This is just to avoid the RFs to warn about the features
+        # unnamed (passed as an array). We do this because we want to replace
+        # alt_tel by alt0, then by alt1...
+        # First use alt_tel of closest MC training node:
+        features_copy[alt_index_in_features] = 'alt0'
+        if is_classifier:
+            prediction_0 = rf.predict_proba(param_array[features_copy].to_numpy())
+        else:
+            prediction_0 = rf.predict(param_array[features_copy].to_numpy())
+        # Now the alt_tel value of the second-closest node:
+        features_copy[alt_index_in_features] = 'alt1'
+        if is_classifier:
+            prediction_1 = rf.predict_proba(param_array[features_copy].to_numpy())
+        else:
+            prediction_1 = rf.predict(param_array[features_copy].to_numpy())
 
     # Interpolated RF prediction:
     if is_classifier:
