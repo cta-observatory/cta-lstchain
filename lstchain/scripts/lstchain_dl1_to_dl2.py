@@ -7,7 +7,6 @@ Run lstchain_dl1_to_dl2 --help to see the options.
 """
 
 import argparse
-import glob
 from pathlib import Path
 import joblib
 import logging
