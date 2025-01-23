@@ -89,12 +89,10 @@ def add_zd_interpolation_info(dl2table, training_pointings):
     training_alt_rad = np.pi / 2 - training_pointings['zd'].to(u.rad).value
     training_az_rad = training_pointings['az'].to(u.rad).value
 
-    tiled_az = np.tile(az_tel,
-                       len(training_az_rad)).reshape(len(training_az_rad),
-                                                     len(dl2table)).T
-    tiled_alt = np.tile(alt_tel,
-                       len(training_alt_rad)).reshape(len(training_alt_rad),
-                                                      len(dl2table)).T
+    tiled_az = np.broadcast_to(az_tel[:, np.newaxis],
+                               (len(dl2table), len(training_az_rad)))
+    tiled_alt = np.broadcast_to(alt_tel[:, np.newaxis],
+                                (len(dl2table), len(training_az_rad)))
 
     delta_alt = np.abs(training_alt_rad - tiled_alt)
     # mask to select training nodes only on the same side of the source
