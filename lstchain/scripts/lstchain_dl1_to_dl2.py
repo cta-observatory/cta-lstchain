@@ -140,13 +140,13 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
     dl1_training_dir = None
     training_pointings = None
     if True in interpolate_rf.values():
-        logger.warning('Cos(zenith) interpolation will be used in:')
+        logger.info('Cos(zenith) interpolation will be used in:')
         if interpolate_energy:
-            logger.warning('   energy reconstruction Random Forest')
+            logger.info('   energy reconstruction Random Forest')
         if interpolate_gammaness:
-            logger.warning('   g/h classification Random Forest')
+            logger.info('   g/h classification Random Forest')
         if interpolate_direction:
-            logger.warning('   direction reconstruction Random Forest')
+            logger.info('   direction reconstruction Random Forest')
 
         if 'random_forest_zd_interpolation' in config.keys():
             zdinter = config['random_forest_zd_interpolation']
