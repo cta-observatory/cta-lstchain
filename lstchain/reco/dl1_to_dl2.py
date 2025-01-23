@@ -53,7 +53,7 @@ __all__ = [
     'update_disp_with_effective_focal_length'
 ]
 
-def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
+def add_zd_interpolation_info(dl2table, training_pointings):
     """
     Compute necessary parameters for the interpolation of RF predictions
     between the zenith pointings of the MC data in the training sample on
@@ -69,8 +69,8 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
     predictions at those two pointings, provide the interpolated result for
     each event's pointing
 
-    training_zd_deg: array containing the zenith distances (in deg) for the
-    MC training nodes
+    training_pointings: astropy Table containing the pointings (zd,
+    az) of the MC training nodes
 
     training_az_deg: array containing the azimuth angles (in deg) for the
     MC training nodes (a given index in bith arrays corresponds to a given MC
@@ -86,8 +86,8 @@ def add_zd_interpolation_info(dl2table, training_zd_deg, training_az_deg):
     alt_tel = dl2table['alt_tel']
     az_tel  = dl2table['az_tel']
 
-    training_alt_rad = np.pi / 2 - np.deg2rad(training_zd_deg)
-    training_az_rad = np.deg2rad(training_az_deg)
+    training_alt_rad = np.pi / 2 - training_pointings['zd'].to(u.rad).value
+    training_az_rad = training_pointings['az'].to(u.rad).value
 
     tiled_az = np.tile(az_tel,
                        len(training_az_rad)).reshape(len(training_az_rad),
@@ -830,9 +830,7 @@ def apply_models(dl1,
 
     if True in interpolate_rf.values():
         # Interpolation of RF predictions is switched on
-        training_az_deg = training_pointings['az'].to(u.deg).value
-        training_zd_deg = training_pointings['zd'].to(u.deg).value
-        dl2 = add_zd_interpolation_info(dl2, training_zd_deg, training_az_deg)
+        dl2 = add_zd_interpolation_info(dl2, training_pointings)
 
     # Reconstruction of Energy and disp_norm distance
     if isinstance(reg_energy, (str, bytes, Path)):
