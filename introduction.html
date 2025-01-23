@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Introduction &mdash; lstchain 0.10.15.dev31+gfc0a74e4 documentation</title>
+  <title>Introduction &mdash; lstchain 0.10.15.dev33+g035f60fe documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -16,7 +16,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=d6ea6727"></script>
+      <script src="_static/documentation_options.js?v=9566279b"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -793,8 +793,10 @@ using a different cleaning by using <code class="docutils literal notranslate"><
 </section>
 <section id="dl2-to-dl3">
 <h2>DL2 to DL3<a class="headerlink" href="#dl2-to-dl3" title="Link to this heading"></a></h2>
-<p>For a quick look into the data and perform <span class="math notranslate nohighlight">\({\theta}^2/{\alpha}\)</span> plots, you can use:
-<code class="docutils literal notranslate"><span class="pre">lstchain.scripts.lstchain_post_dl2</span></code></p>
+<p>For a quick look into the data and perform <span class="math notranslate nohighlight">\({\theta}^2/{\alpha}\)</span> plots from DL2 files,
+you can use the notebook:</p>
+<p><a class="reference external" href="https://github.com/cta-observatory/cta-lstchain/blob/main/notebooks/explore_DL2.ipynb">https://github.com/cta-observatory/cta-lstchain/blob/main/notebooks/explore_DL2.ipynb</a></p>
+<p>or the script: <code class="docutils literal notranslate"><span class="pre">lstchain_significance_calculation</span></code></p>
 <section id="irf-creation">
 <h3>IRF creation<a class="headerlink" href="#irf-creation" title="Link to this heading"></a></h3>
 <p>To write IRF files, you should use <code class="docutils literal notranslate"><span class="pre">lstchain.tools.lstchain_create_irf_files</span></code>.</p>
@@ -870,7 +872,24 @@ using a different cleaning by using <code class="docutils literal notranslate"><
 </section>
 <section id="post-dl3-analysis">
 <h2>Post DL3 analysis<a class="headerlink" href="#post-dl3-analysis" title="Link to this heading"></a></h2>
-<p>You may analyze the resulting files using <code class="docutils literal notranslate"><span class="pre">gammapy</span></code>, see its doc: <a class="reference external" href="https://docs.gammapy.org/">https://docs.gammapy.org/</a>.</p>
+<p>You can analyze the resulting DL3 files using Gammapy <a class="reference external" href="https://docs.gammapy.org/">https://docs.gammapy.org/</a>.</p>
+<p>There is a notebook in <code class="docutils literal notranslate"><span class="pre">cta-lstchain/notebooks</span></code> that shows how to use Gammapy to perform
+a 1D on-off analysis for point-like sources.</p>
+<p><a class="reference external" href="https://github.com/cta-observatory/cta-lstchain/blob/main/notebooks/post_DL3_analysis.ipynb">https://github.com/cta-observatory/cta-lstchain/blob/main/notebooks/post_DL3_analysis.ipynb</a></p>
+<p>Other analyses require additional packages. For example, for the 3D analysis of extended
+sources and creating sky maps, you can create a background model using one of the following packages:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mdebony/BAccMod">https://github.com/mdebony/BAccMod</a></p></li>
+<li><p><a class="reference external" href="https://github.com/cta-observatory/pybkgmodel">https://github.com/cta-observatory/pybkgmodel</a></p></li>
+</ul>
+</div></blockquote>
+<p>For doing pulsar analysis we suggest using:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://github.com/cta-observatory/PulsarTimingAnalysis">https://github.com/cta-observatory/PulsarTimingAnalysis</a></p></li>
+</ul>
+</div></blockquote>
 </section>
 </section>
 
@@ -885,7 +904,7 @@ using a different cleaning by using <code class="docutils literal notranslate"><
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 21 Jan 2025 11:04.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 23 Jan 2025 10:04.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
