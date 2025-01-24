@@ -6,7 +6,8 @@ and outputs DL2 data file(s).
 Run lstchain_dl1_to_dl2 --help to see the options.
 """
 
-import argparse
+import h5py
+import json
 from pathlib import Path
 import joblib
 import logging
@@ -17,6 +18,7 @@ from astropy.coordinates import Angle
 from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
 from tables import open_file
+from ctapipe.core import Tool, ToolConfigurationError, traits, Provenance
 
 from lstchain.io import (
     get_dataset_keys,
@@ -41,41 +43,209 @@ from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 
 logger = logging.getLogger(__name__)
-parser = argparse.ArgumentParser(description=__doc__)
-
-# Required arguments
-parser.add_argument('--input-files', '-f',
-                    type=Path,
-                    nargs='+',
-                    dest='input_files',
-                    help='Path (or list of paths) to a DL1 HDF5 file',
-                    required=True)
-
-parser.add_argument('--path-models', '-p',
-                    action='store',
-                    type=Path,
-                    dest='path_models',
-                    help='Path where to find the trained RF',
-                    default='./trained_models')
-
-# Optional arguments
-parser.add_argument('--output-dir', '-o',
-                    action='store',
-                    type=Path,
-                    dest='output_dir',
-                    help='Path where to store the reco dl2 events',
-                    default='./dl2_data')
-
-parser.add_argument('--config', '-c',
-                    action='store',
-                    type=Path,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None,
-                    required=False)
 
 
-def apply_to_file(filename, models_dict, output_dir, config):
+# def write_provenance(hdf5_file_path, stage_name):
+#     """
+#     Write JSON provenance information to an HDF5 file.
+#     It uses the current activity's provenance information and should typically be called within a ctapipe Tool.
+
+#     Parameters:
+#     -----------
+#     hdf5_file_path : str or Path
+#         Path to the HDF5 file
+#     stage_name : str
+#         Name of the stage generating the provenance
+
+#     Returns:
+#     --------
+#     None
+#     """
+#     try:
+#         # Open the HDF5 file in read-write mode
+#         with h5py.File(hdf5_file_path, 'a') as h5file:
+#             # Ensure the /provenance group exists
+#             if 'provenance' not in h5file:
+#                 h5file.create_group('provenance')
+            
+#             # Convert the provenance dictionary to a JSON string
+#             provenance_json = json.dumps(Provenance().current_activity.provenance, indent=2, default=str)
+            
+#             # Create the dataset in the tool's group
+#             h5file['provenance'].create_dataset(
+#                 stage_name,
+#                 data=provenance_json.encode('utf-8'),
+#                 dtype=h5py.special_dtype(vlen=str)
+#             )
+        
+#         print(f"Provenance for {stage_name} written successfully to {hdf5_file_path}")
+    
+#     except Exception as e:
+#         print(f"Error writing provenance: {e}")
+#         raise
+
+
+def write_provenance(hdf5_file_path, dataset_name):
+    """
+    Write JSON provenance information to an HDF5 file.
+    It uses the current activity's provenance information and should typically be called within a ctapipe Tool.
+
+    Parameters:
+    -----------
+    hdf5_file_path : str or Path
+        Path to the HDF5 file
+    stage_name : str
+        Name of the stage generating the provenance
+
+    Returns:
+    --------
+    None
+    """
+    try:
+        with h5py.File(hdf5_file_path, 'a') as h5file:
+            if dataset_name not in h5file:
+                h5file.create_group(dataset_name)
+            
+            # Convert to JSON string
+            provenance_json = json.dumps(Provenance().current_activity.provenance, indent=2, default=str)
+            
+            # Store as an attribute instead of a dataset
+            h5file[dataset_name].attrs['provenance'] = provenance_json
+        
+    except Exception as e:
+        print(f"Error writing provenance: {e}")
+        raise
+
+
+def read_provenance(hdf5_file_path, dataset_name):
+    """
+    Read JSON provenance from HDF5 file's dataset attributes.
+
+    Parameters:
+    -----------
+    hdf5_file_path : str
+        Path to the HDF5 file
+    dataset_name : str
+        Name of the dataset containing provenance
+
+    Returns:
+    --------
+    dict
+        Provenance information as JSON-decoded dictionary
+    """
+    with h5py.File(hdf5_file_path, 'r') as h5file:
+        if dataset_name not in h5file or 'provenance' not in h5file[dataset_name].attrs:
+            print(f"No provenance found for {dataset_name}")
+            return {}
+        
+        return json.loads(h5file[dataset_name].attrs['provenance'])
+
+def dl2_filename(dl1_filename):
+    """
+    Create the name of the DL2 file from the DL1 file name.
+
+    Parameters:
+    -----------
+    dl1_filename : str
+        Name of the DL1 file
+
+    Returns:
+    --------
+    str
+        Name of the DL2 file
+    """
+    return dl1_filename.replace('dl1', 'dl2', 1)
+
+class DL1ToDL2Tool(Tool):
+    name = "DL1 to DL2 Tool"
+    description = __doc__
+
+    input_files = traits.List(
+        traits.Path,
+        help="Path (or list of paths) to a DL1 HDF5 file",
+    ).tag(config=True)
+
+    path_models = traits.Path(
+        help="Path where to find the trained RF",
+        default='./trained_models',
+    ).tag(config=True)
+
+    output_dir = traits.Path(
+        help="Path where to store the reco dl2 events",
+        default='./dl2_data',
+    ).tag(config=True)
+
+    config_file = traits.Path(
+        help="Path to a configuration file. If none is given, a standard configuration is applied",
+        default=None,
+    ).tag(config=True)
+
+    aliases = {
+        ("f", "input-files"): "DL1ToDL2Tool.input_files",
+        ("p", "path-models"): "DL1ToDL2Tool.path_models",
+        ("o", "output-dir"): "DL1ToDL2Tool.output_dir",
+        ("c", "config"): "DL1ToDL2Tool.config_file",
+    }
+
+    def setup(self):
+         
+        # Check if input files are provided
+        if not self.input_files:
+            raise ToolConfigurationError("No input files provided. Use --input-files to specify.")
+
+        # Additional setup logic can go here
+        self.log.info(f"Input files: {self.input_files}")
+        self.log.info(f"Path to models: {self.path_models}")
+        self.log.info(f"Output directory: {self.output_dir}")
+
+    def start(self):
+            
+        custom_config = {}
+        if self.config_file is not None:
+            try:
+                custom_config = read_configuration_file(self.config_file.absolute())
+            except Exception as e:
+                self.log.error(f"Custom configuration could not be loaded: {e}")
+                return
+
+        config = replace_config(standard_config, custom_config)
+
+        models_keys = ['reg_energy', 'cls_gh']
+
+        if config['disp_method'] == 'disp_vector':
+            models_keys.append('reg_disp_vector')
+        elif config['disp_method'] == 'disp_norm_sign':
+            models_keys.extend(['reg_disp_norm', 'cls_disp_sign'])
+
+        models_dict = {}
+        for models_key in models_keys:
+            models_path = Path(self.path_models, f'{models_key}.sav')
+
+            if len(self.input_files) == 1:
+                models_dict[models_key] = models_path
+            else:
+                models_dict[models_key] = joblib.load(models_path)
+
+        self.output_dir.mkdir(exist_ok=True)
+        for input_dl1file in self.input_files:
+            output_dl2file = self.output_dir.joinpath(dl2_filename(input_dl1file.name))
+            if output_dl2file.exists():
+                raise IOError(str(output_dl2file) + ' exists, exiting.')
+            else:
+                apply_to_file(input_dl1file, models_dict, output_dl2file, config)
+                write_provenance(output_dl2file, 'dl2')
+
+
+def apply_to_file(filename, models_dict, output_file, config):
+    """
+    Applies models to the data in the specified file and writes the output to a new file in the output directory.
+
+    Parameters:
+    - filename (Path or str): The path to the input file.
+    - models_dict (dict): A dictionary containing the models to be applied.
+    - output_file (Path or str): The path to the output file.
+    - config (dict): The configuration dictionary containing parameters for the processing.
+    """
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
@@ -196,12 +366,6 @@ def apply_to_file(filename, models_dict, output_dir, config):
         logger.warning("No dl2 output file written.")
         return
 
-    output_dir.mkdir(exist_ok=True)
-    output_file = output_dir.joinpath(filename.name.replace('dl1', 'dl2', 1))
-
-    if output_file.exists():
-        raise IOError(str(output_file) + ' exists, exiting.')
-
     dl1_keys = get_dataset_keys(filename)
 
     if dl1_images_lstcam_key in dl1_keys:
@@ -258,42 +422,12 @@ def apply_to_file(filename, models_dict, output_dir, config):
             write_dataframe(dl2_onlylhfit, output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
         write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config,
                         meta=metadata)
+        
 
 
 def main():
-    args = parser.parse_args()
-
-    custom_config = {}
-    if args.config_file is not None:
-        try:
-            custom_config = read_configuration_file(args.config_file.absolute())
-        except("Custom configuration could not be loaded !!!"):
-            pass
-
-    config = replace_config(standard_config, custom_config)
-
-    models_keys = ['reg_energy', 'cls_gh']
-
-    if config['disp_method'] == 'disp_vector':
-        models_keys.append('reg_disp_vector')
-    elif config['disp_method'] == 'disp_norm_sign':
-        models_keys.extend(['reg_disp_norm', 'cls_disp_sign'])
-
-    models_dict = {}
-    for models_key in models_keys:
-        models_path = Path(args.path_models, f'{models_key}.sav')
-
-        # For a single input file, each model is loaded just before it is used
-        if len(args.input_files)==1:
-            models_dict[models_key] = models_path
-        # For multiple input files, all the models are loaded only once here 
-        else:
-            models_dict[models_key] = joblib.load(models_path)
-
-    for filename in args.input_files:
-        apply_to_file(filename, models_dict, args.output_dir, config)
-
-
+    tool = DL1ToDL2Tool()
+    tool.run()
 
 if __name__ == '__main__':
     main()
