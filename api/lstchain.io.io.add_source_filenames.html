@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>add_source_filenames &mdash; lstchain 0.10.15.dev35+g51b10277 documentation</title>
+  <title>add_source_filenames &mdash; lstchain 0.10.15.dev37+g83362a0b documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -16,7 +16,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=0c217209"></script>
+      <script src="../_static/documentation_options.js?v=038d2267"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -122,7 +122,22 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="lstchain.io.io.add_source_filenames">
 <span class="sig-prename descclassname"><span class="pre">lstchain.io.io.</span></span><span class="sig-name descname"><span class="pre">add_source_filenames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h5file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.io.add_source_filenames" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Adds the list of source filenames to the HDF5 file.</p>
+<p>This function appends the list of source filenames to the HDF5 file specified by <cite>h5file</cite>.
+If the node <cite>/source_filenames</cite> already exists, it is removed and recreated with the new list of filenames.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>h5file</strong><span class="classifier">str or tables.File</span></dt><dd><p>The path to the HDF5 file or an open HDF5 file object.</p>
+</dd>
+<dt><strong>file_list</strong><span class="classifier">list of str or PosixPath</span></dt><dd><p>A list of paths to the source files.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function modifies the HDF5 file by adding or updating the <cite>/source_filenames</cite> node with the list of source filenames.</p>
+</dd></dl>
 
 </section>
 
@@ -137,7 +152,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 23 Jan 2025 20:45.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 24 Jan 2025 09:37.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
