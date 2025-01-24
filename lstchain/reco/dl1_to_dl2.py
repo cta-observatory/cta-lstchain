@@ -60,22 +60,25 @@ def add_zd_interpolation_info(dl2table, training_pointings):
     between the zenith pointings of the MC data in the training sample on
     which the RFs were trained.
 
-    Parameters:
-    -----------
-    dl2table: pandas dataframe. Four columns will be added: alt0, alt1, w0, w1
-    alt0 and alt1 are the alt_tel values (telescope elevation, in radians) of
-    the closest and second-closest training MC pointings (closest in elevation,
-    on the same side of culmination) for each event in the table. The values
-    w0 and w1 are the corresponding weights that, multiplied by the RF
-    predictions at those two pointings, provide the interpolated result for
-    each event's pointing
+    Parameters
+    ----------
+    dl2table : pandas.DataFrame
+        DataFrame containing DL2 information, including 'alt_tel' and 'az_tel'.
+        Four columns will be added: alt0, alt1, w0, w1.
+        alt0 and alt1 are the alt_tel values (telescope elevation, in radians) of
+        the closest and second-closest training MC pointings (closest in elevation,
+        on the same side of culmination) for each event in the table. The values
+        w0 and w1 are the corresponding weights that, multiplied by the RF
+        predictions at those two pointings, provide the interpolated result for
+        each event's pointing.
 
-    training_pointings: astropy Table containing the pointings (zd,
-    az) of the MC training nodes
+    training_pointings : astropy.table.Table 
+        Table containing the pointings (zd, az) of the MC training nodes.
 
-    Returns:
+    Returns
     -------
-    DL2 pandas dataframe with additional columns alt0, alt1, w0, w1
+    pandas.DataFrame
+        Updated DL2 pandas dataframe with additional columns alt0, alt1, w0, w1.
 
     """
 
@@ -143,25 +146,30 @@ def predict_with_zd_interpolation(rf, param_array, features):
     sceond-closest pointing. Then the values are interpolated (linearly in
     cos(zenith)) to the actual zenith pointing (90 deg - alt_tel) of the event.
 
-    rf: sklearn.ensemble.RandomForestRegressor or RandomForestClassifier,
-    the random forest we want to apply (must contain alt_tel among the
-    training parameters)
+    Parameters
+    ----------
+    rf : sklearn.ensemble.RandomForestRegressor or RandomForestClassifier,
+        The random forest we want to apply (must contain alt_tel among the
+        training parameters).
+    param_array : pandas.DataFrame
+        Dataframe containing the features needed by the RF.
+        It must also contain four additional columns: alt0, alt1, w0, w1, which
+        can be added with the function add_zd_interpolation_info. These are the
+        event-wise telescope elevations for the closest and 2nd-closest training
+        pointings (alt0 and alt1), and the event-wise weights (w0 and w1) which
+        must be applied to the RF prediction at the two pointings to obtain the
+        interpolated value at the actual telescope pointing. Since the weights
+        are the same (for a given event) for different RFs, it does not make
+        sense to compute them here - they are pre-calculated by
+        `add_zd_interpolation_info`.
+    features : list of str
+        List of the names of the image features used by the RF.
 
-    param_array: pandas dataframe containing the features needed by theRF
-    It must also contain four additional columns: alt0, alt1, w0, w1, which
-    can be added with the function add_zd_interpolation_info. These are the
-    event-wise telescope elevations for the closest and 2nd-closest training
-    pointings (alt0 and alt1), and the event-wise weights (w0 and w1) which
-    must be applied to the RF prediction at the two pointings to obtain the
-    interpolated value at the actual telescope pointing. Since the weights
-    are the same (for a given event) for different RFs, it does not make
-    sense to compute them here - they are pre-calculated by
-    add_zd_interpolation_info
-
-    features: list of the names of the image features used by the RF
-
-    Return: interpolated RF predictions. 1D array for regressors (log energy,
-    or disp_norm), 2D (events, # of classes) for classifiers
+    Return
+    ------
+    numpy.ndarray
+        Interpolated RF predictions. 1D array for regressors (log energy,
+        or disp_norm), 2D (events, # of classes) for classifiers.
 
     """
 
@@ -207,7 +215,7 @@ def train_energy(train, custom_config=None):
     Parameters
     ----------
     train: `pandas.DataFrame`
-    custom_config: dictionary
+    custom_config : dict
         Modified configuration to update the standard one
 
     Returns
@@ -780,12 +788,13 @@ def apply_models(dl1,
     effective_focal_length: `astropy.unit`
     custom_config: dictionary
         Modified configuration to update the standard one
-    interpolate_rf: dictionary. Contains three booleans, 'energy_regression',
+    interpolate_rf : dict
+        Contains three booleans, 'energy_regression',
         'particle_classification', 'disp', indicating which RF predictions
-        should be interpolated linearly in cos(zenith)
-    training_pointings: astropy Table azimuth (az), zenith (zd)
-         pointings of the MC sample used in the training. Needed for the
-         interpolation of RF predictions.
+        should be interpolated linearly in cos(zenith).
+    training_pointings : astropy.table.Table 
+        Table with azimuth (az), zenith (zd) pointings of the MC sample used
+        in the training. Needed for the interpolation of RF predictions.
 
     Returns
     -------

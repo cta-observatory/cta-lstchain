@@ -82,7 +82,7 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
     # Read in the settings for the interpolation of Random Forest predictions
     # in cos(zd). If activated this avoids the jumps of performance produced
     # by the discrete set of pointings in the RF training sample.
-    if 'random_forest_zd_interpolation' in config.keys():
+    if 'random_forest_zd_interpolation' in config:
         zdinter = config['random_forest_zd_interpolation']
         interpolate_energy = zdinter.get('interpolate_energy', False)
         interpolate_gammaness = zdinter.get('interpolate_gammaness', False)
