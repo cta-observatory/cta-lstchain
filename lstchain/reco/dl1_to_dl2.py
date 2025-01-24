@@ -117,10 +117,10 @@ def add_zd_interpolation_info(dl2table, training_pointings):
 
     # Update the dataframe:
     with pd.option_context('mode.copy_on_write', True):
-        dl2table = dl2table.assign(alt0=pd.Series(closest_alt).values,
-                                   alt1=pd.Series(second_closest_alt).values,
-                                   w0=pd.Series(w0).values,
-                                   w1=pd.Series(w1).values)
+        dl2table = dl2table.assign(alt0=closest_alt,
+                                   alt1=second_closest_alt,
+                                   w0=w0,
+                                   w1=w1)
 
     return dl2table
 
