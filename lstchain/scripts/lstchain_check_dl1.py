@@ -85,6 +85,11 @@ def main():
     geomlogger = logging.getLogger('ctapipe.instrument.camera')
     geomlogger.setLevel(logging.ERROR)
 
+    # Avoid provenance info messages ("No activity has been explicitly 
+    # started..."), which come from call to load_camera_geometry():
+    provlogger = logging.getLogger('ctapipe.core.provenance')
+    provlogger.setLevel(logging.WARNING)
+
     if len(unknown) > 0:
         ukn = ''
         for s in unknown:
@@ -92,6 +97,7 @@ def main():
         logger.error('Unknown options: ' + ukn)
         exit(-1)
 
+    logger.info('Executing {}'.format(__name__))
     logger.info('input files: {}'.format(args.input_file))
     logger.info('output directory: {}'.format(args.output_dir))
 
