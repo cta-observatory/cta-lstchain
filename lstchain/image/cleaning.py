@@ -61,7 +61,7 @@ def find_tailcuts(input_dir, run_number):
     of the 95% quantile of the pixel charge for pedestal events to deduce the
     NSB level. It is good to use a large quantile of the pixel charge
     distribution (vs. e.g. using the median) because what matters for having
-    a relaistic noise simulation is the tail on the right-side, i.e. for
+    a realistic noise simulation is the tail on the right-side, i.e. for
     large pulses.
     For reasons of stability & simplicity of analysis, we cannot decide the
     cleaning levels (or the NSB tuning) on a subrun-by-subrun basis. We select
@@ -73,17 +73,18 @@ def find_tailcuts(input_dir, run_number):
     Parameters
     ----------
     input_dir: `Path`
-        directory where the DL1 files (subrun-wise, i,e, including
+        directory where the DL1 files (subrun-wise, i.e., including
         DL1a) are stored
 
-    run_number: ìnt`
+    run_number : int
         run number to be processed
 
     Returns
     -------
-        additional_nsb_rate: p.e./ns rate of NSB to be added to "dark MC" to
-        match the noise in the data
-        newconfig (dict): cleaning configuration for running the DL1ab stage
+    additional_nsb_rate : float
+        p.e./ns rate of NSB to be added to "dark MC" to match the noise in the data
+    newconfig : dict
+        cleaning configuration for running the DL1ab stage
     """
 
     log.setLevel(logging.INFO)
@@ -107,7 +108,7 @@ def find_tailcuts(input_dir, run_number):
     # acceptable:
     min_number_of_valid_pixels = 1000
 
-    # Aprox. maximum number of subruns (uniformly distributed through the
+    # Approx. maximum number of subruns (uniformly distributed through the
     # run) to be processed:
     max_number_of_processed_subruns = 10
     # Keep only ~max_number_of_processed_subruns subruns, distributed
@@ -154,7 +155,7 @@ def find_tailcuts(input_dir, run_number):
         qt95_pix_charge = np.nanquantile(charges_pedestals, 0.95, axis=0)
         # ignore pixels with 0 signal:
         qt95_pix_charge = np.where(qt95_pix_charge > 0, qt95_pix_charge, np.nan)
-        # median of medians accross camera:
+        # median of medians across camera:
         median_qt95_pix_charge = np.nanmedian(qt95_pix_charge)
         # mean abs deviation of pixel qt95 values:
         qt95_pix_charge_dev = median_abs_deviation(qt95_pix_charge,
@@ -247,13 +248,13 @@ def pic_th(qt95_ped):
     """
     Parameters
     ----------
-    qt95_ped: `float`
+    qt95_ped : float
         95% quantile of pixel charge in pedestal events (for the standard
         LocalPeakWindowSearch algo & settings in lstchain)
 
     Returns
     -------
-        `int`
+    int
         recommended picture threshold for image cleaning (from a table)
 
     """
@@ -274,7 +275,7 @@ def get_nsb(qt95_ped):
 
     Returns
     -------
-        `float`
+    float
         (from a parabolic parametrization) the recommended additional NSB
         (in p.e. / ns) that has to be added to the "dark MC" waveforms in
         order to match the data for which the 95% quantile of pedestal pixel

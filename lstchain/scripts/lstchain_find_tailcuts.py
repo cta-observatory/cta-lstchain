@@ -15,8 +15,9 @@ It also returns the suggested NSB adjustment needed in the "dark-sky" MC
 to match the data, in units of p.e./ns, to be applied at the waveforms level,
 i.e  with lstchain_tune_nsb_waveform.py
 
-lstchain_find_tailcuts -d "/..../DL1/YYYYMMDD/v0.10/tailcut84 -r 13181 --log
-out.log "
+Example
+-------
+lstchain_find_tailcuts -d /.../DL1/YYYYMMDD/v0.10/tailcut84 -r 13181 --log out.log
 
 """
 
@@ -30,12 +31,12 @@ from lstchain.image.cleaning import find_tailcuts
 
 parser = argparse.ArgumentParser(description="Tailcut finder")
 
-parser.add_argument('-d', '--input-dir', dest='input_dir',
+parser.add_argument('-d', '--input-dir',
                     type=Path, default='./',
                     help='Input DL1 directory')
 parser.add_argument('-r', '--run', dest='run_number',
                     type=int, help='Run number')
-parser.add_argument('-o', '--output-dir', dest='output_dir',
+parser.add_argument('-o', '--output-dir',
                     type=Path, default='./',
                     help='Path to the output directory (default: %(default)s)')
 parser.add_argument('--log', dest='log_file',
