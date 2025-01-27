@@ -55,11 +55,9 @@ def main():
     output_dir = args.output_dir.absolute()
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    log_file = args.log_file
-    if log_file is None:
-        log_file = f'log_find_tailcuts_Run{run_id:05d}.log'
+    log_file = args.log_file or f'log_find_tailcuts_Run{run_id:05d}.log'
 
-    log_file = Path(output_dir, log_file)
+    log_file = output_dir / log_file
     handler = logging.FileHandler(log_file, mode='w')
     logging.getLogger().addHandler(handler)
 
@@ -79,7 +77,7 @@ def main():
         logging.error('lstchain_find_tailcuts failed!')
         sys.exit(1)
   
-    json_filename = Path(output_dir, f'dl1ab_Run{run_id:05d}.json')
+    json_filename = output_dir / f'dl1ab_Run{run_id:05d}.json'
     dump_config({'tailcuts_clean_with_pedestal_threshold': newconfig,
                  'dynamic_cleaning': get_standard_config()['dynamic_cleaning'],
                  'tailcut': {}},
