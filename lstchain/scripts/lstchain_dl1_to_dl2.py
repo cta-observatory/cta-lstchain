@@ -82,39 +82,37 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
     # Read in the settings for the interpolation of Random Forest predictions
     # in cos(zd). If activated this avoids the jumps of performance produced
     # by the discrete set of pointings in the RF training sample.
+
+    interpolate_rf = None     # Default, no interpolation
+    training_pointings = None # Default, no interpolation
     if 'random_forest_zd_interpolation' in config:
         zdinter = config['random_forest_zd_interpolation']
         interpolate_energy = zdinter.get('interpolate_energy', False)
         interpolate_gammaness = zdinter.get('interpolate_gammaness', False)
         interpolate_direction = zdinter.get('interpolate_direction', False)
+        interpolate_rf = {'energy_regression': interpolate_energy,
+                          'particle_classification': interpolate_gammaness,
+                          'disp': interpolate_direction
+                          }
+        if True in interpolate_rf.values():
+            logger.info('Cos(zenith) interpolation will be used in:')
+            if interpolate_energy:
+                logger.info('   energy reconstruction Random Forest')
+            if interpolate_gammaness:
+                logger.info('   g/h classification Random Forest')
+            if interpolate_direction:
+                logger.info('   direction reconstruction Random Forest')
 
-    interpolate_rf = {'energy_regression': interpolate_energy,
-                      'particle_classification': interpolate_gammaness,
-                      'disp': interpolate_direction
-                      }
-
-    training_pointings = None
-    if True in interpolate_rf.values():
-        logger.info('Cos(zenith) interpolation will be used in:')
-        if interpolate_energy:
-            logger.info('   energy reconstruction Random Forest')
-        if interpolate_gammaness:
-            logger.info('   g/h classification Random Forest')
-        if interpolate_direction:
-            logger.info('   direction reconstruction Random Forest')
-
-        # Obtain the training pointings, needed for the RF interpolation:
-        training_pointings_path = Path(models_path, 'training_dirs.ecsv')
-        if training_pointings_path.is_file():
-            training_pointings = Table.read(training_pointings_path)
-            logger.info('RF training pointings:')
-            logger.info(training_pointings)
-        else:
-            logger.warning(f'{training_pointings_path} not found!')
-            logger.warning('Switching off RF interpolation with zenith!')
-            interpolate_rf['energy_regression'] = False
-            interpolate_rf['particle_classification'] = False
-            interpolate_rf['disp'] = False
+            # Obtain the training pointings, needed for the RF interpolation:
+            training_pointings_path = Path(models_path, 'training_dirs.ecsv')
+            if training_pointings_path.is_file():
+                training_pointings = Table.read(training_pointings_path)
+                logger.info('RF training pointings:')
+                logger.info(training_pointings)
+            else:
+                logger.warning(f'{training_pointings_path} not found!')
+                logger.warning('Switching off RF interpolation with zenith!')
+                interpolate_rf = None
 
     if 'lh_fit_config' in config.keys():
         lhfit_data = pd.read_hdf(filename, key=dl1_likelihood_params_lstcam_key)

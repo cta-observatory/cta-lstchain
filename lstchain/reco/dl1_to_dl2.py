@@ -757,9 +757,7 @@ def apply_models(dl1,
                  cls_disp_sign=None,
                  effective_focal_length=29.30565 * u.m,
                  custom_config=None,
-                 interpolate_rf={'energy_regression': False,
-                                 'particle_classification': False,
-                                 'disp': False},
+                 interpolate_rf=None,
                  training_pointings=None
                  ):
     """
@@ -809,6 +807,11 @@ def apply_models(dl1,
     classification_features = config["particle_classification_features"]
     events_filters = config["events_filters"]
 
+    # If no settings are provided for RF interpolation, it is switched off:
+    if interpolate_rf is None:
+        interpolate_rf = {'energy_regression': False,
+                          'particle_classification': False,
+                          'disp': False}
 
     dl2 = utils.filter_events(dl1,
                               filters=events_filters,
