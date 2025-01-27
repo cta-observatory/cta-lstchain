@@ -1,0 +1,6 @@
+pic_th
+======
+
+.. currentmodule:: lstchain.image.cleaning
+
+.. autofunction:: pic_th

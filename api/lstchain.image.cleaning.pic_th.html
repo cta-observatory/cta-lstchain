@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>write_metadata &mdash; lstchain 0.10.15.dev87+g0e1ab4d4 documentation</title>
+  <title>pic_th &mdash; lstchain 0.10.15.dev87+g0e1ab4d4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -30,8 +30,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="write_simtel_energy_histogram" href="lstchain.io.io.write_simtel_energy_histogram.html" />
-    <link rel="prev" title="write_mcheader" href="lstchain.io.io.write_mcheader.html" /> 
+    <link rel="next" title="add_noise_in_pixels" href="lstchain.image.modifier.add_noise_in_pixels.html" />
+    <link rel="prev" title="find_tailcuts" href="lstchain.image.cleaning.find_tailcuts.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -68,19 +68,20 @@
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/io/index.html#introduction">Introduction</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/io/index.html#reference-api">Reference/API</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.config">lstchain.io.config Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.data_management">lstchain.io.data_management Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.event_selection">lstchain.io.event_selection Module</a></li>
-<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.io">lstchain.io.io Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/io/index.html#module-lstchain.io.lstcontainers">lstchain.io.lstcontainers Module</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/image/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/image/index.html#muon-analysis">Muon analysis</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/image/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image">lstchain.image Package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.cleaning">lstchain.image.cleaning Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.modifier">lstchain.image.modifier Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.muon.muon_analysis">lstchain.image.muon.muon_analysis Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.muon.plot_muon">lstchain.image.muon.plot_muon Module</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
@@ -106,10 +107,10 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
-          <li class="breadcrumb-item"><a href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
-      <li class="breadcrumb-item active">write_metadata</li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+      <li class="breadcrumb-item active">pic_th</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/lstchain.io.io.write_metadata.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api/lstchain.image.cleaning.pic_th.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -117,17 +118,23 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="write-metadata">
-<h1>write_metadata<a class="headerlink" href="#write-metadata" title="Link to this heading"></a></h1>
+  <section id="pic-th">
+<h1>pic_th<a class="headerlink" href="#pic-th" title="Link to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="lstchain.io.io.write_metadata">
-<span class="sig-prename descclassname"><span class="pre">lstchain.io.io.</span></span><span class="sig-name descname"><span class="pre">write_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.io.io.write_metadata" title="Link to this definition"></a></dt>
-<dd><p>Write metadata to a HDF5 file</p>
-<dl class="field-list simple">
+<dt class="sig sig-object py" id="lstchain.image.cleaning.pic_th">
+<span class="sig-prename descclassname"><span class="pre">lstchain.image.cleaning.</span></span><span class="sig-name descname"><span class="pre">pic_th</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qt95_ped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.cleaning.pic_th" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>metadata: `lstchain.io.MetaData()`</strong></dt><dd></dd>
-<dt><strong>output_filename: path</strong></dt><dd></dd>
+<dt><strong>qt95_ped</strong><span class="classifier">float</span></dt><dd><p>95% quantile of pixel charge in pedestal events (for the standard
+LocalPeakWindowSearch algo &amp; settings in lstchain)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>int</dt><dd><p>recommended picture threshold for image cleaning (from a table)</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -139,8 +146,8 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="lstchain.io.io.write_mcheader.html" class="btn btn-neutral float-left" title="write_mcheader" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="lstchain.io.io.write_simtel_energy_histogram.html" class="btn btn-neutral float-right" title="write_simtel_energy_histogram" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="lstchain.image.cleaning.find_tailcuts.html" class="btn btn-neutral float-left" title="find_tailcuts" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.image.modifier.add_noise_in_pixels.html" class="btn btn-neutral float-right" title="add_noise_in_pixels" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

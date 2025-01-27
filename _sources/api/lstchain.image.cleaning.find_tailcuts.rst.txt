@@ -1,0 +1,6 @@
+find_tailcuts
+=============
+
+.. currentmodule:: lstchain.image.cleaning
+
+.. autofunction:: find_tailcuts
