@@ -6,8 +6,6 @@ and outputs DL2 data file(s).
 Run lstchain_dl1_to_dl2 --help to see the options.
 """
 
-import h5py
-import json
 from pathlib import Path
 import joblib
 import logging
@@ -39,106 +37,12 @@ from lstchain.io.io import (
     dl2_likelihood_params_lstcam_key,
     write_dataframe,
 )
+from lstchain.io.provenance import write_provenance
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 
 logger = logging.getLogger(__name__)
 
-
-# def write_provenance(hdf5_file_path, stage_name):
-#     """
-#     Write JSON provenance information to an HDF5 file.
-#     It uses the current activity's provenance information and should typically be called within a ctapipe Tool.
-
-#     Parameters:
-#     -----------
-#     hdf5_file_path : str or Path
-#         Path to the HDF5 file
-#     stage_name : str
-#         Name of the stage generating the provenance
-
-#     Returns:
-#     --------
-#     None
-#     """
-#     try:
-#         # Open the HDF5 file in read-write mode
-#         with h5py.File(hdf5_file_path, 'a') as h5file:
-#             # Ensure the /provenance group exists
-#             if 'provenance' not in h5file:
-#                 h5file.create_group('provenance')
-            
-#             # Convert the provenance dictionary to a JSON string
-#             provenance_json = json.dumps(Provenance().current_activity.provenance, indent=2, default=str)
-            
-#             # Create the dataset in the tool's group
-#             h5file['provenance'].create_dataset(
-#                 stage_name,
-#                 data=provenance_json.encode('utf-8'),
-#                 dtype=h5py.special_dtype(vlen=str)
-#             )
-        
-#         print(f"Provenance for {stage_name} written successfully to {hdf5_file_path}")
-    
-#     except Exception as e:
-#         print(f"Error writing provenance: {e}")
-#         raise
-
-
-def write_provenance(hdf5_file_path, dataset_name):
-    """
-    Write JSON provenance information to an HDF5 file.
-    It uses the current activity's provenance information and should typically be called within a ctapipe Tool.
-
-    Parameters:
-    -----------
-    hdf5_file_path : str or Path
-        Path to the HDF5 file
-    stage_name : str
-        Name of the stage generating the provenance
-
-    Returns:
-    --------
-    None
-    """
-    try:
-        with h5py.File(hdf5_file_path, 'a') as h5file:
-            if dataset_name not in h5file:
-                h5file.create_group(dataset_name)
-            
-            # Convert to JSON string
-            provenance_json = json.dumps(Provenance().current_activity.provenance, indent=2, default=str)
-            
-            # Store as an attribute instead of a dataset
-            h5file[dataset_name].attrs['provenance'] = provenance_json
-        
-    except Exception as e:
-        print(f"Error writing provenance: {e}")
-        raise
-
-
-def read_provenance(hdf5_file_path, dataset_name):
-    """
-    Read JSON provenance from HDF5 file's dataset attributes.
-
-    Parameters:
-    -----------
-    hdf5_file_path : str
-        Path to the HDF5 file
-    dataset_name : str
-        Name of the dataset containing provenance
-
-    Returns:
-    --------
-    dict
-        Provenance information as JSON-decoded dictionary
-    """
-    with h5py.File(hdf5_file_path, 'r') as h5file:
-        if dataset_name not in h5file or 'provenance' not in h5file[dataset_name].attrs:
-            print(f"No provenance found for {dataset_name}")
-            return {}
-        
-        return json.loads(h5file[dataset_name].attrs['provenance'])
 
 def dl2_filename(dl1_filename):
     """
@@ -233,7 +137,11 @@ class DL1ToDL2Tool(Tool):
                 raise IOError(str(output_dl2file) + ' exists, exiting.')
             else:
                 apply_to_file(input_dl1file, models_dict, output_dl2file, config)
-                write_provenance(output_dl2file, 'dl2')
+                p = Provenance()
+                p.add_input_file(input_dl1file, role='dl1 input file')
+                p.add_output_file(output_dl2file)
+                p.add_input_file(self.path_models, role='trained model directory')
+                write_provenance(output_dl2file, 'dl1_to_dl2')
 
 
 def apply_to_file(filename, models_dict, output_file, config):
@@ -411,7 +319,6 @@ def apply_to_file(filename, models_dict, output_file, config):
             dl2.drop(lhfit_keys, axis=1, inplace=True)
             write_dl2_dataframe(dl2, output_file, config=config, meta=metadata)
             write_dataframe(dl2_onlylhfit, output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
-
     else:
         if 'lh_fit_config' not in config.keys():
             write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
@@ -423,7 +330,6 @@ def apply_to_file(filename, models_dict, output_file, config):
         write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config,
                         meta=metadata)
         
-
 
 def main():
     tool = DL1ToDL2Tool()
