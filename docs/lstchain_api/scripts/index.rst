@@ -99,19 +99,6 @@ Usage
    :func: parser
    :prog: lstchain_dl1_muon_analysis
 
-.. _lstchain_dl1_to_dl2:
-
-lstchain_dl1_to_dl2
-+++++++++++++++++++
-
-.. automodule:: lstchain.scripts.lstchain_dl1_to_dl2
-
-Usage
------
-.. argparse::
-   :module: lstchain.scripts.lstchain_dl1_to_dl2
-   :func: parser
-   :prog: lstchain_dl1_to_dl2
 
 .. _lstchain_dl1ab:
 
