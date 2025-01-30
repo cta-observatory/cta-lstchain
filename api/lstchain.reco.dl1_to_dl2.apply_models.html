@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>apply_models &mdash; lstchain 0.10.15.dev87+g0e1ab4d4 documentation</title>
+  <title>apply_models &mdash; lstchain 0.10.15.dev121+g7f3979e1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -16,7 +16,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=8daf82fb"></script>
+      <script src="../_static/documentation_options.js?v=cf9e352b"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -31,7 +31,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="build_models" href="lstchain.reco.dl1_to_dl2.build_models.html" />
-    <link rel="prev" title="miss" href="lstchain.reco.disp.miss.html" /> 
+    <link rel="prev" title="add_zd_interpolation_info" href="lstchain.reco.dl1_to_dl2.add_zd_interpolation_info.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -121,7 +121,7 @@
 <h1>apply_models<a class="headerlink" href="#apply-models" title="Link to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="lstchain.reco.dl1_to_dl2.apply_models">
-<span class="sig-prename descclassname"><span class="pre">lstchain.reco.dl1_to_dl2.</span></span><span class="sig-name descname"><span class="pre">apply_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dl1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_disp_vector=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_disp_norm=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls_disp_sign=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effective_focal_length=&lt;Quantity</span> <span class="pre">29.30565</span> <span class="pre">m&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_config=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.reco.dl1_to_dl2.apply_models" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">lstchain.reco.dl1_to_dl2.</span></span><span class="sig-name descname"><span class="pre">apply_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dl1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_disp_vector=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_disp_norm=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls_disp_sign=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effective_focal_length=&lt;Quantity</span> <span class="pre">29.30565</span> <span class="pre">m&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_config=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolate_rf=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_pointings=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.reco.dl1_to_dl2.apply_models" title="Link to this definition"></a></dt>
 <dd><p>Apply previously trained Random Forests to a set of data
 depending on a set of features.
 The right set of disp models must be passed depending on the config.</p>
@@ -147,6 +147,13 @@ for disp sign reconstruction</p>
 <dt><strong>effective_focal_length: `astropy.unit`</strong></dt><dd></dd>
 <dt><strong>custom_config: dictionary</strong></dt><dd><p>Modified configuration to update the standard one</p>
 </dd>
+<dt><strong>interpolate_rf</strong><span class="classifier">dict</span></dt><dd><p>Contains three booleans, ‘energy_regression’,
+‘particle_classification’, ‘disp’, indicating which RF predictions
+should be interpolated linearly in cos(zenith).</p>
+</dd>
+<dt><strong>training_pointings</strong><span class="classifier">astropy.table.Table</span></dt><dd><p>Table with azimuth (az), zenith (zd) pointings of the MC sample used
+in the training. Needed for the interpolation of RF predictions.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -164,14 +171,14 @@ for disp sign reconstruction</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="lstchain.reco.disp.miss.html" class="btn btn-neutral float-left" title="miss" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.reco.dl1_to_dl2.add_zd_interpolation_info.html" class="btn btn-neutral float-left" title="add_zd_interpolation_info" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="lstchain.reco.dl1_to_dl2.build_models.html" class="btn btn-neutral float-right" title="build_models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 27 Jan 2025 18:19.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 30 Jan 2025 11:18.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

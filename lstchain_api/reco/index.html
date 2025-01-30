@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reconstruction (reco) &mdash; lstchain 0.10.15.dev87+g0e1ab4d4 documentation</title>
+  <title>Reconstruction (reco) &mdash; lstchain 0.10.15.dev121+g7f3979e1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -16,7 +16,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=8daf82fb"></script>
+      <script src="../../_static/documentation_options.js?v=cf9e352b"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -165,17 +165,23 @@ applying them to data. The RF can be saved into a file for later use.</p>
 <h4>Functions<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.apply_models.html#lstchain.reco.dl1_to_dl2.apply_models" title="lstchain.reco.dl1_to_dl2.apply_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_models</span></code></a>(dl1, classifier, reg_energy[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.add_zd_interpolation_info.html#lstchain.reco.dl1_to_dl2.add_zd_interpolation_info" title="lstchain.reco.dl1_to_dl2.add_zd_interpolation_info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_zd_interpolation_info</span></code></a>(dl2table, ...)</p></td>
+<td><p>Compute necessary parameters for the interpolation of RF predictions between the zenith pointings of the MC data in the training sample on which the RFs were trained.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.apply_models.html#lstchain.reco.dl1_to_dl2.apply_models" title="lstchain.reco.dl1_to_dl2.apply_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_models</span></code></a>(dl1, classifier, reg_energy[, ...])</p></td>
 <td><p>Apply previously trained Random Forests to a set of data depending on a set of features.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.build_models.html#lstchain.reco.dl1_to_dl2.build_models" title="lstchain.reco.dl1_to_dl2.build_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_models</span></code></a>(filegammas, fileprotons[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.build_models.html#lstchain.reco.dl1_to_dl2.build_models" title="lstchain.reco.dl1_to_dl2.build_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_models</span></code></a>(filegammas, fileprotons[, ...])</p></td>
 <td><p>Uses MC data to train Random Forests for Energy and DISP reconstruction and G/H separation and returns the trained RFs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.get_expected_source_pos.html#lstchain.reco.dl1_to_dl2.get_expected_source_pos" title="lstchain.reco.dl1_to_dl2.get_expected_source_pos"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_expected_source_pos</span></code></a>(data, data_type, config)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.get_expected_source_pos.html#lstchain.reco.dl1_to_dl2.get_expected_source_pos" title="lstchain.reco.dl1_to_dl2.get_expected_source_pos"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_expected_source_pos</span></code></a>(data, data_type, config)</p></td>
 <td><p>Get expected source position for source-dependent analysis .</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.get_source_dependent_parameters.html#lstchain.reco.dl1_to_dl2.get_source_dependent_parameters" title="lstchain.reco.dl1_to_dl2.get_source_dependent_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_source_dependent_parameters</span></code></a>(data, config)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.get_source_dependent_parameters.html#lstchain.reco.dl1_to_dl2.get_source_dependent_parameters" title="lstchain.reco.dl1_to_dl2.get_source_dependent_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_source_dependent_parameters</span></code></a>(data, config)</p></td>
 <td><p>Get parameters dict for source-dependent analysis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.predict_with_zd_interpolation.html#lstchain.reco.dl1_to_dl2.predict_with_zd_interpolation" title="lstchain.reco.dl1_to_dl2.predict_with_zd_interpolation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_with_zd_interpolation</span></code></a>(rf, ...)</p></td>
+<td><p>Obtain a RF prediction which takes into account the difference between the telescope elevation (alt_tel, i.e. 90 deg - zenith) and those of the MC training nodes.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../../api/lstchain.reco.dl1_to_dl2.train_disp_norm.html#lstchain.reco.dl1_to_dl2.train_disp_norm" title="lstchain.reco.dl1_to_dl2.train_disp_norm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_disp_norm</span></code></a>(train[, custom_config, ...])</p></td>
 <td><p>Train a model for the regression of the disp_norm norm</p></td>
@@ -376,7 +382,7 @@ The volume reduction produces reduced waveforms and write them in the DL0 contai
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 27 Jan 2025 18:19.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 30 Jan 2025 11:18.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
