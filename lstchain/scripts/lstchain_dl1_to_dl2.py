@@ -131,18 +131,13 @@ class DL1ToDL2Tool(Tool):
             else:
                 models_dict[models_key] = joblib.load(models_path)
 
-        self.output_dir.mkdir(exist_ok=True)
         for input_dl1file in self.input_files:
-            output_dl2file = self.output_dir.joinpath(dl2_filename(input_dl1file.name))
-            if output_dl2file.exists():
-                raise IOError(str(output_dl2file) + ' exists, exiting.')
-            else:
-                apply_to_file(input_dl1file, models_dict, output_dl2file, config, self.path_models)
-                p = Provenance()
-                p.add_input_file(input_dl1file, role='dl1 input file')
-                p.add_output_file(output_dl2file)
-                p.add_input_file(self.path_models, role='trained model directory')
-                write_provenance(output_dl2file, 'dl1_to_dl2')
+            output_filepath = apply_to_file(input_dl1file, models_dict, output_dir, config, self.path_models)
+            p = Provenance()
+            p.add_input_file(input_dl1file, role='dl1 input file')
+            p.add_output_file(output_filepath, role='dl2 output file')
+            p.add_input_file(self.path_models, role='trained model directory')
+            write_provenance(output_filepath, 'dl1_to_dl2')
                 
 
 def apply_to_file(filename, models_dict, output_dir, config, models_path):
@@ -152,10 +147,15 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
     Parameters:
     - filename (Path or str): The path to the input file.
     - models_dict (dict): A dictionary containing the models to be applied.
-    - output_file (Path or str): The path to the output file.
+    - output_dir (Path or str): The path for the output directory.
     - config (dict): The configuration dictionary containing parameters for the processing.
     - models_path (Path or str): The path to the directory containing the trained models.
     """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(exist_ok=True, parents=True)
+    dl2_output_file = output_dir.joinpath(dl2_filename(filename.name))
+    if dl2_output_file.exists():
+        raise IOError(str(dl2_output_file) + ' exists, exiting.')
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
@@ -334,10 +334,10 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
         dl1_keys.remove(dl1_likelihood_params_lstcam_key)
 
     metadata = global_metadata()
-    write_metadata(metadata, output_file)
+    write_metadata(metadata, dl2_output_file)
 
     with open_file(filename, 'r') as h5in:
-        with open_file(output_file, 'a') as h5out:
+        with open_file(dl2_output_file, 'a') as h5out:
 
             # Write the selected DL1 info
             for k in dl1_keys:
@@ -358,22 +358,24 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
     # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
     if not config['source_dependent']:
         if 'lh_fit_config' not in config.keys():
-            write_dl2_dataframe(dl2, output_file, config=config, meta=metadata)
+            write_dl2_dataframe(dl2, dl2_output_file, config=config, meta=metadata)
         else:
             dl2_onlylhfit = dl2[lhfit_keys]
             dl2.drop(lhfit_keys, axis=1, inplace=True)
-            write_dl2_dataframe(dl2, output_file, config=config, meta=metadata)
-            write_dataframe(dl2_onlylhfit, output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
+            write_dl2_dataframe(dl2, dl2_output_file, config=config, meta=metadata)
+            write_dataframe(dl2_onlylhfit, dl2_output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
     else:
         if 'lh_fit_config' not in config.keys():
-            write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
+            write_dl2_dataframe(dl2_srcindep, dl2_output_file, config=config, meta=metadata)
         else:
             dl2_onlylhfit = dl2_srcindep[lhfit_keys]
             dl2_srcindep.drop(lhfit_keys, axis=1, inplace=True)
-            write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
-            write_dataframe(dl2_onlylhfit, output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
-        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config,
+            write_dl2_dataframe(dl2_srcindep, dl2_output_file, config=config, meta=metadata)
+            write_dataframe(dl2_onlylhfit, dl2_output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
+        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), dl2_output_file, dl2_params_src_dep_lstcam_key, config=config,
                         meta=metadata)
+        
+    return dl2_output_file
         
 
 def main():
@@ -381,5 +383,7 @@ def main():
     tool = DL1ToDL2Tool()
     tool.run()
 
+
 if __name__ == '__main__':
     main()
+
