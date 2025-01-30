@@ -388,14 +388,27 @@ def auto_merge_h5files(
     write_metadata(metadata0, output_filename)
 
 
-
 def add_source_filenames(h5file, file_list):
-    exit_stack = ExitStack()
+    """
+    Adds the list of source filenames to the HDF5 file.
 
-    with exit_stack:
+    This function appends the list of source filenames to the HDF5 file specified by `h5file`.
+    If the node `/source_filenames` already exists, it is removed and recreated with the new list of filenames.
+
+    Parameters
+    ----------
+    h5file : str or tables.File
+        The path to the HDF5 file or an open HDF5 file object.
+    file_list : list of str or PosixPath
+        A list of paths to the source files.
+
+    Notes
+    -----
+    This function modifies the HDF5 file by adding or updating the `/source_filenames` node with the list of source filenames.
+    """
+    with ExitStack() as exit_stack:
         if not isinstance(h5file, tables.File):
             h5file = exit_stack.enter_context(tables.open_file(h5file, 'a'))
-
 
         # we replace any existing node
         if "/source_filenames" in h5file.root:

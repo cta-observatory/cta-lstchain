@@ -50,7 +50,7 @@ from lstchain.paths import (
 )
 
 
-def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False):
+def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False, muons_dir=None):
     """
     Check DL1 files
 
@@ -137,6 +137,8 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
 
     # create the dl1_datacheck containers (one per subrun) for the three
     # event types, and add them to the list dl1datacheck:
+    # process_dl1_file also provides, as the 4th return, a string containing
+    # the configuration found in each DL1 file
     with Pool(max_cores) as pool:
         func_args = [(filename, histogram_binning) for
                      filename in filenames]
@@ -175,17 +177,27 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     file = h5py.File(datacheck_filename, mode='a')
     file.create_dataset('/dl1datacheck/used_trigger_tag', (1,), 'S32',
                         [trigger_source.encode('ascii')])
+    # Write the configuration:
+    cosmics_table = file.get('/dl1datacheck/cosmics')
+    if cosmics_table is not None:
+        # We take the configuration of the first of the DL1 files (if more than
+        # one was processed), assuming the analysis was homogeneous!
+        cosmics_table.attrs['config'] = dl1datacheck[0][3]
+    
     file.close()
 
-    # do the plots and save them to a pdf file. We will look for the muons fits
-    # files in the same directory as the DL1 files (assuming all of them are
-    # in the same directory as the first one!)
+    # do the plots and save them to a pdf file
     if create_pdf:
+        if muons_dir is None:
+            # if not provided, assume muons .fits files are in the 
+            # same directory as the DL1 files:
+            muons_dir = os.path.dirname(filenames[0])
+        
         plot_datacheck(
             datacheck_filename,
             output_path,
             batch,
-            muons_dir=os.path.dirname(filenames[0]),
+            muons_dir=muons_dir,
             tel_id=first_file.tel_id
         )
 
@@ -213,6 +225,9 @@ def process_dl1_file(filename, bins, tel_id=1):
     If one or more of them is None, it means they have not been filled,
     due to lack of events if the given type in the input DL1 file.
 
+    configuration: string containing the configuration stored in the attrs of 
+    the input dl1 table (settings used in the analysis) 
+
     """
 
     logger = logging.getLogger(__name__)
@@ -234,6 +249,7 @@ def process_dl1_file(filename, bins, tel_id=1):
     m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
     parameters = read_table(filename, dl1_params_lstcam_key)
+    configuration = parameters.meta['config']
 
     # convert cog distance to camera center from meters to degrees:
     parameters['r'] = parameters['r'].quantity * m2deg
@@ -311,7 +327,7 @@ def process_dl1_file(filename, bins, tel_id=1):
         dl1datacheck_cosmics = None
 
     return dl1datacheck_pedestals, dl1datacheck_flatfield, \
-           dl1datacheck_cosmics
+           dl1datacheck_cosmics, configuration
 
 
 def plot_datacheck(datacheck_filename, out_path=None, batch=False,
