@@ -132,7 +132,7 @@ class DL1ToDL2Tool(Tool):
                 models_dict[models_key] = joblib.load(models_path)
 
         for input_dl1file in self.input_files:
-            output_filepath = apply_to_file(input_dl1file, models_dict, output_dir, config, self.path_models)
+            output_filepath = apply_to_file(input_dl1file, models_dict, self.output_dir, config, self.path_models)
             p = Provenance()
             p.add_input_file(input_dl1file, role='dl1 input file')
             p.add_output_file(output_filepath, role='dl2 output file')
