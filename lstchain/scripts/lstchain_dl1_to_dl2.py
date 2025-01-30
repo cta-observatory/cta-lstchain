@@ -13,6 +13,7 @@ import logging
 import numpy as np
 import pandas as pd
 import astropy.units as u
+from astropy.table import Table
 from astropy.coordinates import Angle
 from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
@@ -74,10 +75,44 @@ parser.add_argument('--config', '-c',
                     default=None,
                     required=False)
 
-
-def apply_to_file(filename, models_dict, output_dir, config):
+def apply_to_file(filename, models_dict, output_dir, config, models_path):
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+
+    # Read in the settings for the interpolation of Random Forest predictions
+    # in cos(zd). If activated this avoids the jumps of performance produced
+    # by the discrete set of pointings in the RF training sample.
+
+    interpolate_rf = None     # Default, no interpolation
+    training_pointings = None # Default, no interpolation
+    if 'random_forest_zd_interpolation' in config:
+        zdinter = config['random_forest_zd_interpolation']
+        interpolate_energy = zdinter.get('interpolate_energy', False)
+        interpolate_gammaness = zdinter.get('interpolate_gammaness', False)
+        interpolate_direction = zdinter.get('interpolate_direction', False)
+        interpolate_rf = {'energy_regression': interpolate_energy,
+                          'particle_classification': interpolate_gammaness,
+                          'disp': interpolate_direction
+                          }
+        if True in interpolate_rf.values():
+            logger.info('Cos(zenith) interpolation will be used in:')
+            if interpolate_energy:
+                logger.info('   energy reconstruction Random Forest')
+            if interpolate_gammaness:
+                logger.info('   g/h classification Random Forest')
+            if interpolate_direction:
+                logger.info('   direction reconstruction Random Forest')
+
+            # Obtain the training pointings, needed for the RF interpolation:
+            training_pointings_path = Path(models_path, 'training_dirs.ecsv')
+            if training_pointings_path.is_file():
+                training_pointings = Table.read(training_pointings_path)
+                logger.info('RF training pointings:')
+                logger.info(training_pointings)
+            else:
+                logger.warning(f'{training_pointings_path} not found!')
+                logger.warning('Switching off RF interpolation with zenith!')
+                interpolate_rf = None
 
     if 'lh_fit_config' in config.keys():
         lhfit_data = pd.read_hdf(filename, key=dl1_likelihood_params_lstcam_key)
@@ -134,7 +169,9 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                           models_dict['reg_energy'],
                                           reg_disp_vector=models_dict['reg_disp_vector'],
                                           effective_focal_length=effective_focal_length,
-                                          custom_config=config)
+                                          custom_config=config,
+                                          interpolate_rf=interpolate_rf,
+                                          training_pointings=training_pointings)
         elif config['disp_method'] == 'disp_norm_sign':
             dl2 = dl1_to_dl2.apply_models(data,
                                           models_dict['cls_gh'],
@@ -142,7 +179,9 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                           reg_disp_norm=models_dict['reg_disp_norm'],
                                           cls_disp_sign=models_dict['cls_disp_sign'],
                                           effective_focal_length=effective_focal_length,
-                                          custom_config=config)
+                                          custom_config=config,
+                                          interpolate_rf=interpolate_rf,
+                                          training_pointings=training_pointings)
 
     # Source-dependent analysis
     if config['source_dependent']:
@@ -175,7 +214,9 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                                  models_dict['reg_energy'],
                                                  reg_disp_vector=models_dict['reg_disp_vector'],
                                                  effective_focal_length=effective_focal_length,
-                                                 custom_config=config)
+                                                 custom_config=config,
+                                                 interpolate_rf=interpolate_rf,
+                                                 training_pointings=training_pointings)
             elif config['disp_method'] == 'disp_norm_sign':
                 dl2 = dl1_to_dl2.apply_models(data_with_srcdep_param,
                                                  models_dict['cls_gh'],
@@ -183,7 +224,9 @@ def apply_to_file(filename, models_dict, output_dir, config):
                                                  reg_disp_norm=models_dict['reg_disp_norm'],
                                                  cls_disp_sign=models_dict['cls_disp_sign'],
                                                  effective_focal_length=effective_focal_length,
-                                                 custom_config=config)
+                                                 custom_config=config,
+                                                 interpolate_rf=interpolate_rf,
+                                                 training_pointings=training_pointings)
 
             dl2_srcdep = dl2.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
@@ -291,8 +334,8 @@ def main():
             models_dict[models_key] = joblib.load(models_path)
 
     for filename in args.input_files:
-        apply_to_file(filename, models_dict, args.output_dir, config)
-
+        apply_to_file(filename, models_dict, args.output_dir, config,
+                      args.path_models)
 
 
 if __name__ == '__main__':
