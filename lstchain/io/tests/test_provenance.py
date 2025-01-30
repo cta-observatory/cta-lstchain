@@ -1,8 +1,5 @@
 import pytest
-import json
 import h5py
-import pytest
-
 from lstchain.io.provenance import write_provenance, read_provenance
 from ctapipe.core import Provenance
 
