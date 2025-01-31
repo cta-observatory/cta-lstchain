@@ -14,7 +14,6 @@ The scripts to be executed from the command line are described below:
 * `lstchain_data_create_time_calibration_file`_
 * `lstchain_data_r0_to_dl1`_
 * `lstchain_dl1_muon_analysis`_
-* `lstchain_dl1_to_dl2`_
 * `lstchain_dl1ab`_
 * `lstchain_dump_config`_
 * `lstchain_find_pedestals`_
