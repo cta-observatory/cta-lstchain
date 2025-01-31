@@ -459,7 +459,10 @@ def main():
                 dl1_container['sin_az_tel'] = np.sin(params['az_tel'][ii])
 
                 for p in parameters_to_update:
-                    params[ii][p] = u.Quantity(dl1_container[p]).value
+                    if np.isscalar(dl1_container[p]):
+                        params[ii][p] = dl1_container[p]
+                    else:
+                        params[ii][p] = dl1_container[p].value
 
                 images[ii] = image
 
@@ -472,6 +475,11 @@ def main():
                 write_table(image_table, outfile, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
             add_config_metadata(params, config)
+            # Make sure we have the right units in all columns which have them
+            # (this is needed to process DL1 files produced with v0.9!):
+            for p in params.columns:
+                params[p].unit = dl1_container.fields[p].unit
+
             write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
             # write a cat-B calibrations in DL1b
