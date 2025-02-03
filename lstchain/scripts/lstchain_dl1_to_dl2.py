@@ -72,17 +72,17 @@ class DL1ToDL2Tool(Tool):
 
     path_models = traits.Path(
         help="Path where to find the trained RF",
-        default='./trained_models',
+        default_value='./trained_models',
     ).tag(config=True)
 
     output_dir = traits.Path(
         help="Path where to store the reco dl2 events",
-        default='./dl2_data',
+        default_value='./dl2_data',
     ).tag(config=True)
 
     config_file = traits.Path(
         help="Path to a configuration file. If none is given, a standard configuration is applied",
-        default=None,
+        default_value=None,
     ).tag(config=True)
 
     aliases = {
