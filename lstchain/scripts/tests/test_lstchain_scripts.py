@@ -366,6 +366,7 @@ def test_lstchain_merged_dl1_to_dl2(
         "lstchain_dl1_to_dl2",
         "-f",
         simulated_dl1_file_,
+        "-f",
         merged_simulated_dl1_file,
         "-p",
         rf_models["path"],
