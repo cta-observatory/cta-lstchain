@@ -81,6 +81,7 @@ class DL1ToDL2Tool(Tool):
     ).tag(config=True)
 
     config_file = traits.Path(
+        allow_none=True,
         help="Path to a configuration file. If none is given, a standard configuration is applied",
         default_value=None,
     ).tag(config=True)
