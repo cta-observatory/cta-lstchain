@@ -133,7 +133,8 @@ class DL1ToDL2Tool(Tool):
                 models_dict[models_key] = joblib.load(models_path)
 
         for input_dl1file in self.input_files:
-            output_filepath = apply_to_file(input_dl1file, models_dict, self.output_dir, config, self.path_models)
+            output_filepath = apply_to_file(input_dl1file, models_dict, self.output_dir, config, 
+                                            self.path_models, self.overwrite)
             p = Provenance()
             p.add_input_file(input_dl1file, role='dl1 input file')
             p.add_output_file(output_filepath, role='dl2 output file')
@@ -141,7 +142,7 @@ class DL1ToDL2Tool(Tool):
             write_provenance(output_filepath, 'dl1_to_dl2')
                 
 
-def apply_to_file(filename, models_dict, output_dir, config, models_path):
+def apply_to_file(filename, models_dict, output_dir, config, models_path, overwrite=False):
     """
     Applies models to the data in the specified file and writes the output to a new file in the output directory.
 
@@ -155,6 +156,11 @@ def apply_to_file(filename, models_dict, output_dir, config, models_path):
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True, parents=True)
     dl2_output_file = output_dir.joinpath(dl2_filename(filename.name))
+
+    # Remove previous file if overwrite option is used:
+    if overwrite:
+        dl2_output_file.unlink(missing_ok=True)
+
     if dl2_output_file.exists():
         raise IOError(str(dl2_output_file) + ' exists, exiting.')
 
