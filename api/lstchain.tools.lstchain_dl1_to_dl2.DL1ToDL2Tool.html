@@ -1,0 +1,256 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DL1ToDL2Tool &mdash; lstchain 0.10.16.dev23+g5f490a42 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=f769aa97"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script src="../_static/custom.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Visualization (visualization)" href="../lstchain_api/visualization/index.html" />
+    <link rel="prev" title="FitIntensityScan" href="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            lstchain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#data-levels">Data levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html#analysis-steps">Analysis steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lst_analysis_workflow.html">LST-1 data analysis workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snippets.html">Code snippets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../lstchain_api/index.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/tools/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/tools/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_calibration_file">lstchain.tools.lstchain_create_calibration_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_file">lstchain.tools.lstchain_create_dl3_file Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_dl3_index_files">lstchain.tools.lstchain_create_dl3_index_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_create_irf_files">lstchain.tools.lstchain_create_irf_files Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_fit_intensity_scan">lstchain.tools.lstchain_fit_intensity_scan Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/tools/index.html#module-lstchain.tools.lstchain_dl1_to_dl2">lstchain.tools.lstchain_dl1_to_dl2 Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/ctapipe_compat.html">Compatibility Wrappers for ctapipe (<cite>ctapipe_compat</cite>)</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">lstchain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
+      <li class="breadcrumb-item active">DL1ToDL2Tool</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dl1todl2tool">
+<h1>DL1ToDL2Tool<a class="headerlink" href="#dl1todl2tool" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lstchain.tools.lstchain_dl1_to_dl2.</span></span><span class="sig-name descname"><span class="pre">DL1ToDL2Tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Any" title="(in Python v3.6)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://ctapipe.readthedocs.io/en/v0.19.2/api/ctapipe.core.tool.Tool.html#ctapipe.core.tool.Tool" title="(in ctapipe v0.19.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tool</span></code></a></p>
+<p class="rubric">Attributes Summary</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.aliases" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.aliases"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aliases</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.config_file" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.config_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">config_file</span></code></a></p></td>
+<td><p>Path to a configuration file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.description" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">description</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.input_files" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.input_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_files</span></code></a></p></td>
+<td><p>Path (or list of paths) to a DL1 HDF5 file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.name" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.output_dir" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.output_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_dir</span></code></a></p></td>
+<td><p>Path where to store the reco dl2 events</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.path_models" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.path_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">path_models</span></code></a></p></td>
+<td><p>Path where to find the trained RF</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.setup" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>()</p></td>
+<td><p>Set up the tool.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.start" title="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.start"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start</span></code></a>()</p></td>
+<td><p>Main function of the tool.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">StrDict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{('c',</span> <span class="pre">'config'):</span> <span class="pre">'DL1ToDL2Tool.config_file',</span> <span class="pre">('f',</span> <span class="pre">'input-files'):</span> <span class="pre">'DL1ToDL2Tool.input_files',</span> <span class="pre">('o',</span> <span class="pre">'output-dir'):</span> <span class="pre">'DL1ToDL2Tool.output_dir',</span> <span class="pre">('p',</span> <span class="pre">'path-models'):</span> <span class="pre">'DL1ToDL2Tool.path_models'}</span></em><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.aliases" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.config_file">
+<span class="sig-name descname"><span class="pre">config_file</span></span><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.config_file" title="Link to this definition"></a></dt>
+<dd><p>Path to a configuration file. If none is given, a standard configuration is applied</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Unicode</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#bytes" title="(in Python v3.6)"><span class="pre">bytes</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\nRun</span> <span class="pre">the</span> <span class="pre">DL1</span> <span class="pre">to</span> <span class="pre">DL2</span> <span class="pre">step:</span> <span class="pre">Pipeline</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">reconstruction</span> <span class="pre">of</span> <span class="pre">Energy,</span> <span class="pre">disp</span> <span class="pre">and</span> <span class="pre">gamma/hadron\nseparation</span> <span class="pre">of</span> <span class="pre">events</span> <span class="pre">stored</span> <span class="pre">in</span> <span class="pre">a</span> <span class="pre">DL1</span> <span class="pre">file.</span> <span class="pre">It</span> <span class="pre">takes</span> <span class="pre">DL1</span> <span class="pre">file(s)</span> <span class="pre">and</span> <span class="pre">trained</span> <span class="pre">Random</span> <span class="pre">Forests</span> <span class="pre">as</span> <span class="pre">input</span> <span class="pre">\nand</span> <span class="pre">outputs</span> <span class="pre">DL2</span> <span class="pre">data</span> <span class="pre">file(s).\nRun</span> <span class="pre">lstchain_dl1_to_dl2</span> <span class="pre">--help</span> <span class="pre">to</span> <span class="pre">see</span> <span class="pre">the</span> <span class="pre">options.\n'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.description" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.input_files">
+<span class="sig-name descname"><span class="pre">input_files</span></span><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.input_files" title="Link to this definition"></a></dt>
+<dd><p>Path (or list of paths) to a DL1 HDF5 file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Unicode</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#bytes" title="(in Python v3.6)"><span class="pre">bytes</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'lstchain_dl1_to_dl2'</span></em><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.output_dir">
+<span class="sig-name descname"><span class="pre">output_dir</span></span><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.output_dir" title="Link to this definition"></a></dt>
+<dd><p>Path where to store the reco dl2 events</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.path_models">
+<span class="sig-name descname"><span class="pre">path_models</span></span><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.path_models" title="Link to this definition"></a></dt>
+<dd><p>Path where to find the trained RF</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.setup" title="Link to this definition"></a></dt>
+<dd><p>Set up the tool.</p>
+<p>This method runs after the configuration and command line options
+have been parsed.</p>
+<p>Here the tool should construct all <code class="docutils literal notranslate"><span class="pre">Components</span></code>, open files, etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.tools.lstchain_dl1_to_dl2.DL1ToDL2Tool.start" title="Link to this definition"></a></dt>
+<dd><p>Main function of the tool.</p>
+<p>This is automatically called after <cite>Tool.initialize</cite> when <cite>Tool.run</cite> is called.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lstchain.tools.lstchain_fit_intensity_scan.FitIntensityScan.html" class="btn btn-neutral float-left" title="FitIntensityScan" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../lstchain_api/visualization/index.html" class="btn btn-neutral float-right" title="Visualization (visualization)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright LST collaboration.  Last updated 04 Feb 2025 15:26.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

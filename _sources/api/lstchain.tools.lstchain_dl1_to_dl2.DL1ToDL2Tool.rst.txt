@@ -1,0 +1,41 @@
+DL1ToDL2Tool
+============
+
+.. currentmodule:: lstchain.tools.lstchain_dl1_to_dl2
+
+.. autoclass:: DL1ToDL2Tool
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DL1ToDL2Tool.aliases
+      ~DL1ToDL2Tool.config_file
+      ~DL1ToDL2Tool.description
+      ~DL1ToDL2Tool.input_files
+      ~DL1ToDL2Tool.name
+      ~DL1ToDL2Tool.output_dir
+      ~DL1ToDL2Tool.path_models
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~DL1ToDL2Tool.setup
+      ~DL1ToDL2Tool.start
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: aliases
+   .. autoattribute:: config_file
+   .. autoattribute:: description
+   .. autoattribute:: input_files
+   .. autoattribute:: name
+   .. autoattribute:: output_dir
+   .. autoattribute:: path_models
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: setup
+   .. automethod:: start
