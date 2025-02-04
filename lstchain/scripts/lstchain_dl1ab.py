@@ -27,7 +27,7 @@ from ctapipe.image import (
     apply_time_delta_cleaning,
 )
 from ctapipe.instrument import SubarrayDescription
-from ctapipe_io_lst import constants, OPTICS, load_camera_geometry
+from ctapipe_io_lst import constants, OPTICS, LSTEventSource
 
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
@@ -225,15 +225,17 @@ def main():
         delta_time = config[clean_method_name]["delta_time"]
 
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+    replace_subarray_info = False
     try:
         subarray_info = SubarrayDescription.from_hdf(args.input_file)
-        optics = subarray_info.tel[tel_id].optics
-        camera_geom = subarray_info.tel[tel_id].camera.geometry
     except OSError:
         log.warning("Subarray description table is not readable because of version incompatibility.")
         log.warning("The standard LST optics and camera geometry will be used.")
-        optics = OPTICS
-        camera_geom = load_camera_geometry()
+        replace_subarray_info = True
+        subarray_info = LSTEventSource.create_subarray(tel_id=tel_id)
+
+    optics = subarray_info.tel[tel_id].optics
+    camera_geom = subarray_info.tel[tel_id].camera.geometry
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = {
@@ -315,6 +317,10 @@ def main():
 
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
+            if replace_subarray_info:
+                outfile.remove_node("/configuration/instrument", recursive=True)
+                subarray_info.to_hdf(outfile)
+
             add_source_filenames(outfile, [args.input_file])
 
             # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
