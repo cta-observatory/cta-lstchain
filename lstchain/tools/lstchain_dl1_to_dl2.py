@@ -45,6 +45,9 @@ from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 logger = logging.getLogger(__name__)
 
 
+__all__ = ["DL1ToDL2Tool"]
+
+
 def dl2_filename(dl1_filename):
     """
     Create the name of the DL2 file from the DL1 file name.
