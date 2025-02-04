@@ -78,7 +78,7 @@ Here is an example configuration file for this step.
 DL1 to DL2
 ----------
 
-Use ``lstchain.scripts.lstchain_dl1_to_dl2`` for real data and MC.
+Use ``lstchain.tools.lstchain_dl1_to_dl2`` for real data and MC.
 
 For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 

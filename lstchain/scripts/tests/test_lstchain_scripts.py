@@ -17,6 +17,7 @@ from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import read_table
 from ctapipe.io import EventSource
 from ctapipe.containers import EventType
+from lstchain.io.provenance import read_dl2_provenance
 
 
 from lstchain.io.config import get_srcdep_config, get_standard_config
@@ -365,6 +366,7 @@ def test_lstchain_merged_dl1_to_dl2(
         "lstchain_dl1_to_dl2",
         "-f",
         simulated_dl1_file_,
+        "-f",
         merged_simulated_dl1_file,
         "-p",
         rf_models["path"],
@@ -385,6 +387,12 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_disp_dy" in dl2_df.columns
     assert "reco_src_x" in dl2_df.columns
     assert "reco_src_y" in dl2_df.columns
+    
+    prov = read_dl2_provenance(simulated_dl2_file)
+    assert "activity_name" in prov
+    assert "config" in prov
+    assert "path_models" in prov['config']['DL1ToDL2Tool']
+    assert prov['config']['DL1ToDL2Tool']['path_models'] is not None
 
 
 def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
