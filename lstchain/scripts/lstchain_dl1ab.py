@@ -27,7 +27,7 @@ from ctapipe.image import (
     apply_time_delta_cleaning,
 )
 from ctapipe.instrument import SubarrayDescription
-from ctapipe_io_lst import constants, OPTICS, LSTEventSource
+from ctapipe_io_lst import constants, LSTEventSource
 
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
