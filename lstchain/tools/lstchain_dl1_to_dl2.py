@@ -62,7 +62,7 @@ def dl2_filename(dl1_filename):
     return dl1_filename.replace('dl1', 'dl2', 1)
 
 class DL1ToDL2Tool(Tool):
-    name = "DL1 to DL2 Tool"
+    name = "lstchain_dl1_to_dl2"
     description = __doc__
 
     input_files = traits.List(
