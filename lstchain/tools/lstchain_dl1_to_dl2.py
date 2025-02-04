@@ -134,38 +134,42 @@ class DL1ToDL2Tool(Tool):
                 models_dict[models_key] = models_path
             else:
                 models_dict[models_key] = joblib.load(models_path)
-
+                
+        output_dir = Path(self.output_dir)
+        output_dir.mkdir(exist_ok=True, parents=True)
+        
         for input_dl1file in self.input_files:
-            output_filepath = apply_to_file(input_dl1file, models_dict, self.output_dir, config, 
-                                            self.path_models, self.overwrite)
+            dl2_output_file = output_dir.joinpath(dl2_filename(input_dl1file.name))
+
             p = Provenance()
             p.add_input_file(input_dl1file, role='dl1 input file')
-            p.add_output_file(output_filepath, role='dl2 output file')
+            p.add_output_file(dl2_output_file, role='dl2 output file')
             p.add_input_file(self.path_models, role='trained model directory')
-            write_provenance(output_filepath, 'dl1_to_dl2')
+
+            # Remove previous file if overwrite option is used:
+            if self.overwrite:
+                dl2_output_file.unlink(missing_ok=True)
+
+            if dl2_output_file.exists():
+                raise IOError(str(dl2_output_file) + ' exists, exiting.')
+
+            write_provenance(dl2_output_file, 'dl1_to_dl2')
+            
+            apply_to_file(input_dl1file, models_dict, dl2_output_file, config, 
+                          self.path_models)
                 
 
-def apply_to_file(filename, models_dict, output_dir, config, models_path, overwrite=False):
+def apply_to_file(filename, models_dict, dl2_output_file, config, models_path):
     """
     Applies models to the data in the specified file and writes the output to a new file in the output directory.
 
     Parameters:
     - filename (Path or str): The path to the input file.
     - models_dict (dict): A dictionary containing the models to be applied.
-    - output_dir (Path or str): The path for the output directory.
+    - dl2_output_file (Path or str): The path for the output DL2 file.
     - config (dict): The configuration dictionary containing parameters for the processing.
     - models_path (Path or str): The path to the directory containing the trained models.
     """
-    output_dir = Path(output_dir)
-    output_dir.mkdir(exist_ok=True, parents=True)
-    dl2_output_file = output_dir.joinpath(dl2_filename(filename.name))
-
-    # Remove previous file if overwrite option is used:
-    if overwrite:
-        dl2_output_file.unlink(missing_ok=True)
-
-    if dl2_output_file.exists():
-        raise IOError(str(dl2_output_file) + ' exists, exiting.')
 
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
