@@ -361,10 +361,16 @@ class DataReductionFITSWriter(Tool):
             self.data = self.cuts.apply_energy_dependent_gh_cuts(
                 self.data, self.energy_dependent_gh_cuts
             )
-            self.log.info(
-                "Using gamma efficiency of "
-                f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
-            )
+            if 'GH_EFF' in self.energy_dependent_gh_cuts.meta.keys():
+                self.log.info(
+                    "Using gamma efficiency of "
+                    f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
+                )
+            else:
+                self.log.info(
+                    "Using energy dependent gamma efficiency : "
+                    f"{self.energy_dependent_gh_cuts.meta['GH_CUTS']}"
+                )
         else:
             self.cuts.global_gh_cut = self.irf_final_hdu[1].header["GH_CUT"]
             self.data = self.cuts.apply_global_gh_cut(self.data)
