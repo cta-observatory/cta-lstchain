@@ -137,8 +137,8 @@ class IRFFITSWriter(Tool):
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
-        --cut_strategy-gh efficiency
-        --cut_strategy-theta efficiency
+        --cut_strategy-gh edep_efficiency
+        --cut_strategy-theta edep_efficiency
         --gh-efficiency 0.95
         --theta-containment 0.68
 
@@ -147,8 +147,8 @@ class IRFFITSWriter(Tool):
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
-        --cut_strategy-gh custom
-        --cut_strategy-theta custom
+        --cut_strategy-gh edep_custom
+        --cut_strategy-theta edep_custom
         --config /path/to/config.json (Must contain the custom cuts, see
         example provided in docs/examples/irf_dl3_tool_config_edepcuts.json)
 
