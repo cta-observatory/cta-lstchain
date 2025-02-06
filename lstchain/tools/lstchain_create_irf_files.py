@@ -11,7 +11,7 @@ The default values are written in the EventSelector, DL3Cuts and
 DataBinning Component and also given in some example configs in docs/examples/
 
 By default, the Tool uses global cuts for gammaness and theta.
-To use an alternative strategy use the argument cut_strategy_X, with X being
+To use an alternative strategy use the argument cut-strategy-X, with X being
 gh, theta or alpha, depending on which parameter is considered.
 Values for these arguments are global, edep_efficiency and edep_custom.
 
@@ -147,8 +147,8 @@ class IRFFITSWriter(Tool):
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
-        --cut_strategy-gh edep_custom
-        --cut_strategy-theta edep_custom
+        --cut-strategy-gh edep_custom
+        --cut-strategy-theta edep_custom
         --config /path/to/config.json (Must contain the custom cuts, see
         example provided in docs/examples/irf_dl3_tool_config_edepcuts.json)
 
@@ -252,6 +252,9 @@ class IRFFITSWriter(Tool):
         ("e", "input-electron-dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
         "irf-obs-time": "IRFFITSWriter.irf_obs_time",
+        "cut-strategy-gh": "IRFFITSWriter.cut_strategy_gh",
+        "cut-strategy-theta": "IRFFITSWriter.cut_strategy_theta",
+        "cut-strategy-alpha": "IRFFITSWriter.cut_strategy_alpha",
         "global-gh-cut": "DL3Cuts.global_gh_cut",
         "gh-efficiency": "DL3Cuts.gh_efficiency",
         "energy_dependent_gh_cut": "DL3Cuts.energy_dependent_gh_cut",
@@ -441,7 +444,7 @@ class IRFFITSWriter(Tool):
             if self.cut_strategy_gh == "edep_custom":
                 self.gh_cuts_gamma = self.cuts.from_dict("gh", reco_energy_bins, self.interpolate_custom)
                 self.log.info(
-                    f"Using provided energy dependent gammaness cuts"
+                    "Using provided energy dependent gammaness cuts"
                 )
             gammas = self.cuts.apply_energy_dependent_gh_cuts(
                 gammas, self.gh_cuts_gamma
@@ -467,7 +470,7 @@ class IRFFITSWriter(Tool):
                     if self.cut_strategy_theta == "edep_custom":
                         self.theta_cuts = self.cuts.from_dict("theta", reco_energy_bins, self.interpolate_custom)
                         self.log.info(
-                            f"Using provided energy dependent theta cuts"
+                            "Using provided energy dependent theta cuts"
                         )
                     gammas = self.cuts.apply_energy_dependent_theta_cuts(
                         gammas, self.theta_cuts
@@ -491,7 +494,7 @@ class IRFFITSWriter(Tool):
                     if self.cut_strategy_alpha == "edep_custom":
                         self.alpha_cuts = self.cuts.from_dict("alpha", reco_energy_bins, self.interpolate_custom)
                         self.log.info(
-                            f"Using provided energy dependent alpha cuts"
+                            "Using provided energy dependent alpha cuts"
                         )
                     gammas = self.cuts.apply_energy_dependent_alpha_cuts(
                         gammas, self.alpha_cuts

@@ -116,7 +116,7 @@ def test_create_irf_point_like_srcdep(
             assert isinstance(hdu.header["AL_CUT"], float)
 
 
-def test_create_irf_point_like_energy_dependent_cuts(
+def test_create_irf_point_like_energy_dependent_efficiency_cuts(
     temp_dir_observed_files, simulated_dl2_file
 ):
     """
@@ -136,9 +136,9 @@ def test_create_irf_point_like_energy_dependent_cuts(
                 f"--input-electron-dl2={simulated_dl2_file}",
                 f"--output-irf-file={irf_file}",
                 "--overwrite",
-                "--energy-dependent-gh",
+                "--cut-strategy-gh=edep_efficiency",
                 "--point-like",
-                "--energy-dependent-theta",
+                "--cut-strategy-theta=edep_efficiency",
                 "--DL3Cuts.max_theta_cut=1",
                 "--DL3Cuts.fill_theta_cut=1",
                 "--DL3Cuts.min_event_p_en_bin=2",
@@ -170,8 +170,8 @@ def test_create_irf_point_like_srcdep_energy_dependent_cuts(
                 f"--output-irf-file={irf_file}",
                 "--point-like",
                 "--source-dep",
-                "--energy-dependent-gh",
-                "--energy-dependent-alpha",
+                "--cut-strategy-gh=edep_efficiency",
+                "--cut-strategy-alpha=edep_efficiency",
                 "--DL3Cuts.min_event_p_en_bin=2",
                 "--overwrite",
             ],
