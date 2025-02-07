@@ -121,7 +121,7 @@ def test_create_irf_point_like_energy_dependent_efficiency_cuts(
 ):
     """
     Generating point-like IRF file from a test DL2 files, using
-    energy-dependent cuts
+    energy-dependent cuts based on gamma efficiency
     """
     from gammapy.irf import RadMax2D
 
@@ -151,12 +151,12 @@ def test_create_irf_point_like_energy_dependent_efficiency_cuts(
     assert RadMax2D.read(irf_file, hdu="RAD_MAX")
 
 
-def test_create_irf_point_like_srcdep_energy_dependent_cuts(
+def test_create_irf_point_like_srcdep_energy_dependent_efficiency_cuts(
     temp_dir_observed_srcdep_files, simulated_srcdep_dl2_file
 ):
     """
     Generating point-like source-dependent IRF file from a test DL2 files,
-    using energy-dependent cuts
+    using energy-dependent cuts based on gamma efficiency
     """
     from astropy.table import QTable
 
@@ -185,6 +185,73 @@ def test_create_irf_point_like_srcdep_energy_dependent_cuts(
 
     al_cuts = QTable.read(irf_file, hdu="AL_CUTS")
     assert isinstance(al_cuts.meta["AL_CONT"], float)
+
+
+def test_create_irf_point_like_energy_dependent_custom_cuts(
+        temp_dir_observed_files, simulated_dl2_file
+):
+    """
+    Generating point-like IRF file from a test DL2 files, using
+    custom energy-dependent cuts from a config file
+    """
+    from gammapy.irf import RadMax2D
+
+    irf_file = temp_dir_observed_files / "pnt_irf_custom.fits.gz"
+    config_file = os.path.join(os.getcwd(), "./docs/examples/irf_dl3_tool_config_edepcuts.json")
+
+    assert (
+            run_tool(
+                IRFFITSWriter(),
+                argv=[
+                    f"--input-gamma-dl2={simulated_dl2_file}",
+                    f"--input-proton-dl2={simulated_dl2_file}",
+                    f"--input-electron-dl2={simulated_dl2_file}",
+                    f"--output-irf-file={irf_file}",
+                    "--overwrite",
+                    "--point-like",
+                    f"--config={config_file}",
+                ],
+                cwd=temp_dir_observed_files,
+            )
+            == 0
+    )
+
+    assert RadMax2D.read(irf_file, hdu="RAD_MAX")
+
+
+def test_create_irf_point_like_srcdep_energy_dependent_custom_cuts(
+        temp_dir_observed_srcdep_files, simulated_srcdep_dl2_file
+):
+    """
+    Generating point-like source-dependent IRF file from a test DL2 files,
+    using custom energy-dependent cuts from a config file
+    """
+    from astropy.table import QTable
+
+    irf_file = temp_dir_observed_srcdep_files / "irf_edep_custom.fits.gz"
+    config_file = os.path.join(os.getcwd(), "./docs/examples/irf_dl3_tool_config_edepcuts.json")
+
+    assert (
+            run_tool(
+                IRFFITSWriter(),
+                argv=[
+                    f"--input-gamma-dl2={simulated_srcdep_dl2_file}",
+                    f"--output-irf-file={irf_file}",
+                    "--point-like",
+                    "--source-dep",
+                    f"--config={config_file}",
+                    "--overwrite",
+                ],
+                cwd=temp_dir_observed_srcdep_files,
+            )
+            == 0
+    )
+
+    gh_cuts = QTable.read(irf_file, hdu="GH_CUTS")
+    assert gh_cuts.meta["GH_CUTS"] == "custom energy dependent"
+
+    al_cuts = QTable.read(irf_file, hdu="AL_CUTS")
+    assert al_cuts.meta["AL_CUTS"] == "custom energy dependent"
 
 
 @pytest.mark.private_data
