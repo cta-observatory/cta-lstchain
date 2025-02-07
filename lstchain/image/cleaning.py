@@ -86,7 +86,9 @@ def find_tailcuts(input_dir, run_number):
     newconfig : dict
         cleaning configuration for running the DL1ab stage
     """
-
+    
+    log.setLevel(logging.INFO)
+       
     # subrun-wise dl1 file names:
     dl1_filenames = Path(input_dir,
                          run_to_dl1_filename(1, run_number, 0).replace(
