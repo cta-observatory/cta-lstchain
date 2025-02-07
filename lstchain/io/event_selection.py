@@ -355,6 +355,7 @@ class DL3Cuts(Component):
     def from_dict(self, parameter, energy_bins, interpolate_kind='nearest'):
         """
         Convert the cut dictionary to a QTable for the requested parameter.
+
         Parameters
         ----------
         parameter: string
