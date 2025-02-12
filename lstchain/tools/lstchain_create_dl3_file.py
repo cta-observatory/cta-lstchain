@@ -368,7 +368,7 @@ class DataReductionFITSWriter(Tool):
                 )
             else:
                 self.log.info(
-                    "Using energy dependent gamma efficiency : "
+                    "Using energy dependent gammaness cuts : "
                     f"{self.energy_dependent_gh_cuts.meta['GH_CUTS']}"
                 )
         else:
@@ -397,10 +397,16 @@ class DataReductionFITSWriter(Tool):
                 data_temp = self.cuts.apply_energy_dependent_gh_cuts(
                     data_temp, self.energy_dependent_gh_cuts
                 )
-                self.log.info(
-                    "Using gamma efficiency of "
-                    f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
-                )
+                if 'GH_EFF' in self.energy_dependent_gh_cuts.meta.keys():
+                    self.log.info(
+                        "Using gamma efficiency of "
+                        f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
+                    )
+                else:
+                    self.log.info(
+                        "Using energy dependent gammaness cuts : "
+                        f"{self.energy_dependent_gh_cuts.meta['GH_CUTS']}"
+                    )
             else:
                 self.cuts.global_gh_cut = self.irf_final_hdu[1].header["GH_CUT"]
                 data_temp = self.cuts.apply_global_gh_cut(data_temp)
@@ -412,10 +418,16 @@ class DataReductionFITSWriter(Tool):
                 data_temp = self.cuts.apply_energy_dependent_alpha_cuts(
                     data_temp, self.energy_dependent_alpha_cuts
                 )
-                self.log.info(
-                    "Using alpha containment region of "
-                    f'{self.energy_dependent_alpha_cuts.meta["AL_CONT"]}'
-                )
+                if 'AL_CONT' in self.energy_dependent_alpha_cuts.meta.keys():
+                    self.log.info(
+                        "Using alpha containment region of "
+                        f'{self.energy_dependent_alpha_cuts.meta["AL_CONT"]}'
+                    )
+                else:
+                    self.log.info(
+                        "Using energy dependent gammaness cuts : "
+                        f"{self.energy_dependent_gh_cuts.meta['AL_CUTS']}"
+                    )
             else:
                 self.cuts.global_alpha_cut = self.irf_final_hdu[1].header["AL_CUT"]
                 data_temp = self.cuts.apply_global_alpha_cut(data_temp)
