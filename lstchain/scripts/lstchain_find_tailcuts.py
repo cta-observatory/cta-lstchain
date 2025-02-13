@@ -60,6 +60,7 @@ def main():
     log_file = output_dir / log_file
     handler = logging.FileHandler(log_file, mode='w')
     logging.getLogger().addHandler(handler)
+    logging.getLogger('lstchain.image.cleaning').setLevel(logging.INFO)
 
     input_dir = args.input_dir.absolute()
 
