@@ -269,8 +269,11 @@ def main():
         parameters_to_update["calibration_id"] = np.int32
 
     nodes_keys = get_dataset_keys(args.input_file)
-    if args.no_image:
-        nodes_keys.remove(dl1_images_lstcam_key)
+    # Remove the images key from the list of nodes to be copied: 
+    # it will be added later if so chosen by the user.
+    # Copying it here sometimes resulted in too bulky files, due
+    # to empty chunks.
+    nodes_keys.remove(dl1_images_lstcam_key)
 
     metadata = global_metadata()
 
