@@ -319,6 +319,37 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_fi
 
 
 @pytest.mark.private_data
+def test_create_srcindep_dl3_energy_dependent_custom_cuts(
+        temp_dir_observed_files, observed_dl2_file
+):
+    """
+    Generating a source-independent DL3 file from a test DL2 files and test IRF file,
+    using custom energy-dependent cuts
+    """
+    from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
+
+    irf_file = temp_dir_observed_files / "pnt_irf_custom.fits.gz"
+
+    assert (
+            run_tool(
+                DataReductionFITSWriter(),
+                argv=[
+                    f"--input-dl2={observed_dl2_file}",
+                    f"--output-dl3-path={temp_dir_observed_files}",
+                    f"--input-irf-path={irf_file.parent}",
+                    f"--irf-file-pattern={irf_file.name}",
+                    "--source-name=Crab",
+                    "--source-ra=83.633deg",
+                    "--source-dec=22.01deg",
+                    "--overwrite",
+                ],
+                cwd=temp_dir_observed_files,
+            )
+            == 0
+    )
+
+
+@pytest.mark.private_data
 def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file, using
@@ -416,6 +447,38 @@ def test_create_srcdep_dl3_energy_dependent_cuts(
             cwd=temp_dir_observed_srcdep_files,
         )
         == 0
+    )
+
+
+@pytest.mark.private_data
+def test_create_srcdep_dl3_energy_dependent_custom_cuts(
+        temp_dir_observed_srcdep_files, observed_srcdep_dl2_file
+):
+    """
+    Generating a source-dependent DL3 file from a test DL2 files and test IRF file,
+    using energy-dependent cuts
+    """
+    from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
+
+    irf_file = temp_dir_observed_srcdep_files / "irf_edep_custom.fits.gz"
+
+    assert (
+            run_tool(
+                DataReductionFITSWriter(),
+                argv=[
+                    f"--input-dl2={observed_srcdep_dl2_file}",
+                    f"--output-dl3-path={temp_dir_observed_srcdep_files}",
+                    f"--input-irf-path={irf_file.parent}",
+                    f"--irf-file-pattern={irf_file.name}",
+                    "--source-name=Crab",
+                    "--source-ra=83.633deg",
+                    "--source-dec=22.01deg",
+                    "--source-dep",
+                    "--overwrite",
+                ],
+                cwd=temp_dir_observed_srcdep_files,
+            )
+            == 0
     )
 
 
