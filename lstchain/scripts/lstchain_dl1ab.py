@@ -104,6 +104,25 @@ parser.add_argument(
     help='Disable pedestal cleaning. This is also done automatically for simulations.',
 )
 
+####################################################################
+# Adding this option to scale the charge in all pixels of all events
+parser.add_argument(
+    '--light-scaling',
+    type=float,
+    dest='scale_factor',
+    default=1.,
+    help='Pass a float in order to scale by this value the charge in all pixels of all events.',
+)
+
+#############################################################
+# Adding an option to reduce subset to a range of intensities
+parser.add_argument(
+    '--intensity-range',
+    type=str,
+    dest='intensity_range',
+    default=None,
+    help='Pass a range of intensities to select events with intensity in that range.',
+)
 
 def main():
     args = parser.parse_args()
@@ -178,12 +197,19 @@ def main():
         smeared_light_fraction = imconfig["smeared_light_fraction"]
 
     args.pedestal_cleaning = False if is_simulation else args.pedestal_cleaning
+    
+    ###############################################################
+    # if we selected to scale the charge on the pixels by a factor
+    if args.scale_factor is not None:
+        scale_factor_total_light = float(args.scale_factor)
+    else:
+        scale_factor_total_light = 1. 
 
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
         sigma = config[clean_method_name]['sigma']
-        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
+        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma) * scale_factor_total_light
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Fraction of Cat_A pixel cleaning thresholds above Cat_A picture thr.:"
@@ -331,11 +357,28 @@ def main():
                 outfile.root[dl1_params_lstcam_key].attrs[k] = item
             outfile.root[dl1_params_lstcam_key].attrs["config"] = str(config)
 
+
+            #################################
+            # Data selection
+
+            # select events with intensity in a given range
+            if args.intensity_range is not None:
+
+                rang = [float(args.intensity_range.split(",")[0]), float(args.intensity_range.split(",")[1])]
+
+                intensity_mask = (params["intensity"] >= rang[0]) & (params["intensity"] <= rang[1])    
+            else:
+                intensity_mask = np.ones(len(params), dtype=bool)
+
+            # Select events with intensity in a given range
+            image_table = image_table[intensity_mask]
+            params = params[intensity_mask]
+
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
 
-                image = row['image']
+                image = row['image'] * scale_factor_total_light
                 peak_time = row['peak_time']
 
                 if catB_calib:
@@ -355,8 +398,9 @@ def main():
                     n_samples = config['LocalPeakWindowSum']['window_width']
                     pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
 
-                    # calibrate charge
-                    image = (image - pedestal) * dc_to_pe
+                    #############################################
+                    # calibrate charge, scaling also the pedestal
+                    image = (image - pedestal * scale_factor_total_light) * dc_to_pe
 
                     # put to zero charge unusable pixels in order not to select them in the cleaning
                     image[unusable_pixels] = 0
