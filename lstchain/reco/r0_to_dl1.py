@@ -535,8 +535,13 @@ def r0_to_dl1(
                                            new_ped=True, new_ff=True)
 
                 # flat-field or pedestal:
-                if (event.trigger.event_type == EventType.FLATFIELD or
-                        event.trigger.event_type == EventType.SKY_PEDESTAL):
+                if ((event.trigger.event_type == EventType.FLATFIELD or
+                     event.trigger.event_type == EventType.SKY_PEDESTAL) and
+                    event.r0.tel[tel_id].waveform is not None):
+
+                    # Check on r0 waveform != None is needed for R0G and R0V data: 
+                    # occasionally there is an interleaved event which has only 
+                    # one gain (due to misidentification in R0G/V creation)
 
                     # process interleaved events (pedestals, ff, calibration)
                     new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
