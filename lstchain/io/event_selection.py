@@ -351,23 +351,23 @@ class DL3Cuts(Component):
         )
         return data[data["selected_alpha"]]
 
-
-    def from_dict(self, parameter, energy_bins, interpolate_kind='nearest'):
+    def from_dict(self, parameter, irf_energy_bins, interpolation_kind='nearest'):
         """
         Convert the cut dictionary to a QTable for the requested parameter.
+        Cut values are interpolated along the IRF energy binning.
 
         Parameters
         ----------
         parameter: string
             'gh', 'theta' or 'alpha'
-        energy_bins: `astropy.units.quantity.Quantity`
+        irf_energy_bins: `astropy.units.quantity.Quantity`
             energy bins used for the IRFs
-        interpolate_kind: string
+        interpolation_kind: string
             Interpolation strategy for `scipy.interpolate.interp1d`
 
         Returns
         -------
-        cut_table: QTable
+        cut_table: `astropy.table.QTable`
             Energy dependent cuts for the requested parameter.
 
         """
@@ -383,11 +383,11 @@ class DL3Cuts(Component):
 
         input_ebins_center = (cuts_dict["energy_bins"][:-1]* u.TeV + cuts_dict["energy_bins"][1:] * u.TeV) * 0.5
 
-        cut_table["low"] =energy_bins[:-1]
-        cut_table["high"] = energy_bins[1:]
+        cut_table["low"] = irf_energy_bins[:-1]
+        cut_table["high"] = irf_energy_bins[1:]
         cut_table["center"] = 0.5 * (cut_table["low"] + cut_table["high"])
-        f_cut=interp1d(input_ebins_center, cuts_dict["cut"], kind=interpolate_kind, bounds_error=False,
-                       fill_value=(cuts_dict["cut"][0], cuts_dict["cut"][-1]), assume_sorted=True)
+        f_cut = interp1d(input_ebins_center, cuts_dict["cut"], kind=interpolation_kind, bounds_error=False,
+                         fill_value=(cuts_dict["cut"][0], cuts_dict["cut"][-1]), assume_sorted=True)
         cut_table["cut"] = f_cut(cut_table["center"]) * unit
 
         return cut_table

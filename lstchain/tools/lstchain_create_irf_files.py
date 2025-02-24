@@ -211,27 +211,27 @@ class IRFFITSWriter(Tool):
     ).tag(config=True)
 
     cut_strategy_gh = traits.Unicode(
-        help="Define the strategy used for the gammaness cut."
+        help="Strategy used for the gammaness cut."
              "Possible values are global, edep_efficiency or edep_custom.",
         default_value="global",
     ).tag(config=True)
 
     cut_strategy_theta = traits.Unicode(
-        help="Define the strategy used for the theta cut."
+        help="Strategy used for the theta cut."
              "Possible values are global, edep_efficiency or edep_custom.",
         default_value="global",
     ).tag(config=True)
 
     cut_strategy_alpha = traits.Unicode(
-        help="Define the strategy used for the alpha cut."
+        help="Strategy used for the alpha cut."
              "Possible values are global, edep_efficiency or edep_custom.",
         default_value="global",
     ).tag(config=True)
 
-    interpolate_custom = traits.Unicode(
+    interp_method_custom_cuts = traits.Unicode(
         help="Interpolation option for scipy.interpolate.interp1d used with "
              "custom, energy dependent cuts.",
-        default_value="global",
+        default_value="nearest",
     ).tag(config=True)
 
     overwrite = traits.Bool(
@@ -442,7 +442,7 @@ class IRFFITSWriter(Tool):
                     f"Using gamma efficiency of {self.cuts.gh_efficiency}"
                 )
             if self.cut_strategy_gh == "edep_custom":
-                self.gh_cuts_gamma = self.cuts.from_dict("gh", reco_energy_bins, self.interpolate_custom)
+                self.gh_cuts_gamma = self.cuts.from_dict("gh", reco_energy_bins, self.interp_method_custom_cuts)
                 self.log.info(
                     "Using provided energy dependent gammaness cuts"
                 )
@@ -468,7 +468,7 @@ class IRFFITSWriter(Tool):
                             f"{self.cuts.theta_containment}"
                         )
                     if self.cut_strategy_theta == "edep_custom":
-                        self.theta_cuts = self.cuts.from_dict("theta", reco_energy_bins, self.interpolate_custom)
+                        self.theta_cuts = self.cuts.from_dict("theta", reco_energy_bins, self.interp_method_custom_cuts)
                         self.log.info(
                             "Using provided energy dependent theta cuts"
                         )
@@ -492,7 +492,7 @@ class IRFFITSWriter(Tool):
                             f"{self.cuts.alpha_containment} %"
                         )
                     if self.cut_strategy_alpha == "edep_custom":
-                        self.alpha_cuts = self.cuts.from_dict("alpha", reco_energy_bins, self.interpolate_custom)
+                        self.alpha_cuts = self.cuts.from_dict("alpha", reco_energy_bins, self.interp_method_custom_cuts)
                         self.log.info(
                             "Using provided energy dependent alpha cuts"
                         )
