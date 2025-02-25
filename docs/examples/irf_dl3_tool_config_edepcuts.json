@@ -14,7 +14,7 @@
     "cut_strategy_gh": "edep_custom",
     "cut_strategy_theta": "edep_custom",
     "cut_strategy_alpha": "edep_custom",
-    "interpolate_custom": "nearest"
+    "interp_method_custom_cuts": "nearest"
   },
   "DL3Cuts": {
     "min_event_p_en_bin": 100,
