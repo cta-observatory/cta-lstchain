@@ -354,8 +354,6 @@ def r0_to_dl1(
     metadata = global_metadata()
     write_metadata(metadata, output_filename)
 
-    cal_mc = load_calibrator_from_config(config, subarray)
-
     # minimum number of pe in a pixel to include it
     # in calculation of muon ring time (peak sample):
     min_pe_for_muon_t_calc = 10.
@@ -438,6 +436,16 @@ def r0_to_dl1(
                 logger.info(f'{nsb_tuning_rate:.3f} GHz for telescope ids:')
                 logger.info(f'{allowed_tels}')
 
+                # NOTE: mc_image_scaling_factor (in config) can be used to adjust the light 
+                # collection efficiency in the MC to that of data - this is an approximation: 
+                # after the scaling, the fluctuations of the signals will be smaller in MC than 
+                # in data (since more p.e. have been simulated, then it signal scaled down). The 
+                # adjustment can be needed due to poor atmospheric transmission and/or dirty 
+                # mirror, or camera window.
+                # TBD: it is not obvious how the rate of additional nsb (nsb_tuning rate)
+                # obtained from this sort of data would have to be modified (if at all) to get
+                # a good match of the noise after the scaling.
+
                 nsb_per_tel = {tel_id: nsb_tuning_rate * u.GHz for tel_id in
                                allowed_tels}
 
@@ -507,11 +515,6 @@ def r0_to_dl1(
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
-                cal_mc(event)
-
-                if config['mc_image_scaling_factor'] != 1:
-                    rescale_dl1_charge(event, config['mc_image_scaling_factor'])
-
             else:
                 if i == 0:
                     # initialize the telescope
@@ -585,6 +588,11 @@ def r0_to_dl1(
 
             # create image for all events
             r1_dl1_calibrator(event)
+
+            if is_simu:
+                # Scale all integrated charges in all pixels if requested by user:
+                if config['mc_image_scaling_factor'] != 1:
+                    rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
