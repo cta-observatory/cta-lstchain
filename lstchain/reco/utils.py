@@ -20,6 +20,7 @@ from ctapipe.coordinates import CameraFrame
 from ctapipe.containers import EventType
 from ctapipe_io_lst import OPTICS
 from ctapipe_io_lst.constants import LST1_LOCATION
+from scipy.signal import find_peaks
 
 from . import disp
 
@@ -40,6 +41,8 @@ __all__ = [
     "get_effective_time",
     "get_event_pos_in_camera",
     "get_geomagnetic_delta",
+    "get_intensity_threshold",
+    "get_intensity_cut",
     "impute_pointing",
     "linear_imputer",
     "polar_to_cartesian",
@@ -776,6 +779,126 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
     delta = np.arccos(term)
 
     return delta
+
+
+def get_intensity_threshold(data):
+    """
+    Obtain from a dl2 data table the peak of the differential
+    intensity (I) spectrum, i.e. dR/dI = dN/dt/dI (events/s/p.e.), and
+    determine from it the intensity at which the 50% of the peak rate 
+    is reached on the rising edge.
+    
+    Parameters
+    ----------
+    data: pandas DataFrame or astropy.table.QTable of dl2 events.
+
+    Returns
+    -------
+    xmax: (float) Intensity (in p.e.) at which the peak of dR/dI is reached 
+    
+    ymax: (float) Value of dR/dI at peak (events/s/p.e.)
+
+    x50: (float) Intensity (in p.e.) at which 50% ofthe peak of dR/dI is reached
+    on the rising edge of the peak. Will be nan if not found in the search range
+
+    y50: (float) 50% of the peak dR/dI (events/s/p.e.). Will be nan if not found
+    in the search range
+
+    bincenters: (array) the centers (in log10(intensity)) of the bins of 
+    the intensity histogram used in the calculation (p.e.)
+
+    nevents: (array) the bin contents of the histogram used in the calculation
+    (events/s/p.e.)
+    
+    """
+    
+    # p.e. range where to look for the "true" cosmics peak
+    min_intensity = 25 
+    max_intensity = 1000  
+    # At lower intensity there are occasioanally fake peaks from stars, 
+    # satellites, meteors...
+    # At higher intensity there are sometimes peak from external light 
+    # sources, and from mis-tagged FF events
+    step = 0.02 # in log10(intensity), for histogramming & peak finding
+    
+    efftime, _ = get_effective_time(data)
+
+    nbins = 1 + int( (np.log10(max_intensity) - np.log10(min_intensity)) / step)
+    bins = np.logspace(np.log10(min_intensity), 
+                       np.log10(max_intensity), nbins)
+    binwidth = np.diff(bins)
+    nevents, _ = np.histogram(data['intensity'], bins=bins)
+    nevents = nevents.astype('float') / (binwidth*efftime.to_value(u.s))
+
+    peaks, properties = find_peaks(np.log10(nevents), 
+                                   prominence=0.04, # ~10% in log10 scale
+                                   width=int(0.1/step)) # ~25% in log10 scale
+    if len(peaks) == 0:
+        return np.nan, np.nan, x, y
+
+    bincenters = (bins[1:]*bins[:-1])**0.5 # geometrical mean (log bin center)
+    
+    xmax = bincenters[peaks.max()] # The peak at highest intensity (spurious peaks sometimes at low values)
+    ymax = nevents[peaks.max()]
+
+    # Find the intensity for which 50% of peak dR/dI is reached, moving down from the peak, in finer steps
+    # for better precision:
+    finestep = 0.001 # in log10(intensity)
+    xx = np.logspace(np.log10(min_intensity), 
+                     np.log10(xmax), 
+                     1+int((np.log10(xmax) - np.log10(min_intensity))/finestep))[::-1]
+
+    # Linear interpolation in dR/dI (differential rate) vs. log10(intensity/p.e.):    
+    yy = np.interp(np.log10(xx), np.log10(bincenters), nevents)
+
+    x50 = np.nan
+    y50 = np.nan
+    for xxx, yyy in zip(xx, yy):
+        if yyy < 0.5 * ymax:
+            x50 = xxx
+            y50 = np.interp(np.log10(xxx), np.log10(bincenters), nevents)
+            break
+
+    # If the 50% of peak rate is not found, x50 and y50 will be returned as nan
+    # In some cases this may be because the cosmic-ray dR/dI peak merges with a 
+    # lower-intensity peak from star-illuminated pixels, meteors, satellites...
+    # The data may still be usable, and in that case we should probably apply the
+    # default low intensity cut (50 p.e.). If data turn out to have some more 
+    # serious problem, that should be determined elsewhere.
+    
+    return xmax, ymax, x50, y50, bincenters, nevents
+
+
+def get_intensity_cut(data):
+    """
+    Obtain from a dl2 data table the recommended minimum intensity
+    cut to be applied in the event selection as a "software trigger"
+    to improve the agreement between data and MC.
+    
+    Parameters
+    ----------
+    data: pandas DataFrame or astropy.table.QTable of dl2 events.
+
+    Returns
+    -------
+    intensity_cut: (p.e.) Recommended intensity cut (both in data and MC)
+    to achieve a good match between data and MC
+    """
+
+    # Factor by which we multiply the "intensity threshold" (intensity at which
+    # 50% of peak rate dR/dI is reached) to obtain the (minimum) intensity cut. 
+    factor = 1.3 
+    # This value results in ~50 p.e. for the bulk of the LST1 data taken in dark 
+    # conditions (this cut provides good data-MC agreement in image parameters,
+    # as shown in the LST1 performance paper, ApJ 956
+
+    default_cut = 50 # p.e.
+    # We return the default of 50 p.e., if factor * intensity_threshold is below it. 
+    
+    _, _, intensity_at_50pc_peak_rate, _, _, _ = get_intensity_threshold(data)
+    intensity_cut = max(50, 1.3 * intensity_at_50pc_peak_rate)
+
+    return intensity_cut
 
 
 def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inplace=True):
