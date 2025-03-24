@@ -829,14 +829,15 @@ def get_intensity_threshold(data):
     binwidth = np.diff(bins)
     nevents, _ = np.histogram(data['intensity'], bins=bins)
     nevents = nevents.astype('float') / (binwidth*efftime.to_value(u.s))
-
+    bincenters = (bins[1:]*bins[:-1])**0.5 # geometrical mean (log bin center)
+ 
     peaks, properties = find_peaks(np.log10(nevents), 
                                    prominence=0.04, # ~10% in log10 scale
                                    width=int(0.1/step)) # ~25% in log10 scale
-    if len(peaks) == 0:
-        return np.nan, np.nan, x, y
 
-    bincenters = (bins[1:]*bins[:-1])**0.5 # geometrical mean (log bin center)
+    # If no peak is found, nans are returned (except for the histogram data):
+    if len(peaks) == 0:
+        return np.nan, np.nan, np.nan, np.nan, bincenters, nevents
     
     xmax = bincenters[peaks.max()] # The peak at highest intensity (spurious peaks sometimes at low values)
     ymax = nevents[peaks.max()]
