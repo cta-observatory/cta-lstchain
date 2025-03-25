@@ -870,7 +870,7 @@ def get_intensity_threshold(data):
     # serious problem, that should be determined elsewhere.
 
     if np.isnan(x50):
-        log.warning('Rising edge of intensity spectrum peak not found in expected range!')
+        log.warning('Rising edge (50%) of intensity spectrum peak not found in the expected range!')
         log.warning('Perhaps the peak overlaps with an anomalous peak at lower intensity?')
     
     return xmax, ymax, x50, y50, bincenters, drdi
