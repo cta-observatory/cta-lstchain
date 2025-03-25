@@ -838,6 +838,7 @@ def get_intensity_threshold(data):
 
     # If no peak is found, nans are returned (except for the histogram data):
     if len(peaks) == 0:
+        log.warning('Peak of the intensity spectrum not found!')
         return np.nan, np.nan, np.nan, np.nan, bincenters, drdi
     
     xmax = bincenters[peaks.max()] # The peak at highest intensity (spurious peaks sometimes at low values)
@@ -867,6 +868,10 @@ def get_intensity_threshold(data):
     # The data may still be usable, and in that case we should probably apply the
     # default low intensity cut (50 p.e.). If data turn out to have some more 
     # serious problem, that should be determined elsewhere.
+
+    if np.isnan(x50):
+        log.warning('Rising edge of intensity spectrum peak not found in expected range!')
+        log.warning('Perhaps the peak overlaps with an anomalous peak at lower intensity?')
     
     return xmax, ymax, x50, y50, bincenters, drdi
 
