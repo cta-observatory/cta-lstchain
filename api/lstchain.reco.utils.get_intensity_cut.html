@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>calculate_noise_parameters &mdash; lstchain 0.10.19.dev18+gcaefc087 documentation</title>
+  <title>get_intensity_cut &mdash; lstchain 0.10.19.dev18+gcaefc087 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -30,8 +30,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="random_psf_smearer" href="lstchain.image.modifier.random_psf_smearer.html" />
-    <link rel="prev" title="calculate_required_additional_nsb" href="lstchain.image.modifier.calculate_required_additional_nsb.html" /> 
+    <link rel="next" title="impute_pointing" href="lstchain.reco.utils.impute_pointing.html" />
+    <link rel="prev" title="get_intensity_threshold" href="lstchain.reco.utils.get_intensity_threshold.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -68,22 +68,21 @@
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/calib/index.html">Calibration (<cite>calib</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/datachecks/index.html">Datachecks (<cite>datachecks</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/high_level/index.html">High Level Analysis (<cite>high_level</cite>)</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/image/index.html#introduction">Introduction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/image/index.html#muon-analysis">Muon analysis</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/image/index.html#reference-api">Reference/API</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image">lstchain.image Package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.cleaning">lstchain.image.cleaning Module</a></li>
-<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.modifier">lstchain.image.modifier Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.muon.muon_analysis">lstchain.image.muon.muon_analysis Module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/image/index.html#module-lstchain.image.muon.plot_muon">lstchain.image.muon.plot_muon Module</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/io/index.html">Input/Output (<cite>io</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/mc/index.html">MonteCarlo (<cite>mc</cite>)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../lstchain_api/reco/index.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../lstchain_api/reco/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.disp">lstchain.reco.disp Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.dl1_to_dl2">lstchain.reco.dl1_to_dl2 Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.r0_to_dl1">lstchain.reco.r0_to_dl1 Module</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.utils">lstchain.reco.utils Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstchain_api/reco/index.html#module-lstchain.reco.volume_reducer">lstchain.reco.volume_reducer Module</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/scripts/index.html">Command line Scripts (<cite>scripts</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/tools/index.html">Command line Tools (<cite>tools</cite>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lstchain_api/visualization/index.html">Visualization (<cite>visualization</cite>)</a></li>
@@ -107,10 +106,10 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../lstchain_api/index.html">API Docs</a></li>
-          <li class="breadcrumb-item"><a href="../lstchain_api/image/index.html">Image (<cite>image</cite>)</a></li>
-      <li class="breadcrumb-item active">calculate_noise_parameters</li>
+          <li class="breadcrumb-item"><a href="../lstchain_api/reco/index.html">Reconstruction (<cite>reco</cite>)</a></li>
+      <li class="breadcrumb-item active">get_intensity_cut</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/lstchain.image.modifier.calculate_noise_parameters.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api/lstchain.reco.utils.get_intensity_cut.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -118,42 +117,24 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="calculate-noise-parameters">
-<h1>calculate_noise_parameters<a class="headerlink" href="#calculate-noise-parameters" title="Link to this heading"></a></h1>
+  <section id="get-intensity-cut">
+<h1>get_intensity_cut<a class="headerlink" href="#get-intensity-cut" title="Link to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="lstchain.image.modifier.calculate_noise_parameters">
-<span class="sig-prename descclassname"><span class="pre">lstchain.image.modifier.</span></span><span class="sig-name descname"><span class="pre">calculate_noise_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simtel_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dl1_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.image.modifier.calculate_noise_parameters" title="Link to this definition"></a></dt>
-<dd><p>Calculates the parameters needed to increase the noise in an MC DL1 file
-to match the noise in a real data DL1 file, using add_noise_in_pixels
-The returned parameters are those needed by the function add_noise_in_pixels (see
-description in its documentation above).</p>
+<dt class="sig sig-object py" id="lstchain.reco.utils.get_intensity_cut">
+<span class="sig-prename descclassname"><span class="pre">lstchain.reco.utils.</span></span><span class="sig-name descname"><span class="pre">get_intensity_cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.reco.utils.get_intensity_cut" title="Link to this definition"></a></dt>
+<dd><p>Obtain from a dl2 data table the recommended minimum intensity
+cut to be applied in the event selection as a “software trigger”
+to improve the agreement between data and MC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>simtel_filename: `str`</strong></dt><dd><p>a simtel file containing showers, from the same
-production (same NSB and telescope settings) as the MC DL1 file below. It
-must contain pixel-wise info on true number of p.e.’s from C-photons (
-will be used to identify pixels which only contain noise).</p>
-</dd>
-<dt><strong>data_dl1_filename: `str`</strong></dt><dd><p>a real data DL1 file (processed with calibration
-settings corresponding to those with which the MC is to be processed).
-It must contain calibrated images, i.e. “DL1a” data. This file has the
-“target” noise which we want to have in the MC files, for better
-agreement of data and simulations.</p>
-</dd>
-<dt><strong>config_filename: `str`</strong></dt><dd><p>configuration file containing the calibration
-settings used for processing both the data and the MC files above</p>
-</dd>
+<dt><strong>data: pandas DataFrame or astropy.table.QTable of dl2 events.</strong></dt><dd></dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>extra_noise_in_dim_pixels: <cite>float</cite></dt><dd><p>Extra noise of dim pixels (number of NSB photoelectrons).</p>
-</dd>
-<dt>extra_bias_in_dim_pixels: <cite>float</cite></dt><dd><p>Extra bias of dim pixels  (direct shift in photoelectrons).</p>
-</dd>
-<dt>extra_noise_in_bright_pixels: <cite>float</cite></dt><dd><p>Extra noise of bright pixels  (number of NSB photoelectrons).</p>
-</dd>
+<dt>intensity_cut: (p.e.) Recommended intensity cut (both in data and MC)</dt><dd></dd>
+<dt>to achieve a good match between data and MC</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -165,8 +146,8 @@ settings used for processing both the data and the MC files above</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="lstchain.image.modifier.calculate_required_additional_nsb.html" class="btn btn-neutral float-left" title="calculate_required_additional_nsb" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="lstchain.image.modifier.random_psf_smearer.html" class="btn btn-neutral float-right" title="random_psf_smearer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="lstchain.reco.utils.get_intensity_threshold.html" class="btn btn-neutral float-left" title="get_intensity_threshold" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lstchain.reco.utils.impute_pointing.html" class="btn btn-neutral float-right" title="impute_pointing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

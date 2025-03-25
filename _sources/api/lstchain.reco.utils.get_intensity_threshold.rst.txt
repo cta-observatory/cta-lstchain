@@ -1,0 +1,6 @@
+get_intensity_threshold
+=======================
+
+.. currentmodule:: lstchain.reco.utils
+
+.. autofunction:: get_intensity_threshold
