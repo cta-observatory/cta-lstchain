@@ -905,6 +905,9 @@ def get_intensity_cut(data):
     _, _, intensity_at_50pc_peak_rate, _, _, _ = get_intensity_threshold(data)
     intensity_cut = max(default_cut, factor * intensity_at_50pc_peak_rate)
 
+    if intensity_cut == default_cut:
+        log.info(f'The default cut of {default_cut} p.e. is fine for these data!')
+
     return intensity_cut
 
 
