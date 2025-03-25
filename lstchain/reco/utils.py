@@ -807,8 +807,9 @@ def get_intensity_threshold(data):
     bincenters: (array) the centers (in log10(intensity)) of the bins of 
     the intensity histogram used in the calculation (p.e.)
 
-    nevents: (array) the bin contents of the histogram used in the calculation
-    (events/s/p.e.)
+    drdi: (array) the dR/dI values (events/s/p.e.) at the intensity values 
+    in bincenters 
+    
     
     """
     
@@ -828,19 +829,19 @@ def get_intensity_threshold(data):
                        np.log10(max_intensity), nbins)
     binwidth = np.diff(bins)
     nevents, _ = np.histogram(data['intensity'], bins=bins)
-    nevents = nevents.astype('float') / (binwidth*efftime.to_value(u.s))
+    drdi = nevents.astype('float') / (binwidth*efftime.to_value(u.s))
     bincenters = (bins[1:]*bins[:-1])**0.5 # geometrical mean (log bin center)
  
-    peaks, properties = find_peaks(np.log10(nevents), 
+    peaks, properties = find_peaks(np.log10(drdi), 
                                    prominence=0.04, # ~10% in log10 scale
                                    width=int(0.1/step)) # ~25% in log10 scale
 
     # If no peak is found, nans are returned (except for the histogram data):
     if len(peaks) == 0:
-        return np.nan, np.nan, np.nan, np.nan, bincenters, nevents
+        return np.nan, np.nan, np.nan, np.nan, bincenters, drdi
     
     xmax = bincenters[peaks.max()] # The peak at highest intensity (spurious peaks sometimes at low values)
-    ymax = nevents[peaks.max()]
+    ymax = drdi[peaks.max()]
 
     # Find the intensity for which 50% of peak dR/dI is reached, moving down from the peak, in finer steps
     # for better precision:
@@ -850,14 +851,14 @@ def get_intensity_threshold(data):
                      1+int((np.log10(xmax) - np.log10(min_intensity))/finestep))[::-1]
 
     # Linear interpolation in dR/dI (differential rate) vs. log10(intensity/p.e.):    
-    yy = np.interp(np.log10(xx), np.log10(bincenters), nevents)
+    yy = np.interp(np.log10(xx), np.log10(bincenters), drdi)
 
     x50 = np.nan
     y50 = np.nan
     for xxx, yyy in zip(xx, yy):
         if yyy < 0.5 * ymax:
             x50 = xxx
-            y50 = np.interp(np.log10(xxx), np.log10(bincenters), nevents)
+            y50 = np.interp(np.log10(xxx), np.log10(bincenters), drdi)
             break
 
     # If the 50% of peak rate is not found, x50 and y50 will be returned as nan
@@ -867,7 +868,7 @@ def get_intensity_threshold(data):
     # default low intensity cut (50 p.e.). If data turn out to have some more 
     # serious problem, that should be determined elsewhere.
     
-    return xmax, ymax, x50, y50, bincenters, nevents
+    return xmax, ymax, x50, y50, bincenters, drdi
 
 
 def get_intensity_cut(data):
