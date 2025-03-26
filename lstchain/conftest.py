@@ -42,14 +42,12 @@ def temp_dir_simulated_srcdep_files(tmp_path_factory):
     return tmp_path_factory.mktemp("simulated_srcdep_files")
 
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def temp_dir_observed_files(tmp_path_factory):
     """Temporal common directory for processing observed data."""
     return tmp_path_factory.mktemp("observed_files")
 
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def temp_dir_observed_srcdep_files(tmp_path_factory):
     """Temporal common directory for processing observed data."""
@@ -87,7 +85,6 @@ def run_summary_path(temp_dir_observed_files):
     return run_summary_path
 
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     """
@@ -209,7 +206,6 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
 
 
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def interleaved_r1_file(temp_dir_observed_files, run_summary_path):
     test_pedcal_run = test_data / 'real/R0/20200218/LST-1.1.Run02006.0000_first50.fits.fz'
@@ -364,7 +360,6 @@ def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file, simula
     }
 
 @pytest.fixture(scope="session")
-@pytest.mark.private_data
 def observed_dl2_file(temp_dir_observed_files, observed_dl1_files, rf_models):
     """Produce a dl2 file from an observed dl1 file."""
     real_data_dl2_file = temp_dir_observed_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
@@ -381,7 +376,6 @@ def observed_dl2_file(temp_dir_observed_files, observed_dl1_files, rf_models):
 
 
 @pytest.fixture(scope="session")
-@pytest.mark.private_data
 def observed_srcdep_dl2_file(temp_dir_observed_srcdep_files, observed_dl1_files, rf_models_srcdep):
     """Produce a source-dependent dl2 file from an observed dl1 file."""
     real_data_srcdep_dl2_file = temp_dir_observed_srcdep_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
