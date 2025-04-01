@@ -828,7 +828,9 @@ def get_intensity_threshold(data):
     bins = np.logspace(np.log10(min_intensity), 
                        np.log10(max_intensity), nbins)
     binwidth = np.diff(bins)
-    nevents, _ = np.histogram(data['intensity'], bins=bins)
+
+    cosmics = data['event_type'] == EventType.SUBARRAY.value
+    nevents, _ = np.histogram(data['intensity'][cosmics], bins=bins)
     drdi = nevents.astype('float') / (binwidth*efftime.to_value(u.s))
     bincenters = (bins[1:]*bins[:-1])**0.5 # geometrical mean (log bin center)
  
