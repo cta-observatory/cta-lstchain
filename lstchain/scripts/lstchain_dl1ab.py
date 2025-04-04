@@ -371,7 +371,10 @@ def main():
                     # use CatB pedestals to estimate the picture threshold 
                     # as defined in the config file
                     if args.pedestal_cleaning:
-                        threshold_clean_pe = catB_threshold_clean_pe[calib_idx][selected_gain, pixel_index]
+                        threshold_clean_pe = (catB_dc_to_pe[calib_idx][0] * 
+                                              catB_threshold_clean_pe[calib_idx][selected_gain, 
+                                                                                 pixel_index])
+                        
                         threshold_clean_pe[unusable_pixels] = pic_th
                         picture_th = np.clip(threshold_clean_pe, pic_th, None)
 
