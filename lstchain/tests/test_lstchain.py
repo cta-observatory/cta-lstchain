@@ -18,6 +18,7 @@ test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
 
+
 calib_path = test_data / 'real/monitoring/PixelCalibration/Cat-A'
 calib_version = 'ctapipe-v0.17'
 test_calib_path = calib_path / f'calibration/20200218/{calib_version}/calibration_filters_52.Run02006.0000.h5'
@@ -403,3 +404,52 @@ def test_version_not_unknown():
     """
     import lstchain
     assert lstchain.__version__ != 'unknown'
+
+
+@pytest.mark.private_data
+def test_r1_to_dl1(tmp_path):
+    """Test for R1 (precalibrated by EVB)"""
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+
+    path = test_data / 'real/R0/20231219/LST-1.1.Run16255.0000_first50.fits.fz'
+    output_path = tmp_path / ('dl1_' + path.stem + '.h5')
+
+
+    config = deepcopy(standard_config)
+
+    lst_event_source = config['source_config']['LSTEventSource']
+    lst_event_source['PointingSource']['drive_report_path'] = (
+        test_data / 'real/monitoring/DrivePositioning/DrivePosition_log_20231219.txt'
+    )
+
+    r0_corrections = lst_event_source["LSTR0Corrections"]
+    r0_corrections['drs4_pedestal_path'] = (
+        test_data
+        / 'real/monitoring/PixelCalibration/Cat-A/drs4_baseline/20231219/v0.10.6/'
+        / 'drs4_pedestal.Run16248.0000.h5'
+    )
+    r0_corrections['calibration_path'] = (
+        test_data
+        / 'real/monitoring/PixelCalibration/Cat-A/calibration/20231219/v0.10.6'
+        / 'calibration_filters_52.Run16249.0000.h5'
+    )
+    r0_corrections['drs4_time_calibration_path'] = test_time_calib_path
+
+
+    r0_to_dl1(
+        path,
+        output_filename=output_path,
+        custom_config=config
+    )
+
+    with tables.open_file(output_path, 'r') as f:
+        images_table = f.root[dl1_images_lstcam_key]
+        params_table = f.root[dl1_params_lstcam_key]
+        assert 'image' in images_table.colnames
+        assert 'peak_time' in images_table.colnames
+        assert 'tel_id' in images_table.colnames
+        assert 'obs_id' in images_table.colnames
+        assert 'event_id' in images_table.colnames
+        assert 'tel_id' in params_table.colnames
+        assert 'event_id' in params_table.colnames
+        assert 'obs_id' in params_table.colnames
