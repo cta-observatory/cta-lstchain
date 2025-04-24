@@ -140,10 +140,17 @@ class PedestalIntegrator(PedestalCalculator):
             qq = []
             tt = []
             # Extract each gain separately (ctapipe extractors return only one charge per pixel) 
-            for wf, gain, bps in zip(waveforms, no_gain_selection, broken_pixels):
-                dl1 = self.extractor(wf, self.tel_id, gain, broken_pixels=bps)
-                qq.append(dl1.image)
-                tt.append(dl1.peak_time)
+            dl1 = self.extractor(waveforms[0], self.tel_id, 
+                                 no_gain_selection[0], 
+                                 broken_pixels=broken_pixels[0])
+            qq.append(dl1.image)
+            tt.append(dl1.peak_time)
+            dl1 = self.extractor(waveforms[1], self.tel_id, 
+                                 no_gain_selection[1], 
+                                 broken_pixels=broken_pixels[1])
+            qq.append(dl1.image)
+            tt.append(dl1.peak_time)
+            
             charge = np.array(qq)
             peak_pos = np.array(tt)
 
