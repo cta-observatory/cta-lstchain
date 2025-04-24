@@ -40,7 +40,7 @@ setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
     packages=find_packages(exclude="lstchain._dev_version"),
     install_requires=[
-        'astropy~=5.0',
+        'astropy~=6.1',
         'bokeh~=3.0',
         'ctapipe~=0.25.0',
         'ctapipe_io_lst~=0.25.1',
