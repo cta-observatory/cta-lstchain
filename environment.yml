@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.11
   - numpy
-  - astropy=5
+  - astropy=6
   - pip
   - ctapipe=0.25.0
   - ctapipe_io_lst >=0.25.1,<0.26a0
