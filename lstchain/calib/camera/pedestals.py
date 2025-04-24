@@ -137,22 +137,11 @@ class PedestalIntegrator(PedestalCalculator):
         peak_pos = 0
         if self.extractor:
             broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
-            qq = []
-            tt = []
-            # Extract each gain separately (ctapipe extractors return only one charge per pixel) 
-            dl1 = self.extractor(waveforms[0], self.tel_id, 
-                                 no_gain_selection[0], 
-                                 broken_pixels=broken_pixels[0])
-            qq.append(dl1.image)
-            tt.append(dl1.peak_time)
-            dl1 = self.extractor(waveforms[1], self.tel_id, 
-                                 no_gain_selection[1], 
-                                 broken_pixels=broken_pixels[1])
-            qq.append(dl1.image)
-            tt.append(dl1.peak_time)
-            
-            charge = np.array(qq)
-            peak_pos = np.array(tt)
+         
+            dl1 = self.extractor(waveforms, self.tel_id, no_gain_selection, 
+                                 broken_pixels=broken_pixels)
+            charge = dl1.image
+            peak_pos = dl1.peak_time
 
         return charge, peak_pos
 
