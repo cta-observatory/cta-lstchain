@@ -710,7 +710,7 @@ def r0_to_dl1(
                         # integrator in case of crazy pixels!  TBD: can this be done in a simpler
                         # way?
                         bad_pixels = bad_pixels_hg | bad_pixels_lg
-                        bad_waveform = np.transpose(np.array(numsamples * [bad_pixels]))
+                        bad_waveform = np.array([np.transpose(np.array(numsamples * [bad_pixels]))]) # (1, npixels, nsamples)
 
                         # print('hg bad pixels:',np.where(bad_pixels_hg))
                         # print('lg bad pixels:',np.where(bad_pixels_lg))
