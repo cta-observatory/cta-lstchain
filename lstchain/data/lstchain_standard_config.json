@@ -287,7 +287,7 @@
   "write_interleaved_events":{
     "DataWriter": {
       "overwrite":  true,
-      "write_images": false,
+      "write_dl1_images": false,
       "write_parameters": false,
       "write_waveforms": true,
       "transform_waveform": true,
