@@ -20,6 +20,8 @@ __pycache__
 */cython_version.py
 htmlcov
 .coverage
+.coverage.*
+coverage.xml
 MANIFEST
 
 # Sphinx

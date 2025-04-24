@@ -17,6 +17,7 @@ from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import read_table
 from ctapipe.io import EventSource
 from ctapipe.containers import EventType
+from lstchain.io.provenance import read_dl2_provenance
 
 
 from lstchain.io.config import get_srcdep_config, get_standard_config
@@ -88,6 +89,13 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
         "--pattern=dl1_*.h5"
     )
     return merged_dl1_file
+
+
+def test_lstchain_mc_r0_to_dl1_default_mc_file(tmp_path):
+    """Run R0 to DL1 script for the default MC file without specifying an input file."""
+    output_file = tmp_path / "dl1_gamma_lstprod2.h5"
+    run_program("lstchain_mc_r0_to_dl1", "-o", tmp_path)
+    assert output_file.is_file()
 
 
 def test_lstchain_mc_r0_to_dl1(simulated_dl1_file):
@@ -358,6 +366,7 @@ def test_lstchain_merged_dl1_to_dl2(
         "lstchain_dl1_to_dl2",
         "-f",
         simulated_dl1_file_,
+        "-f",
         merged_simulated_dl1_file,
         "-p",
         rf_models["path"],
@@ -378,6 +387,12 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_disp_dy" in dl2_df.columns
     assert "reco_src_x" in dl2_df.columns
     assert "reco_src_y" in dl2_df.columns
+    
+    prov = read_dl2_provenance(simulated_dl2_file)
+    assert "activity_name" in prov
+    assert "config" in prov
+    assert "path_models" in prov['config']['DL1ToDL2Tool']
+    assert prov['config']['DL1ToDL2Tool']['path_models'] is not None
 
 
 def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):

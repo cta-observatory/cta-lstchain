@@ -78,7 +78,7 @@ Here is an example configuration file for this step.
 DL1 to DL2
 ----------
 
-Use ``lstchain.scripts.lstchain_dl1_to_dl2`` for real data and MC.
+Use ``lstchain.tools.lstchain_dl1_to_dl2`` for real data and MC.
 
 For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 
@@ -96,9 +96,12 @@ Here is an example configuration file for this step.
 DL2 to DL3
 ----------
 
-For a quick look into the data and perform :math:`{\theta}^2/{\alpha}` plots, you can use:
-``lstchain.scripts.lstchain_post_dl2``
+For a quick look into the data and perform :math:`{\theta}^2/{\alpha}` plots from DL2 files,
+you can use the notebook:
 
+https://github.com/cta-observatory/cta-lstchain/blob/main/notebooks/explore_DL2.ipynb
+
+or the script: ``lstchain_significance_calculation``
 
 IRF creation
 ^^^^^^^^^^^^
@@ -132,5 +135,19 @@ You should use the same configuration file used for the IRF creation (hence you 
 Post DL3 analysis
 -----------------
 
-You may analyze the resulting files using ``gammapy``, see its doc: https://docs.gammapy.org/.
+You can analyze the resulting DL3 files using Gammapy https://docs.gammapy.org/.
 
+There is a notebook in ``cta-lstchain/notebooks`` that shows how to use Gammapy to perform
+a 1D on-off analysis for point-like sources.
+
+https://github.com/cta-observatory/cta-lstchain/blob/main/notebooks/post_DL3_analysis.ipynb
+
+Other analyses require additional packages. For example, for the 3D analysis of extended
+sources and creating sky maps, you can create a background model using one of the following packages:
+
+    * https://github.com/mdebony/BAccMod
+    * https://github.com/cta-observatory/pybkgmodel
+
+For doing pulsar analysis we suggest using:
+
+    * https://github.com/cta-observatory/PulsarTimingAnalysis

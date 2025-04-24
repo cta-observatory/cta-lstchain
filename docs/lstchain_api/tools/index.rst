@@ -24,3 +24,5 @@ Reference/API
    :no-inheritance-diagram:
 .. automodapi:: lstchain.tools.lstchain_fit_intensity_scan
    :no-inheritance-diagram:
+.. automodapi:: lstchain.tools.lstchain_dl1_to_dl2
+   :no-inheritance-diagram:

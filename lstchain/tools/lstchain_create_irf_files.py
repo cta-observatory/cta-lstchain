@@ -398,8 +398,21 @@ class IRFFITSWriter(Tool):
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
 
+        if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
+            # The 4 is semi-arbitray. This keeps the same precision as the previous code
+            mean_fov_offset = np.round(get_mc_fov_offset(self.mc_particle["gamma"]["file"]), 4)
+            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
+            self.log.info(f"Single offset for point like gamma MC with offset {mean_fov_offset}")
+        else:
+            fov_offset_bins = self.data_bin.fov_offset_bins()
+            self.log.info(f"Multiple offset for diffuse gamma MC : {fov_offset_bins}")
+
+            if np.max(fov_offset_bins) > gammas["true_source_fov_offset"].max():
+                self.log.warning(f'The highest FoV offset bin ({np.max(fov_offset_bins)}) is larger than the maximum offset simulated ({gammas["true_source_fov_offset"].max()})')
+
         gammas = self.event_sel.filter_cut(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
+        gammas = gammas[gammas['true_source_fov_offset'] <= np.max(fov_offset_bins)]
 
         if self.energy_dependent_gh:
             self.gh_cuts_gamma = self.cuts.energy_dependent_gh_cuts(
@@ -455,29 +468,6 @@ class IRFFITSWriter(Tool):
                         "Using a global Alpha cut of "
                         f"{self.cuts.global_alpha_cut} for point like IRF"
                     )
-
-        if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
-            # The 4 is semi-arbitray. This keeps the same precision as the previous code
-            mean_fov_offset = np.round(get_mc_fov_offset(self.mc_particle["gamma"]["file"]), 4)
-            self.log.info(f"Single offset for point like gamma MC with offset {mean_fov_offset}")
-            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
-        else:
-            fov_offset_bins = self.data_bin.fov_offset_bins()
-            self.log.info("Multiple offset for diffuse gamma MC")
-
-            if self.energy_dependent_theta:
-                fov_offset_bins = [
-                    round(
-                        gammas["true_source_fov_offset"].min().to_value(), 3
-                    ),
-                    round(
-                        gammas["true_source_fov_offset"].max().to_value(), 3
-                    )
-                ] * u.deg
-                self.log.info(
-                    "For RAD MAX, FoV where we have all of the reconstructed "
-                    f"events, is used, {fov_offset_bins}"
-                )
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -719,7 +709,8 @@ class IRFFITSWriter(Tool):
                 self.hdus.append(
                     create_rad_max_hdu(
                         self.theta_cuts["cut"][:, np.newaxis],
-                        reco_energy_bins, fov_offset_bins,
+                        reco_energy_bins, fov_offset_bins[[fov_offset_bins.argmin(),
+                                                           fov_offset_bins.argmax()]],
                         **extra_headers
                     )
                 )

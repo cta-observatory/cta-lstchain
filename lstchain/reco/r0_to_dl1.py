@@ -34,7 +34,6 @@ from . import disp
 from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
 from ..data import NormalizedPulseTemplate
-from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.cleaning import apply_dynamic_cleaning
 from ..image.modifier import calculate_required_additional_nsb, WaveformNsbTuner
@@ -329,11 +328,10 @@ def r0_to_dl1(
     -------
 
     """
-
     # using None as default and using `get_dataset_path` only inside the function
     # prevents downloading at import time.
     if input_filename is None:
-        get_dataset_path('gamma_test_large.simtel.gz')
+        get_dataset_path('gamma_lstprod2.simtel.gz')
 
     if output_filename is None:
         try:
@@ -354,8 +352,6 @@ def r0_to_dl1(
 
     metadata = global_metadata()
     write_metadata(metadata, output_filename)
-
-    cal_mc = load_calibrator_from_config(config, subarray)
 
     # minimum number of pe in a pixel to include it
     # in calculation of muon ring time (peak sample):
@@ -439,6 +435,16 @@ def r0_to_dl1(
                 logger.info(f'{nsb_tuning_rate:.3f} GHz for telescope ids:')
                 logger.info(f'{allowed_tels}')
 
+                # NOTE: mc_image_scaling_factor (in config) can be used to adjust the light 
+                # collection efficiency in the MC to that of data - this is an approximation: 
+                # after the scaling, the fluctuations of the signals will be smaller in MC than 
+                # in data (since more p.e. have been simulated, then it signal scaled down). The 
+                # adjustment can be needed due to poor atmospheric transmission and/or dirty 
+                # mirror, or camera window.
+                # TBD: it is not obvious how the rate of additional nsb (nsb_tuning rate)
+                # obtained from this sort of data would have to be modified (if at all) to get
+                # a good match of the noise after the scaling.
+
                 nsb_per_tel = {tel_id: nsb_tuning_rate * u.GHz for tel_id in
                                allowed_tels}
 
@@ -508,11 +514,6 @@ def r0_to_dl1(
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
-                cal_mc(event)
-
-                if config['mc_image_scaling_factor'] != 1:
-                    rescale_dl1_charge(event, config['mc_image_scaling_factor'])
-
             else:
                 if i == 0:
                     # initialize the telescope
@@ -536,8 +537,13 @@ def r0_to_dl1(
                                            new_ped=True, new_ff=True)
 
                 # flat-field or pedestal:
-                if (event.trigger.event_type == EventType.FLATFIELD or
-                        event.trigger.event_type == EventType.SKY_PEDESTAL):
+                if ((event.trigger.event_type == EventType.FLATFIELD or
+                     event.trigger.event_type == EventType.SKY_PEDESTAL) and
+                    event.r0.tel[tel_id].waveform is not None):
+
+                    # Check on r0 waveform != None is needed for R0G and R0V data: 
+                    # occasionally there is an interleaved event which has only 
+                    # one gain (due to misidentification in R0G/V creation)
 
                     # process interleaved events (pedestals, ff, calibration)
                     new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
@@ -581,6 +587,11 @@ def r0_to_dl1(
 
             # create image for all events
             r1_dl1_calibrator(event)
+
+            if is_simu:
+                # Scale all integrated charges in all pixels if requested by user:
+                if config['mc_image_scaling_factor'] != 1:
+                    rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
