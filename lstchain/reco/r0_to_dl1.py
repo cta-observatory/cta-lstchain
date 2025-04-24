@@ -702,7 +702,7 @@ def r0_to_dl1(
                     if tag_pix_thr(image):
 
                         # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
-                        numsamples = event.r1.tel[telescope_id].waveform.shape[1]  # not necessarily the same as in r0!
+                        numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
                         bad_pixels_hg = calibration_mon.unusable_pixels[0]
                         bad_pixels_lg = calibration_mon.unusable_pixels[1]
 
