@@ -6,7 +6,7 @@ dependencies:
   - numpy
   - astropy=5
   - pip
-  - ctapipe=0.22.0
+  - ctapipe=0.25.0
   - ctapipe_io_lst >=0.25.1,<0.26a0
   - ctaplot~=0.6.4
   - gammapy=1.2
