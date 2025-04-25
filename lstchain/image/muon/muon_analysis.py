@@ -248,9 +248,7 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
     pix_ring_2 = image[dist_mask_2]
 
     muonparameters = MuonParametersContainer()
-    muonparameters.containment = ring_containment(
-        muonringparam.radius,
-        muonringparam.center_fov_lon, muonringparam.center_fov_lat, cam_rad)
+    muonparameters.containment = ring_containment(muonringparam, cam_rad)
 
     radial_distribution = radial_light_distribution(
         muonringparam.center_fov_lon,
@@ -291,12 +289,13 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
 
         # We do the calculation of the ring completeness (i.e. fraction of whole circle) using the pixels
         # within the "width" fitted using MuonIntensityFitter
+
+        print('HOLA', params['ring_completeness_threshold'])
         muonparameters.completeness = ring_completeness(
-            x[dist_ringwidth_mask], y[dist_ringwidth_mask],
-            image[dist_ringwidth_mask],
-            muonringparam.radius,
-            muonringparam.center_fov_lon,
-            muonringparam.center_fov_lat,
+            pixel_fov_lon=x[dist_ringwidth_mask], 
+            pixel_fov_lat=y[dist_ringwidth_mask],
+            weights=image[dist_ringwidth_mask],
+            ring=muonringparam,
             threshold=params['ring_completeness_threshold'],
             bins=30)
 

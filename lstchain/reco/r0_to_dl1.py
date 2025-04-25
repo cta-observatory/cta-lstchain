@@ -568,13 +568,13 @@ def r0_to_dl1(
 
                     r1 = event.r1.tel[tel_id]
                     r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
-                    r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX]
+                    r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX][np.newaxis, :, :] # Add the "channel" axis, all ctapipe wfs are 3D now
 
                     event.calibration.tel[tel_id].dl1.time_shift = \
-                        event.calibration.tel[tel_id].dl1.time_shift[r1.selected_gain_channel, PIXEL_INDEX]
+                        event.calibration.tel[tel_id].dl1.time_shift[:, PIXEL_INDEX]
 
                     event.calibration.tel[tel_id].dl1.relative_factor = \
-                        event.calibration.tel[tel_id].dl1.relative_factor[r1.selected_gain_channel, PIXEL_INDEX]
+                        event.calibration.tel[tel_id].dl1.relative_factor[:, PIXEL_INDEX]
 
             # Option to add nsb in waveforms
             if nsb_tuning:
@@ -745,8 +745,8 @@ def r0_to_dl1(
                             mask_hg = bright_pixels & (selected_gain == 0)
                             mask_lg = bright_pixels & (selected_gain == 1)
 
-                            bright_pixels_waveforms_hg = event.r1.tel[telescope_id].waveform[mask_hg, :]
-                            bright_pixels_waveforms_lg = event.r1.tel[telescope_id].waveform[mask_lg, :]
+                            bright_pixels_waveforms_hg = event.r1.tel[telescope_id].waveform[0, mask_hg, :]
+                            bright_pixels_waveforms_lg = event.r1.tel[telescope_id].waveform[0, mask_lg, :]
                             stacked_waveforms_hg = np.sum(bright_pixels_waveforms_hg, axis=0)
                             stacked_waveforms_lg = np.sum(bright_pixels_waveforms_lg, axis=0)
 
