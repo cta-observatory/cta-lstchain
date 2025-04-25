@@ -293,7 +293,7 @@
       "write_r1_waveforms": true,
       "transform_waveform": true,
       "waveform_dtype": "uint16",
-      "waveform_offset": 5,
+      "waveform_offset": 400,
       "waveform_scale": 60  
     }
   }
