@@ -20,7 +20,7 @@ dependencies:
   - toml
   - protozfits=2.6
   - pyparsing
-  - scipy <1.14
+  - scipy
   - scikit-learn=1.2
   - sphinx
   - sphinx-automodapi
