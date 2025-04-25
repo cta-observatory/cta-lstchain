@@ -46,7 +46,7 @@ setup(
         'ctapipe_io_lst~=0.26.1',
         'ctaplot~=0.6.4',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
-        'gammapy~=1.2',
+        'gammapy~=1.3.0',
         'h5py',
         'iminuit>=2',
         'joblib~=1.4.0',
@@ -55,7 +55,7 @@ setup(
         'numpy',
         'pandas',
         'pyirf~=0.12.0',
-        'scipy>=1.8,<1.14',
+        'scipy>=1.8',
         'seaborn',
         'scikit-learn~=1.6',
         'tables',
