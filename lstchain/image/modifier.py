@@ -711,7 +711,7 @@ class WaveformNsbTuner:
 
         """
         log.info(f"Pre-generating nsb waveforms for nsb tuning and telescope id {tel_id}.")
-        n_pixels, n_samples = waveform.shape
+        _, n_pixels, n_samples = waveform.shape
         baseline_correction = -(self.added_nsb[tel_id] * dt).to_value("")
         nsb_waveforms = np.full((self.multiplicity * n_pixels, 2, n_samples), baseline_correction)
         duration = (self.extra_samples + n_samples) * dt
@@ -768,12 +768,12 @@ class WaveformNsbTuner:
             sampling_rate = readout.sampling_rate
             dt = (1.0 / sampling_rate).to(u.s)
             self.initialise_waveforms(waveform, dt, tel_id)
-        n_pixels, _ = waveform.shape
+        _, n_pixels, _ = waveform.shape
         # The nsb_waveform array is randomised along the first axis,
         # then the n_pixels first elements with correct gain are used for the injection
         self.rng.shuffle(self.nsb_waveforms[tel_id])
-        waveform += ((is_high_gain == 0)[:, np.newaxis] * self.nsb_waveforms[tel_id][:n_pixels, 0] +
-                     (is_high_gain == 1)[:, np.newaxis] * self.nsb_waveforms[tel_id][:n_pixels, 1])
+        waveform[0] += ((is_high_gain == 0)[:, np.newaxis] * self.nsb_waveforms[tel_id][:n_pixels, 0] +
+                        (is_high_gain == 1)[:, np.newaxis] * self.nsb_waveforms[tel_id][:n_pixels, 1])
 
     def _tune_nsb_on_waveform_direct(self, waveform, tel_id, is_high_gain, subarray):
         """
