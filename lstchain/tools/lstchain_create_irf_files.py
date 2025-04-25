@@ -43,7 +43,6 @@ from astropy import table
 from astropy.io import fits
 from astropy.time import Time
 import astropy.units as u
-from traitlets import Undefined
 import numpy as np
 
 from ctapipe.core import (
@@ -154,6 +153,7 @@ class IRFFITSWriter(Tool):
 
     input_gamma_dl2 = traits.Path(
         help="Input MC gamma DL2 file",
+        default_value=None,
         allow_none=True,
         exists=True,
         directory_ok=False,
@@ -162,6 +162,7 @@ class IRFFITSWriter(Tool):
 
     input_proton_dl2 = traits.Path(
         help="Input MC proton DL2 file",
+        default_value=None,
         allow_none=True,
         exists=True,
         directory_ok=False,
@@ -170,6 +171,7 @@ class IRFFITSWriter(Tool):
 
     input_electron_dl2 = traits.Path(
         help="Input MC electron DL2 file",
+        default_value=None,
         allow_none=True,
         exists=True,
         directory_ok=False,
@@ -178,6 +180,7 @@ class IRFFITSWriter(Tool):
 
     output_irf_file = traits.Path(
         help="IRF output file",
+        default_value=None,
         allow_none=True,
         directory_ok=False,
         file_ok=True,
@@ -284,7 +287,7 @@ class IRFFITSWriter(Tool):
                 "Use .fits or .fits.gz."
             )
 
-        if self.input_proton_dl2 and self.input_electron_dl2 is not Undefined:
+        if self.input_proton_dl2 and self.input_electron_dl2 is not None:
             self.only_gamma_irf = False
         else:
             self.only_gamma_irf = True
