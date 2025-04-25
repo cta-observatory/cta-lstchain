@@ -217,7 +217,7 @@ class TimeWaveformFitter(TelescopeComponent):
         n_samples = waveform.shape[2]
         times = np.arange(0, n_samples) * dt
         selected_gains = event.r1.tel[telescope_id].selected_gain_channel
-        time_shift = np.choose(selected_gains, dl1_calib.time_shift)
+        time_shift = dl1_calib.time_shift
         
         is_high_gain = (selected_gains == 0)
 
