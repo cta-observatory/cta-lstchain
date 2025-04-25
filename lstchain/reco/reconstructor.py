@@ -153,7 +153,7 @@ class TimeWaveformFitter(TelescopeComponent):
                 break
             if event.trigger.event_type == EventType.SUBARRAY:
                 for tel_id in event.r1.tel.keys():
-                    iftime_shift i == 0:
+                    if i == 0:
                         n_pix[tel_id] = event.r1.tel[tel_id].waveform.shape[0]
                     mask = event.simulation.tel[tel_id].true_image == 0
                     wave = event.r1.tel[tel_id].waveform
