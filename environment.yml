@@ -34,4 +34,4 @@ dependencies:
   - pymongo
   - seaborn
   - pytest
-  - pyirf~=0.10.0
+  - pyirf~=0.12.0
