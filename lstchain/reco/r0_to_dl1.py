@@ -571,10 +571,10 @@ def r0_to_dl1(
                     r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX][np.newaxis, :, :] # Add the "channel" axis, all ctapipe wfs are 3D now
 
                     event.calibration.tel[tel_id].dl1.time_shift = \
-                        event.calibration.tel[tel_id].dl1.time_shift[selected_gain_channel, PIXEL_INDEX]
+                        event.calibration.tel[tel_id].dl1.time_shift[r1.selected_gain_channel, PIXEL_INDEX]
 
                     event.calibration.tel[tel_id].dl1.relative_factor = \
-                        event.calibration.tel[tel_id].dl1.relative_factor[selected_gain_channel, PIXEL_INDEX]
+                        event.calibration.tel[tel_id].dl1.relative_factor[r1.selected_gain_channel, PIXEL_INDEX]
 
             # Option to add nsb in waveforms
             if nsb_tuning:
