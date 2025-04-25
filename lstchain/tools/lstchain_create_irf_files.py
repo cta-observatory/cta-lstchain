@@ -180,7 +180,6 @@ class IRFFITSWriter(Tool):
 
     output_irf_file = traits.Path(
         help="IRF output file",
-        default_value=None,
         allow_none=True,
         directory_ok=False,
         file_ok=True,
