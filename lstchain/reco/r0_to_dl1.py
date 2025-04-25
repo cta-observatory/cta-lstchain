@@ -568,7 +568,8 @@ def r0_to_dl1(
 
                     r1 = event.r1.tel[tel_id]
                     r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
-                    r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX][np.newaxis, :, :] # Add the "channel" axis, all ctapipe wfs are 3D now
+                    # select gain but keep waveform 3d
+                    r1.waveform = r1.waveform[np.newaxis, r1.selected_gain_channel, PIXEL_INDEX]
 
                     event.calibration.tel[tel_id].dl1.time_shift = \
                         event.calibration.tel[tel_id].dl1.time_shift[:, PIXEL_INDEX]
