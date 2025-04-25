@@ -153,7 +153,7 @@ class TimeWaveformFitter(TelescopeComponent):
                 break
             if event.trigger.event_type == EventType.SUBARRAY:
                 for tel_id in event.r1.tel.keys():
-                    if i == 0:
+                    iftime_shift i == 0:
                         n_pix[tel_id] = event.r1.tel[tel_id].waveform.shape[0]
                     mask = event.simulation.tel[tel_id].true_image == 0
                     wave = event.r1.tel[tel_id].waveform
@@ -210,7 +210,6 @@ class TimeWaveformFitter(TelescopeComponent):
         waveform = event.r1.tel[telescope_id].waveform
 
         dl1_calib = event.calibration.tel[telescope_id].dl1
-        time_shift = dl1_calib.time_shift
         # TODO check if this is correct here or if it is applied to r1 waveform earlier
         if dl1_calib.pedestal_offset is not None:
             waveform = waveform - dl1_calib.pedestal_offset[:, np.newaxis]
@@ -218,6 +217,8 @@ class TimeWaveformFitter(TelescopeComponent):
         n_samples = waveform.shape[2]
         times = np.arange(0, n_samples) * dt
         selected_gains = event.r1.tel[telescope_id].selected_gain_channel
+        time_shift = np.choose(selected_gains, dl1_calib.time_shift)
+        
         is_high_gain = (selected_gains == 0)
 
         # We assume that the time gradient is given in unit of 'geometry spatial unit'/ns
