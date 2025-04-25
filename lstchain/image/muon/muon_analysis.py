@@ -290,7 +290,6 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
         # We do the calculation of the ring completeness (i.e. fraction of whole circle) using the pixels
         # within the "width" fitted using MuonIntensityFitter
 
-        print('HOLA', params['ring_completeness_threshold'])
         muonparameters.completeness = ring_completeness(
             pixel_fov_lon=x[dist_ringwidth_mask], 
             pixel_fov_lat=y[dist_ringwidth_mask],
