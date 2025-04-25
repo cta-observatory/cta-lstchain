@@ -571,12 +571,6 @@ def r0_to_dl1(
                     # select gain but keep waveform 3d
                     r1.waveform = r1.waveform[np.newaxis, r1.selected_gain_channel, PIXEL_INDEX]
 
-                    event.calibration.tel[tel_id].dl1.time_shift = \
-                        event.calibration.tel[tel_id].dl1.time_shift[:, PIXEL_INDEX]
-
-                    event.calibration.tel[tel_id].dl1.relative_factor = \
-                        event.calibration.tel[tel_id].dl1.relative_factor[:, PIXEL_INDEX]
-
             # Option to add nsb in waveforms
             if nsb_tuning:
                 # FIXME? assumes same correction ratio for all telescopes
