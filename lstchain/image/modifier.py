@@ -790,7 +790,7 @@ class WaveformNsbTuner:
         subarray: `ctapipe.instrument.subarray.SubarrayDescription`
 
         """
-        n_pixels, n_samples = waveform.shape
+        _, n_pixels, n_samples = waveform.shape
         readout = subarray.tel[tel_id].camera.readout
         sampling_rate = readout.sampling_rate
         dt = (1.0 / sampling_rate).to(u.s)
