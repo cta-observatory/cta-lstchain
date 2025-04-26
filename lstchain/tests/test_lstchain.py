@@ -139,9 +139,19 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
 @pytest.mark.private_data
 def test_r0_to_dl1_lhfit_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
-    config = deepcopy(standard_config)
-    config['source_config']['EventSource']['max_events'] = None
-    config['source_config']['EventSource']['allowed_tels'] = [1]
+    #config = deepcopy(standard_config)
+    config = standard_config
+    lst_event_source = config['source_config']['LSTEventSource']
+    lst_event_source['max_events'] = None
+    lst_event_source['allowed_tels'] = [1]
+    lst_event_source['PointingSource']['drive_report_path'] = test_drive_report
+    lst_event_source['LSTR0Corrections']['drs4_pedestal_path'] = \
+        test_drs4_pedestal_path
+    lst_event_source['LSTR0Corrections']['calibration_path'] = \
+        test_calib_path
+    lst_event_source['LSTR0Corrections']['drs4_time_calibration_path']\
+        = test_time_calib_path
+
     config['lh_fit_config'] = {
         "sigma_s": [
             ["type", "*", 1.0],
