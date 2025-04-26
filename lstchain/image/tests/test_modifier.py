@@ -85,10 +85,7 @@ def test_tune_nsb_on_waveform():
     from lstchain.image.modifier import WaveformNsbTuner
     from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
 
-    waveform = np.array(
-        [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
-    )
+    waveform = np.zeros((2, 2, 22))
     added_nsb_rate = {1: 0.1 * u.GHz}
     subarray = LSTEventSource.create_subarray(1)
     amplitude_HG = np.zeros(40)
@@ -108,21 +105,19 @@ def test_tune_nsb_on_waveform():
     charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                          bounds_error=False, fill_value=0.,
                                          assume_sorted=True)
-    nsb_tunner = WaveformNsbTuner(added_nsb_rate,
-                                  pulse_templates,
-                                  charge_spe_cumulative_pdf,
-                                  pre_computed_multiplicity=0)
-    nsb_tunner.tune_nsb_on_waveform(waveform, 1, gain, subarray)
+    nsb_tuner = WaveformNsbTuner(added_nsb_rate,
+                                 pulse_templates,
+                                 charge_spe_cumulative_pdf,
+                                 pre_computed_multiplicity=0)
+    nsb_tuner.tune_nsb_on_waveform(waveform, 1, gain, subarray)
     assert np.any(waveform != 0)
     assert np.isclose(np.mean(waveform), 0.0, atol=0.2)
-    waveform = np.array(
-        [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
-    )
-    nsb_tunner = WaveformNsbTuner(added_nsb_rate,
-                                  pulse_templates,
-                                  charge_spe_cumulative_pdf,
-                                  pre_computed_multiplicity=10)
-    nsb_tunner.tune_nsb_on_waveform(waveform, 1, gain, subarray)
+    
+    waveform = np.zeros((2, 2, 22))
+    nsb_tuner = WaveformNsbTuner(added_nsb_rate,
+                                 pulse_templates,
+                                 charge_spe_cumulative_pdf,
+                                 pre_computed_multiplicity=10)
+    nsb_tuner.tune_nsb_on_waveform(waveform, 1, gain, subarray)
     assert np.any(waveform != 0)
     assert np.isclose(np.mean(waveform), 0.0, atol=0.2)
