@@ -522,9 +522,6 @@ def r0_to_dl1(
 
                     tel_id = calibration_calculator.tel_id
 
-                    # Default of absolute_factor is None - needs to be set here
-                    event.calibration.tel[tel_id].dl1.absolute_factor = np.ones((2, PIXEL_INDEX.size))
-
                     # initialize the event monitoring data
                     event.mon = deepcopy(source.r0_r1_calibrator.mon_data)
                     for container in [event.mon.tel[tel_id].pedestal, event.mon.tel[tel_id].flatfield,
@@ -538,6 +535,13 @@ def r0_to_dl1(
                                            calibration_index,
                                            event.mon.tel[tel_id],
                                            new_ped=True, new_ff=True)
+
+                # Default of absolute_factor is None - needs to be set here
+                event.calibration.tel[tel_id].dl1.absolute_factor = np.ones((2, PIXEL_INDEX.size))
+                # PATCH: ctapipe expects relative_factor to be always (ngains, npixels)
+                if event.calibration.tel[tel_id].dl1.relative_factor is not None:
+                    if event.calibration.tel[tel_id].dl1.relative_factor.ndim == 1:
+                        event.calibration.tel[tel_id].dl1.relative_factor = np.array(2*[event.calibration.tel[tel_id].dl1.relative_factor])
 
                 # flat-field or pedestal:
                 if ((event.trigger.event_type == EventType.FLATFIELD or
