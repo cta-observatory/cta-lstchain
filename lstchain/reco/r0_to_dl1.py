@@ -511,6 +511,8 @@ def r0_to_dl1(
 
             dl1_container.reset()
 
+            event.calibration.tel[tel_id].dl1.absolute_factor = np.ones((2, PIXEL_INDEX.size))
+            
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
@@ -571,7 +573,6 @@ def r0_to_dl1(
                     # select gain but keep waveform 3d
                     r1.waveform = r1.waveform[np.newaxis, r1.selected_gain_channel, PIXEL_INDEX]
 
-                    event.calibration.tel[tel_id].dl1.absolute_factor = 1
     
             # Option to add nsb in waveforms
             if nsb_tuning:
