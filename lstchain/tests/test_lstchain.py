@@ -140,7 +140,6 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
 def test_r0_to_dl1_lhfit_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
     config = deepcopy(standard_config)
-    config = standard_config
     lst_event_source = config['source_config']['LSTEventSource']
     lst_event_source['max_events'] = None
     lst_event_source['allowed_tels'] = [1]
