@@ -8,7 +8,7 @@ import pytest
 import tables
 from copy import deepcopy
 
-from lstchain.io import standard_config, srcdep_config, replace_config
+from lstchain.io import standard_config, srcdep_config
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.reco.utils import filter_events
 from lstchain.reco.dl1_to_dl2 import build_models
@@ -139,7 +139,7 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
 @pytest.mark.private_data
 def test_r0_to_dl1_lhfit_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
-    #config = deepcopy(standard_config)
+    config = deepcopy(standard_config)
     config = standard_config
     lst_event_source = config['source_config']['LSTEventSource']
     lst_event_source['max_events'] = None
@@ -276,14 +276,12 @@ def test_build_models(simulated_dl1_file, rf_models):
         }
     }
 
-    config = replace_config(standard_config, custom_config)
-
     reg_energy, reg_disp_norm, cls_disp_sign, cls_gh = build_models(
         infile,
         infile,
         save_models=False,
         free_model_memory=False,
-        custom_config=config
+        custom_config=custom_config
     )
 
     build_models(
@@ -291,7 +289,7 @@ def test_build_models(simulated_dl1_file, rf_models):
         infile,
         save_models=True,
         free_model_memory=True,
-        custom_config=config
+        custom_config=custom_config
     )
 
     import joblib
