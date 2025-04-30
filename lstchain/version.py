@@ -19,4 +19,4 @@ except Exception:
     del warnings
     version = "0.0.0"
 
-__version__ = version
+__version__ = "0.11.0.post1"
