@@ -58,7 +58,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
             plt.rc("font", size=15)
 
             # first figure
-            fig = plt.figure(1, figsize=(12, 24))
+            fig = plt.figure(figsize=(12, 24))
             plt.tight_layout()
             fig.suptitle(f"Run {run}, {calib_type} calibration", fontsize=25)
             pad = 420
@@ -142,7 +142,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
             plt.close()
 
             # second figure
-            fig = plt.figure(2, figsize=(12, 24))
+            fig = plt.figure(figsize=(12, 24))
             plt.tight_layout()
             fig.suptitle(f"Run {run}", fontsize=25)
             pad = 420
@@ -269,7 +269,7 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
 
                 # select good pixels
                 select = np.logical_not(mask[chan])
-                fig = plt.figure(chan + 10, figsize=(12, 24))
+                fig = plt.figure(figsize=(12, 24))
                 fig.tight_layout(rect=[0, 0.0, 1, 0.95])
 
                 fig.suptitle(f"Run {run} channel: {channel[chan]}", fontsize=25)

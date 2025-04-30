@@ -154,14 +154,14 @@ class TimeWaveformFitter(TelescopeComponent):
             if event.trigger.event_type == EventType.SUBARRAY:
                 for tel_id in event.r1.tel.keys():
                     if i == 0:
-                        n_pix[tel_id] = event.r1.tel[tel_id].waveform.shape[0]
+                        n_pix[tel_id] = event.r1.tel[tel_id].waveform.shape[1]
                     mask = event.simulation.tel[tel_id].true_image == 0
                     wave = event.r1.tel[tel_id].waveform
                     if nsb_tunner is not None:
                         selected_gains = event.r1.tel[tel_id].selected_gain_channel
                         mask_high = (selected_gains == 0)
                         nsb_tunner.tune_nsb_on_waveform(wave, tel_id, mask_high, self.subarray)
-                    waveforms[tel_id].append(wave[mask].flatten())
+                    waveforms[tel_id].append(wave[0, mask].flatten())
         for tel_id, tel_waveforms in waveforms.items():
             self.error[tel_id] = np.full(n_pix[tel_id], np.nanstd(np.concatenate(tel_waveforms)))
             self.allowed_pixels = np.ones(n_pix[tel_id], dtype=bool)
@@ -210,14 +210,15 @@ class TimeWaveformFitter(TelescopeComponent):
         waveform = event.r1.tel[telescope_id].waveform
 
         dl1_calib = event.calibration.tel[telescope_id].dl1
-        time_shift = dl1_calib.time_shift
         # TODO check if this is correct here or if it is applied to r1 waveform earlier
         if dl1_calib.pedestal_offset is not None:
             waveform = waveform - dl1_calib.pedestal_offset[:, np.newaxis]
 
-        n_pixels, n_samples = waveform.shape
+        n_samples = waveform.shape[2]
         times = np.arange(0, n_samples) * dt
         selected_gains = event.r1.tel[telescope_id].selected_gain_channel
+        time_shift = dl1_calib.time_shift
+        
         is_high_gain = (selected_gains == 0)
 
         # We assume that the time gradient is given in unit of 'geometry spatial unit'/ns
@@ -283,13 +284,15 @@ class TimeWaveformFitter(TelescopeComponent):
         crosstalks = spatial_ones * self.crosstalk.tel[telescope_id]
 
         times = (np.arange(0, n_samples) * dt)[mask_time]
+
+        time_shift = np.choose(selected_gains, time_shift)
         time_shift = time_shift[mask_pixel]
 
         p_x = pix_x[mask_pixel]
         p_y = pix_y[mask_pixel]
         pix_area = geometry.pix_area[mask_pixel].to_value(unit ** 2)
 
-        data = waveform
+        data = waveform[0]
         error = self.error
 
         filter_pixels = np.nonzero(~mask_pixel)

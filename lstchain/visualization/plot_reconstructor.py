@@ -471,7 +471,7 @@ def plot_waveforms(fitter, event, telescope_id, axes=None, save=False, ids=''):
         [fitter.end_parameters['v'], fitter.end_parameters['t_cm']], long_pix)
     times_index = np.argsort(fitted_times)
 
-    waveforms = data[pixels]
+    waveforms = data[0, pixels]
     waveforms = waveforms[times_index]
     long_pix = long_pix[times_index]
     fitted_times = fitted_times[times_index]

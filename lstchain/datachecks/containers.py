@@ -329,7 +329,8 @@ class DL1DataCheckContainer(Container):
         pointing = SkyCoord(az=self.mean_az_tel,
                             alt=self.mean_alt_tel,
                             frame=horizon_frame)
-        bright_stars = get_bright_stars(pointing=pointing, radius=3*u.deg,
+        bright_stars = get_bright_stars(time=obstime,
+                                        pointing=pointing, radius=3*u.deg,
                                         magnitude_cut=8)
         # Account for average relative spot shift (outwards) due to coma
         # aberration:

@@ -510,7 +510,7 @@ def r0_to_dl1(
                 event.simulation.prefix = 'mc'
 
             dl1_container.reset()
-
+            
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
@@ -535,6 +535,13 @@ def r0_to_dl1(
                                            calibration_index,
                                            event.mon.tel[tel_id],
                                            new_ped=True, new_ff=True)
+
+                # Default of absolute_factor is None - needs to be set here
+                event.calibration.tel[tel_id].dl1.absolute_factor = np.ones((2, PIXEL_INDEX.size))
+                # PATCH: ctapipe expects relative_factor to be always (ngains, npixels)
+                if event.calibration.tel[tel_id].dl1.relative_factor is not None:
+                    if event.calibration.tel[tel_id].dl1.relative_factor.ndim == 1:
+                        event.calibration.tel[tel_id].dl1.relative_factor = np.array(2*[event.calibration.tel[tel_id].dl1.relative_factor])
 
                 # flat-field or pedestal:
                 if ((event.trigger.event_type == EventType.FLATFIELD or
@@ -568,14 +575,10 @@ def r0_to_dl1(
 
                     r1 = event.r1.tel[tel_id]
                     r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
-                    r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX]
+                    # select gain but keep waveform 3d
+                    r1.waveform = r1.waveform[np.newaxis, r1.selected_gain_channel, PIXEL_INDEX]
 
-                    event.calibration.tel[tel_id].dl1.time_shift = \
-                        event.calibration.tel[tel_id].dl1.time_shift[r1.selected_gain_channel, PIXEL_INDEX]
-
-                    event.calibration.tel[tel_id].dl1.relative_factor = \
-                        event.calibration.tel[tel_id].dl1.relative_factor[r1.selected_gain_channel, PIXEL_INDEX]
-
+    
             # Option to add nsb in waveforms
             if nsb_tuning:
                 # FIXME? assumes same correction ratio for all telescopes
@@ -702,7 +705,7 @@ def r0_to_dl1(
                     if tag_pix_thr(image):
 
                         # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
-                        numsamples = event.r1.tel[telescope_id].waveform.shape[1]  # not necessarily the same as in r0!
+                        numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
                         bad_pixels_hg = calibration_mon.unusable_pixels[0]
                         bad_pixels_lg = calibration_mon.unusable_pixels[1]
 
@@ -710,7 +713,7 @@ def r0_to_dl1(
                         # integrator in case of crazy pixels!  TBD: can this be done in a simpler
                         # way?
                         bad_pixels = bad_pixels_hg | bad_pixels_lg
-                        bad_waveform = np.transpose(np.array(numsamples * [bad_pixels]))
+                        bad_waveform = np.array([np.transpose(np.array(numsamples * [bad_pixels]))]) # (1, npixels, nsamples)
 
                         # print('hg bad pixels:',np.where(bad_pixels_hg))
                         # print('lg bad pixels:',np.where(bad_pixels_lg))
@@ -745,8 +748,8 @@ def r0_to_dl1(
                             mask_hg = bright_pixels & (selected_gain == 0)
                             mask_lg = bright_pixels & (selected_gain == 1)
 
-                            bright_pixels_waveforms_hg = event.r1.tel[telescope_id].waveform[mask_hg, :]
-                            bright_pixels_waveforms_lg = event.r1.tel[telescope_id].waveform[mask_lg, :]
+                            bright_pixels_waveforms_hg = event.r1.tel[telescope_id].waveform[0, mask_hg, :]
+                            bright_pixels_waveforms_lg = event.r1.tel[telescope_id].waveform[0, mask_lg, :]
                             stacked_waveforms_hg = np.sum(bright_pixels_waveforms_hg, axis=0)
                             stacked_waveforms_lg = np.sum(bright_pixels_waveforms_lg, axis=0)
 

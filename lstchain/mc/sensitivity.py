@@ -1,7 +1,7 @@
 import astropy.units as u
 import numpy as np
 import pandas as pd
-from astropy.coordinates.angle_utilities import angular_separation
+from astropy.coordinates import angular_separation
 from gammapy.stats import WStatCountsStatistic
 
 from lstchain.io import read_simu_info_merged_hdf5
