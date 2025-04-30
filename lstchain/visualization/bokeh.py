@@ -4,7 +4,7 @@ from bokeh.models import HoverTool
 from bokeh.models import ColumnDataSource, CustomJS, Slider
 from bokeh.models import Range1d, RangeSlider, Div
 from bokeh.models.annotations import Title
-from bokeh.models.widgets import Tabs, Panel
+from bokeh.models.layouts import TabPanel, Tabs
 from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry, PixelShape
 from ..io.io import get_resource_path
@@ -288,9 +288,9 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
                                 ('pix # in cluster', '@pix_id_in_cluster')],
                       mode='mouse', point_policy='snap_to_data'))
 
-    tab1 = Panel(child=cam.figure, title='linear')
+    tab1 = TabPanel(child=cam.figure, title='linear')
     if showlog:
-        tab2 = Panel(child=camlog.figure, title='logarithmic')
+        tab2 = TabPanel(child=camlog.figure, title='logarithmic')
         p1 = Tabs(tabs=[tab1, tab2])
     else:
         p1 = Tabs(tabs=[tab1])

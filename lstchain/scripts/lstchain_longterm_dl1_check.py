@@ -43,7 +43,7 @@ from bokeh.models import (
     Range1d,
     Whisker,
 )
-from bokeh.models.widgets import Tabs, Panel
+from bokeh.models.layouts import Tabs, TabPanel
 from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 # from ctapipe.instrument import SubarrayDescription
@@ -929,7 +929,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     # Plot interleaved pedestal rates
 
-    page0 = Panel()
+    page0 = TabPanel()
     fig_ped_rates = show_graph(x=runtime, y=ped_rate, ey=err_ped_rate,
                                xlabel='date',
                                ylabel='Interleaved pedestals rate (Hz)',
@@ -1000,7 +1000,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page0.title = 'Event rates'
 
 
-    page0a = Panel()
+    page0a = TabPanel()
 
     num_events = runsummary['num_cosmics'] + runsummary['num_pedestals'] + \
                  runsummary['num_flatfield']
@@ -1032,7 +1032,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
 
 
-    page0b = Panel()
+    page0b = TabPanel()
     items = []
     for trigtype in ['ucts', 'tib']:
         for evttype in ['pedestals', 'flatfield', 'cosmics']:
@@ -1057,7 +1057,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page0b.child = grid0b
     page0b.title = 'Trigger tags'
 
-    page0c = Panel()
+    page0c = TabPanel()
     altmin = np.rad2deg(runsummary['min_altitude'])
     altmean = np.rad2deg(runsummary['mean_altitude'])
     altmax = np.rad2deg(runsummary['max_altitude'])
@@ -1107,7 +1107,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     pixel_problems = []
     check_name = []
 
-    page1 = Panel()
+    page1 = TabPanel()
     pad_width = 350
     pad_height = 370
 
@@ -1131,7 +1131,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page1.child = grid1
     page1.title = 'Interleaved pedestals'
 
-    page2 = Panel()
+    page2 = TabPanel()
 
     mean = np.array(pixwise_runsummary['ff_pix_charge_mean'])
     stddev = np.array(pixwise_runsummary['ff_pix_charge_stddev'])
@@ -1164,7 +1164,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page2.child = grid2
     page2.title = 'Interleaved flat field, charge'
 
-    page3 = Panel()
+    page3 = TabPanel()
 
     mean = np.array(pixwise_runsummary['ff_pix_rel_time_mean'])
     stddev = np.array(pixwise_runsummary['ff_pix_rel_time_stddev'])
@@ -1203,7 +1203,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page3.child = grid3
     page3.title = 'Interleaved flat field, time'
 
-    page4 = Panel()
+    page4 = TabPanel()
 
     pulse_rate_above_10 = \
         np.array(pixwise_runsummary['cosmics_pix_fraction_pulses_above10'] *
@@ -1253,7 +1253,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page4.child = grid4
     page4.title = 'Cosmics'
 
-    page4b = Panel()
+    page4b = TabPanel()
 
     # For the image centroids distributions we use the table without cuts in
     # pixels with nearby stars, because centroid is not really as pixel-wise
@@ -1281,7 +1281,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     # Now we make a page with a summary of the pixel problems (in what
     # fraction of the runs each pixel showed a given problem)
-    page4c = Panel()
+    page4c = TabPanel()
     fraction_of_runs = np.array(pixel_problems) / len(runsummary)
 
     row = show_camera(fraction_of_runs, engineering_geom,
@@ -1301,7 +1301,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page4c.child = grid4c
     page4c.title = 'Pixel problems'
 
-    page5 = Panel()
+    page5 = TabPanel()
     pad_width = 550
     pad_height = 350
     fig_mu_effi = show_graph(x=pd.to_datetime(runsummary['time'], origin='unix',
@@ -1358,7 +1358,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page5.child = grid5
     page5.title = "Muons"
 
-    page6 = Panel()
+    page6 = TabPanel()
     pad_width = 550
     pad_height = 350
     fig_ped = show_graph(x=pd.to_datetime(runsummary['time'],
@@ -1412,7 +1412,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page6.child = grid6
     page6.title = "Interleaved pedestals, averages"
 
-    page7 = Panel()
+    page7 = TabPanel()
     pad_width = 550
     pad_height = 350
     fig_flatfield = show_graph(x=pd.to_datetime(runsummary['time'],
@@ -1485,7 +1485,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page7.child = grid7
     page7.title = "Interleaved FF, averages"
 
-    page8 = Panel()
+    page8 = TabPanel()
     pad_width = 550
     pad_height = 350
 

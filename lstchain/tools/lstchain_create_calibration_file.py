@@ -108,7 +108,7 @@ class CalibrationHDF5Writer(Tool):
     def setup(self):
 
         self.log.info("Opening file")
-        self.eventsource = EventSource.from_config(parent=self)
+        self.eventsource = EventSource(parent=self)
 
         self.processor = CalibrationCalculator.from_name(
             self.calibration_product,

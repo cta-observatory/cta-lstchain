@@ -30,8 +30,8 @@ def test_camera_to_altaz():
 def test_radec_to_camera():
     pointing_radec = SkyCoord.from_name("Crab")
     obstime = Time("2020-01-27T23:00", scale="utc")
-    pointing_alt = u.Quantity(1.3748, u.rad, copy=False)
-    pointing_az = u.Quantity(4.0975, u.rad, copy=False)
+    pointing_alt = u.Quantity(1.3748, u.rad)
+    pointing_az = u.Quantity(4.0975, u.rad)
     focal = 28 * u.m
     expected_source_pos_camera = np.array([0.0, 0.0]) * u.m
     pointing_pos_camera = utils.radec_to_camera(

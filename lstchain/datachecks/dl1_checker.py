@@ -387,8 +387,8 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False,
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
     # For future bokeh-based display, turned off for now:
-    # page1 = Panel()
-    # page2 = Panel()
+    # page1 = TabPanel()
+    # page2 = TabPanel()
 
     with PdfPages(pdf_filename) as pdf:
         # first deal with the DL1 datacheck file, created from DL1 event data:
