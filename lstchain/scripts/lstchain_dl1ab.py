@@ -195,7 +195,7 @@ def main():
         extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
     if increase_psf:
         smeared_light_fraction = imconfig["smeared_light_fraction"]
-
+    
     args.pedestal_cleaning = False if is_simulation else args.pedestal_cleaning
     
     ###############################################################
@@ -205,11 +205,12 @@ def main():
     else:
         scale_factor_total_light = 1. 
 
+
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
         sigma = config[clean_method_name]['sigma']
-        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma) * scale_factor_total_light
+        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Fraction of Cat_A pixel cleaning thresholds above Cat_A picture thr.:"
@@ -373,12 +374,15 @@ def main():
             # Select events with intensity in a given range
             image_table = image_table[intensity_mask]
             params = params[intensity_mask]
+            
+            ########################################
+            image_table["image"] = image_table["image"] * scale_factor_total_light
 
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
 
-                image = row['image'] * scale_factor_total_light
+                image = row['image']
                 peak_time = row['peak_time']
 
                 if catB_calib:
@@ -398,9 +402,8 @@ def main():
                     n_samples = config['LocalPeakWindowSum']['window_width']
                     pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
 
-                    #############################################
-                    # calibrate charge, scaling also the pedestal
-                    image = (image - pedestal * scale_factor_total_light) * dc_to_pe
+                    # calibrate charge
+                    image = (image - pedestal) * dc_to_pe
 
                     # put to zero charge unusable pixels in order not to select them in the cleaning
                     image[unusable_pixels] = 0
@@ -546,3 +549,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
