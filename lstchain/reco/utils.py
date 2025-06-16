@@ -905,7 +905,7 @@ def get_intensity_cut(data):
     # We return the default of 50 p.e., if factor * intensity_threshold is below it. 
     
     _, _, intensity_at_50pc_peak_rate, _, _, _ = get_intensity_threshold(data)
-    intensity_cut = max(default_cut, factor * intensity_at_50pc_peak_rate)
+    intensity_cut = np.maximum(default_cut, factor * intensity_at_50pc_peak_rate)
 
     if intensity_cut == default_cut:
         log.info(f'The default cut of {default_cut} p.e. is fine for these data!')
