@@ -275,8 +275,8 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
         c.datasource.add(pix_id_in_cluster, 'pix_id_in_cluster')
 
         # c.add_colorbar()
-        c.figure.plot_width = pad_width
-        c.figure.plot_height = int(pad_width * 0.9)
+        c.figure.width = pad_width
+        c.figure.height = int(pad_width * 0.9)
         c.figure.grid.visible = False
         c.figure.axis.visible = True
         c.figure.xaxis.axis_label = 'X position (m)'
@@ -302,7 +302,7 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
                 y_axis_label=label)
     p2.min_border_top = 40
     p2.min_border_bottom = 50
-    p2.plot_width = pad_width
+    p2.width = pad_width
 
     source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                          value=cam.image))
@@ -359,7 +359,7 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top='top', bottom='bottom', left='left', right='right',
             source=source3)
-    p3.plot_width = pad_width
+    p3.width = pad_width
 
     if titles is None:
         titles = [None] * len(allimages)
@@ -521,7 +521,7 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
                        labels[1])
 
     grid = gridplot([row1, row2], sizing_mode=None,
-                    plot_width=pad_width, plot_height=pad_height)
+                    width=pad_width, height=pad_height)
     return grid
 
 
