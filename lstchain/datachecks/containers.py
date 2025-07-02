@@ -265,10 +265,11 @@ class DL1DataCheckContainer(Container):
                 cog_pixid[k] = geom.position_to_pix_index(x, y)
             else:
                 cog_pixid[k] = -1
+        # Make sure the indices make sense:
+        cog_pixid = np.clip(cog_pixid, -1, geom.n_pixels-1)
 
         self.cog_within_pixel = np.zeros(geom.n_pixels)
-        # explicitly skip -1 values, lest they end in the highest pixel id...
-        # position_to_pix_index returns -1 for nan inputs or x,y outside camera!
+                                 
         for pix in cog_pixid[cog_pixid != -1]:
             self.cog_within_pixel[pix] += 1
 
