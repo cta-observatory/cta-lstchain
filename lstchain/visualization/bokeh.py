@@ -1,5 +1,5 @@
 import logging
-from bokeh.layouts import gridplot
+from bokeh.layouts import gridplot, column
 from bokeh.models import HoverTool
 from bokeh.models import ColumnDataSource, CustomJS, Slider
 from bokeh.models import Range1d, RangeSlider, Div
@@ -167,7 +167,6 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     geom: camera geometry
 
     pad_width: width in pixels of each of the 3 pads in the plot
-    pad_height: height in pixels of each of the 3 pads in the plot
     label: string to label the quantity which is displayed, the same for the N
     sets of pixels inside "content"
     titles: list of N strings, with the title specific to each of the sets
@@ -295,23 +294,26 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     else:
         p1 = Tabs(tabs=[tab1])
     p1.margin = (0, 0, 0, 25)
+    p1.width = pad_width
+    p1.height = int(0.9*pad_width)
 
     p2 = figure(background_fill_color='#ffffff',
                 y_range=(display_min, display_max),
                 x_axis_label='Pixel id',
                 y_axis_label=label)
-    p2.min_border_top = 40
+    p2.min_border_top = 50
     p2.min_border_bottom = 50
     p2.width = pad_width
+    p2.height = pad_width
 
     source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                          value=cam.image))
-    pixel_data = p2.circle(x='pix_id', y='value', size=2, source=source2)
+    pixel_data = p2.scatter(x='pix_id', y='value', size=2, source=source2)
 
     if content_lowlim is None:
-        content_lowlim = np.nan * np.ones_like(content)
+        content_lowlim = 0.0001 * np.ones_like(content) # np.nan * np.ones_like(content)
     if content_upplim is None:
-        content_upplim = np.nan * np.ones_like(content)
+        content_upplim = 1.e4 * np.ones_like(content) # np.nan * np.ones_like(content)
 
     if np.isscalar(content_lowlim):
         content_lowlim = content_lowlim* np.ones_like(content)
@@ -359,7 +361,11 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top='top', bottom='bottom', left='left', right='right',
             source=source3)
+
+    p3.min_border_top = 50
+    p3.min_border_bottom = 50
     p3.width = pad_width
+    p3.height = pad_width
 
     if titles is None:
         titles = [None] * len(allimages)
@@ -419,35 +425,16 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     """)
 
 
-    # https://github.com/bokeh/bokeh/issues/10444
-    slider_height = 300
-    slider_style = Div(text=f"""<style>
-    .fixed-length-slider .bk-input-group {{
-        height: {slider_height}px;
-    }}
-    .custom-length-slider .bk-input-group {{
-        height: {100*(numsets+1)}px;
-    }}
-    </style>
-    """)
 
+    slider = Slider(start=1, end=numsets, value=1, 
+                    step=1, title="run",
+                    show_value=False,
+                    orientation='horizontal',
+                    width=int(pad_width*0.4))
+    slider.margin = (0, 0, 0, 35)
 
-    slider = None
-    if numsets > 1:
-        sstyle = ["fixed-length-slider"]
-        
-        # WARNING: the page won't look nice for number of sets much larger
-        # than 300! (=very long slider) But in this way we avoid that the
-        # run slider skips elements:
-        if numsets > 299:
-            sstyle = ["custom-length-slider"]
+    slider.js_on_change('value', callback)
 
-        slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
-                        show_value=False,
-                        orientation='vertical', css_classes=sstyle)
-
-        slider.margin = (0, 0, 0, 35)
-        slider.js_on_change('value', callback)
 
     callback2 = CustomJS(args=dict(color_mapper=cam._color_mapper,
                                    color_mapper_log=color_mapper_log,
@@ -468,12 +455,14 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     range_slider = RangeSlider(start=display_min, end=display_max,
                                value=(display_min, display_max), step=step,
                                title="z_range",
-                               orientation='vertical', direction='rtl',
-                               css_classes=["fixed-length-slider"],
+                               orientation='horizontal', 
+                               width=int(pad_width*0.4),
+                               direction='rtl',
                                show_value=False)
+    range_slider.margin = (0, 0, 0, 35)
     range_slider.js_on_change('value', callback2)
 
-    return [slider, p1, range_slider, p2, p3, slider_style]
+    return [column(slider, range_slider), p1, p2, p3]
 
 def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     """
@@ -520,7 +509,7 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     row2 = show_camera(stddev, camgeom, pad_width, pad_height,
                        labels[1])
 
-    grid = gridplot([row1, row2], sizing_mode=None,
+    grid = gridplot([row1, row2], sizing_mode=fixed,
                     width=pad_width, height=pad_height)
     return grid
 
