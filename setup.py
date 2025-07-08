@@ -35,6 +35,9 @@ docs_require = [
     "sphinxcontrib-mermaid",
     "sphinx-togglebutton"
 ]
+dev_extra = [
+    "setuptools_scm"
+]
 
 setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
@@ -63,9 +66,9 @@ setup(
         'protozfits>=2.6.1,<3',
         'pymongo',
         'pyparsing',
-        'setuptools_scm',
     ],
     extras_require={
+        "dev": dev_extra,
         "all": tests_require + docs_require,
         "tests": tests_require,
         "docs": docs_require,
