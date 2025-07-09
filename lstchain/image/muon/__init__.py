@@ -4,7 +4,6 @@ from .muon_analysis import (
     tag_pix_thr,
     create_muon_table,
     fill_muon_event,
-    pixel_coords_to_telescope,
 )
 
 __all__ = [
@@ -13,5 +12,4 @@ __all__ = [
     'create_muon_table',
     'fill_muon_event',
     'plot_muon_event',
-    'pixel_coords_to_telescope',
 ]
