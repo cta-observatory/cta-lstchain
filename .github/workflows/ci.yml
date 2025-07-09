@@ -37,10 +37,23 @@ jobs:
       run:
         shell: bash -leo pipefail {0}
 
+    # Note about scikit-learn versions (09/07/2025):
+    # - scikit-learn 1.2 is required to load previous models - see https://github.com/cta-observatory/cta-lstchain/issues/1366
+    # - it requires python 3.11 
+    # - at the moment we test that this version can still be installed but this should be removed in the future, when new models are available
     strategy:
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
-        ctapipe-version: ["v0.25.1"]
+        include:
+          - python-version: "3.11"
+            ctapipe-version: "v0.25.1"
+          - python-version: "3.12"
+            ctapipe-version: "v0.25.1"
+          - python-version: "3.13"
+            ctapipe-version: "v0.25.1"
+          - python-version: "3.11"
+            ctapipe-version: "v0.25.1"
+            sklearn-version: "1.2"
+            name: "scikit-learn 1.2"
 
     steps:
       - uses: actions/checkout@v4
@@ -50,14 +63,25 @@ jobs:
       - name: Prepare mamba installation
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
+          SKLEARN_VERSION: ${{ matrix.sklearn-version }}
         run: |
+          ENV_FILE="environment.yml"
+          if [ -n "$SKLEARN_VERSION" ]; then
+            echo "Running with scikit-learn $SKLEARN_VERSION"
+            NEW_ENV_FILE="environment-sklearn-$SKLEARN_VERSION.yml"
+            cp environment.yml "$NEW_ENV_FILE"
+            sed -i -e "s/scikit-learn>=1.2/scikit-learn=$SKLEARN_VERSION/g" "$NEW_ENV_FILE"
+            ENV_FILE="$NEW_ENV_FILE"
+          fi
+
           # setup correct python version
-          sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
+          sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" "$ENV_FILE"
+          echo "environment-file=$ENV_FILE" >> $GITHUB_ENV
 
       - name: Mamba setup
         uses: mamba-org/setup-micromamba@v2
         with:
-          environment-file: environment.yml
+          environment-file: ${{ env.environment-file }}
           cache-downloads: true
 
       - name: Install dependencies
