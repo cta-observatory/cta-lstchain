@@ -7,7 +7,6 @@ from ctapipe.containers import (
     MuonParametersContainer,
 )
 from ctapipe.coordinates import (
-    CameraFrame,
     TelescopeFrame,
 )
 from ctapipe.image.cleaning import tailcuts_clean
@@ -324,7 +323,6 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
         good_ring = False
 
     if (plot_rings and plots_path and good_ring):
-        focal_length = tel_description.optics.effective_focal_length
         ring_telescope = SkyCoord(muonringparam.center_fov_lon,
                                   muonringparam.center_fov_lat,
                                   TelescopeFrame())
