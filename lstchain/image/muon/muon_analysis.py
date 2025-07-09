@@ -328,22 +328,19 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
         ring_telescope = SkyCoord(muonringparam.center_fov_lon,
                                   muonringparam.center_fov_lat,
                                   TelescopeFrame())
+        centroid = ring_telescope.fov_lon.value, ring_telescope.fov_lat.value
 
-        ring_camcoord = ring_telescope.transform_to(CameraFrame(
-            focal_length=focal_length,
-            rotation=geom.cam_rotation,
-        ))
-        centroid = (ring_camcoord.x.value, ring_camcoord.y.value)
         radius = muonringparam.radius
         width = muonintensityoutput.width
-        ringrad_camcoord = 2 * radius.to(u.rad) * focal_length
+
         ringwidthfrac = width / radius
-        ringrad_inner = ringrad_camcoord * (1. - ringwidthfrac)
-        ringrad_outer = ringrad_camcoord * (1. + ringwidthfrac)
+        ringrad_inner = radius * (1. - ringwidthfrac)
+        ringrad_outer = radius * (1. + ringwidthfrac)
 
         fig, ax = plt.subplots(figsize=(10, 10))
-        plot_muon_event(ax, geom, image * clean_mask, centroid,
-                        ringrad_camcoord, ringrad_inner, ringrad_outer,
+
+        plot_muon_event(ax, geom_telframe, image * clean_mask, centroid,
+                        radius, ringrad_inner, ringrad_outer,
                         event_id)
 
         plt.figtext(0.15, 0.20, 'radial std dev: {0:.3f}'. \
