@@ -25,36 +25,11 @@ __all__ = [
     'fill_muon_event',
     'fit_muon',
     'muon_filter',
-    'pixel_coords_to_telescope',
     'radial_light_distribution',
     'tag_pix_thr',
     'update_parameters',
 ]
 
-
-def pixel_coords_to_telescope(geom, effective_focal_length):
-    """
-    Get the x, y coordinates of the pixels in the telescope frame
-
-    Parameters
-    ----------
-    geom : `CameraGeometry`
-        Camera geometry
-    effective_focal_length: `float`
-        Focal length of the telescope
-
-    Returns
-    -------
-    fov_lon, fov_lat : `floats`
-        Coordinates in  the TelescopeFrame
-    """
-
-    camera_coord = SkyCoord(geom.pix_x, geom.pix_y,
-                            CameraFrame(focal_length=effective_focal_length,
-                                        rotation=geom.cam_rotation))
-    tel_coord = camera_coord.transform_to(TelescopeFrame())
-
-    return tel_coord.fov_lon, tel_coord.fov_lat
 
 
 def update_parameters(config, n_pixels):
@@ -221,17 +196,17 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
 
     tel_description = subarray.tels[tel_id]
 
-    cam_rad = (
-                      tel_description.camera.geometry.guess_radius() / tel_description.optics.effective_focal_length
-              ) * u.rad
     geom = tel_description.camera.geometry
-    effective_focal_length = tel_description.optics.effective_focal_length
+    geom_telframe = geom.transform_to(TelescopeFrame())
+
+    fov_rad = geom_telframe.guess_radius()
+
     mirror_area = tel_description.optics.mirror_area
 
     # some parameters for analysis and cuts for good ring selection:
     params = update_parameters(good_ring_config, geom.n_pixels)
 
-    x, y = pixel_coords_to_telescope(geom, effective_focal_length)
+    x, y = geom_telframe.pix_x, geom_telframe.pix_y
     muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom)
 
     mirror_radius = np.sqrt(mirror_area / np.pi)  # meters
@@ -248,7 +223,7 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
     pix_ring_2 = image[dist_mask_2]
 
     muonparameters = MuonParametersContainer()
-    muonparameters.containment = ring_containment(muonringparam, cam_rad)
+    muonparameters.containment = ring_containment(muonringparam, fov_rad)
 
     radial_distribution = radial_light_distribution(
         muonringparam.center_fov_lon,
@@ -349,7 +324,7 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
         good_ring = False
 
     if (plot_rings and plots_path and good_ring):
-        focal_length = effective_focal_length
+        focal_length = tel_description.optics.effective_focal_length
         ring_telescope = SkyCoord(muonringparam.center_fov_lon,
                                   muonringparam.center_fov_lat,
                                   TelescopeFrame())
