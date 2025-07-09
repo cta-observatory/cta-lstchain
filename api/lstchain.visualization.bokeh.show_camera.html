@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>show_camera &mdash; lstchain 0.10.20.dev6+gac2126ef documentation</title>
+  <title>show_camera &mdash; lstchain 0.11.2.dev4+gd84c1728 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -16,7 +16,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=feb1c0bc"></script>
+      <script src="../_static/documentation_options.js?v=53065427"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -131,7 +131,6 @@
 <dt><strong>be just (number_of_pixels), in case a single camera display is to be shown</strong></dt><dd></dd>
 <dt><strong>geom: camera geometry</strong></dt><dd></dd>
 <dt><strong>pad_width: width in pixels of each of the 3 pads in the plot</strong></dt><dd></dd>
-<dt><strong>pad_height: height in pixels of each of the 3 pads in the plot</strong></dt><dd></dd>
 <dt><strong>label: string to label the quantity which is displayed, the same for the N</strong></dt><dd></dd>
 <dt><strong>sets of pixels inside “content”</strong></dt><dd></dd>
 <dt><strong>titles: list of N strings, with the title specific to each of the sets</strong></dt><dd></dd>
@@ -145,10 +144,10 @@
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>[slider, p1, range_slider, p2, p3]: three bokeh figures, intended for</dt><dd></dd>
-<dt>showing them on the same row, and two sliders, one for the run numbers (</dt><dd></dd>
-<dt>or whatever “sets” of data we are displaying) and the other for the</dt><dd></dd>
-<dt>z-range of the plots.</dt><dd></dd>
+<dt>[column(slider, rangeslider), p1, p2, p3]:</dt><dd></dd>
+<dt>three bokeh figures, intended for showing them on the same row,</dt><dd></dd>
+<dt>and two sliders, one for the run numbers (or whatever “sets” of</dt><dd></dd>
+<dt>data we are displaying) and the other for the z-range of the plots.</dt><dd></dd>
 <dt>p1 is the camera display (with “content” in linear &amp; logarithmic scale)</dt><dd></dd>
 <dt>p2: content vs. pixel</dt><dd></dd>
 <dt>p3: histogram of content (with one entry per pixel)</dt><dd></dd>
@@ -170,7 +169,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 04 Jul 2025 07:15.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 09 Jul 2025 09:03.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
