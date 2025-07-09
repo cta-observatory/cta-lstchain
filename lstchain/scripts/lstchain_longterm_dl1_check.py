@@ -1297,7 +1297,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # of the plots):
     row1[0].children[1].value=(1e-6, 0.5)
 
-    grid4c = gridplot([row1], width=pad_width, height=pad_height)
+    grid4c = gridplot([row1])
     page4c.child = grid4c
     page4c.title = 'Pixel problems'
 

@@ -2,7 +2,7 @@ import logging
 from bokeh.layouts import gridplot, column
 from bokeh.models import HoverTool
 from bokeh.models import ColumnDataSource, CustomJS, Slider
-from bokeh.models import Range1d, RangeSlider, Div
+from bokeh.models import Range1d, RangeSlider
 from bokeh.models.annotations import Title
 from bokeh.models.layouts import TabPanel, Tabs
 from bokeh.plotting import figure
@@ -510,7 +510,7 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     row2 = show_camera(stddev, camgeom, pad_width, pad_height,
                        labels[1])
 
-    grid = gridplot([row1, row2], sizing_mode=fixed,
+    grid = gridplot([row1, row2],
                     width=pad_width, height=pad_height)
     return grid
 
