@@ -72,18 +72,17 @@ def update_parameters(config, n_pixels):
     return params
 
 
-def fit_muon(x, y, image, geom, tailcuts=None):
+def fit_muon(image, geom, tailcuts=None):
     """
     Fit the muon ring
 
     Parameters
     ----------
-    x, y : `floats`
-        Coordinates in  the TelescopeFrame
     image : `np.ndarray`
         Number of photoelectrons in each pixel
     geom : CameraGeometry
-    tailcuts :`list`
+        transformed into TelescopeFrame
+    tailcuts : `list`
         Tail cuts for image cleaning.
         Default is None, such that the tailcuts are calculated for each image.
         If tailcuts are an input, those indicated will be used.
@@ -104,7 +103,7 @@ def fit_muon(x, y, image, geom, tailcuts=None):
         # negative Q cumulative distribution.
         negative_Q = np.sort(image[image <= 0])
         
-        hist, bins = np.histogram(negative_Q,range=(-15,0),bins=30)
+        hist, bins = np.histogram(negative_Q, range=(-15,0), bins=30)
         bins = bins[:-1]
 
         cumulative = np.cumsum(hist)
@@ -130,6 +129,8 @@ def fit_muon(x, y, image, geom, tailcuts=None):
         min_number_picture_neighbors = 2
     )
 
+    x = geom.pix_x
+    y = geom.pix_y
     ring = fitter(x, y, image, clean_mask)
 
     max_allowed_outliers_distance = 0.4
@@ -148,8 +149,7 @@ def fit_muon(x, y, image, geom, tailcuts=None):
         clean_mask *= (ring_dist < ring.radius * max_allowed_outliers_distance)
         ring = fitter(x, y, image, clean_mask)
 
-    image_clean = image * clean_mask
-    return ring, clean_mask, dist, image_clean
+    return ring, clean_mask, dist
 
 
 def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot_rings, plots_path):
@@ -195,18 +195,16 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
 
     tel_description = subarray.tels[tel_id]
 
-    geom = tel_description.camera.geometry
-    geom_telframe = geom.transform_to(TelescopeFrame())
+    geom = tel_description.camera.geometry.transform_to(TelescopeFrame())
 
-    fov_rad = geom_telframe.guess_radius()
+    fov_rad = geom.guess_radius()
 
     mirror_area = tel_description.optics.mirror_area
 
     # some parameters for analysis and cuts for good ring selection:
     params = update_parameters(good_ring_config, geom.n_pixels)
 
-    x, y = geom_telframe.pix_x, geom_telframe.pix_y
-    muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom)
+    muonringparam, clean_mask, dist = fit_muon(image, geom)
 
     mirror_radius = np.sqrt(mirror_area / np.pi)  # meters
     dist_mask = np.abs(dist - muonringparam.radius
@@ -336,7 +334,7 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
 
         fig, ax = plt.subplots(figsize=(10, 10))
 
-        plot_muon_event(ax, geom_telframe, image * clean_mask, centroid,
+        plot_muon_event(ax, geom, image * clean_mask, centroid,
                         radius, ringrad_inner, ringrad_outer,
                         event_id)
 
