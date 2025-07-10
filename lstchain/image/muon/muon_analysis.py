@@ -331,9 +331,8 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
         radius = muonringparam.radius
         width = muonintensityoutput.width
 
-        ringwidthfrac = width / radius
-        ringrad_inner = radius * (1. - ringwidthfrac)
-        ringrad_outer = radius * (1. + ringwidthfrac)
+        ringrad_inner = radius * (1. - width)
+        ringrad_outer = radius * (1. + width)
 
         fig, ax = plt.subplots(figsize=(10, 10))
 
