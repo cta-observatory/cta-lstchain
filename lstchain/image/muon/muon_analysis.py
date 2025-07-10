@@ -320,10 +320,12 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
     else:
         good_ring = False
 
-    if (plot_rings and plots_path and good_ring):
-        ring_telescope = SkyCoord(muonringparam.center_fov_lon,
-                                  muonringparam.center_fov_lat,
-                                  TelescopeFrame())
+    if plot_rings and plots_path and good_ring:
+        ring_telescope = SkyCoord(
+            muonringparam.center_fov_lon,
+            muonringparam.center_fov_lat,
+            TelescopeFrame(),
+        )
         centroid = ring_telescope.fov_lon.value, ring_telescope.fov_lat.value
 
         radius = muonringparam.radius
@@ -332,20 +334,25 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
         ringrad_inner = radius - width
         ringrad_outer = radius + width
 
-        fig, ax = plt.subplots(figsize=(10, 10))
+        fig, ax = plt.subplots(figsize=(10, 10), layout="constrained")
 
         plot_muon_event(ax, geom, image * clean_mask, centroid,
                         radius, ringrad_inner, ringrad_outer,
                         event_id)
 
-        plt.figtext(0.15, 0.20, 'radial std dev: {0:.3f}'. \
-                    format(radial_distribution['standard_dev']))
-        plt.figtext(0.15, 0.18, 'radial excess kurtosis: {0:.3f}'. \
-                    format(radial_distribution['excess_kurtosis']))
-        plt.figtext(0.15, 0.16, 'fitted ring width: {0:.3f}'.format(width))
-        plt.figtext(0.15, 0.14, 'ring completeness: {0:.3f}'. \
-                    format(muonparameters.completeness))
-
+        fig.text(
+            0.15, 0.20,
+            'radial std dev: {0:.3f}'.format(radial_distribution['standard_dev']),
+        )
+        fig.text(
+            0.15, 0.18,
+            'radial excess kurtosis: {0:.3f}'.format(radial_distribution['excess_kurtosis'])
+        )
+        fig.text(0.15, 0.16, 'fitted ring width: {0:.3f}'.format(width))
+        fig.text(
+            0.15, 0.14,
+            'ring completeness: {0:.3f}'.format(muonparameters.completeness)
+        )
         fig.savefig('{}/Event_{}_fitted.png'.format(plots_path, event_id))
 
     if (plot_rings and not plots_path):
