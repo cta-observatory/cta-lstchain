@@ -140,14 +140,15 @@ def fit_muon(image, geom, tailcuts=None):
     # (along the radial direction)
     # The goal is to improve fit for good rings
     # with very few additional non-ring bright pixels.
+    dist = np.sqrt((x - ring.center_fov_lon) ** 2 +
+                   (y - ring.center_fov_lat) ** 2)
     for _ in (0, 0):  # just to iterate the fit twice more
-        dist = np.sqrt(
-            (x - ring.center_fov_lon) ** 2 + (y - ring.center_fov_lat) ** 2
-        )
         ring_dist = np.abs(dist - ring.radius)
 
         clean_mask *= (ring_dist < ring.radius * max_allowed_outliers_distance)
         ring = fitter(x, y, image, clean_mask)
+        dist = np.sqrt((x - ring.center_fov_lon) ** 2 +
+                       (y - ring.center_fov_lat) ** 2)
 
     return ring, clean_mask, dist
 
