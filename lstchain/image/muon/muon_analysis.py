@@ -196,8 +196,8 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
     tel_description = subarray.tels[tel_id]
 
     geom = tel_description.camera.geometry.transform_to(TelescopeFrame())
-    x = geom.pixel_x
-    y = geom.pixel_y
+    x = geom.pix_x
+    y = geom.pix_y
 
     fov_rad = geom.guess_radius()
 
