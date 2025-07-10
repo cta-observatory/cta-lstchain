@@ -34,13 +34,13 @@ def plot_muon_event(ax, geom, image, centroid, ringrad_camcoord,
     disp0.image = image
     disp0.cmap = 'viridis'
     disp0.add_colorbar(ax=ax)
-    disp0.add_ellipse(centroid, ringrad_camcoord.value,
-                      ringrad_camcoord.value, 0., 0., color="red")
-    disp0.add_ellipse(centroid, ringrad_inner.value,
-                      ringrad_inner.value, 0., 0.,
+    disp0.add_ellipse(centroid, ringrad_camcoord.value * 2,
+                      ringrad_camcoord.value * 2, 0., 0., color="red")
+    disp0.add_ellipse(centroid, ringrad_inner.value * 2,
+                      ringrad_inner.value * 2, 0., 0.,
                       color="magenta")
-    disp0.add_ellipse(centroid, ringrad_outer.value,
-                      ringrad_outer.value, 0., 0.,
+    disp0.add_ellipse(centroid, ringrad_outer.value * 2,
+                      ringrad_outer.value * 2, 0., 0.,
                       color="magenta")
     ax.set_title(f"Event {event_id}")
 
