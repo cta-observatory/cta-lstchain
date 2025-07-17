@@ -160,7 +160,7 @@ def main():
                 # Modify pixel status as needed
                 new_status = np.where(ordered_pix_mask,
                                       pixel_status | PixelStatus.DVR_STATUS_0,
-                                      pixel_status & ~PixelStatus.DVR_STATUS_0)
+                                      pixel_status & ~(PixelStatus.DVR_STATUS_0 | PixelStatus.DVR_STATUS_1))
                 event.pixel_status.data = new_status.tobytes()
 
                 stream.write_message(event)
