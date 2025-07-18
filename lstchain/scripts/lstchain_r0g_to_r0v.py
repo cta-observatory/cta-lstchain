@@ -8,6 +8,11 @@ In principle it can work on R0 data (2 gains), but no gain selection will be
 applied, and it does not make much sense to keep both gains on reduced 
 (pixel-selected) data!
 
+If the option --fix-pixel-status is used, then the input file has to be an R0V
+file, and the pixel selection file must be the same that was used to produce 
+it. this is a special option to fix R0V that were created with wrong pixel 
+status (but correct waveform selection).
+
 """
 import logging
 import protozfits
@@ -41,6 +46,11 @@ parser.add_argument('--log', dest='log_file',
                     type=Path, default=None,
                     help='Log file name')
 
+parser.add_argument('--fix-pixel-status', dest='fix_pixel_status',
+                    action='store_true', required=False, 
+                    default=False,
+                    help='Just set the pixel status flags (input file should be R0V)')
+
 # Events for which gain selection will be applied:
 EVENT_TYPES_TO_REDUCE = [EventType.SUBARRAY, EventType.UNKNOWN]
 UNSET_DVR_BIT_MASK = ~np.uint8(PixelStatus.DVR_STATUS_0 | PixelStatus.DVR_STATUS_1)
@@ -48,7 +58,7 @@ SET_DVR_BIT_0 = np.uint8(PixelStatus.DVR_STATUS_0)
 
 def main():
     args = parser.parse_args()
-  
+
     input_file = args.input_file
     output_dir = args.output_dir
 
@@ -116,6 +126,11 @@ def main():
             n_tiles = header["NAXIS2"]
             rows_per_tile = header["ZTILELEN"]
 
+            if args.fix_pixel_status:
+                r0v_input = header.get("LSTDVR", False)
+                if not r0v_input:
+                    raise RuntimeError('Input file must be R0V if --fix-pixel-status option is used!')
+
             stream = stack.enter_context(protozfits.ProtobufZOFits(
                     n_tiles=n_tiles,
                     rows_per_tile=rows_per_tile,
@@ -146,8 +161,6 @@ def main():
                     continue
 
                 num_gains = event.num_channels
-                wf = protozfits.any_array_to_numpy(event.waveform)
-                wf = wf.reshape((num_gains, num_pixels, num_samples))
 
                 evtype = event_type[event.event_id]
                 pixel_status = protozfits.any_array_to_numpy(event.pixel_status)
@@ -156,9 +169,23 @@ def main():
                 if evtype in EVENT_TYPES_TO_REDUCE:
                     pixmask = pixel_mask[event.event_id]
                     ordered_pix_mask = pixmask[pixel_id_map]
-                    new_wf = wf[:, ordered_pix_mask, :]
-                    event.waveform.data = new_wf.tobytes()
-                  
+
+                    wf = protozfits.any_array_to_numpy(event.waveform)
+                    # Keep only selected waveforms - unless the option
+                    # --fix-pixel-status has been selected, in which case
+                    # it is not needed because input file is already R0V:
+                    if not args.fix_pixel_status:
+                        wf = wf.reshape((num_gains, num_pixels, num_samples))
+                        new_wf = wf[:, ordered_pix_mask, :]
+                        event.waveform.data = new_wf.tobytes()
+                    else:
+                        # Check that the number of saved pixels in the mask 
+                        # is consistent with the size of the waveform (will
+                        # be the case, if the pixel selection file is the same
+                        # that was used in the creation of the input R0V file
+                        if len(wf) != num_gains * num_samples * ordered_pix_mask.sum():
+                            raise RuntimeError('The pixel selection file is not consistent with the input R0V file!')
+
                 # Modify pixel status as needed
                 new_status = np.where(ordered_pix_mask,
                                       pixel_status | SET_DVR_BIT_0,
