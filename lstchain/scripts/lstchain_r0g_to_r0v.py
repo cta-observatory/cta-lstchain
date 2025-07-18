@@ -44,6 +44,7 @@ parser.add_argument('--log', dest='log_file',
 # Events for which gain selection will be applied:
 EVENT_TYPES_TO_REDUCE = [EventType.SUBARRAY, EventType.UNKNOWN]
 UNSET_DVR_BIT_MASK = ~np.uint8(PixelStatus.DVR_STATUS_0 | PixelStatus.DVR_STATUS_1)
+SET_DVR_BIT_0 = np.uint8(PixelStatus.DVR_STATUS_0)
 
 def main():
     args = parser.parse_args()
@@ -160,7 +161,7 @@ def main():
                   
                 # Modify pixel status as needed
                 new_status = np.where(ordered_pix_mask,
-                                      pixel_status | PixelStatus.DVR_STATUS_0,
+                                      pixel_status | SET_DVR_BIT_0,
                                       pixel_status & UNSET_DVR_BIT_MASK)
                 event.pixel_status.data = new_status.tobytes()
 
