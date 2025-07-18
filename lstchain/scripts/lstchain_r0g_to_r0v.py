@@ -43,7 +43,7 @@ parser.add_argument('--log', dest='log_file',
 
 # Events for which gain selection will be applied:
 EVENT_TYPES_TO_REDUCE = [EventType.SUBARRAY, EventType.UNKNOWN]
-UNSET_DVR_BIT_MASK = ~np.uint8(PixelStatus.DVR_STATUS_0 | PixelStatus.DVR_STATUS_1))
+UNSET_DVR_BIT_MASK = ~np.uint8(PixelStatus.DVR_STATUS_0 | PixelStatus.DVR_STATUS_1)
 
 def main():
     args = parser.parse_args()
