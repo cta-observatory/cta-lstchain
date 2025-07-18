@@ -118,7 +118,7 @@ def main():
                     n_tiles=n_tiles,
                     rows_per_tile=rows_per_tile,
                     compression_block_size_kb=64*1024,
-                    defaul_compression="lst-r1v1-uncalibrated"))
+                    default_compression="lst-r1v1-uncalibrated"))
             stream.open(str(name))
 
             stream.move_to_new_table("DataStream")
