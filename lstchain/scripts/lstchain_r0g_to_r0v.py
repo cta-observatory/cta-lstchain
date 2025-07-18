@@ -127,11 +127,7 @@ def main():
             rows_per_tile = header["ZTILELEN"]
 
             if args.fix_pixel_status:
-                r0v_input = True
-                if "LSTDVR" in header:
-                    r0v_input = header["LSTDVR"]
-                else:
-                    r0v_input = False
+                r0v_input = header.get("LSTDVR", False)
                 if not r0v_input:
                     raise RuntimeError('Input file must be R0V if --fix-pixel-status option is used!')
 
