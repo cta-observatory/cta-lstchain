@@ -8,6 +8,11 @@ In principle it can work on R0 data (2 gains), but no gain selection will be
 applied, and it does not make much sense to keep both gains on reduced 
 (pixel-selected) data!
 
+If the option --fix-pixel-status is used, then the input file has to be an R0V
+file, and the pixel selection file must be the same that was used to produce 
+it. this is a special option to fix R0V that were created with wrong pixel 
+status (but correct waveform selection).
+
 """
 import logging
 import protozfits
