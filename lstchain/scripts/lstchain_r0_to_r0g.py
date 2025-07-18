@@ -175,7 +175,7 @@ def main():
                     new_status = np.where(use_lg,
                                           pixel_status & 0b11111011,
                                           pixel_status & 0b11110111)
-                    event.pixel_status.data = np.uint8(new_status).tobytes()
+                    event.pixel_status.data = new_status.tobytes()
 
                 stream.write_message(event)
 
