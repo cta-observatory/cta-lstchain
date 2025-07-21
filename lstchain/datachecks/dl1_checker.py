@@ -265,12 +265,12 @@ def process_dl1_file(filename, bins, tel_id=1):
     # The same mask should be valid for image_table, since the entry in
     # the two tables correspond one to one.
 
-    # Revise flatfield_mask : event_type can be rarely wrong, so check
-    # here that all events look like interleaved flat field events:
-    # Note (AM, 20211202): finally we won't use this, the event source
-    # takes care of it
-    # flatfield_mask &= ((parameters['intensity'] > 50000) &
-    #                    (parameters['concentration_pixel'] < 0.005))
+    # Revise flatfield_mask : event_type can be (rarely) wrong, so we make
+    # sure here that all events look like interleaved flat field events:
+    # (Note: this would fail if ever we move to using significantly dimmer
+    # flat-field flashes - as of 2025/07 we have ~72 p.e./pixel)
+    flatfield_mask &= ((parameters['intensity'] > 50000) &
+                       (parameters['concentration_pixel'] < 0.005))
 
     pedestal_mask = (parameters['event_type'] ==
                      EventType.SKY_PEDESTAL.value)

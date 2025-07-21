@@ -7,7 +7,8 @@ import numpy as np
 from astropy import units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz
-
+from astropy.coordinates import NonRotationTransformationWarning
+from erfa import ErfaWarning
 import warnings
 from ctapipe.core import Container, Field
 from ctapipe.utils import get_bright_stars
@@ -326,35 +327,44 @@ class DL1DataCheckContainer(Container):
         sampled_times = self.dragon_time
         obstime = Time(sampled_times[int(len(sampled_times)/2)],
                        scale='utc', format='unix')
-        horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
-        pointing = SkyCoord(az=self.mean_az_tel,
-                            alt=self.mean_alt_tel,
-                            frame=horizon_frame)
-        bright_stars = get_bright_stars(time=obstime,
-                                        pointing=pointing, radius=3*u.deg,
-                                        magnitude_cut=8)
-        # Account for average relative spot shift (outwards) due to coma
-        # aberration:
-        relative_shift = 1.0466 # For LST's paraboloid
-        camera_frame = CameraFrame(telescope_pointing=pointing,
-                                   focal_length=focal_length*relative_shift,
-                                   obstime=obstime,
-                                   location=LST1_LOCATION)
-        telescope_frame = TelescopeFrame(obstime=obstime, location=LST1_LOCATION)
 
-        # radius around star within which we consider the pixel may be affected
-        # (hence we will later not raise a flag if e.g. its pedestal std dev is
-        # high):
-        r_around_star = 0.25 * u.deg
-        stars = bright_stars['ra_dec']
-        pixels = SkyCoord(x=geom.pix_x, y=geom.pix_y,
-                          frame=camera_frame).transform_to(telescope_frame)
-        angular_distance = pixels[:, np.newaxis].separation(stars)
 
-        # This counts how many stars are close to each pixel; stars can be
-        # counted more than once (for different pixels!) so don't add them up.
-        self.num_nearby_stars = np.count_nonzero(angular_distance < r_around_star,
-                                                 axis=1)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=NonRotationTransformationWarning)
+            warnings.filterwarnings("ignore", category=ErfaWarning)
+
+            horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
+            pointing = SkyCoord(az=self.mean_az_tel,
+                                alt=self.mean_alt_tel,
+                                frame=horizon_frame)
+            bright_stars = get_bright_stars(time=obstime,
+                                            pointing=pointing, radius=3*u.deg,
+                                            magnitude_cut=8)
+            # Account for average relative spot shift (outwards) due to coma
+            # aberration:
+            relative_shift = 1.0466 # For LST's paraboloid
+            camera_frame = CameraFrame(telescope_pointing=pointing,
+                                       focal_length=focal_length*relative_shift,
+                                       obstime=obstime,
+                                       location=LST1_LOCATION)
+            telescope_frame = TelescopeFrame(obstime=obstime, location=LST1_LOCATION)
+
+            # radius around star within which we consider the pixel may be affected
+            # (hence we will later not raise a flag if e.g. its pedestal std dev is
+            # high):
+            r_around_star = 0.25 * u.deg
+            stars = bright_stars['ra_dec']
+
+            pixels = SkyCoord(x=geom.pix_x, y=geom.pix_y,
+                              frame=camera_frame).transform_to(telescope_frame)
+
+            angular_distance = pixels[:, np.newaxis].separation(stars)
+
+            # This counts how many stars are close to each pixel; stars can be
+            # counted more than once (for different pixels!) so don't add them up.
+            self.num_nearby_stars = np.count_nonzero(angular_distance < r_around_star,
+                                                     axis=1)
 
         # for pedestal events nothing else to be done:
         if event_type == 'pedestals':
@@ -375,23 +385,12 @@ class DL1DataCheckContainer(Container):
             # mean and std dev for each pixel through the whole subrun:
             self.time_mean = np.nanmean(time, axis=0)
             self.time_stddev = np.nanstd(time, axis=0)
-            # Now the average time in the camera, for each event:
-            tmean = np.nanmean(time, axis=1)
 
-            # We do the calculation of the relative times event by event,
-            # instead of using events*pixels matrices, because keeping all
-            # necessary matrices in memory to do it in one go results in too
-            # large memory use (>5GB)
-            for ievt, event_pixtimes in enumerate(time):
-                # for each pixel we want the mean time of all the other pixels:
-                mean_t_other = np.ones_like(event_pixtimes) * tmean[ievt]
-                mean_t_other *= n_valid_pixels[ievt]
-                mean_t_other -= event_pixtimes
-                mean_t_other /= (n_valid_pixels[ievt] - 1)
-                time[ievt] -= mean_t_other
-
-            # Now time contains the times of each pixel relative to the average
-            # of the rest of the pixels in the same event
+            # Compute median of the pixel times for each event. This is more
+            # robust against outliers (mainly needed for flat-field events)
+            tmedian = np.nanmedian(time, axis=1)
+            # Convert pixel times to time relative to each event's median
+            time = (time.T - tmedian).T
 
             self.relative_time_mean = np.nanmean(time, axis=0)
             self.relative_time_stddev = np.nanstd(time, axis=0)
