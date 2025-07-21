@@ -283,7 +283,7 @@ class DL1DataCheckContainer(Container):
             self.cog_within_pixel_intensity_gt_200[pix] += 1
 
     def fill_pixel_wise_info(self, table, mask, histogram_binnings,
-                             focal_length, geom, event_type = ''):
+                             effective_focal_length, geom, event_type = ''):
         """
         Fills the quantities that are calculated pixel-wise
 
@@ -293,7 +293,8 @@ class DL1DataCheckContainer(Container):
         mask: indicates rows that have to be used for filling this container
         histogram_binnings: container of type DL1DataCheckHistogramBins, with
                             definition of the binnings of all the histograms
-        focal_length: quantity; telescope focal length
+        effective_focal_length: quantity; telescope effective focal length (
+                            accounting for average effect of aberration)
         geom: camera geometry, ctapipe.instrument.camera.geometry.CameraGeometry
         event_type: 'pedestals' 'flatfield' or 'cosmics'
 
@@ -341,11 +342,9 @@ class DL1DataCheckContainer(Container):
             bright_stars = get_bright_stars(time=obstime,
                                             pointing=pointing, radius=3*u.deg,
                                             magnitude_cut=8)
-            # Account for average relative spot shift (outwards) due to coma
-            # aberration:
-            relative_shift = 1.0466 # For LST's paraboloid
+
             camera_frame = CameraFrame(telescope_pointing=pointing,
-                                       focal_length=focal_length*relative_shift,
+                                       focal_length=effective_focal_length,
                                        obstime=obstime,
                                        location=LST1_LOCATION)
             telescope_frame = TelescopeFrame(obstime=obstime, location=LST1_LOCATION)

@@ -31,7 +31,7 @@ from ctapipe.containers import EventType
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.io import HDF5TableWriter
 from ctapipe.io import read_table
-from ctapipe_io_lst import TriggerBits, load_camera_geometry
+from ctapipe_io_lst import TriggerBits, LSTEventSource
 from ctapipe.visualization import CameraDisplay
 
 from matplotlib.backends.backend_pdf import PdfPages
@@ -243,9 +243,13 @@ def process_dl1_file(filename, bins, tel_id=1):
     #geom = subarray_info.tel[tel_id].camera.geometry
     #equivalent_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
 
-    geom = load_camera_geometry()
-    equivalent_focal_length = geom.frame.focal_length
+    sa = LSTEventSource.create_subarray(tel_id=1)
+    geom = sa.tel[1].camera.geometry
+    equivalent_focal_length = sa.tel[1].optics.equivalent_focal_length
+    effective_focal_length = sa.tel[1].optics.effective_focal_length
 
+    # Note: the transformation from m to degrees below does not correct for
+    # aberration:
     m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
     parameters = read_table(filename, dl1_params_lstcam_key)
@@ -294,7 +298,7 @@ def process_dl1_file(filename, bins, tel_id=1):
                                                     geom, bins)
         dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
                                                     pedestal_mask, bins,
-                                                    equivalent_focal_length,
+                                                    effective_focal_length,
                                                     geom,
                                                     'pedestals')
     else:
@@ -307,7 +311,7 @@ def process_dl1_file(filename, bins, tel_id=1):
                                                     geom, bins)
         dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
                                                     flatfield_mask, bins,
-                                                    equivalent_focal_length,
+                                                    effective_focal_length,
                                                     geom,
                                                     'flatfield')
     else:
@@ -320,7 +324,7 @@ def process_dl1_file(filename, bins, tel_id=1):
                                                   geom, bins)
         dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
                                                   cosmics_mask, bins,
-                                                  equivalent_focal_length,
+                                                  effective_focal_length,
                                                   geom,
                                                   'cosmics')
     else:
@@ -381,9 +385,9 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False,
         pdf_filename = Path(out_path, pdf_filename.name)
 
     # Read camera geometry
-    # subarray_info = SubarrayDescription.from_hdf(datacheck_filename)
-    # geom = subarray_info.tel[tel_id].camera.geometry
-    geom = load_camera_geometry()
+    sa = LSTEventSource.create_subarray(tel_id=1)
+    geom = sa.tel[1].camera.geometry
+
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
     # For future bokeh-based display, turned off for now:
