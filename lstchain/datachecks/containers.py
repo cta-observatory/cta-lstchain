@@ -329,41 +329,41 @@ class DL1DataCheckContainer(Container):
         obstime = Time(sampled_times[int(len(sampled_times)/2)],
                        scale='utc', format='unix')
 
+        horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
+        pointing = SkyCoord(az=self.mean_az_tel, alt=self.mean_alt_tel,
+                            frame=horizon_frame)
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore",
                                     category=NonRotationTransformationWarning)
             warnings.filterwarnings("ignore", category=ErfaWarning)
-
-            horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
-            pointing = SkyCoord(az=self.mean_az_tel,
-                                alt=self.mean_alt_tel,
-                                frame=horizon_frame)
             bright_stars = get_bright_stars(time=obstime,
                                             pointing=pointing, radius=3*u.deg,
                                             magnitude_cut=8)
 
-            camera_frame = CameraFrame(telescope_pointing=pointing,
-                                       focal_length=effective_focal_length,
-                                       obstime=obstime,
-                                       location=LST1_LOCATION)
-            telescope_frame = TelescopeFrame(obstime=obstime, location=LST1_LOCATION)
+        camera_frame = CameraFrame(telescope_pointing=pointing,
+                                   focal_length=effective_focal_length,
+                                   obstime=obstime,
+                                   location=LST1_LOCATION)
+        telescope_frame = TelescopeFrame(obstime=obstime,
+                                         location=LST1_LOCATION,
+                                         telescope_pointing=pointing)
 
-            # radius around star within which we consider the pixel may be affected
-            # (hence we will later not raise a flag if e.g. its pedestal std dev is
-            # high):
-            r_around_star = 0.25 * u.deg
-            stars = bright_stars['ra_dec']
+        # radius around star within which we consider the pixel may be affected
+        # (hence we will later not raise a flag if e.g. its pedestal std dev is
+        # high):
+        r_around_star = 0.25 * u.deg
+        stars = bright_stars['ra_dec'].transform_to(telescope_frame)
 
-            pixels = SkyCoord(x=geom.pix_x, y=geom.pix_y,
-                              frame=camera_frame).transform_to(telescope_frame)
+        pixels = SkyCoord(x=geom.pix_x, y=geom.pix_y,
+                          frame=camera_frame).transform_to(telescope_frame)
 
-            angular_distance = pixels[:, np.newaxis].separation(stars)
+        angular_distance = pixels[:, np.newaxis].separation(stars)
 
-            # This counts how many stars are close to each pixel; stars can be
-            # counted more than once (for different pixels!) so don't add them up.
-            self.num_nearby_stars = np.count_nonzero(angular_distance < r_around_star,
-                                                     axis=1)
+        # This counts how many stars are close to each pixel; stars can be
+        # counted more than once (for different pixels!) so don't add them up.
+        self.num_nearby_stars = np.count_nonzero(angular_distance < r_around_star,
+                                                 axis=1)
 
         # for pedestal events nothing else to be done:
         if event_type == 'pedestals':
