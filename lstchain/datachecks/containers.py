@@ -388,7 +388,7 @@ class DL1DataCheckContainer(Container):
             # robust against outliers (mainly needed for flat-field events)
             tmedian = np.nanmedian(time, axis=1)
             # Convert pixel times to time relative to each event's median
-            time = (time.T - tmedian).T
+            time -= tmedian[:, np.newaxis]
 
             self.relative_time_mean = np.nanmean(time, axis=0)
             self.relative_time_stddev = np.nanstd(time, axis=0)
