@@ -577,9 +577,13 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False,
             bins = hist_binning.col(hist)[0]
             for table in dl1dcheck_tables:
                 contents = np.sum(table.col(hist), axis=0)
+                if contents.sum() > 0:
+                    ww = contents / contents.sum()
+                else:
+                    ww = np.zeros_like(contents)
+                    # need to plot it even if empty to keep meaning of colors!
                 axes.flatten()[i].hist(bins[:-1], bins, histtype='step',
-                                       weights=contents / contents.sum(),
-                                       label=table.name)
+                                       weights=ww, label=table.name)
             axes.flatten()[i].set_yscale('log')
             axes.flatten()[i].set_xscale('log')
             axes.flatten()[i].set_ylabel('fraction of events of the given type')
