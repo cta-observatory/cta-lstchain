@@ -379,8 +379,6 @@ class DL1DataCheckContainer(Container):
 
             # Make nan all pulse times for charges less than 1 p.e.:
             time = np.where(charge > 1, time, np.nan)
-            # count how many valid pixels per event:
-            n_valid_pixels = np.count_nonzero(np.isfinite(time), axis=1)
 
             # mean and std dev for each pixel through the whole subrun:
             self.time_mean = np.nanmean(time, axis=0)
