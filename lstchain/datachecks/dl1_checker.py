@@ -423,7 +423,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False,
             raise RuntimeError
 
         dl1dcheck_tables = [table_flatfield, table_pedestals, table_cosmics]
-        labels = ['flatfield (guessed)', 'pedestals',
+        labels = ['flatfield', 'pedestals',
                   'cosmics']
         labels = [x for i, x in enumerate(labels)
                   if dl1dcheck_tables[i] is not None]
