@@ -7,7 +7,8 @@ import numpy as np
 from astropy import units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz
-
+from astropy.coordinates import NonRotationTransformationWarning
+from erfa import ErfaWarning
 import warnings
 from ctapipe.core import Container, Field
 from ctapipe.utils import get_bright_stars
@@ -181,108 +182,117 @@ class DL1DataCheckContainer(Container):
         self.ucts_time = np.pad(ucts_time, padding, mode='edge')
         self.dragon_time = np.pad(dragon_time, padding, mode='edge')
 
-        # for the delta_t histogram we do not apply the mask, we want to have
-        # all events present in the original table:
-        delta_t = np.array(table['dragon_time'][1:]) - \
-                  np.array(table['dragon_time'][:-1])
-        counts, _, _, = plt.hist(delta_t * 1.e3,
-                                 bins=histogram_binnings.hist_delta_t)
-        self.hist_delta_t = counts
+        with warnings.catch_warnings():
+            # silence warnings when attempting to histogram all-NaN arrays
+            # (this happens often with post-cleaning quantities in pedestal
+            # events - in some subruns not a single pedestal survives cleaning)
+            warnings.filterwarnings("ignore",
+                                    message="All-NaN slice encountered")
+            warnings.filterwarnings("ignore",
+                                    message="All-NaN axis encountered")
+            # for the delta_t histogram we do not apply the mask, we want to have
+            # all events present in the original table:
+            delta_t = np.array(table['dragon_time'][1:]) - \
+                      np.array(table['dragon_time'][:-1])
+            counts, _, _, = plt.hist(delta_t * 1.e3,
+                                     bins=histogram_binnings.hist_delta_t)
+            self.hist_delta_t = counts
 
-        n_pixels = table['n_pixels'][mask]
-        counts, _, _, = plt.hist(n_pixels,
-                                 bins=histogram_binnings.hist_npixels)
-        self.hist_npixels = counts
+            n_pixels = table['n_pixels'][mask]
+            counts, _, _, = plt.hist(n_pixels,
+                                     bins=histogram_binnings.hist_npixels)
+            self.hist_npixels = counts
 
-        n_islands = table['n_islands'][mask]
-        counts, _, _, = plt.hist(n_islands,
-                                 bins=histogram_binnings.hist_nislands)
-        self.hist_nislands = counts
+            n_islands = table['n_islands'][mask]
+            counts, _, _, = plt.hist(n_islands,
+                                     bins=histogram_binnings.hist_nislands)
+            self.hist_nislands = counts
 
-        intensity = table[mask]['intensity'].data
-        counts, _, _ = plt.hist(intensity,
-                                bins=histogram_binnings.hist_intensity)
-        self.hist_intensity = counts
+            intensity = table[mask]['intensity'].data
+            counts, _, _ = plt.hist(intensity,
+                                    bins=histogram_binnings.hist_intensity)
+            self.hist_intensity = counts
 
-        dist0 = table[mask]['r']
-        counts, _, _ = plt.hist(dist0, bins=histogram_binnings.hist_dist0)
-        self.hist_dist0 = counts
+            dist0 = table[mask]['r']
+            counts, _, _ = plt.hist(dist0, bins=histogram_binnings.hist_dist0)
+            self.hist_dist0 = counts
 
-        counts, _, _ = \
-            plt.hist(dist0[intensity > 200],
-                     bins=histogram_binnings.hist_dist0_intensity_gt_200)
-        self.hist_dist0_intensity_gt_200 = counts
+            counts, _, _ = \
+                plt.hist(dist0[intensity > 200],
+                         bins=histogram_binnings.hist_dist0_intensity_gt_200)
+            self.hist_dist0_intensity_gt_200 = counts
 
-        counts, _, _, _ = plt.hist2d(intensity,
-                                     table[mask]['width'].data,
-                                     bins=histogram_binnings.hist_width)
-        self.hist_width = counts
+            counts, _, _, _ = plt.hist2d(intensity,
+                                         table[mask]['width'].data,
+                                         bins=histogram_binnings.hist_width)
+            self.hist_width = counts
 
-        counts, _, _, _ = plt.hist2d(intensity,
-                                     table[mask]['length'].data,
-                                     bins=histogram_binnings.hist_length)
-        self.hist_length = counts
+            counts, _, _, _ = plt.hist2d(intensity,
+                                         table[mask]['length'].data,
+                                         bins=histogram_binnings.hist_length)
+            self.hist_length = counts
 
-        counts, _, _, _ = plt.hist2d(intensity,
-                                     table[mask]['skewness'].data,
-                                     bins=histogram_binnings.hist_skewness)
-        self.hist_skewness = counts
+            counts, _, _, _ = plt.hist2d(intensity,
+                                         table[mask]['skewness'].data,
+                                         bins=histogram_binnings.hist_skewness)
+            self.hist_skewness = counts
 
-        psi = table[mask]['psi'].data
-        counts, _, _ = \
-            plt.hist(psi, bins=histogram_binnings.hist_psi)
-        self.hist_psi = counts
+            psi = table[mask]['psi'].data
+            counts, _, _ = \
+                plt.hist(psi, bins=histogram_binnings.hist_psi)
+            self.hist_psi = counts
 
-        counts, _, _, _ = \
-            plt.hist2d(intensity, table[mask]['intercept'].data,
-                       bins=histogram_binnings.hist_intercept)
-        self.hist_intercept = counts
+            counts, _, _, _ = \
+                plt.hist2d(intensity, table[mask]['intercept'].data,
+                           bins=histogram_binnings.hist_intercept)
+            self.hist_intercept = counts
 
-        length = table[mask]['length'].data
-        tgrad = np.abs(table[mask]['time_gradient'].data)
-        counts, _, _, _ = \
-            plt.hist2d(length, tgrad,
-                       bins=histogram_binnings.hist_tgrad_vs_length)
-        self.hist_tgrad_vs_length = counts
+            length = table[mask]['length'].data
+            tgrad = np.abs(table[mask]['time_gradient'].data)
+            counts, _, _, _ = \
+                plt.hist2d(length, tgrad,
+                           bins=histogram_binnings.hist_tgrad_vs_length)
+            self.hist_tgrad_vs_length = counts
 
-        # We noticed an occasional pyplot error that seems to be fixed by
-        # making sure that the coordinates passed to hist2d are ndarrays
-        # (instead of Pandas data series)
+            # We noticed an occasional pyplot error that seems to be fixed by
+            # making sure that the coordinates passed to hist2d are ndarrays
+            # (instead of Pandas data series)
 
-        counts, _, _, _ = \
-            plt.hist2d(length[intensity > 200], tgrad[intensity > 200],
-                       bins=histogram_binnings.
-                       hist_tgrad_vs_length_intensity_gt_200)
-        self.hist_tgrad_vs_length_intensity_gt_200 = counts
+            counts, _, _, _ = \
+                plt.hist2d(length[intensity > 200], tgrad[intensity > 200],
+                           bins=histogram_binnings.
+                           hist_tgrad_vs_length_intensity_gt_200)
+            self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
-        # event-wise, id of camera pixel which contains the image's cog:
-        # we skip nan coordinates to avoid a lot of ctapipe warnings
-        cog_pixid = np.zeros(mask.sum(), dtype='int')
-        for k, x, y in zip(range(mask.sum()),
-                           table['x'].quantity[mask],
-                           table['y'].quantity[mask]):
-            if np.isfinite(x) & np.isfinite(y):
-                cog_pixid[k] = geom.position_to_pix_index(x, y)
-            else:
-                cog_pixid[k] = -1
-        # Make sure the indices make sense:
-        cog_pixid = np.clip(cog_pixid, -1, geom.n_pixels-1)
+            # event-wise, id of camera pixel which contains the image's cog:
+            # we skip nan coordinates to avoid a lot of ctapipe warnings
+            cog_pixid = np.zeros(mask.sum(), dtype='int')
+            for k, x, y in zip(range(mask.sum()),
+                               table['x'].quantity[mask],
+                               table['y'].quantity[mask]):
+                if np.isfinite(x) & np.isfinite(y):
+                    cog_pixid[k] = geom.position_to_pix_index(x, y)
+                else:
+                    cog_pixid[k] = -1
+            # Make sure the indices make sense:
+            cog_pixid = np.clip(cog_pixid, -1, geom.n_pixels-1)
 
-        self.cog_within_pixel = np.zeros(geom.n_pixels)
-                                 
-        for pix in cog_pixid[cog_pixid != -1]:
-            self.cog_within_pixel[pix] += 1
+            self.cog_within_pixel = np.zeros(geom.n_pixels)
 
-        self.cog_within_pixel_intensity_gt_200 = np.zeros(geom.n_pixels)
-        # now the same for relatively bright images (intensity > 200 p.e.)
-        select = intensity > 200
-        for pix in cog_pixid[select]:
-            if pix == -1:  # out of camera or non-reconstructed event
-                continue
-            self.cog_within_pixel_intensity_gt_200[pix] += 1
+            for pix in cog_pixid[cog_pixid != -1]:
+                self.cog_within_pixel[pix] += 1
+
+            self.cog_within_pixel_intensity_gt_200 = np.zeros(geom.n_pixels)
+            # now the same for relatively bright images (intensity > 200 p.e.)
+            select = intensity > 200
+            for pix in cog_pixid[select]:
+                if pix == -1:  # out of camera or non-reconstructed event
+                    continue
+                self.cog_within_pixel_intensity_gt_200[pix] += 1
+
 
     def fill_pixel_wise_info(self, table, mask, histogram_binnings,
-                             focal_length, geom, event_type = ''):
+                             effective_focal_length, geom, event_type = ''):
         """
         Fills the quantities that are calculated pixel-wise
 
@@ -292,7 +302,8 @@ class DL1DataCheckContainer(Container):
         mask: indicates rows that have to be used for filling this container
         histogram_binnings: container of type DL1DataCheckHistogramBins, with
                             definition of the binnings of all the histograms
-        focal_length: quantity; telescope focal length
+        effective_focal_length: quantity; telescope effective focal length (
+                            accounting for average effect of aberration)
         geom: camera geometry, ctapipe.instrument.camera.geometry.CameraGeometry
         event_type: 'pedestals' 'flatfield' or 'cosmics'
 
@@ -326,29 +337,36 @@ class DL1DataCheckContainer(Container):
         sampled_times = self.dragon_time
         obstime = Time(sampled_times[int(len(sampled_times)/2)],
                        scale='utc', format='unix')
+
         horizon_frame = AltAz(location=LST1_LOCATION, obstime=obstime)
-        pointing = SkyCoord(az=self.mean_az_tel,
-                            alt=self.mean_alt_tel,
+        pointing = SkyCoord(az=self.mean_az_tel, alt=self.mean_alt_tel,
                             frame=horizon_frame)
-        bright_stars = get_bright_stars(time=obstime,
-                                        pointing=pointing, radius=3*u.deg,
-                                        magnitude_cut=8)
-        # Account for average relative spot shift (outwards) due to coma
-        # aberration:
-        relative_shift = 1.0466 # For LST's paraboloid
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=NonRotationTransformationWarning)
+            warnings.filterwarnings("ignore", category=ErfaWarning)
+            bright_stars = get_bright_stars(time=obstime,
+                                            pointing=pointing, radius=3*u.deg,
+                                            magnitude_cut=8)
+
         camera_frame = CameraFrame(telescope_pointing=pointing,
-                                   focal_length=focal_length*relative_shift,
+                                   focal_length=effective_focal_length,
                                    obstime=obstime,
                                    location=LST1_LOCATION)
-        telescope_frame = TelescopeFrame(obstime=obstime, location=LST1_LOCATION)
+        telescope_frame = TelescopeFrame(obstime=obstime,
+                                         location=LST1_LOCATION,
+                                         telescope_pointing=pointing)
 
         # radius around star within which we consider the pixel may be affected
         # (hence we will later not raise a flag if e.g. its pedestal std dev is
         # high):
         r_around_star = 0.25 * u.deg
-        stars = bright_stars['ra_dec']
+        stars = bright_stars['ra_dec'].transform_to(telescope_frame)
+
         pixels = SkyCoord(x=geom.pix_x, y=geom.pix_y,
                           frame=camera_frame).transform_to(telescope_frame)
+
         angular_distance = pixels[:, np.newaxis].separation(stars)
 
         # This counts how many stars are close to each pixel; stars can be
@@ -369,29 +387,16 @@ class DL1DataCheckContainer(Container):
 
             # Make nan all pulse times for charges less than 1 p.e.:
             time = np.where(charge > 1, time, np.nan)
-            # count how many valid pixels per event:
-            n_valid_pixels = np.count_nonzero(np.isfinite(time), axis=1)
 
             # mean and std dev for each pixel through the whole subrun:
             self.time_mean = np.nanmean(time, axis=0)
             self.time_stddev = np.nanstd(time, axis=0)
-            # Now the average time in the camera, for each event:
-            tmean = np.nanmean(time, axis=1)
 
-            # We do the calculation of the relative times event by event,
-            # instead of using events*pixels matrices, because keeping all
-            # necessary matrices in memory to do it in one go results in too
-            # large memory use (>5GB)
-            for ievt, event_pixtimes in enumerate(time):
-                # for each pixel we want the mean time of all the other pixels:
-                mean_t_other = np.ones_like(event_pixtimes) * tmean[ievt]
-                mean_t_other *= n_valid_pixels[ievt]
-                mean_t_other -= event_pixtimes
-                mean_t_other /= (n_valid_pixels[ievt] - 1)
-                time[ievt] -= mean_t_other
-
-            # Now time contains the times of each pixel relative to the average
-            # of the rest of the pixels in the same event
+            # Compute median of the pixel times for each event. This is more
+            # robust against outliers (mainly needed for flat-field events)
+            tmedian = np.nanmedian(time, axis=1)
+            # Convert pixel times to time relative to each event's median
+            time -= tmedian[:, np.newaxis]
 
             self.relative_time_mean = np.nanmean(time, axis=0)
             self.relative_time_stddev = np.nanstd(time, axis=0)
