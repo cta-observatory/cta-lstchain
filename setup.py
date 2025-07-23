@@ -46,7 +46,7 @@ setup(
         'astropy>=6.1,<8',
         'bokeh~=3.0',
         'ctapipe~=0.25.1',
-        'ctapipe_io_lst~=0.27.0',
+        'ctapipe_io_lst~=0.27.2',
         'ctaplot~=0.6.4',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=1.3.0',
