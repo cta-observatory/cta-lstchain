@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DL1DataCheckContainer &mdash; lstchain 0.11.3.dev17+gfa812d4ab documentation</title>
+  <title>DL1DataCheckContainer &mdash; lstchain 0.11.3.dev26+gded565c6f documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -16,7 +16,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=6fd60076"></script>
+      <script src="../_static/documentation_options.js?v=ad067c76"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -659,7 +659,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lstchain.datachecks.containers.DL1DataCheckContainer.fill_pixel_wise_info">
-<span class="sig-name descname"><span class="pre">fill_pixel_wise_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">histogram_binnings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focal_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geom</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.fill_pixel_wise_info" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fill_pixel_wise_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">histogram_binnings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effective_focal_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geom</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lstchain.datachecks.containers.DL1DataCheckContainer.fill_pixel_wise_info" title="Link to this definition"></a></dt>
 <dd><p>Fills the quantities that are calculated pixel-wise</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -668,7 +668,8 @@
 <dt><strong>mask: indicates rows that have to be used for filling this container</strong></dt><dd></dd>
 <dt><strong>histogram_binnings: container of type DL1DataCheckHistogramBins, with</strong></dt><dd><p>definition of the binnings of all the histograms</p>
 </dd>
-<dt><strong>focal_length: quantity; telescope focal length</strong></dt><dd></dd>
+<dt><strong>effective_focal_length: quantity; telescope effective focal length (</strong></dt><dd><p>accounting for average effect of aberration)</p>
+</dd>
 <dt><strong>geom: camera geometry, ctapipe.instrument.camera.geometry.CameraGeometry</strong></dt><dd></dd>
 <dt><strong>event_type: ‘pedestals’ ‘flatfield’ or ‘cosmics’</strong></dt><dd></dd>
 </dl>
@@ -696,7 +697,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 21 Jul 2025 15:19.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 23 Jul 2025 08:40.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
