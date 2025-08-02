@@ -526,7 +526,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
                            and config['waveform_nsb_tuning']['spe_location']
                            is not None
                         else get_resource_path(
-                "data/SinglePhE_ResponseInPhE_expo2Gaus.dat"))
+                "data/spe_LST1_307tubes_2024-09-06.dat"))
         spe = np.loadtxt(spe_location).T
         spe_integral = np.cumsum(spe[1])
         charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',

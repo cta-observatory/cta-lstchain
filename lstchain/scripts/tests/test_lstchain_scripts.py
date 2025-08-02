@@ -255,7 +255,7 @@ def test_validity_tune_nsb_waveform(tune_nsb_waveform):
         if '"nsb_tuning_rate"' in line:
             assert line == '  "nsb_tuning_rate": -1.0,'
         if '"spe_location"' in line:
-            assert line == f'  "spe_location": "{get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")}"'
+            assert line == f'  "spe_location": "{get_resource_path("data/spe_LST1_307tubes_2024-09-06.dat")}"'
 
 
 def test_lstchain_mc_trainpipe(rf_models):
