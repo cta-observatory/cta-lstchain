@@ -174,7 +174,7 @@ def main():
                 dummy = np.zeros(num_subruns)
                 dummy2 = np.zeros(num_subruns)
                 for jj, nn, nn2 in zip(
-                        a.root.dl1datacheck.pedestals.col('subrun_index'),
+                        np.arange(0,num_subruns),
                         a.root.dl1datacheck.pedestals.col('num_events'),
                         a.root.dl1datacheck.pedestals.col('num_cleaned_events')):
                     dummy[jj] = nn
@@ -212,7 +212,7 @@ def main():
                 dummy = np.zeros(num_subruns)
                 dummy2 = np.zeros(num_subruns)
                 for jj, nn, nn2 in zip(
-                        a.root.dl1datacheck.flatfield.col('subrun_index'),
+                        np.arange(0,num_subruns),
                         a.root.dl1datacheck.flatfield.col('num_events'),
                         a.root.dl1datacheck.flatfield.col('num_cleaned_events')):
                     dummy[jj] = nn
