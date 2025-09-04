@@ -177,8 +177,9 @@ def main():
                         a.root.dl1datacheck.pedestals.col('subrun_index'),
                         a.root.dl1datacheck.pedestals.col('num_events'),
                         a.root.dl1datacheck.pedestals.col('num_cleaned_events')):
-                    dummy[jj] = nn
-                    dummy2[jj] = nn2
+                    new_index = np.where(a.root.dl1datacheck.cosmics.col('subrun_index') == jj)[0][0]
+                    dummy[new_index] = nn
+                    dummy2[new_index] = nn2
                 num_pedestals.append(dummy)
                 num_cleaned_pedestals.append(dummy2)
 
@@ -190,8 +191,9 @@ def main():
                         a.root.dl1datacheck.pedestals.col('charge_mean'),
                         a.root.dl1datacheck.pedestals.col('charge_stddev')):
                     starmask = nns < 1
-                    dummy[jj] = np.nanmean(np.where(starmask, ch1, np.nan))
-                    dummy2[jj] = np.nanmean(np.where(starmask, ch2, np.nan))
+                    new_index = np.where(a.root.dl1datacheck.cosmics.col('subrun_index') == jj)[0][0]
+                    dummy[new_index] = np.nanmean(np.where(starmask, ch1, np.nan))
+                    dummy2[new_index] = np.nanmean(np.where(starmask, ch2, np.nan))
                 diffuse_nsb_mean.append(dummy)
                 diffuse_nsb_std.append(dummy2)
 
@@ -215,8 +217,9 @@ def main():
                         a.root.dl1datacheck.flatfield.col('subrun_index'),
                         a.root.dl1datacheck.flatfield.col('num_events'),
                         a.root.dl1datacheck.flatfield.col('num_cleaned_events')):
-                    dummy[jj] = nn
-                    dummy2[jj] = nn2
+                    new_index = np.where(a.root.dl1datacheck.cosmics.col('subrun_index') == jj)[0][0]
+                    dummy[new_index] = nn
+                    dummy2[new_index] = nn2
                 num_flatfield.append(dummy)
                 num_cleaned_flatfield.append(dummy2)
 
