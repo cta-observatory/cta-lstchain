@@ -24,5 +24,5 @@ def test_r0_to_dl1_nsb_tuning(tmp_path, mc_gamma_testfile):
     config = deepcopy(standard_config)
     config['source_config']['EventSource']['allowed_tels'] = [1]
     config['waveform_nsb_tuning']['nsb_tuning'] = True
-    config['waveform_nsb_tuning']['spe_location'] = None  ## If None, the default file data/SinglePhE_ResponseInPhE_expo2Gaus.dat is used
+    config['waveform_nsb_tuning']['spe_location'] = None  ## If None, the default file data/spe_LST1_307tubes_2024-09-06.dat is used
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")

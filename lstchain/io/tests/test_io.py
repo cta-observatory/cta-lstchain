@@ -240,5 +240,5 @@ def test_add_config_metadata():
 
 
 def test_get_resource_path():
-    filepath = get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")
+    filepath = get_resource_path("data/spe_LST1_307tubes_2024-09-06.dat")
     assert filepath.is_file()

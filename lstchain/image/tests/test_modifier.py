@@ -100,7 +100,7 @@ def test_tune_nsb_on_waveform():
     pulse_templates = {1: NormalizedPulseTemplate(amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
                                                   amplitude_LG_err=None)}
     gain = np.array([1, 0])
-    spe = np.loadtxt(get_resource_path("data/SinglePhE_ResponseInPhE_expo2Gaus.dat")).T
+    spe = np.loadtxt(get_resource_path("data/spe_LST1_307tubes_2024-09-06.dat")).T
     spe_integral = np.cumsum(spe[1])
     charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                          bounds_error=False, fill_value=0.,
