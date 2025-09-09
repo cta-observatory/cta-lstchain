@@ -254,8 +254,15 @@ class DL3Cuts(Component):
         Note: Using too fine binning will result in too un-smooth cuts.
         """
         if use_same_disp_sign:
-            disp_mask = data["reco_disp_sign"] == data["disp_sign"]
-            data = data[disp_mask]
+            if "reco_disp_sign" in data.colnames and "disp_sign" in data.colnames:
+                disp_mask = data["reco_disp_sign"] == data["disp_sign"]
+                data = data[disp_mask]
+            else : 
+                self.log.warning(
+                    "Columns, reco_disp_sign and/or disp_sign not present "
+                    + "in the data table. Proceeding without applying the "
+                    + "same disp_sign mask."
+                )
 
         theta_cuts = calculate_percentile_cut(
             data["theta"],
