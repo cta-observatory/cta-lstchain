@@ -26,7 +26,6 @@ from ctapipe.io import read_table, write_table
 from ctapipe.reco.utils import add_defaults_and_meta
 from ctapipe.core import Provenance
 from ctapipe.instrument import SubarrayDescription
-from ctapipe.instrument.optics import FocalLengthKind
 
 POINTING_GROUP = "/dl1/monitoring/telescope/pointing"
 DL1_TELESCOPE_GROUP = "/dl1/event/telescope"
