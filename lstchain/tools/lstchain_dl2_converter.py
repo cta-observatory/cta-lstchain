@@ -6,7 +6,7 @@ from importlib.resources import files, as_file
 import numpy as np
 import tables
 from astropy import units as u
-from astropy.table import Table, join, setdiff, vstack
+from astropy.table import Table
 from astropy.time import Time
 
 from ctapipe.containers import (
@@ -15,7 +15,6 @@ from ctapipe.containers import (
     ReconstructedEnergyContainer,
 )
 from ctapipe.core import Tool
-from ctapipe.core.tool import ToolConfigurationError
 from ctapipe.core.traits import (
     Bool,
     Path,
@@ -61,8 +60,7 @@ def get_lst1_subarray_description(focal_length_choice=FocalLengthKind.EFFECTIVE)
 class DL2Converter(Tool):
     """
     Tool to convert DL2 files from lstchain to ctapipe format.
-    The tool reads DL1 data from lstchain HDF5 files, applies quality selection,
-    performs predictions using pre-trained DL2 models, and saves the results
+    The tool reads DL1 data from lstchain HDF5 files and saves the results
     in ctapipe DL2 format.
     """
 
