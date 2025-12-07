@@ -250,6 +250,32 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_fi
         == 0
     )
 
+@pytest.mark.private_data
+def test_dl2_converter(temp_dir_observed_files, observed_dl2_file):
+    """
+    Creating a ctapipe-compatible DL2 file from an observed DL2 file
+    """
+    from lstchain.tools.lstchain_dl2_converter import DL2Converter
+    from ctapipe.io import TableLoader
+
+    ctapipe_dl2_file = temp_dir_observed_files / "observed_dl2_file_ctapipe.dl2.h5"
+    assert (
+        run_tool(
+            DL2Converter(),
+            argv=[
+                f"--input_url={observed_dl2_file}",
+                f"--output={ctapipe_dl2_file}",
+                "--overwrite",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+    with TableLoader(ctapipe_dl2_file, pointing=True) as loader:
+        events = loader.read_telescope_events([1])
+        assert len(events) > 0
+        assert "telescope_pointing_azimuth" in events.colnames
+        assert "telescope_pointing_altitude" in events.colnames
 
 @pytest.mark.private_data
 def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
