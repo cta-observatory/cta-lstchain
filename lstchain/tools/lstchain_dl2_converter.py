@@ -6,7 +6,7 @@ from importlib.resources import files, as_file
 import numpy as np
 import tables
 from astropy import units as u
-from astropy.table import Table, join, setdiff, vstack
+from astropy.table import Column, Table
 from astropy.time import Time
 
 from ctapipe.containers import (
@@ -15,7 +15,6 @@ from ctapipe.containers import (
     ReconstructedEnergyContainer,
 )
 from ctapipe.core import Tool
-from ctapipe.core.tool import ToolConfigurationError
 from ctapipe.core.traits import (
     Bool,
     Path,
@@ -27,7 +26,6 @@ from ctapipe.io import read_table, write_table
 from ctapipe.reco.utils import add_defaults_and_meta
 from ctapipe.core import Provenance
 from ctapipe.instrument import SubarrayDescription
-from ctapipe.instrument.optics import FocalLengthKind
 
 POINTING_GROUP = "/dl1/monitoring/telescope/pointing"
 DL1_TELESCOPE_GROUP = "/dl1/event/telescope"
@@ -61,8 +59,7 @@ def get_lst1_subarray_description(focal_length_choice=FocalLengthKind.EFFECTIVE)
 class DL2Converter(Tool):
     """
     Tool to convert DL2 files from lstchain to ctapipe format.
-    The tool reads DL1 data from lstchain HDF5 files, applies quality selection,
-    performs predictions using pre-trained DL2 models, and saves the results
+    The tool reads DL1 data from lstchain HDF5 files and saves the results
     in ctapipe DL2 format.
     """
 
@@ -86,7 +83,7 @@ class DL2Converter(Tool):
     ).tag(config=True)
 
     dl2_telescope = Bool(
-        default_value=False,
+        default_value=True,
         allow_none=False,
         help="Set whether to include dl2 telescope-event-wise data in the output file.",
     ).tag(config=True)
@@ -292,19 +289,24 @@ class DL2Converter(Tool):
             reco_energy, name=f"{self.prefix}_tel_energy"
         )
         # Create is_valid column based on event_type
-        is_valid_col = event_type == 32 
-        dl2_table.add_column(
-            is_valid_col, name=f"{self.prefix}_tel_is_valid"
+        is_valid_col = Column(
+            event_type.data == 32,
+            name=f"{self.prefix}_tel_is_valid",
+            dtype=np.bool_
+        )
+        dl2_table.add_column(is_valid_col)
+        # Create telescopes flag column for subarray tables
+        telescopes_flag = Column(
+            np.array(is_valid_col, dtype=np.bool_)[:, None],
+            f"{self.prefix}_telescopes"
         )
 
         # Prepare the classification telescope table
         classification_tel_table = dl2_table.copy()
         classification_tel_table.keep_columns(
             TELESCOPE_EVENT_KEYS
-            + [f"{self.prefix}_tel_prediction"]
+            + [f"{self.prefix}_tel_prediction", f"{self.prefix}_tel_is_valid"]
         )
-        # Just in case sort the table by the tel event identifiers
-        classification_tel_table.sort(TELESCOPE_EVENT_KEYS)
         # Add the default values and meta data to the table
         add_defaults_and_meta(
             classification_tel_table,
@@ -334,9 +336,7 @@ class DL2Converter(Tool):
                     classification_subarray_table.rename_column(
                         colname, colname.replace("_tel", "")
                     )
-            classification_subarray_table.add_column(
-                [[val] for val in is_valid_col], name=f"{self.prefix}_telescopes"
-            )
+            classification_subarray_table.add_column(telescopes_flag)
             # Save the prediction to the output file
             write_table(
                 classification_subarray_table,
@@ -354,10 +354,8 @@ class DL2Converter(Tool):
         energy_tel_table = dl2_table.copy()
         energy_tel_table.keep_columns(
             TELESCOPE_EVENT_KEYS
-            + [f"{self.prefix}_tel_energy"]
+            + [f"{self.prefix}_tel_energy", f"{self.prefix}_tel_is_valid"]
         )
-        # Just in case sort the table by the tel event identifiers
-        energy_tel_table.sort(TELESCOPE_EVENT_KEYS)
         # Add the default values and meta data to the table
         add_defaults_and_meta(
             energy_tel_table,
@@ -387,9 +385,7 @@ class DL2Converter(Tool):
                     energy_subarray_table.rename_column(
                         colname, colname.replace("_tel", "")
                     )
-            energy_subarray_table.add_column(
-                [[val] for val in is_valid_col], name=f"{self.prefix}_telescopes"
-            )
+            energy_subarray_table.add_column(telescopes_flag)
             # Save the prediction to the output file
             write_table(
                 energy_subarray_table,
@@ -407,10 +403,12 @@ class DL2Converter(Tool):
         direction_tel_table = dl2_table.copy()
         direction_tel_table.keep_columns(
             TELESCOPE_EVENT_KEYS
-            + [f"{self.prefix}_tel_alt", f"{self.prefix}_tel_az"]
+            + [
+                f"{self.prefix}_tel_alt",
+                f"{self.prefix}_tel_az",
+                f"{self.prefix}_tel_is_valid"
+            ]
         )
-        # Just in case sort the table by the tel event identifiers
-        direction_tel_table.sort(TELESCOPE_EVENT_KEYS)
         # Add the default values and meta data to the table
         add_defaults_and_meta(
             direction_tel_table,
@@ -440,9 +438,7 @@ class DL2Converter(Tool):
                     direction_subarray_table.rename_column(
                         colname, colname.replace("_tel", "")
                     )
-            direction_subarray_table.add_column(
-                [[val] for val in is_valid_col], name=f"{self.prefix}_telescopes"
-            )
+            direction_subarray_table.add_column(telescopes_flag)
             # Save the prediction to the output file
             write_table(
                 direction_subarray_table,
