@@ -169,12 +169,6 @@ class DL2Converter(Tool):
         time_ = time[::1000]
         tel_az_ = tel_az[::1000]
         tel_alt_ = tel_alt[::1000]
-        # Ensure last element is included so that pointing interpolator
-        # works correctly without extrapolation.
-        if time_[-1] != time[-1]:
-            time_ = time_.tolist() + [time[-1]]
-            tel_az_ = tel_az_.tolist() + [tel_az[-1]]
-            tel_alt_ = tel_alt_.tolist() + [tel_alt[-1]]
         # Create the dl0 telescope pointing table
         pointing_table = Table(
             {
@@ -183,6 +177,16 @@ class DL2Converter(Tool):
                 "altitude": tel_alt_,
             }
         )
+        # Ensure last element is included so that pointing interpolator
+        # works correctly without extrapolation.
+        if time_[-1] != time[-1]:
+            pointing_table.add_row(
+                {
+                    'time': time[-1],
+                    'azimuth': tel_az[-1],
+                    'altitude': tel_alt[-1],
+                }
+            )
         write_table(
             pointing_table,
             self.output_path,
