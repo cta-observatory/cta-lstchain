@@ -27,7 +27,7 @@ from ctapipe.reco.utils import add_defaults_and_meta
 from ctapipe.core import Provenance
 from ctapipe.instrument import SubarrayDescription
 
-POINTING_GROUP = "/dl1/monitoring/telescope/pointing"
+POINTING_GROUP = "/dl0/monitoring/telescope/pointing"
 DL1_TELESCOPE_GROUP = "/dl1/event/telescope"
 DL2_TELESCOPE_GROUP = "/dl2/event/telescope"
 DL2_SUBARRAY_GROUP = "/dl2/event/subarray"
@@ -164,12 +164,13 @@ class DL2Converter(Tool):
         event_type = dl2_table["event_type"]
         time = Time(dl2_table["dragon_time"] * u.s, format="unix")
         # Create the pointing table
-        # This table is used to store the telescope pointing per event
+        # This table is used to store the uncalibrated
+        # telescope pointing per every thousandth event
         pointing_table = Table(
             {
-                "time": time,
-                "azimuth": tel_az,
-                "altitude": tel_alt,
+                "time": time[::1000],
+                "azimuth": tel_az[::1000],
+                "altitude": tel_alt[::1000],
             }
         )
         write_table(
