@@ -166,11 +166,21 @@ class DL2Converter(Tool):
         # Create the pointing table
         # This table is used to store the uncalibrated
         # telescope pointing per every thousandth event
+        time_ = time[::1000]
+        tel_az_ = tel_az[::1000]
+        tel_alt_ = tel_alt[::1000]
+        # Ensure last element is included so that pointing interpolator
+        # works correctly without extrapolation.
+        if time_[-1] != time[-1]:
+            time_ = time_.tolist() + [time[-1]]
+            tel_az_ = tel_az_.tolist() + [tel_az[-1]]
+            tel_alt_ = tel_alt_.tolist() + [tel_alt[-1]]
+        # Create the dl0 telescope pointing table
         pointing_table = Table(
             {
-                "time": time[::1000],
-                "azimuth": tel_az[::1000],
-                "altitude": tel_alt[::1000],
+                "time": time_,
+                "azimuth": tel_az_,
+                "altitude": tel_alt_,
             }
         )
         write_table(
