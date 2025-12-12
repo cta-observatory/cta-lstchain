@@ -19,6 +19,7 @@ through the input_dir command-line argument
 
 import glob
 import logging
+import json
 
 import tables
 import gc
@@ -90,6 +91,8 @@ def main():
     run = []
     intensity_hist = []
     delta_t_hist = []
+    picture_thresh = []
+    boundary_thresh = []
 
     for file in tqdm(files):
         a = tables.open_file(file)
@@ -123,6 +126,22 @@ def main():
         dragon_time.append(
             np.mean(a.root.dl1datacheck.cosmics.col('dragon_time'), axis=1))
         elapsed_time.append(a.root.dl1datacheck.cosmics.col('elapsed_time'))
+
+        # Datachecks processed before 2025 do not contain config information.
+        # Since the reprocessed files correspond to runs with increased cleaning
+        # settings and the unprocessed files to tailcut 84, we hardcode the values
+        # of the picture and boundary threshold for these unprocessed runs
+        try:
+            config = json.loads(a.root.dl1datacheck.cosmics.attrs['config'])
+            picture_thresh.append(
+                config['tailcuts_clean_with_pedestal_threshold']['picture_thresh']
+            )
+            boundary_thresh.append(
+                config['tailcuts_clean_with_pedestal_threshold']['boundary_thresh']
+            )
+        except:
+            picture_thresh.append(8)
+            boundary_thresh.append(4)
 
         # Compute corrected elapsed time, i.e. remove periods of inactive daq
         # (e.g. busy spikes). For this we use the timestamps (50 per subrun)
@@ -270,6 +289,8 @@ def main():
     all_dragon_time = []
     all_diffuse_nsb_mean = []
     all_diffuse_nsb_std = []
+    all_picture_thresh = []
+    all_boundary_thresh = []
 
     all_intensity_50 = []
     all_peak_intensity = []
@@ -286,11 +307,12 @@ def main():
 
     # Loop over runs:
     for ncosm, ncosm2, nped, nff, x, t, t2, dth, alt, az, ra, dec, r, sr, dt, \
-        nsap, dnsbm, dnsbs in tqdm(zip(
+        p_th, b_th, nsap, dnsbm, dnsbs in tqdm(zip(
             num_cosmics, num_cleaned_cosmics, num_pedestals, num_flatfield,
             intensity_hist, elapsed_time, corrected_elapsed_time, delta_t_hist,
             mean_alt_tel, mean_az_tel,
             tel_ra, tel_dec, run, subrun_index, dragon_time,
+            picture_thresh, boundary_thresh,
             num_star_affected_pixels, diffuse_nsb_mean, diffuse_nsb_std),
         total=num_total):
 
@@ -337,6 +359,9 @@ def main():
         all_dragon_time.extend(dt)
         all_diffuse_nsb_mean.extend(dnsbm)
         all_diffuse_nsb_std.extend(dnsbs)
+
+        all_picture_thresh.extend(len(sr) * [p_th])
+        all_boundary_thresh.extend(len(sr) * [b_th])
 
         rate_vs_intensity = x / t2[:, None]
         delta_rate_vs_intensity = x ** 0.5 / t2[:, None]
@@ -447,6 +472,44 @@ def main():
     all_corrected_fit_errors = np.array([all_fit_errors[:, 0] * par0_correction,
                                          all_fit_errors[:, 1]]).T
 
+    # Corrections for all subruns: each cleaning setting has a par0/par1 correction.
+    # A single value is used per cleaning settings.
+    # The correction for cleaning setting i is:
+    #     mean(par) at tailcut 84  -  mean(par) at tailcut_i
+    # Outliers for tailcut 8 and 4 were removed via 3-sigma clipping.
+    par0_vs_cleaning = np.array([
+        1.7333089998523712,     # tailcut84
+        1.5776585297234975,     # tailcut1005
+        1.4646775462855528,     # tailcut1206
+        1.3896934185870662,     # tailcut1407
+        1.2643366087099113,     # tailcut1608
+        1.1739059102483556      # tailcut1809
+    ])
+    par1_vs_cleaning = np.array([
+        -2.23890766428692,      # tailcut84
+        -2.239266422500952,     # tailcut1005
+        -2.2353770255012613,    # tailcut1206
+        -2.2699142953752602,    # tailcut1407
+        -2.329712992562281,     # tailcut1608
+        -2.4281261034926587     # tailcut1809
+    ])
+    list_pict_cleaning = np.array([8, 10, 12, 14, 16, 18])
+
+    params_vs_cleaning = np.array([par0_vs_cleaning, par1_vs_cleaning]).T
+    reference_params = params_vs_cleaning[0, :]
+
+    unique_picture_threshold = np.sort(np.unique(all_picture_thresh))
+    assert set(unique_picture_threshold).issubset(list_pict_cleaning)
+
+    # No correction for tailcut 84
+    for pict_th in unique_picture_threshold:
+        if pict_th == 8:
+            continue
+        arg_i = np.flatnonzero(pict_th == list_pict_cleaning)[0]
+        correction = reference_params - params_vs_cleaning[arg_i, :]
+        mask = (all_picture_thresh == pict_th)
+        all_corrected_fit_params[mask] += correction
+
     #
     # The dependece with cos zenith of the peak cosmics rate, and intensity at
     # 50% of peak rate are more complicated and we need splines. Also computed
@@ -529,6 +592,8 @@ def main():
                 "elapsed_time": all_elapsed_time,
                 "corrected_elapsed_time": all_corrected_elapsed_time,
                 "delta_t_exp_index": all_dt_exp_index,
+                "picture_thresh": all_picture_thresh,
+                "boundary_thresh": all_boundary_thresh,
                 "cosmics_rate": all_cosmic_rates,
                 "cosmics_cleaned_rate": all_cosmic_cleaned_rates,
                 "intensity_at_half_peak_rate": all_intensity_50,
