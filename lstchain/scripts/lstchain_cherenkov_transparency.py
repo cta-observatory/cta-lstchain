@@ -472,26 +472,37 @@ def main():
     all_corrected_fit_errors = np.array([all_fit_errors[:, 0] * par0_correction,
                                          all_fit_errors[:, 1]]).T
 
-    # Corrections for all subruns: each cleaning setting has a par0/par1 correction.
-    # A single value is used per cleaning settings.
+    # Corrections for all subruns (cleaning dependent correction)
+    # The intensity parameter depends on the cleaning settings. Consequently,
+    # the derived CR intensity spectrum and the associated parameters (par0 and par1)
+    # also depend on the cleaning applied to the shower images. To enable a consistent
+    # comparison between runs with different cleaning settings, the effect of cleaning
+    # on the CR intensity spectrum parameters must be corrected.
+    # We apply an empirical correction to par0 and par1 derived from the good-quality
+    # data (i.e. 20221118 - 20230214). The correction is estimated separately on par0
+    # and par1 for each cleaning setting. A single correction value is applied to
+    # all subruns processed with the same image cleaning.
+    # The correction is defined such that the corrected par0 and par1 values match
+    # the values obtained from runs with the tailcut 8 and 4, which is used for
+    # the largest fraction of the data.
     # The correction for cleaning setting i is:
     #     mean(par) at tailcut 84  -  mean(par) at tailcut_i
     # Outliers for tailcut 8 and 4 were removed via 3-sigma clipping.
     par0_vs_cleaning = np.array([
-        1.7333089998523712,     # tailcut84
-        1.5776585297234975,     # tailcut1005
-        1.4646775462855528,     # tailcut1206
-        1.3896934185870662,     # tailcut1407
-        1.2643366087099113,     # tailcut1608
-        1.1739059102483556      # tailcut1809
+        1.733,     # tailcut84
+        1.578,     # tailcut1005
+        1.465,     # tailcut1206
+        1.390,     # tailcut1407
+        1.264,     # tailcut1608
+        1.174      # tailcut1809
     ])
     par1_vs_cleaning = np.array([
-        -2.23890766428692,      # tailcut84
-        -2.239266422500952,     # tailcut1005
-        -2.2353770255012613,    # tailcut1206
-        -2.2699142953752602,    # tailcut1407
-        -2.329712992562281,     # tailcut1608
-        -2.4281261034926587     # tailcut1809
+        -2.239,    # tailcut84
+        -2.239,    # tailcut1005
+        -2.235,    # tailcut1206
+        -2.267,    # tailcut1407
+        -2.330,    # tailcut1608
+        -2.428     # tailcut1809
     ])
     list_pict_cleaning = np.array([8, 10, 12, 14, 16, 18])
 
@@ -501,8 +512,8 @@ def main():
     unique_picture_threshold = np.sort(np.unique(all_picture_thresh))
     assert set(unique_picture_threshold).issubset(list_pict_cleaning)
 
-    # No correction for tailcut 84
     for pict_th in unique_picture_threshold:
+        # No correction for tailcut 84
         if pict_th == 8:
             continue
         arg_i = np.flatnonzero(pict_th == list_pict_cleaning)[0]
