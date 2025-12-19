@@ -42,14 +42,12 @@ def temp_dir_simulated_srcdep_files(tmp_path_factory):
     return tmp_path_factory.mktemp("simulated_srcdep_files")
 
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def temp_dir_observed_files(tmp_path_factory):
     """Temporal common directory for processing observed data."""
     return tmp_path_factory.mktemp("observed_files")
 
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def temp_dir_observed_srcdep_files(tmp_path_factory):
     """Temporal common directory for processing observed data."""
@@ -87,7 +85,6 @@ def run_summary_path(temp_dir_observed_files):
     return run_summary_path
 
 
-@pytest.mark.private_data
 @pytest.fixture(scope="session")
 def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     """
