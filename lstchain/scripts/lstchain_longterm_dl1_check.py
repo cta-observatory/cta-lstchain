@@ -21,6 +21,7 @@ which are beyond certain limits.
 
 import argparse
 import copy
+import glob
 import logging
 from pathlib import Path
 
@@ -86,7 +87,9 @@ def main():
     handler = logging.FileHandler(logfilename, mode='w')
     logging.getLogger().addHandler(handler)
 
-    files = sorted(args.input_dir.glob('datacheck_dl1_LST-1.Run?????.h5'))
+    files = glob.glob(str(args.input_dir.joinpath('datacheck_dl1_LST-1.Run?????.h5')))
+    files.sort()
+    files = [Path(f) for f in files]
 
     if not files:
         raise IOError("No input datacheck files found")
