@@ -91,6 +91,32 @@ def main():
     files.sort()
     files = [Path(f) for f in files]
 
+    # Prevent more than one datacheck file per run ID and
+    # keep the file with the highest picture threshold value.
+    # Dict with key: run_id, and values: (tailcut, file)
+    run_info = {}
+
+    for f in files:
+        run_id = int(f.name[-8:-3])
+        tailcut = int(f.parent.parent.name[7:])
+
+        prev_info = run_info.get(run_id)
+
+        if prev_info is None or tailcut > prev_info[0]:
+            if prev_info is not None:
+                log.warning(
+                    f"Run {run_id}: replacing tailcut {prev_info[0]} "
+                    f"with higher tailcut {tailcut}"
+                )
+            run_info[run_id] = (tailcut, f)
+        else:
+            log.warning(
+                f"Run {run_id}: skipping lower tailcut {tailcut} "
+                f"(kept {prev_info[0]})"
+            )
+
+    files = [f for _, f in run_info.values()]
+
     if not files:
         raise IOError("No input datacheck files found")
 
