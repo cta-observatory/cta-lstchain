@@ -52,32 +52,6 @@ def main():
     files = glob.glob(input_dir+'/datacheck_dl1_LST-1.Run?????.h5')
     files.sort()
 
-    # Prevent more than one datacheck file per run ID and
-    # keep the file with the highest picture threshold value.
-    # Dict with key: run_id and values: (tailcut, file)
-    run_info = {}
-
-    for f in files:
-        run_id = int(f.split("/")[-1][-8:-3])
-        tailcut = int(f.split("/")[-3][7:])
-
-        prev_info = run_info.get(run_id)
-
-        if prev_info is None or tailcut > prev_info[0]:
-            if prev_info is not None:
-                logging.warning(
-                    f"Run {run_id}: replacing tailcut {prev_info[0]} "
-                    f"with higher tailcut {tailcut}"
-                )
-            run_info[run_id] = (tailcut, f)
-        else:
-            logging.warning(
-                f"Run {run_id}: skipping lower tailcut {tailcut} "
-                f"(kept {prev_info[0]})"
-            )
-
-    files = [f for _, f in run_info.values()]
-
     if len(files) == 0:
         logging.error(f'No run-wise datacheck files found in {input_dir}!')
         sys.exit(-1)
@@ -119,6 +93,10 @@ def main():
     delta_t_hist = []
     picture_thresh = []
     boundary_thresh = []
+
+    # Prevent more than one datacheck file per run ID
+    # Dict with key: run_id and value: file
+    run_info = {}
 
     for file in tqdm(files):
         a = tables.open_file(file)
@@ -193,9 +171,21 @@ def main():
         corrected_elapsed_time.append(newtime)
 
         subrun_index.append(a.root.dl1datacheck.cosmics.col('subrun_index'))
-        run.append(int(file[file.find('.Run') + 4:file.find('.Run') + 9]))
+        runnumber = int(file[file.find('.Run') + 4:file.find('.Run') + 9])
+        run.append(runnumber)
 
         num_subruns = len(a.root.dl1datacheck.cosmics.col('subrun_index'))
+
+        # check if the run is duplicated
+        prev_file = run_info.get(runnumber)
+        if prev_file is None:
+            run_info[runnumber] = file
+        else:
+            a.close()
+            raise RuntimeError(
+                f"The datacheck for run {runnumber} has been loaded twice: "
+                f"from path {prev_file} and path {file}"
+            )
 
         if 'pedestals' in a.root.dl1datacheck:
             if len(a.root.dl1datacheck.pedestals.col(
