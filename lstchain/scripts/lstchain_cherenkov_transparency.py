@@ -94,6 +94,10 @@ def main():
     picture_thresh = []
     boundary_thresh = []
 
+    # Prevent more than one datacheck file per run ID
+    # Dict with key: run_id and value: file
+    run_info = {}
+
     for file in tqdm(files):
         a = tables.open_file(file)
 
@@ -167,9 +171,21 @@ def main():
         corrected_elapsed_time.append(newtime)
 
         subrun_index.append(a.root.dl1datacheck.cosmics.col('subrun_index'))
-        run.append(int(file[file.find('.Run') + 4:file.find('.Run') + 9]))
+        runnumber = int(file[file.find('.Run') + 4:file.find('.Run') + 9])
+        run.append(runnumber)
 
         num_subruns = len(a.root.dl1datacheck.cosmics.col('subrun_index'))
+
+        # check if the run is duplicated
+        prev_file = run_info.get(runnumber)
+        if prev_file is None:
+            run_info[runnumber] = file
+        else:
+            a.close()
+            raise RuntimeError(
+                f"The datacheck for run {runnumber} has been loaded twice: "
+                f"from path {prev_file} and path {file}"
+            )
 
         if 'pedestals' in a.root.dl1datacheck:
             if len(a.root.dl1datacheck.pedestals.col(
