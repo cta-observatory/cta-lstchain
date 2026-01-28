@@ -56,7 +56,7 @@ setup(
         'matplotlib~=3.10.0',
         'numba',
         'numpy',
-        'pandas',
+        'pandas<3.0',
         'pyirf~=0.12.0',
         'scipy>=1.8',
         'seaborn',
