@@ -30,7 +30,7 @@ dependencies:
   - nbsphinx
   - numba
   - numpydoc
-  - pandas>=2
+  - pandas>=2,<3
   - pymongo
   - seaborn
   - pytest
