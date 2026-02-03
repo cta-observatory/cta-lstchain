@@ -141,7 +141,7 @@ def read_simu_info_merged_hdf5(filename):
     with open_file(filename) as file:
         simu_info = file.root["simulation/run_config"]
         colnames = simu_info.colnames
-        skip = {"n_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
+        skip = {"run_number", "n_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
         for k in filter(lambda k: k not in skip, colnames):
             assert np.all(simu_info[:][k] == simu_info[0][k])
         n_showers = simu_info[:]["n_showers"].sum()
