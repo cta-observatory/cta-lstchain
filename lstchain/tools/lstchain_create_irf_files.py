@@ -11,12 +11,18 @@ The default values are written in the EventSelector, DL3Cuts and
 DataBinning Component and also given in some example configs in docs/examples/
 
 By default, the Tool uses global cuts for gammaness and theta.
+To use an alternative strategy use the argument cut-strategy-X, with X being
+gh, theta or alpha, depending on which parameter is considered.
+Values for these arguments are global, edep_efficiency and edep_custom.
 
-For using energy-dependent gammaness cuts, use the argument gh_efficiency
-for passing the gamma efficiency value to calculate the gammaness cuts for
-each reco energy bin and the flag energy-dependent-gh.
-Similarly, for energy-dependent theta cuts, use the argument
-theta_containment and the flag energy-dependent-theta.
+When using energy-dependent gammaness cuts based on gamma efficiency,
+the gamma efficiency value to calculate the gammaness cuts for each reco
+energy bin can be passed using the argument gh-efficiency.
+Similarly, for energy-dependent theta cuts, use the argument theta_containment.
+
+To provide externally computed energy dependent cuts, fill in a config file the
+energy_dependent_X_cut, X being gh, theta or alpha, with the energy binning
+and cuts in a dictionary.
 
 The energy-dependent cuts are stored as HDUs - GH_CUTS and RAD_MAX,
 and saved with other IRFs.
@@ -130,10 +136,20 @@ class IRFFITSWriter(Tool):
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
-        --energy-dependent-gh
-        --energy-dependent-theta
+        --cut_strategy-gh edep_efficiency
+        --cut_strategy-theta edep_efficiency
         --gh-efficiency 0.95
         --theta-containment 0.68
+
+    To use energy-dependent cuts obtained before:
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -o /path/to/irf.fits.gz
+        --point-like (Only for point_like IRFs)
+        --cut-strategy-gh edep_custom
+        --cut-strategy-theta edep_custom
+        --config /path/to/config.json (Must contain the custom cuts, see
+        example provided in docs/examples/irf_dl3_tool_config_edepcuts.json)
 
     Or generate source-dependent IRFs
     > lstchain_create_irf_files
@@ -196,19 +212,28 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    energy_dependent_gh = traits.Bool(
-        help="True for applying energy-dependent gammaness cuts",
-        default_value=False,
+    cut_strategy_gh = traits.Unicode(
+        help="Strategy used for the gammaness cut."
+             "Possible values are global, edep_efficiency or edep_custom.",
+        default_value="global",
     ).tag(config=True)
 
-    energy_dependent_theta = traits.Bool(
-        help="True for applying energy-dependent theta cuts",
-        default_value=False,
+    cut_strategy_theta = traits.Unicode(
+        help="Strategy used for the theta cut."
+             "Possible values are global, edep_efficiency or edep_custom.",
+        default_value="global",
     ).tag(config=True)
 
-    energy_dependent_alpha = traits.Bool(
-        help="True for applying energy-dependent alpha cuts",
-        default_value=False,
+    cut_strategy_alpha = traits.Unicode(
+        help="Strategy used for the alpha cut."
+             "Possible values are global, edep_efficiency or edep_custom.",
+        default_value="global",
+    ).tag(config=True)
+
+    interp_method_custom_cuts = traits.Unicode(
+        help="Interpolation option for scipy.interpolate.interp1d used with "
+             "custom, energy dependent cuts.",
+        default_value="nearest",
     ).tag(config=True)
 
     overwrite = traits.Bool(
@@ -229,12 +254,18 @@ class IRFFITSWriter(Tool):
         ("e", "input-electron-dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
         "irf-obs-time": "IRFFITSWriter.irf_obs_time",
+        "cut-strategy-gh": "IRFFITSWriter.cut_strategy_gh",
+        "cut-strategy-theta": "IRFFITSWriter.cut_strategy_theta",
+        "cut-strategy-alpha": "IRFFITSWriter.cut_strategy_alpha",
         "global-gh-cut": "DL3Cuts.global_gh_cut",
         "gh-efficiency": "DL3Cuts.gh_efficiency",
+        "energy_dependent_gh_cut": "DL3Cuts.energy_dependent_gh_cut",
         "theta-containment": "DL3Cuts.theta_containment",
         "global-theta-cut": "DL3Cuts.global_theta_cut",
+        "energy_dependent_theta_cut": "DL3Cuts.energy_dependent_theta_cut",
         "alpha-containment": "DL3Cuts.alpha_containment",
         "global-alpha-cut": "DL3Cuts.global_alpha_cut",
+        "energy_dependent_alpha_cut": "DL3Cuts.energy_dependent_alpha_cut",
         "allowed-tels": "DL3Cuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
         "scale-true-energy": "DataBinning.scale_true_energy"
@@ -252,18 +283,6 @@ class IRFFITSWriter(Tool):
         "source-dep": (
             {"IRFFITSWriter": {"source_dep": True}},
             "Source-dependent analysis will be performed",
-        ),
-        "energy-dependent-gh": (
-            {"IRFFITSWriter": {"energy_dependent_gh": True}},
-            "Uses energy-dependent cuts for gammaness",
-        ),
-        "energy-dependent-theta": (
-            {"IRFFITSWriter": {"energy_dependent_theta": True}},
-            "Uses energy-dependent cuts for theta",
-        ),
-        "energy-dependent-alpha": (
-            {"IRFFITSWriter": {"energy_dependent_alpha": True}},
-            "Uses energy-dependent cuts for alpha",
         ),
     }
 
@@ -416,17 +435,23 @@ class IRFFITSWriter(Tool):
         gammas = self.cuts.allowed_tels_filter(gammas)
         gammas = gammas[gammas['true_source_fov_offset'] <= np.max(fov_offset_bins)]
 
-        if self.energy_dependent_gh:
-            self.gh_cuts_gamma = self.cuts.energy_dependent_gh_cuts(
-                gammas, reco_energy_bins
-            )
+        if self.cut_strategy_gh[:4] == "edep":
+            if self.cut_strategy_gh == "edep_efficiency":
+                self.gh_cuts_gamma = self.cuts.energy_dependent_gh_cuts(
+                    gammas, reco_energy_bins
+                )
+                self.log.info(
+                    f"Using gamma efficiency of {self.cuts.gh_efficiency}"
+                )
+            if self.cut_strategy_gh == "edep_custom":
+                self.gh_cuts_gamma = self.cuts.from_dict("gh", reco_energy_bins, self.interp_method_custom_cuts)
+                self.log.info(
+                    "Using provided energy dependent gammaness cuts"
+                )
             gammas = self.cuts.apply_energy_dependent_gh_cuts(
                 gammas, self.gh_cuts_gamma
             )
-            self.log.info(
-                f"Using gamma efficiency of {self.cuts.gh_efficiency}"
-            )
-        else:
+        elif self.cut_strategy_gh == "global":
             gammas = self.cuts.apply_global_gh_cut(gammas)
             self.log.info(
                 "Using a global gammaness cut of "
@@ -435,16 +460,22 @@ class IRFFITSWriter(Tool):
 
         if self.point_like:
             if not self.source_dep:
-                if self.energy_dependent_theta:
-                    self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
-                        gammas, reco_energy_bins,
-                    )
+                if self.cut_strategy_theta[:4] == "edep":
+                    if self.cut_strategy_theta == "edep_efficiency":
+                        self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
+                            gammas, reco_energy_bins,
+                        )
+                        self.log.info(
+                            "Using a containment region for theta of "
+                            f"{self.cuts.theta_containment}"
+                        )
+                    if self.cut_strategy_theta == "edep_custom":
+                        self.theta_cuts = self.cuts.from_dict("theta", reco_energy_bins, self.interp_method_custom_cuts)
+                        self.log.info(
+                            "Using provided energy dependent theta cuts"
+                        )
                     gammas = self.cuts.apply_energy_dependent_theta_cuts(
                         gammas, self.theta_cuts
-                    )
-                    self.log.info(
-                        "Using a containment region for theta of "
-                        f"{self.cuts.theta_containment}"
                     )
                 else:
                     gammas = self.cuts.apply_global_theta_cut(gammas)
@@ -453,16 +484,22 @@ class IRFFITSWriter(Tool):
                         f"{self.cuts.global_theta_cut} for point-like IRF"
                     )
             else:
-                if self.energy_dependent_alpha:
-                    self.alpha_cuts = self.cuts.energy_dependent_alpha_cuts(
-                        gammas, reco_energy_bins,
-                    )
+                if self.cut_strategy_alpha[:4] == "edep":
+                    if self.cut_strategy_alpha == "edep_efficiency":
+                        self.alpha_cuts = self.cuts.energy_dependent_alpha_cuts(
+                            gammas, reco_energy_bins,
+                        )
+                        self.log.info(
+                            "Using a containment region for alpha of "
+                            f"{self.cuts.alpha_containment} %"
+                        )
+                    if self.cut_strategy_alpha == "edep_custom":
+                        self.alpha_cuts = self.cuts.from_dict("alpha", reco_energy_bins, self.interp_method_custom_cuts)
+                        self.log.info(
+                            "Using provided energy dependent alpha cuts"
+                        )
                     gammas = self.cuts.apply_energy_dependent_alpha_cuts(
                         gammas, self.alpha_cuts
-                    )
-                    self.log.info(
-                        "Using a containment region for alpha of "
-                        f"{self.cuts.alpha_containment} %"
                     )
                 else:
                     gammas = self.cuts.apply_global_alpha_cut(gammas)
@@ -492,7 +529,7 @@ class IRFFITSWriter(Tool):
                         "Use MCs with same zenith pointing."
                     )
 
-            if self.energy_dependent_gh:
+            if self.cut_strategy_gh[:4] == "edep":
                 background = self.cuts.apply_energy_dependent_gh_cuts(
                     background, self.gh_cuts_gamma
                 )
@@ -553,21 +590,31 @@ class IRFFITSWriter(Tool):
             self.log.info("Generating Full-Enclosure IRF HDUs")
 
         # Updating the HDU headers with the gammaness and theta cuts/efficiency
-        if not self.energy_dependent_gh:
+        if self.cut_strategy_gh == "global":
             extra_headers["GH_CUT"] = self.cuts.global_gh_cut
 
-        else:
+        elif self.cut_strategy_gh == "edep_efficiency":
             extra_headers["GH_EFF"] = (
                 self.cuts.gh_efficiency,
                 "gamma/hadron efficiency",
             )
+        elif self.cut_strategy_gh == "edep_custom":
+            extra_headers["GH_CUTS"] = (
+                "custom energy dependent",
+                "gamma/hadron selection cuts",
+            )
 
         if self.point_like:
             if not self.source_dep:
-                if self.energy_dependent_theta:
+                if self.cut_strategy_theta == "edep_efficiency":
                     extra_headers["TH_CONT"] = (
                         self.cuts.theta_containment,
                         "Theta containment region in percentage",
+                    )
+                elif self.cut_strategy_theta == "edep_custom":
+                    extra_headers["TH_CUTS"] = (
+                        "custom energy dependent",
+                        "theta selection cuts",
                     )
                 else:
                     extra_headers["RAD_MAX"] = (
@@ -581,10 +628,15 @@ class IRFFITSWriter(Tool):
                     'deg'
                 )
 
-                if self.energy_dependent_alpha:
+                if self.cut_strategy_alpha == "edep_efficiency":
                     extra_headers["AL_CONT"] = (
                         self.cuts.alpha_containment,
                         "Alpha containment region in percentage",
+                    )
+                elif self.cut_strategy_alpha == "edep_custom":
+                    extra_headers["AL_CUTS"] = (
+                        "custom energy dependent",
+                        "alpha selection cuts",
                     )
                 else:
                     extra_headers["AL_CUT"] = (
@@ -690,7 +742,7 @@ class IRFFITSWriter(Tool):
             )
             self.log.info("PSF HDU created")
 
-        if self.energy_dependent_gh:
+        if self.cut_strategy_gh[:4] == "edep":
             # Create a separate temporary header
             gh_header = fits.Header()
             gh_header["CREATOR"] = f"lstchain v{__version__}"
@@ -706,7 +758,7 @@ class IRFFITSWriter(Tool):
             )
             self.log.info("GH CUTS HDU added")
 
-        if self.energy_dependent_theta and self.point_like:
+        if self.cut_strategy_theta[:4] == "edep" and self.point_like:
             if not self.source_dep:
                 self.hdus.append(
                     create_rad_max_hdu(
@@ -718,7 +770,7 @@ class IRFFITSWriter(Tool):
                 )
                 self.log.info("RAD MAX HDU added")
 
-        if self.energy_dependent_alpha and self.source_dep:
+        if self.cut_strategy_alpha[:4] == "edep" and self.source_dep:
             # Create a separate temporary header
             alpha_header = fits.Header()
             alpha_header["CREATOR"] = f"lstchain v{__version__}"
