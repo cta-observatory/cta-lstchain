@@ -29,6 +29,7 @@ from traitlets.config import Config
 from ctapipe_io_lst.constants import (
     PIXEL_INDEX
 )
+from ctapipe_io_lst.evb_preprocessing import EVBPreprocessingFlag
 
 from . import disp
 from .utils import sky_to_camera
@@ -529,7 +530,8 @@ def r0_to_dl1(
                         add_global_metadata(container, metadata)
                         add_config_metadata(container, config)
 
-                    # write the first calibration event (initialized from calibration h5 file)
+                    # write the first calibration event (initialized from
+                    # calibration h5 file, if provided)
                     # TODO: these data are supposed to change table_path with "dl1/monitoring/telescope/CatA" in short future
                     write_calibration_data(writer,
                                            calibration_index,
@@ -538,45 +540,53 @@ def r0_to_dl1(
 
                 # Default of absolute_factor is None - needs to be set here
                 event.calibration.tel[tel_id].dl1.absolute_factor = np.ones((2, PIXEL_INDEX.size))
-                # PATCH: ctapipe expects relative_factor to be always (ngains, npixels)
-                if event.calibration.tel[tel_id].dl1.relative_factor is not None:
-                    if event.calibration.tel[tel_id].dl1.relative_factor.ndim == 1:
-                        event.calibration.tel[tel_id].dl1.relative_factor = np.array(2*[event.calibration.tel[tel_id].dl1.relative_factor])
 
                 # flat-field or pedestal:
-                if ((event.trigger.event_type == EventType.FLATFIELD or
-                     event.trigger.event_type == EventType.SKY_PEDESTAL) and
-                    event.r0.tel[tel_id].waveform is not None):
+                if ((event.trigger.event_type == EventType.FLATFIELD) or
+                    (event.trigger.event_type == EventType.SKY_PEDESTAL)):
 
-                    # Check on r0 waveform != None is needed for R0G and R0V data: 
-                    # occasionally there is an interleaved event which has only 
-                    # one gain (due to misidentification in R0G/V creation)
+                    # NOTE: there used to be a check here of the existence of
+                    # R0 (two-gains) waveform. This was from the time in
+                    # which interleaved events were never gain-selected. Back
+                    # then there were occasionally (in R0G and R0V files)
+                    # events mistagged as interleaved, but which were
+                    # cosmics and had only one gain. This can fail now when
+                    # processing such files. IN CASE OF NEED: Perhaps the check
+                    # can be put back for old run numbers....
 
                     # process interleaved events (pedestals, ff, calibration)
                     new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
 
                     # write monitoring containers if updated
-                    # these data a supposed to be replaced by the Cat_B data in a short future
+                    # these data are supposed to be replaced by the Cat_B data
+                    # in a short future
                     if new_ped_event or new_ff_event:
                         write_calibration_data(writer,
                                                calibration_index,
                                                event.mon.tel[tel_id],
                                                new_ped=new_ped_event, new_ff=new_ff_event)
 
-                    # write the calibrated R1 waveform without gain selection
-                    source.r0_r1_calibrator.select_gain = False
-                    source.r0_r1_calibrator.calibrate(event)
+                    # write the calibrated R1 waveform (without gain selection
+                    # if the event is not already gain selected)
+                    tdp_action = event.lst.tel[tel_id].evt.tdp_action
+                    is_calibrated = False
+                    if tdp_action is not None:
+                        tdp_action = EVBPreprocessingFlag(int(tdp_action))
+                        is_calibrated = EVBPreprocessingFlag.PE_CALIBRATION in tdp_action
+                    if not is_calibrated:
+                        source.r0_r1_calibrator.select_gain = False
+                        source.r0_r1_calibrator.calibrate(event)
 
                     if interleaved_writer is not None:
                         interleaved_writer(event)
 
-                    # gain select the events
-                    source.r0_r1_calibrator.select_gain = True
-
+                    # gain select the events if not done already:
                     r1 = event.r1.tel[tel_id]
-                    r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
-                    # select gain but keep waveform 3d
-                    r1.waveform = r1.waveform[np.newaxis, r1.selected_gain_channel, PIXEL_INDEX]
+                    if r1.selected_gain_channel is None:
+                        source.r0_r1_calibrator.select_gain = True
+                        r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
+                        # select gain but keep waveform 3d
+                        r1.waveform = r1.waveform[np.newaxis, r1.selected_gain_channel, PIXEL_INDEX]
 
     
             # Option to add nsb in waveforms

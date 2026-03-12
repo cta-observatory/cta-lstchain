@@ -117,18 +117,22 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         event : general event container
 
         """
-        # copy the waveform be cause we do not want to change it for the moment
+        # copy the waveform because we do not want to change it for the moment
         waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
-
-        # In case of no gain selection the selected gain channels are  [0,0,..][1,1,..]
-        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
-        no_gain_selection[1] = 1
-        n_pixels = 1855
 
         # correct the r1 waveform for the sampling time corrections
         if self.time_sampling_corrector:
-            waveforms*= (self.time_sampling_corrector.get_corrections(event,self.tel_id)
-                         [no_gain_selection, np.arange(n_pixels)])
+            n_pixels = 1855
+            selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
+            if selected_gain is None:  # No gain selection
+                gain_index = np.zeros((waveforms.shape[0], waveforms.shape[1]),
+                                      dtype=np.int64)
+                gain_index[1] = 1
+                waveforms *= self.time_sampling_corrector.get_corrections(event,self.tel_id)
+                [gain_index, np.arange(n_pixels)]
+            else:
+                waveforms[0] *= self.time_sampling_corrector.get_corrections(event,self.tel_id)
+                [selected_gain, np.arange(n_pixels)]
 
         # Extract charge and time
         charge = 0
@@ -143,7 +147,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # (e.g. drs4 waveform time shifts for LST)
         time_shift = event.calibration.tel[self.tel_id].dl1.time_shift
         if time_shift is not None:
-            peak_pos -= time_shift
+            if peak_pos.shape == time_shift.shape:
+                peak_pos -= time_shift
+            else:
+                peak_pos -= time_shift[event.r1.tel[self.tel_id].selected_gain_channel,
+                    np.arange(peak_pos.shape[1])]
 
         return charge, peak_pos
 
@@ -180,6 +188,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # the peak position (assumed as time for the moment)
         charge, arrival_time = self._extract_charge(event)
 
+        if pixel_mask.shape != charge.shape:
+            pixel_mask = pixel_mask[event.r1.tel[self.tel_id].selected_gain_channel,
+                                    np.arange(pixel_mask.shape[1])]
         self.collect_sample(charge, pixel_mask, arrival_time)
 
         sample_age = (self.trigger_time - self.time_start).to_value(u.s)

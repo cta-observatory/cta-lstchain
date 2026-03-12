@@ -122,15 +122,16 @@ class PedestalIntegrator(PedestalCalculator):
         # copy the waveform be cause we do not want to change it for the moment
         waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
 
-        # pedestal event do not have gain selection
-        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
-        no_gain_selection[1] = 1
-        n_pixels = 1855
-
-        # correct the r1 waveform for the sampling time corrections
+        # Correct waveform charge by sampling inhomogeneity, if requested:
         if self.time_sampling_corrector:
-            waveforms *= (self.time_sampling_corrector.get_corrections(event, self.tel_id)
-            [no_gain_selection, np.arange(n_pixels)])
+            charge_sampling_corrections = self.time_sampling_corrector.get_corrections(event, self.tel_id)
+            # pedestal events may or may not be gain-selected
+            selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
+            if selected_gain is None:
+                waveforms *= charge_sampling_corrections
+            else:  # gain-selected; waveform is (1, N_PIXELS, N_SAMPLES)
+                waveforms[0] *= charge_sampling_corrections(selected_gain,
+                                                            np.arange(waveforms.shape[1]))
 
         # Extract charge and time
         charge = 0
@@ -178,7 +179,10 @@ class PedestalIntegrator(PedestalCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge = self._extract_charge(event)[0]
-
+        selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
+        if selected_gain is not None:
+            pixel_mask = pixel_mask[selected_gain,
+                                    np.arange(pixel_mask.shape[1])]
         self.collect_sample(charge, pixel_mask)
 
         sample_age = (self.trigger_time - self.time_start).to_value(u.s)
