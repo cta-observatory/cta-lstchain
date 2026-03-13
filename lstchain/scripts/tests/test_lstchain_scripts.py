@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from importlib import resources
+from importlib.metadata import entry_points
 import pytest
 import tables
 from importlib.resources import files
@@ -39,7 +39,7 @@ def find_entry_points(package_name):
     """from: https://stackoverflow.com/a/47383763/3838691"""
     entrypoints = [
         ep.name
-        for ep in resources.iter_entry_points("console_scripts")
+        for ep in entry_points("console_scripts")
         if ep.module_name.startswith(package_name)
     ]
     return entrypoints
