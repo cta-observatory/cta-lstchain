@@ -2,7 +2,7 @@
 
 set -eu
 
-TEST_DATA_URL=${TEST_DATA_URL:-https://www.lst1.iac.es/lstchain-testfiles/}
+TEST_DATA_URL=${TEST_DATA_URL:-https://old.lst.iac.es/lstchain-testfiles/}
 TEST_DATA_USER=${TEST_DATA_USER:-""}
 TEST_DATA_PASSWORD=${TEST_DATA_PASSWORD:-""}
 
