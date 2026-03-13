@@ -40,7 +40,7 @@ def find_entry_points(package_name):
     entrypoints = [
         ep.name
         for ep in entry_points(group="console_scripts")
-        if ep.module_name.startswith(package_name)
+        if ep.value.startswith(package_name)
     ]
     return entrypoints
 
