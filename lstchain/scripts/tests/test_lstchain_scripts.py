@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import from importlib.metadata import entry_points
+from importlib.metadata import entry_points
 import pytest
 import tables
 from importlib.resources import files
