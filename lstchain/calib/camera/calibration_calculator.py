@@ -234,14 +234,19 @@ class LSTCalibrationCalculator(CalibrationCalculator):
                                           mask=calib_data.unusable_pixels)
             pedestal_per_sample_masked = np.ma.array(calib_data.pedestal_per_sample,
                                                      mask=calib_data.unusable_pixels)
-
         else:
-            dc_to_pe = np.nan * np.ones((constants.N_GAINS, constants.N_PIXELS))
-            dc_to_pe[selected_gain, np.arange(constants.N_PIXELS)] = calib_data.dc_to_pe
-            dc_to_pe_masked = np.ma.array(dc_to_pe,
-                                          mask=calib_data.unusable_pixels)
-            pedestal_per_sample = np.nan * np.ones((constants.N_GAINS, constants.N_PIXELS))
-            pedestal_per_sample[selected_gain, np.arange(constants.N_PIXELS)] = calib_data.pedestal_per_sample
+            if calib_data.dc_to_pe.shape == calib_data.unusable_pixels.shape:
+                dc_to_pe = calib_data.dc_to_pe
+            else:
+                dc_to_pe = np.nan * np.ones_like(calib_data.unusable_pixels)
+                dc_to_pe[selected_gain, np.arange(constants.N_PIXELS)] = calib_data.dc_to_pe
+            dc_to_pe_masked = np.ma.array(dc_to_pe,  mask=calib_data.unusable_pixels)
+
+            if (calib_data.pedestal_per_sample.shape == calib_data.unusable_pixels.shape):
+                pedestal_per_sample = calib_data.pedestal_per_sample
+            else:
+                pedestal_per_sample = np.nan * np.ones_like(calib_data.unusable_pixels)
+                pedestal_per_sample[selected_gain, np.arange(constants.N_PIXELS)] = calib_data.pedestal_per_sample
             pedestal_per_sample_masked = np.ma.array(pedestal_per_sample,
                                                      mask=calib_data.unusable_pixels)
 
@@ -255,13 +260,17 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         
         # set to zero time corrections of unusable pixels
         if selected_gain is None:
-            time_correction_masked =  np.ma.array(calib_data.time_correction, mask=calib_data.unusable_pixels)
+            time_correction_masked =  np.ma.array(calib_data.time_correction,
+                                                  mask=calib_data.unusable_pixels)
         else:
-            time_correction = np.nan * np.ones((constants.N_GAINS, constants.N_PIXELS)) * u.ns
-            time_correction[selected_gain,
-                            np.arange(constants.N_PIXELS)] = (calib_data.time_correction)
+            if (calib_data.time_correction.shape == calib_data.unusable_pixels.shape):
+                time_correction = calib_data.time_correction
+            else:
+                time_correction = np.nan * np.ones_like(calib_data.unusable_pixels) * u.ns
+                time_correction[selected_gain, np.arange(constants.N_PIXELS)] = calib_data.time_correction
+            time_correction_masked = np.ma.array(time_correction,
+                                                 mask=calib_data.unusable_pixels)
         # set to zero time corrections of unusable pixels
-        time_correction_masked = np.ma.array(time_correction, mask=calib_data.unusable_pixels)
         calib_data.time_correction = time_correction_masked.filled(0)
 
         # in the case FF intensity is not sufficiently high, better to scale low gain calibration from high gain results

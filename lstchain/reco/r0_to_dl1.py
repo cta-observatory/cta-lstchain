@@ -27,7 +27,7 @@ from ctapipe.io import EventSource, HDF5TableWriter, DataWriter
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
 from ctapipe_io_lst.constants import (
-    PIXEL_INDEX
+    PIXEL_INDEX, N_GAINS, N_PIXELS
 )
 from ctapipe_io_lst.evb_preprocessing import EVBPreprocessingFlag
 
@@ -520,7 +520,6 @@ def r0_to_dl1(
                     # initialize the telescope
                     # FIXME? LST calibrator is only for one telescope
                     # it should be inside the telescope loop (?)
-
                     tel_id = calibration_calculator.tel_id
 
                     # initialize the event monitoring data
@@ -540,6 +539,17 @@ def r0_to_dl1(
 
                 # Default of absolute_factor is None - needs to be set here
                 event.calibration.tel[tel_id].dl1.absolute_factor = np.ones((2, PIXEL_INDEX.size))
+
+                # PATCH: ctapipe expects relative_factor to be always (ngains, npixels)
+                tel_dl1 = event.calibration.tel[tel_id].dl1
+                rel_factor = tel_dl1.relative_factor
+                if rel_factor is not None:
+                    if rel_factor.ndim == 1:
+                        rel_factor_2d = np.zeros((N_GAINS, N_PIXELS))
+                        sg = event.r1.tel[id].selected_gain_channel
+                        rel_factor_2d[0, sg == 0] = rel_factor[sg == 0]
+                        rel_factor_2d[1, sg == 1] = rel_factor[sg == 1]
+                        tel_dl1.relative_factor = rel_factor_2d
 
                 # flat-field or pedestal:
                 if ((event.trigger.event_type == EventType.FLATFIELD) or
