@@ -39,7 +39,7 @@ def find_entry_points(package_name):
     """from: https://stackoverflow.com/a/47383763/3838691"""
     entrypoints = [
         ep.name
-        for ep in entry_points("console_scripts")
+        for ep in entry_points(group="console_scripts")
         if ep.module_name.startswith(package_name)
     ]
     return entrypoints
