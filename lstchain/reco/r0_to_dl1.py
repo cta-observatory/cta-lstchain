@@ -546,7 +546,7 @@ def r0_to_dl1(
                 if rel_factor is not None:
                     if rel_factor.ndim == 1:
                         rel_factor_2d = np.zeros((N_GAINS, N_PIXELS))
-                        sg = event.r1.tel[id].selected_gain_channel
+                        sg = event.r1.tel[tel_id].selected_gain_channel
                         rel_factor_2d[0, sg == 0] = rel_factor[sg == 0]
                         rel_factor_2d[1, sg == 1] = rel_factor[sg == 1]
                         tel_dl1.relative_factor = rel_factor_2d
