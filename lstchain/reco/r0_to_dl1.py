@@ -486,7 +486,8 @@ def r0_to_dl1(
         interleaved_output_file = Path(dir, name)
         interleaved_writer = DataWriter(event_source=source, output_path=interleaved_output_file,
                                         config=interleaved_writer_config)
-        interleaved_writer._writer.exclude("/r1/event/telescope/.*", "selected_gain_channel")
+        # interleaved_writer._writer.exclude("/r1/event/telescope/.*",
+        # "selected_gain_channel")
 
     with HDF5TableWriter(
             filename=output_filename,
