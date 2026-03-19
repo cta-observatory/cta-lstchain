@@ -3,7 +3,6 @@ Component for the estimation of the calibration coefficients  events
 """
 import numpy as np
 import h5py
-import astropy.units as u
 from ctapipe.core import Component, traits
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
