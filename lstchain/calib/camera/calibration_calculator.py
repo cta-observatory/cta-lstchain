@@ -224,29 +224,21 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers).filled(True)
-
+        
         # give to the unusable pixels the median camera value for the dc_to_pe and pedestal
-        # (these are the starting data for the Cat-B calibration)
-        dc_to_pe_masked = np.ma.array(calib_data.dc_to_pe,
-                                      mask=calib_data.unusable_pixels)
-        pedestal_per_sample_masked = np.ma.array(calib_data.pedestal_per_sample,
-                                                 mask=calib_data.unusable_pixels)
-
-        median_dc_to_pe = np.ma.median(dc_to_pe_masked, axis=1)[:, np.newaxis]
-        fill_array = (np.ones((constants.N_GAINS, constants.N_PIXELS)) *
-                      median_dc_to_pe)
+        # (these are the starting data for the Cat-B calibration)        
+        dc_to_pe_masked = np.ma.array(calib_data.dc_to_pe, mask=calib_data.unusable_pixels)
+        median_dc_to_pe = np.ma.median(dc_to_pe_masked, axis=1)[:,np.newaxis]
+        fill_array = np.ones((constants.N_GAINS, constants.N_PIXELS)) * median_dc_to_pe
         calib_data.dc_to_pe = np.ma.filled(dc_to_pe_masked, fill_array)
         
-        median_pedestal_per_sample = np.ma.median(pedestal_per_sample_masked,
-                                                  axis=1)[:,np.newaxis]
-        fill_array = (np.ones((constants.N_GAINS, constants.N_PIXELS)) *
-                      median_pedestal_per_sample)
+        pedestal_per_sample_masked = np.ma.array(calib_data.pedestal_per_sample, mask=calib_data.unusable_pixels)
+        median_pedestal_per_sample = np.ma.median(pedestal_per_sample_masked, axis=1)[:,np.newaxis]
+        fill_array = np.ones((constants.N_GAINS, constants.N_PIXELS)) * median_pedestal_per_sample
         calib_data.pedestal_per_sample = np.ma.filled(pedestal_per_sample_masked, fill_array)
-
+        
         # set to zero time corrections of unusable pixels
-        time_correction_masked =  np.ma.array(calib_data.time_correction,
-                                              mask=calib_data.unusable_pixels)
-        # set to zero time corrections of unusable pixels
+        time_correction_masked =  np.ma.array(calib_data.time_correction, mask=calib_data.unusable_pixels)
         calib_data.time_correction = time_correction_masked.filled(0)
 
         # in the case FF intensity is not sufficiently high, better to scale low gain calibration from high gain results
