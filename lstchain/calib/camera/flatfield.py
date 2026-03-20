@@ -11,6 +11,7 @@ from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
+from ctapipe_io_lst.constants import (PIXEL_INDEX, N_GAINS, N_PIXELS)
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -122,7 +123,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # correct the r1 waveform for the sampling time corrections
         if self.time_sampling_corrector:
-            n_pixels = 1855
+            n_pixels = N_PIXELS
             selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
             if selected_gain is None:  # No gain selection
                 gain_index = np.zeros((waveforms.shape[0], waveforms.shape[1]),
@@ -187,6 +188,15 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge, arrival_time = self._extract_charge(event)
+
+        selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
+        if selected_gain is not None:
+            ch = np.zeros((N_GAINS, charge.shape[1]))
+            ch[selected_gain, PIXEL_INDEX] = charge
+            charge = ch
+            at = np.nan * np.ones((N_GAINS, arrival_time.shape[1]))
+            at[selected_gain, PIXEL_INDEX] = arrival_time
+            arrival_time = at
 
         if pixel_mask.shape != charge.shape:
             pixel_mask = pixel_mask[event.r1.tel[self.tel_id].selected_gain_channel,
@@ -253,11 +263,10 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
 
-        n_channels = waveform.shape[0]
         n_pix = waveform.shape[1]
-        shape = (sample_size, n_channels, n_pix)
+        shape = (sample_size, N_GAINS, n_pix)
 
-        self.charge_medians = np.zeros((sample_size, n_channels))
+        self.charge_medians = np.zeros((sample_size, N_GAINS))
         self.charges = np.zeros(shape)
         self.arrival_times = np.zeros(shape)
         self.sample_masked_pixels = np.zeros(shape)

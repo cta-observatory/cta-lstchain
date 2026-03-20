@@ -13,7 +13,7 @@ from ctapipe.image.extractor import ImageExtractor
 from ctapipe.calib.camera.pedestals import PedestalCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
-
+from ctapipe_io_lst.constants import (PIXEL_INDEX, N_GAINS, N_PIXELS)
 
 __all__ = [
     'PedestalIntegrator'
@@ -180,9 +180,12 @@ class PedestalIntegrator(PedestalCalculator):
         # the peak position (assumed as time for the moment)
         charge = self._extract_charge(event)[0]
         selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
+
         if selected_gain is not None:
-            pixel_mask = pixel_mask[selected_gain,
-                                    np.arange(pixel_mask.shape[1])]
+            ch = np.zeros((N_GAINS, charge.shape[1]))
+            ch[selected_gain, PIXEL_INDEX] = charge
+            charge = ch
+
         self.collect_sample(charge, pixel_mask)
 
         sample_age = (self.trigger_time - self.time_start).to_value(u.s)
@@ -241,13 +244,12 @@ class PedestalIntegrator(PedestalCalculator):
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
        
-        n_channels = waveform.shape[0]
         n_pix = waveform.shape[1]
-        shape = (sample_size, n_channels, n_pix)
+        shape = (sample_size, N_GAINS, n_pix)
 
-        self.charge_medians = np.zeros((sample_size, n_channels))
-        self.charges = np.zeros(shape)
-        self.sample_masked_pixels = np.zeros(shape)
+        self.charge_medians = np.zeros((sample_size, N_GAINS))
+        self.charges = np.zeros((sample_size, N_GAINS, n_pix))
+        self.sample_masked_pixels = np.zeros((sample_size, N_GAINS, n_pix))
 
     def collect_sample(self, charge, pixel_mask):
         """Collect the sample data"""

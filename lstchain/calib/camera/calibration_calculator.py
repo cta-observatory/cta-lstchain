@@ -223,16 +223,11 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # cut on the base of the pe statistical uncertainty over the camera
         tot_std = self.expected_npe_std(npe_median, ff_data.n_events)
-        if selected_gain is None:
-            npe_outliers = (
-                np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * tot_std[:,np.newaxis],
-                              npe_deviation > self.npe_median_cut_outliers[1] * tot_std[:,np.newaxis]))
-        else:
-            npe_outliers = (
-                np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] *
-                              tot_std[selected_gain],
-                              npe_deviation > self.npe_median_cut_outliers[1] *
-                              tot_std[selected_gain]))
+        npe_outliers = (
+            np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] *
+                          tot_std[selected_gain],
+                          npe_deviation > self.npe_median_cut_outliers[1] *
+                          tot_std[selected_gain]))
 
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers).filled(True)
