@@ -13,7 +13,7 @@ from ctapipe.image.extractor import ImageExtractor
 from ctapipe.calib.camera.pedestals import PedestalCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
-from ctapipe_io_lst.constants import (PIXEL_INDEX, N_GAINS, N_PIXELS)
+from ctapipe_io_lst.constants import (PIXEL_INDEX, N_GAINS)
 
 __all__ = [
     'PedestalIntegrator'
@@ -248,8 +248,8 @@ class PedestalIntegrator(PedestalCalculator):
         shape = (sample_size, N_GAINS, n_pix)
 
         self.charge_medians = np.zeros((sample_size, N_GAINS))
-        self.charges = np.zeros((sample_size, N_GAINS, n_pix))
-        self.sample_masked_pixels = np.zeros((sample_size, N_GAINS, n_pix))
+        self.charges = np.zeros(shape)
+        self.sample_masked_pixels = np.zeros(shape)
 
     def collect_sample(self, charge, pixel_mask):
         """Collect the sample data"""
