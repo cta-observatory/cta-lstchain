@@ -259,9 +259,10 @@ class CatBCalibrationHDF5Writer(Tool):
                         # make sure the LG is not marked as failing:
                         if missing_low_gain.sum() > 0.9 * missing_low_gain.size:
                             status_data.pedestal_failing_pixels[1, :] = False
-                            # Also set the pedestal per sample to nan, to make sure
-                            # it is not used anywhere
-                            calib_data.pedestal_per_sample[1, :] = np.nan
+                            # Also set the pedestal per sample to 0, this is
+                            # a correction of the LG baseline that for gain-selected
+                            # interleaved events we cannot calculate...
+                            calib_data.pedestal_per_sample[1, :] = 0
 
                         # write calib and pixel status
                         self.log.info("Write pixel_status data")
