@@ -229,11 +229,39 @@ class CatBCalibrationHDF5Writer(Tool):
                         new_ff = False
                         new_ped = False
 
+
+                        # For gain-selected interleaved FF events, we use the HG
+                        # calibration for the LG (WARNING: this assumes that the
+                        # low gain is not selected for any significant fraction
+                        # of the FF events for any of the pixels. If a pixel was always
+                        # in the low gain, we would spoil its calibration with this
+                        # assumption).
+                        # If low gain is missing for over  90% of pixel/events, we
+                        # activate the use of the HG calibration for the LG.
+                        num_events_seen = self.processor.flatfield.num_events_seen
+                        missing_low_gain = self.processor.flatfield.sample_missing_gain[:num_events_seen, 1]
+                        if missing_low_gain.sum() > 0.9 * missing_low_gain.size:
+                            self.processor.use_scaled_low_gain = True
+
                         # Then, calculate calibration coefficients
                         self.processor.calculate_calibration_coefficients(event)
+                        if self.processor.use_scaled_low_gain:
+                            status_data.flatfield_failing_pixels[1, :] = False
 
-                        # Set the time correction relative to the Cat-A calibration so to avoid to decalibrate (as for dc_to_pe)
-                        calib_data.time_correction -= self.cat_A_monitoring_data.calibration.time_correction 
+                        # Set the time correction relative to the Cat-A calibration
+                        # so to avoid to decalibrate (as for dc_to_pe).
+                        calib_data.time_correction -= self.cat_A_monitoring_data.calibration.time_correction
+
+                        # Now pedestals, check if they are gain-selected
+                        num_events_seen = self.processor.pedestal.num_events_seen
+                        missing_low_gain = self.processor.pedestal.sample_missing_gain[:num_events_seen, 1]
+                        # if LG was missing because pedestals were gain-selected,
+                        # make sure the LG is not marked as failing:
+                        if missing_low_gain.sum() > 0.9 * missing_low_gain.size:
+                            status_data.pedestal_failing_pixels[1, :] = False
+                            # Also set the pedestal per sample to nan, to make sure
+                            # it is not used anywhere
+                            calib_data.pedestal_per_sample[1, :] = np.nan
 
                         # write calib and pixel status
                         self.log.info("Write pixel_status data")

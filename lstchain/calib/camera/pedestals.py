@@ -1,8 +1,8 @@
 """
 Factory for the estimation of the flat field coefficients
 """
-
-
+import logging
+import warnings
 import numpy as np
 from astropy import units as u
 from astropy.stats import sigma_clipped_stats
@@ -13,7 +13,7 @@ from ctapipe.image.extractor import ImageExtractor
 from ctapipe.calib.camera.pedestals import PedestalCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
-from ctapipe_io_lst.constants import (PIXEL_INDEX, N_GAINS)
+from ctapipe_io_lst.constants import (PIXEL_INDEX, N_GAINS, N_PIXELS)
 
 __all__ = [
     'PedestalIntegrator'
@@ -93,7 +93,11 @@ class PedestalIntegrator(PedestalCalculator):
 
         self.charge_medians = None  # med. charge in camera per event in sample
         self.charges = None  # charge per event in sample
-        self.sample_masked_pixels = None  # pixels tp be masked per event in sample
+        self.sample_masked_pixels = None
+        # pixels to be masked per event in sample
+
+        self.sample_missing_gain = None   # (sample_size, N_GAINS, N_PIXELS)
+        # 1 if gain is NOT present, 0 otherwise (to be used as a mask)
 
         # declare the charge sampling corrector
         if self.time_sampling_correction_path is not None:
@@ -163,7 +167,8 @@ class PedestalIntegrator(PedestalCalculator):
         
         # initialize the np array at each cycle
         waveform = event.r1.tel[self.tel_id].waveform
-    
+        selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
+
         # re-initialize counter
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
@@ -179,14 +184,21 @@ class PedestalIntegrator(PedestalCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge = self._extract_charge(event)[0]
-        selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
 
+        missing_gain_mask = np.zeros((N_GAINS, N_PIXELS))
         if selected_gain is not None:
-            ch = np.zeros((N_GAINS, charge.shape[1]))
+            missing_gain_mask = np.ones((N_GAINS, N_PIXELS))
+            missing_gain_mask[selected_gain, PIXEL_INDEX] = 0
+
+            # 0 will is just a default charge value for the missing gain (i.e.
+            # LG, in gain-selected pedestal events). Anyway those values
+            # will not be used in any calculation (will be masked through
+            # sample_missing_gain)
+            ch = np.zeros((N_GAINS, N_PIXELS))
             ch[selected_gain, PIXEL_INDEX] = charge
             charge = ch
 
-        self.collect_sample(charge, pixel_mask)
+        self.collect_sample(charge, pixel_mask, missing_gain_mask)
 
         sample_age = (self.trigger_time - self.time_start).to_value(u.s)
         # check if to create a calibration event
@@ -219,10 +231,11 @@ class PedestalIntegrator(PedestalCalculator):
 
         # mask the part of the array not filled
         self.sample_masked_pixels[self.num_events_seen:] = 1
+        self.sample_missing_gain[self.num_events_seen:] = 1
 
         pedestal_results = self.calculate_pedestal_results(
             self.charges,
-            self.sample_masked_pixels,
+            self.sample_masked_pixels | self.sample_missing_gain,
         )
         time_results = calculate_time_results(
             self.time_start,
@@ -249,9 +262,10 @@ class PedestalIntegrator(PedestalCalculator):
 
         self.charge_medians = np.zeros((sample_size, N_GAINS))
         self.charges = np.zeros(shape)
-        self.sample_masked_pixels = np.zeros(shape)
+        self.sample_masked_pixels = np.zeros(shape, dtype=bool)
+        self.sample_missing_gain = np.zeros(shape, dtype=bool)
 
-    def collect_sample(self, charge, pixel_mask):
+    def collect_sample(self, charge, pixel_mask, missing_gain_mask):
         """Collect the sample data"""
 
         good_charge = np.ma.array(charge, mask=pixel_mask)
@@ -259,6 +273,7 @@ class PedestalIntegrator(PedestalCalculator):
 
         self.charges[self.num_events_seen] = charge
         self.sample_masked_pixels[self.num_events_seen] = pixel_mask
+        self.sample_missing_gain[self.num_events_seen] = missing_gain_mask
         self.charge_medians[self.num_events_seen] = charge_median
         self.num_events_seen += 1
 
@@ -268,18 +283,22 @@ class PedestalIntegrator(PedestalCalculator):
             trace_integral,
             mask=masked_pixels_of_sample
         )
-        
+
         # mean and std over the sample per pixel
         max_sigma = self.sigma_clipping_max_sigma
-        pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
-            masked_trace_integral,
-            sigma=max_sigma,
-            maxiters=self.sigma_clipping_iterations,
-            cenfunc="mean",
-            axis=0,
-        )
+        with warnings.catch_warnings():
+            if self.log.getEffectiveLevel() > logging.DEBUG:
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+            pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
+                masked_trace_integral,
+                sigma=max_sigma,
+                maxiters=self.sigma_clipping_iterations,
+                cenfunc="mean",
+                axis=0,
+            )
 
-        # mask pixels without defined statistical values (mainly due to hardware problems)
+        # mask pixels without defined statistical values (mainly due to hardware
+        # problems, or non-stored gain channel)
         pixel_mean = np.ma.array(pixel_mean, mask=np.isnan(pixel_mean))
         pixel_median = np.ma.array(pixel_median, mask=np.isnan(pixel_median))
         pixel_std = np.ma.array(pixel_std, mask=np.isnan(pixel_std))
