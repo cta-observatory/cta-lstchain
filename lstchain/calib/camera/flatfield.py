@@ -129,7 +129,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # correct the r1 waveform for the sampling time corrections
         if self.time_sampling_corrector:
-            n_pixels = N_PIXELS
             if selected_gain is None:  # No gain selection
                 gain_index = np.zeros((waveforms.shape[0], waveforms.shape[1]),
                                       dtype=np.int64)
