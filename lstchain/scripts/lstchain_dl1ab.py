@@ -123,7 +123,7 @@ def main():
             log.critical(f"Calibration file {args.catB_calibration_file} not found")
             sys.exit(1)
 
-        log.info(f"Cat-B calbration file: {args.catB_calibration_file}")
+        log.info(f"Cat-B calibration file: {args.catB_calibration_file}")
         catB_calib = read_table(args.catB_calibration_file, "/tel_1/calibration")
 
         # add the calibration index
