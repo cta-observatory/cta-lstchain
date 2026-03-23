@@ -183,21 +183,21 @@ def main():
         log.info("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
         sigma = config[clean_method_name]['sigma']
-        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
-        log.info(f"Fraction of Cat_A pixel cleaning thresholds above Cat_A picture thr.:"
-                 f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
-        picture_th = np.clip(pedestal_thresh, pic_th, None)
-        log.info(f"Tailcut clean with pedestal threshold config used:"
-                 f"{config['tailcuts_clean_with_pedestal_threshold']}")
-        
-        if args.catB_calibration_file is not None:
+
+        if catB_calib:
             catB_pedestal_mean = np.array(catB_pedestal["charge_mean"])
-            catB_pedestal_std= np.array(catB_pedestal["charge_std"])
+            catB_pedestal_std = np.array(catB_pedestal["charge_std"])
             catB_threshold_clean_pe = catB_pedestal_mean + sigma * catB_pedestal_std
-
-
+        else:
+            pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
+            log.info(
+                f"Fraction of Cat_A pixel cleaning thresholds above Cat_A picture thr.:"
+                f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
+            picture_th = np.clip(pedestal_thresh, pic_th, None)
+            log.info(f"Tailcut clean with pedestal threshold config used:"
+                     f"{config['tailcuts_clean_with_pedestal_threshold']}")
     else:
         clean_method_name = 'tailcut'
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
@@ -368,12 +368,11 @@ def main():
                     image_table['image'][ii] = image
                     image_table['peak_time'][ii] = peak_time
 
-                    # use CatB pedestals to estimate the picture threshold 
-                    # as defined in the config file
                     if args.pedestal_cleaning:
-                        threshold_clean_pe = (catB_dc_to_pe[calib_idx][0, pixel_index] * 
+                        # use CatB pedestals to estimate the picture threshold
+                        # as defined in the config file
+                        threshold_clean_pe = (catB_dc_to_pe[calib_idx][0, pixel_index] *
                                               catB_threshold_clean_pe[calib_idx][0, pixel_index])
-                        
                         threshold_clean_pe[unusable_pixels] = pic_th
                         picture_th = np.clip(threshold_clean_pe, pic_th, None)
 

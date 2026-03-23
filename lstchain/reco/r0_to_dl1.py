@@ -568,6 +568,13 @@ def r0_to_dl1(
                     # process interleaved events (pedestals, ff, calibration)
                     new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
 
+                    # Check if the event is already calibrated to p.e. by the EVent Builder:
+                    tdp_action = event.lst.tel[tel_id].evt.tdp_action
+                    is_calibrated = False
+                    if tdp_action is not None:
+                        tdp_action = EVBPreprocessingFlag(int(tdp_action))
+                        is_calibrated = EVBPreprocessingFlag.PE_CALIBRATION in tdp_action
+
                     # write monitoring containers if updated
                     # these data are supposed to be replaced by the Cat_B data
                     # in a short future
@@ -579,11 +586,6 @@ def r0_to_dl1(
 
                     # write the calibrated R1 waveform (without gain selection
                     # if the event is not already gain selected)
-                    tdp_action = event.lst.tel[tel_id].evt.tdp_action
-                    is_calibrated = False
-                    if tdp_action is not None:
-                        tdp_action = EVBPreprocessingFlag(int(tdp_action))
-                        is_calibrated = EVBPreprocessingFlag.PE_CALIBRATION in tdp_action
                     if not is_calibrated:
                         source.r0_r1_calibrator.select_gain = False
                         source.r0_r1_calibrator.calibrate(event)
