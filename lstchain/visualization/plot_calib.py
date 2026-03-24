@@ -232,26 +232,27 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
             plt.xlabel("pe", fontsize=20)
             plt.ylabel("pixels", fontsize=20)
 
-            # pe scatter plot
-            pad += 1
-            plt.subplot(pad)
-            plt.tight_layout()
-            HG = calib_data.n_pe[0]
-            LG = calib_data.n_pe[1]
-            HG = np.ma.array(np.where(np.isnan(HG), 0, HG),mask=mask[chan])
-            LG = np.ma.array(np.where(np.isnan(LG), 0, LG),mask=mask[chan])
-            
-            mymin = np.ma.median(LG) - 2 * np.ma.std(LG)
-            mymax = np.ma.median(LG) + 2 * np.ma.std(LG)
-            plt.hist2d(LG, HG, bins=[100, 100])
-            plt.xlabel("LG", fontsize=20)
-            plt.ylabel("HG", fontsize=20)
+            if len(channels) == 2:
+                # pe scatter plot
+                pad += 1
+                plt.subplot(pad)
+                plt.tight_layout()
+                HG = calib_data.n_pe[0]
+                LG = calib_data.n_pe[1]
+                HG = np.ma.array(np.where(np.isnan(HG), 0, HG),mask=mask[chan])
+                LG = np.ma.array(np.where(np.isnan(LG), 0, LG),mask=mask[chan])
 
-            x = np.arange(mymin, mymax)
-            plt.plot(x, x)
-            plt.ylim(mymin, mymax)
-            plt.xlim(mymin, mymax)
-            plt.subplots_adjust(top=0.92)
+                mymin = np.ma.median(LG) - 2 * np.ma.std(LG)
+                mymax = np.ma.median(LG) + 2 * np.ma.std(LG)
+                plt.hist2d(LG, HG, bins=[100, 100])
+                plt.xlabel("LG", fontsize=20)
+                plt.ylabel("HG", fontsize=20)
+
+                x = np.arange(mymin, mymax)
+                plt.plot(x, x)
+                plt.ylim(mymin, mymax)
+                plt.xlim(mymin, mymax)
+                plt.subplots_adjust(top=0.92)
 
             pdf.savefig()
             plt.close()
