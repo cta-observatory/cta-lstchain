@@ -26,7 +26,7 @@ def get_bias_and_std(dl1_file):
         ped_charge_mean = ped.col('charge_mean')
         ped_charge_std = ped.col('charge_std')
         calib = f.root[dl1_params_tel_mon_cal_key]
-        dc_to_pe = calib.col('dc_to_pe')[ORIGINAL_CALIBRATION_ID]
+        dc_to_pe = calib.col('dc_to_pe')
         ped_charge_mean_pe = ped_charge_mean * dc_to_pe
         ped_charge_std_pe = ped_charge_std * dc_to_pe
 
