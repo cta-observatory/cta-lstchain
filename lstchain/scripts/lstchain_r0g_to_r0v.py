@@ -194,7 +194,7 @@ def main():
                         pixel_time_shift = protozfits.any_array_to_numpy(event.pixel_time_shift)
                         # Write pixel_time_shift only for selected pixels:
                         new_pixel_time_shift = pixel_time_shift[ordered_pix_mask]
-                        event.pixel_time_shift = protozfits.numpy_to_any_array(new_pixel_time_shift)
+                        event.pixel_time_shift.data = protozfits.numpy_to_any_array(new_pixel_time_shift)
 
                 # Modify pixel status as needed
                 new_status = np.where(ordered_pix_mask,
