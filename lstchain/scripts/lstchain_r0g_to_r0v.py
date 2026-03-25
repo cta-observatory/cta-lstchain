@@ -189,7 +189,7 @@ def main():
 
                 # Write pixel_time_shift only for selected pixels:
                 new_pixel_time_shift = pixel_time_shift[ordered_pix_mask]
-                event.pixel_time_shift = new_pixel_time_shift.tobytes()
+                event.pixel_time_shift.data = new_pixel_time_shift.tobytes()
 
                 # Modify pixel status as needed
                 new_status = np.where(ordered_pix_mask,
