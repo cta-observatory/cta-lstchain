@@ -164,6 +164,7 @@ def main():
 
                 evtype = event_type[event.event_id]
                 pixel_status = protozfits.any_array_to_numpy(event.pixel_status)
+                pixel_time_shift = protozfits.any_array_to_numpy(event.pixel_time_shift)
                 ordered_pix_mask = np.array(num_pixels*[True])
               
                 if evtype in EVENT_TYPES_TO_REDUCE:
@@ -185,6 +186,10 @@ def main():
                         # that was used in the creation of the input R0V file
                         if len(wf) != num_gains * num_samples * ordered_pix_mask.sum():
                             raise RuntimeError('The pixel selection file is not consistent with the input R0V file!')
+
+                # Write pixel_time_shift only for selected pixels:
+                new_pixel_time_shift = pixel_time_shift[ordered_pix_mask]
+                event.pixel_time_shift = new_pixel_time_shift.tobytes()
 
                 # Modify pixel status as needed
                 new_status = np.where(ordered_pix_mask,
