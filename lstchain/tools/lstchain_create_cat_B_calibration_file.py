@@ -16,7 +16,7 @@ from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
 from lstchain.io import add_config_metadata, add_global_metadata, global_metadata, write_metadata
 from ctapipe.containers import EventType
 from lstchain.io.calibration import read_calibration_file
-
+from ctapipe_io_lst.constants import PIXEL_INDEX, N_GAINS, N_PIXELS
 
 __all__ = [
     'CatBCalibrationHDF5Writer'
@@ -196,6 +196,17 @@ class CatBCalibrationHDF5Writer(Tool):
                         add_config_metadata(calib_data, self.config)
                         add_global_metadata(calib_data, metadata)
         
+                    # Put the pixel time correction in event.calibration,
+                    # if available in event.r1:
+                    if event.calibration.tel[tel_id].dl1.time_shift is None:
+                        if event.r1.tel[tel_id].pixel_time_shift is not None:
+                            sg = event.r1.tel[tel_id].selected_gain_channel
+                            if sg is None:
+                                event.calibration.tel[tel_id].dl1.time_shift = event.r1.tel[tel_id].pixel_time_shift
+                            else:
+                                event.calibration.tel[tel_id].dl1.time_shift = np.zeros((N_GAINS, N_PIXELS))
+                                event.calibration.tel[tel_id].dl1.time_shift[sg, PIXEL_INDEX] = event.r1.tel[tel_id].pixel_time_shift[0, PIXEL_INDEX]
+
                     # if pedestal event
                     if self._is_pedestal(event, tel_id):
 
@@ -248,9 +259,32 @@ class CatBCalibrationHDF5Writer(Tool):
                         if self.processor.use_scaled_low_gain:
                             status_data.flatfield_failing_pixels[1, :] = False
 
-                        # Set the time correction relative to the Cat-A calibration
-                        # so to avoid to decalibrate (as for dc_to_pe).
-                        calib_data.time_correction -= self.cat_A_monitoring_data.calibration.time_correction
+
+                        # For data which are not calibrated by the EvB:
+                        # The inter-pixel Cat-A time flat-fielding is *not* 
+                        # applied in the Cat-B calibration, hence the obtained
+                        # time_correction values must be modified so that 
+                        # they become corrections relative to the DL1a pixel
+                        # times, that were already flatfielded. Note that 
+                        # the Fourier correction to account for DRS4 sampling
+                        # inhomogeneitites is not applied at all during this
+                        # CatB calculations. Still, since the time 
+                        # (re-)calibration is based on averages over many 
+                        # events, covering the whole DRS4 buffer, it more or 
+                        # less works. 
+                        # 
+                        # In contrast, data fully calibrated by the EvB 
+                        # contain the Fourier corrections in the R1 data,
+                        # which are then copied to event.calibration, and 
+                        # hence used for correcting the pulse time 
+                        # calculations in this Cat-B processing. Therefore, 
+                        # in that case one should not remove the cat-A
+                        # calibration from the computed values.
+
+                        if event.r1.tel[tel_id].pixel_time_shift is None:
+                            # Set the time correction relative to the Cat-A calibration
+                            # so to avoid to decalibrate.
+                            calib_data.time_correction -= self.cat_A_monitoring_data.calibration.time_correction
 
                         # Now pedestals, check if they are gain-selected
                         num_events_seen = self.processor.pedestal.num_events_seen

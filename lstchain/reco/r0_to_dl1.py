@@ -590,11 +590,20 @@ def r0_to_dl1(
                         source.r0_r1_calibrator.select_gain = False
                         source.r0_r1_calibrator.calibrate(event)
 
+                    r1 = event.r1.tel[tel_id]
+
                     if interleaved_writer is not None:
-                        interleaved_writer(event)
+                        # Include pixel time calibration in r1:
+                        if r1.selected_gain_channel is None:
+                            r1.pixel_time_shift = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')
+                        else:
+                            r1.pixel_time_shift = np.zeros((1, N_PIXELS),
+                                                           dtype='float32')
+                            r1.pixel_time_shift[0] = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')[r1.selected_gain_channel, PIXEL_INDEX]
+
+                    interleaved_writer(event)
 
                     # gain select the events if not done already:
-                    r1 = event.r1.tel[tel_id]
                     if r1.selected_gain_channel is None:
                         source.r0_r1_calibrator.select_gain = True
                         r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
