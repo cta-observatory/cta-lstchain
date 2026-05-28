@@ -5,7 +5,6 @@ from astropy.io import fits
 from astropy.table import QTable
 from ctapipe.io import HDF5TableReader
 
-from ctapipe.io import HDF5TableReader
 from ctapipe.containers import (
     WaveformCalibrationContainer,
     PedestalContainer,
