@@ -5,6 +5,7 @@ from astropy.io import fits
 from astropy.table import QTable
 from ctapipe.io import HDF5TableReader
 from ctapipe.io import metadata as meta
+from lstcam_calib.io import get_dataset_keys
 
 from ctapipe.containers import (
     WaveformCalibrationContainer,
