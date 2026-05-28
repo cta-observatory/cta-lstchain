@@ -5,7 +5,6 @@ from astropy.io import fits
 from astropy.table import QTable
 from ctapipe.io import HDF5TableReader
 from ctapipe.io import metadata as meta
-from lstcam_calib.io import get_dataset_keys
 
 from ctapipe.containers import (
     WaveformCalibrationContainer,
@@ -37,13 +36,13 @@ def get_metadata(path):
         )
 
 
-def read_calibration_file(file, row_number=0):
+def read_calibration_file(file, tel_id=1, row_number=0):
     """Read camera calibration container for specified telescope."""
 
     # flexible reading of h5 file to be compatible with old key name
     if Path(file).name.endswith(".h5"):
         base = f'tel_{tel_id}'
-        with HDF5TableReader(h5file) as reader:
+        with HDF5TableReader(file) as reader:
             mon_data = MonitoringCameraContainer(
                 calibration=next(reader.read(f'/{base}/calibration', 
                                              WaveformCalibrationContainer)),
