@@ -42,15 +42,17 @@ def read_calibration_file(file, row_number=0):
 
     # flexible reading of h5 file to be compatible with old key name
     if Path(file).name.endswith(".h5"):
-        mon_data = MonitoringCameraContainer(
-            calibration=next(reader.read(f'/{base}/calibration', 
-                                         WaveformCalibrationContainer)),
-            pedestal=next(reader.read(f'/{base}/pedestal', 
-                                      PedestalContainer)),
-            flatfield=next(reader.read(f'/{base}/flatfield', 
-                                       FlatFieldContainer)),
-            pixel_status=next(reader.read(f"/{base}/pixel_status", 
-                                          PixelStatusContainer)))
+        base = f'tel_{tel_id}'
+        with HDF5TableReader(h5file) as reader:
+            mon_data = MonitoringCameraContainer(
+                calibration=next(reader.read(f'/{base}/calibration', 
+                                             WaveformCalibrationContainer)),
+                pedestal=next(reader.read(f'/{base}/pedestal', 
+                                          PedestalContainer)),
+                flatfield=next(reader.read(f'/{base}/flatfield', 
+                                           FlatFieldContainer)),
+                pixel_status=next(reader.read(f"/{base}/pixel_status", 
+                                              PixelStatusContainer)))
         # add metadata
         mon_data.meta = meta.read_reference_metadata(Path(file))
 
