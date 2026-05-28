@@ -4,6 +4,7 @@ from pathlib import Path
 from astropy.io import fits
 from astropy.table import QTable
 from ctapipe.io import HDF5TableReader
+from ctapipe.io import metadata as meta
 
 from ctapipe.containers import (
     WaveformCalibrationContainer,
