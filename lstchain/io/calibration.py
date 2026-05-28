@@ -39,28 +39,23 @@ def get_metadata(path):
 
 def read_calibration_file(file, row_number=0):
     """Read camera calibration container for specified telescope."""
-    mon_data = MonitoringCameraContainer()
 
     # flexible reading of h5 file to be compatible with old key name
     if Path(file).name.endswith(".h5"):
-        # get keys in file
-        file_keys = get_dataset_keys(file)
-
-        with HDF5TableReader(file) as reader:
-            for file_key in file_keys:
-                for key in CALIB_CONTAINERS.keys():
-                    if key in file_key:
-                        for n, container in enumerate(
-                            reader.read(file_key, CALIB_CONTAINERS[key])
-                        ):
-                            if n == row_number:
-                                mon_data[key] = container
-                                break
-
+        mon_data = MonitoringCameraContainer(
+            calibration=next(reader.read(f'/{base}/calibration', 
+                                         WaveformCalibrationContainer)),
+            pedestal=next(reader.read(f'/{base}/pedestal', 
+                                      PedestalContainer)),
+            flatfield=next(reader.read(f'/{base}/flatfield', 
+                                       FlatFieldContainer)),
+            pixel_status=next(reader.read(f"/{base}/pixel_status", 
+                                          PixelStatusContainer)))
         # add metadata
         mon_data.meta = meta.read_reference_metadata(Path(file))
 
     elif Path(file).name.endswith(".fits") or Path(file).name.endswith(".fits.gz"):
+        mon_data = MonitoringCameraContainer()
         with fits.open(file) as f:
             for key in CALIB_CONTAINERS.keys():
                 table = QTable.read(f, hdu=key)
