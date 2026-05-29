@@ -1,6 +1,8 @@
 """
 Factory for the estimation of the flat field coefficients
 """
+import logging
+import warnings
 import numpy as np
 from astropy import units as u
 from astropy.stats import sigma_clipped_stats
@@ -11,6 +13,7 @@ from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
+from ctapipe_io_lst.constants import (PIXEL_INDEX, N_GAINS, N_PIXELS)
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -95,6 +98,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
 
+        self.sample_missing_gain = None   # (sample_size, N_GAINS, N_PIXELS)
+        # 1 if gain is NOT present, 0 otherwise (to be used as a mask)
+
         # declare the charge sampling corrector
         if self.time_sampling_correction_path is not None:
             self.time_sampling_corrector = TimeSamplingCorrection(
@@ -117,25 +123,30 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         event : general event container
 
         """
-        # copy the waveform be cause we do not want to change it for the moment
+        # copy the waveform because we do not want to change it for the moment
         waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
-
-        # In case of no gain selection the selected gain channels are  [0,0,..][1,1,..]
-        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
-        no_gain_selection[1] = 1
-        n_pixels = 1855
+        selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
 
         # correct the r1 waveform for the sampling time corrections
         if self.time_sampling_corrector:
-            waveforms*= (self.time_sampling_corrector.get_corrections(event,self.tel_id)
-                         [no_gain_selection, np.arange(n_pixels)])
+            if selected_gain is None:  # No gain selection
+                gain_index = np.zeros((waveforms.shape[0], waveforms.shape[1]),
+                                      dtype=np.int64)
+                gain_index[1] = 1
+                waveforms *= self.time_sampling_corrector.get_corrections(event,self.tel_id)
+                [gain_index, PIXEL_INDEX]
+            else:
+                waveforms[0] *= self.time_sampling_corrector.get_corrections(event,self.tel_id)
+                [selected_gain, PIXEL_INDEX]
 
         # Extract charge and time
         charge = 0
         peak_pos = 0
         if self.extractor:
             broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
-            dl1 = self.extractor(waveforms, self.tel_id, selected_gain_channel=None, broken_pixels=broken_pixels)
+            dl1 = self.extractor(waveforms, self.tel_id,
+                                 selected_gain_channel=None,
+                                 broken_pixels=broken_pixels)
             charge = dl1.image
             peak_pos = dl1.peak_time
 
@@ -143,7 +154,10 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # (e.g. drs4 waveform time shifts for LST)
         time_shift = event.calibration.tel[self.tel_id].dl1.time_shift
         if time_shift is not None:
-            peak_pos -= time_shift
+            if selected_gain is None:
+                peak_pos -= time_shift
+            else:
+                peak_pos -= time_shift[selected_gain, PIXEL_INDEX]
 
         return charge, peak_pos
 
@@ -162,6 +176,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # initialize the np array at each cycle
         waveform = event.r1.tel[self.tel_id].waveform
+        selected_gain = event.r1.tel[self.tel_id].selected_gain_channel
 
         # re-initialize counter
         if self.num_events_seen == self.sample_size:
@@ -180,7 +195,24 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # the peak position (assumed as time for the moment)
         charge, arrival_time = self._extract_charge(event)
 
-        self.collect_sample(charge, pixel_mask, arrival_time)
+        missing_gain_mask = np.zeros((N_GAINS, N_PIXELS))
+
+        if selected_gain is not None:
+            missing_gain_mask = np.ones((N_GAINS, N_PIXELS))
+            missing_gain_mask[selected_gain, PIXEL_INDEX] = 0
+
+            # We use 0's as default charge values for the missing channel, but
+            # they won't be used in any calculation - they will be masked
+            # through sample_missing_gain
+            ch = np.zeros((N_GAINS, N_PIXELS))
+            ch[selected_gain, PIXEL_INDEX] = charge
+            charge = ch
+
+            at = np.zeros((N_GAINS, N_PIXELS))
+            at[selected_gain, PIXEL_INDEX] = arrival_time
+            arrival_time = at
+
+        self.collect_sample(charge, pixel_mask, missing_gain_mask, arrival_time)
 
         sample_age = (self.trigger_time - self.time_start).to_value(u.s)
 
@@ -210,17 +242,18 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
        
         container = event.mon.tel[self.tel_id].flatfield
 
-        # mask the part of the array not filled
+        # mask the part of the arrays not filled
         self.sample_masked_pixels[self.num_events_seen:] = 1
+        self.sample_missing_gain[self.num_events_seen:] = 1
 
         relative_gain_results = self.calculate_relative_gain_results(
             self.charge_medians,
             self.charges,
-            self.sample_masked_pixels
+            self.sample_masked_pixels | self.sample_missing_gain
         )
         time_results = self.calculate_time_results(
             self.arrival_times,
-            self.sample_masked_pixels,
+            self.sample_masked_pixels | self.sample_missing_gain,
             self.time_start,
             self.trigger_time
         )
@@ -242,16 +275,17 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
 
-        n_channels = waveform.shape[0]
         n_pix = waveform.shape[1]
-        shape = (sample_size, n_channels, n_pix)
+        shape = (sample_size, N_GAINS, n_pix)
 
-        self.charge_medians = np.zeros((sample_size, n_channels))
+        self.charge_medians = np.zeros((sample_size, N_GAINS))
         self.charges = np.zeros(shape)
         self.arrival_times = np.zeros(shape)
-        self.sample_masked_pixels = np.zeros(shape)
+        self.sample_masked_pixels = np.zeros(shape, dtype=bool)
+        self.sample_missing_gain = np.zeros(shape, dtype=bool)
 
-    def collect_sample(self, charge, pixel_mask, arrival_time):
+    def collect_sample(self, charge, pixel_mask, missing_gain_mask,
+                       arrival_time):
         """Collect the sample data"""
 
         # extract the charge of the event and
@@ -263,6 +297,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.charges[self.num_events_seen] = charge
         self.arrival_times[self.num_events_seen] = arrival_time
         self.sample_masked_pixels[self.num_events_seen] = pixel_mask
+        self.sample_missing_gain[self.num_events_seen] = missing_gain_mask
+
         self.charge_medians[self.num_events_seen] = charge_median
         self.num_events_seen += 1
 
@@ -322,13 +358,16 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # mean and std over the sample per pixel
         max_sigma = self.sigma_clipping_max_sigma
-        pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
-            masked_trace_integral,
-            sigma=max_sigma,
-            maxiters=self.sigma_clipping_iterations,
-            cenfunc="mean",
-            axis=0,
-        )
+        with warnings.catch_warnings():
+            if self.log.getEffectiveLevel() > logging.DEBUG:
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+            pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
+                masked_trace_integral,
+                sigma=max_sigma,
+                maxiters=self.sigma_clipping_iterations,
+                cenfunc="mean",
+                axis=0,
+            )
 
         # mask pixels without defined statistical values (mainly due to hardware problems)
         pixel_mean = np.ma.array(pixel_mean, mask=np.isnan(pixel_mean))

@@ -126,6 +126,10 @@ def main():
             n_tiles = header["NAXIS2"]
             rows_per_tile = header["ZTILELEN"]
 
+            write_pixel_time_shift = False
+            if header.tostring().find('pixel_time_shift') > 0:
+                write_pixel_time_shift = True
+
             if args.fix_pixel_status:
                 r0v_input = header.get("LSTDVR", False)
                 if not r0v_input:
@@ -185,6 +189,12 @@ def main():
                         # that was used in the creation of the input R0V file
                         if len(wf) != num_gains * num_samples * ordered_pix_mask.sum():
                             raise RuntimeError('The pixel selection file is not consistent with the input R0V file!')
+
+                    if write_pixel_time_shift:
+                        pixel_time_shift = protozfits.any_array_to_numpy(event.pixel_time_shift)
+                        # Write pixel_time_shift only for selected pixels:
+                        new_pixel_time_shift = pixel_time_shift[ordered_pix_mask]
+                        event.pixel_time_shift.data = new_pixel_time_shift.tobytes()
 
                 # Modify pixel status as needed
                 new_status = np.where(ordered_pix_mask,

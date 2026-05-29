@@ -16,6 +16,7 @@ from lstchain.reco.dl1_to_dl2 import build_models
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data')).absolute()
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
+test_r0_path3 = test_data / 'real/R0/20250326/LST-1.1.Run20527.0000_first50.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
 
 calib_path = test_data / 'real/monitoring/PixelCalibration/Cat-A'
@@ -74,11 +75,39 @@ def test_r0_to_dl1_observed(tmp_path):
         assert 'event_id' in params_table.colnames
         assert 'obs_id' in params_table.colnames
 
+@pytest.mark.private_data
+def test_r0_to_dl1_evb_calibrated(tmp_path):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+
+    output_path = tmp_path / ('dl1_' + test_r0_path3.stem + '.h5')
+
+    config = standard_config
+    lst_event_source = config['source_config']['LSTEventSource']
+    lst_event_source['pointing_information'] = False
+
+    r0_to_dl1(
+        test_r0_path3,
+        output_filename=output_path,
+        custom_config=config
+    )
+
+    with tables.open_file(output_path, 'r') as f:
+        images_table = f.root[dl1_images_lstcam_key]
+        params_table = f.root[dl1_params_lstcam_key]
+        assert 'image' in images_table.colnames
+        assert 'peak_time' in images_table.colnames
+        assert 'tel_id' in images_table.colnames
+        assert 'obs_id' in images_table.colnames
+        assert 'event_id' in images_table.colnames
+        assert 'tel_id' in params_table.colnames
+        assert 'event_id' in params_table.colnames
+        assert 'obs_id' in params_table.colnames
 
 @pytest.mark.private_data
 def test_r0_available():
     assert test_r0_path.is_file()
     assert test_r0_path2.is_file()
+    assert test_r0_path3.is_file()
 
 
 def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
