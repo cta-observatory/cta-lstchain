@@ -593,13 +593,16 @@ def r0_to_dl1(
                     r1 = event.r1.tel[tel_id]
 
                     if interleaved_writer is not None:
-                        # Include pixel time calibration in r1:
-                        if r1.selected_gain_channel is None:
-                            r1.pixel_time_shift = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')
-                        else:
-                            r1.pixel_time_shift = np.zeros((1, N_PIXELS),
+                        # Include pixel time calibration in r1, if field
+                        # pixel_time_shift exists:
+                        if 'pixel_time_shift' in r1.keys():
+                            if r1.selected_gain_channel is None:
+                                r1.pixel_time_shift = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')
+                            else:
+                                r1.pixel_time_shift = np.zeros((1, N_PIXELS),
                                                            dtype='float32')
-                            r1.pixel_time_shift[0] = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')[r1.selected_gain_channel, PIXEL_INDEX]
+                                r1.pixel_time_shift[0] = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')[r1.selected_gain_channel, PIXEL_INDEX]
+
 
                     interleaved_writer(event)
 
