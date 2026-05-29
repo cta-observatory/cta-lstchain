@@ -199,7 +199,7 @@ class CatBCalibrationHDF5Writer(Tool):
                     # Put the pixel time correction in event.calibration,
                     # if available in event.r1:
                     if event.calibration.tel[tel_id].dl1.time_shift is None:
-                        if event.r1.tel[tel_id].pixel_time_shift is not None:
+                        if event.r1.tel[tel_id].as_dict().get('pixel_time_shift') is not None:
                             sg = event.r1.tel[tel_id].selected_gain_channel
                             if sg is None:
                                 event.calibration.tel[tel_id].dl1.time_shift = event.r1.tel[tel_id].pixel_time_shift
@@ -281,7 +281,7 @@ class CatBCalibrationHDF5Writer(Tool):
                         # in that case one should not remove the cat-A
                         # calibration from the computed values.
 
-                        if event.r1.tel[tel_id].pixel_time_shift is None:
+                        if event.r1.tel[tel_id].as_dict().get('pixel_time_shift') is None:
                             # Set the time correction relative to the Cat-A calibration
                             # so to avoid to decalibrate.
                             calib_data.time_correction -= self.cat_A_monitoring_data.calibration.time_correction
