@@ -259,19 +259,19 @@ class CatBCalibrationHDF5Writer(Tool):
                         if self.processor.use_scaled_low_gain:
                             status_data.flatfield_failing_pixels[1, :] = False
 
-
-                        # For data which are not calibrated by the EvB:
+                        # For data which are *not* calibrated by the EvB:
                         # The inter-pixel Cat-A time flat-fielding is *not* 
                         # applied in the Cat-B calibration, hence the obtained
                         # time_correction values must be modified so that 
                         # they become corrections relative to the DL1a pixel
-                        # times, that were already flatfielded. Note that 
-                        # the Fourier correction to account for DRS4 sampling
-                        # inhomogeneitites is not applied at all during this
-                        # CatB calculations. Still, since the time 
+                        # times, that were already flatfielded. Note that for 
+                        # such data the Fourier correction to account for 
+                        # DRS4 sampling inhomogeneitites is not applied at all
+                        # during this CatB calculations. Still, since the time 
                         # (re-)calibration is based on averages over many 
                         # events, covering the whole DRS4 buffer, it more or 
-                        # less works. 
+                        # less works (the t-deviations due to the DRS4 average
+                        # out). 
                         # 
                         # In contrast, data fully calibrated by the EvB 
                         # contain the Fourier corrections in the R1 data,
