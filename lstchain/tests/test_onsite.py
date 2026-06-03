@@ -236,10 +236,9 @@ def test_find_calibration_file():
     assert ((path.name == 'calibration_filters_52.Run02006.0000.h5') or
             (path.name == 'calibration_filters_52.Run02006.0000.fits.gz'))
 
-    # To be reconsidered (now it yields no error if multiple files - just returns the first one)
-    # with pytest.raises(IOError):
-    #     # if many calibration runs in one date
-    #     find_calibration_file(pro=PRO, date='20221001', base_dir=BASE_DIR)
+    with pytest.raises(IOError):
+        # if many calibration runs in one date
+        find_calibration_file(pro=PRO, date='20221001', base_dir=BASE_DIR)
    
     with pytest.raises(IOError):
         # wrong run
