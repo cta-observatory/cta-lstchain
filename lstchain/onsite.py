@@ -15,8 +15,8 @@ log = logging.getLogger(__name__)
 DEFAULT_BASE_PATH = Path('/fefs/aswg/data/real')
 DEFAULT_R0_PATH = DEFAULT_BASE_PATH / 'R0'
 DEFAULT_DL1_PATH = DEFAULT_BASE_PATH / 'DL1'
-CAT_A_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-A'
-CAT_B_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-B'
+CAT_A_PIXEL_DIR = 'service/PixelCalibration/Cat-A'
+CAT_B_PIXEL_DIR = 'service/PixelCalibration/Cat-B'
 
 
 DEFAULT_CONFIG = get_resource_path("data/onsite_camera_calibration_param.json")
@@ -202,7 +202,7 @@ def find_calibration_file(pro, calibration_run=None, date=None, category=DataCat
 
     if calibration_run is not None:
         # search a specific calibration run
-        file_list = sorted(cal_dir.rglob(f'{pro}/calibration*.Run{calibration_run:05d}.0000.h5'))
+        file_list = sorted(cal_dir.rglob(f'{pro}/calibration*.Run{calibration_run:05d}.0000.*'))
 
         if len(file_list) == 0:
             raise IOError(f"Calibration file from run {calibration_run} not found\n")
@@ -210,7 +210,7 @@ def find_calibration_file(pro, calibration_run=None, date=None, category=DataCat
         return file_list[0].resolve()
 
     # search for a unique calibration file from the same date
-    file_list = sorted((cal_dir / date / pro).glob('calibration*.0000.h5'))
+    file_list = sorted((cal_dir / date / pro).glob('calibration*.0000.*'))
     if len(file_list) == 0:
         raise IOError(f"No calibration file found for date {date}")
 
