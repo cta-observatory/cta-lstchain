@@ -215,7 +215,8 @@ def find_calibration_file(pro, calibration_run=None, date=None, category=DataCat
         raise IOError(f"No calibration file found for date {date}")
 
     if len(file_list) > 1:
-        raise IOError(f"Too many calibration files found for date {date}: {file_list}, choose one run\n")
+        log.warning(f"Too many calibration files found for date {date}: {file_list}\n")
+        log.warning(f"First file will be used: {file_list[0]}\n")
 
     return file_list[0].resolve()
 
