@@ -216,9 +216,8 @@ def find_calibration_file(pro, calibration_run=None, date=None, category=DataCat
 
     if len(file_list) > 1:
         sffx = [Path(x).suffix for x in file_list]
-        stm = [Path(x).stem for x in file_list]
-        if ((np.unique(sffx).size == len(file_list)) and
-            (np.unique(stm).size == 1)): # These are just different file types, but same calibration
+        if np.unique(sffx).size == len(file_list):
+            # These are different file types, but (probably) from the same calibration run
             log.warning(f"More than one calibration file type found for date {date}: {file_list}\n")
             log.warning(f"First file will be used: {file_list[0]}\n")
         else:
