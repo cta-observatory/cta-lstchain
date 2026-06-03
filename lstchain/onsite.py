@@ -6,6 +6,7 @@ from datetime import datetime
 import tempfile
 from astropy.time import Time
 import pymongo
+import numpy as np
 
 from .paths import parse_calibration_name
 from .io.io import get_resource_path
@@ -189,7 +190,6 @@ def find_systematics_correction_file(pro, date, sys_date=None, base_dir=DEFAULT_
     return (sys_dir / selected_date / pro / f"ffactor_systematics_{selected_date}.h5").resolve()
 
 def find_calibration_file(pro, calibration_run=None, date=None, category=DataCategory.A, base_dir=DEFAULT_BASE_PATH):
-
     if category == DataCategory.A:
         cal_dir = Path(base_dir) / CAT_A_PIXEL_DIR / "calibration"
     elif category == DataCategory.B:
@@ -215,8 +215,14 @@ def find_calibration_file(pro, calibration_run=None, date=None, category=DataCat
         raise IOError(f"No calibration file found for date {date}")
 
     if len(file_list) > 1:
-        log.warning(f"Too many calibration files found for date {date}: {file_list}\n")
-        log.warning(f"First file will be used: {file_list[0]}\n")
+        sffx = [Path(x).suffix for x in file_list]
+        stm = [Path(x).stem for x in file_list]
+        if ((np.unique(sffx).size == len(file_list)) and
+            (np.unique(stm).size == 1)) # These are just different file types, but same calibration
+            log.warning(f"More than one calibration file type found for date {date}: {file_list}\n")
+            log.warning(f"First file will be used: {file_list[0]}\n")
+        else:
+            raise IOError(f"Different calibration files found for date {date}: {file_list}\n")
 
     return file_list[0].resolve()
 
