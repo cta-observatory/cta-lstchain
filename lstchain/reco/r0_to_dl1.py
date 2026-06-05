@@ -595,7 +595,8 @@ def r0_to_dl1(
                     if interleaved_writer is not None:
                         # Include pixel time calibration in r1, if field
                         # pixel_time_shift exists:
-                        if 'pixel_time_shift' in r1.keys():
+                        # if 'pixel_time_shift' in r1.keys():
+                        if 'pixel_time_shift' in event.lst.tel[tel_id].evt.keys():
                             if r1.selected_gain_channel is None:
                                 r1.pixel_time_shift = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')
                             else:
