@@ -16,7 +16,6 @@ from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
 from lstchain.io import add_config_metadata, add_global_metadata, global_metadata, write_metadata
 from ctapipe.containers import EventType
 from lstchain.io.calibration import read_calibration_file
-from ctapipe_io_lst.constants import PIXEL_INDEX, N_GAINS, N_PIXELS
 
 __all__ = [
     'CatBCalibrationHDF5Writer'
