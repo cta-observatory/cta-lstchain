@@ -192,6 +192,25 @@ def extract_source_position_from_coord(
     source_coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
     return extract_positions(data, source_coord, equivalent_focal_length)
 
+def compute_theta2(data, source_position, conversion_factor=2.0):
+    """
+    Computes a square of theta (angle from z-axis) from camera frame coordinates
+
+    Parameters
+    ----------
+    pandas.DataFrame data: Input data
+    2D array (x,y) source_position: Observed source position in astropy.units.m
+    float conversion_factor: Conversion factor (default 0.1/0.05 deg/m)
+
+    Returns
+    -------
+    Array with `theta2` values
+    """
+    reco_src_x = np.array(data["reco_src_x"]) * u.m
+    reco_src_y = np.array(data["reco_src_y"]) * u.m
+    return conversion_factor ** 2 * (
+        (source_position[0] - reco_src_x) ** 2 + (source_position[1] - reco_src_y) ** 2
+    )
 
 def compute_alpha(data):
     """
