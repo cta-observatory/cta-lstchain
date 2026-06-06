@@ -604,7 +604,7 @@ def r0_to_dl1(
                                 r1.pixel_time_shift[0] = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')[r1.selected_gain_channel, PIXEL_INDEX]
 
 
-                    interleaved_writer(event)
+                    # interleaved_writer(event)
 
                     # gain select the events if not done already:
                     if r1.selected_gain_channel is None:
@@ -625,6 +625,11 @@ def r0_to_dl1(
 
             # create image for all events
             r1_dl1_calibrator(event)
+
+            if interleaved_writer:
+                if ((event.trigger.event_type == EventType.FLATFIELD) or
+                    (event.trigger.event_type == EventType.SKY_PEDESTAL)):
+                    interleaved_writer(event)
 
             if is_simu:
                 # Scale all integrated charges in all pixels if requested by user:

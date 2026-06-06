@@ -161,7 +161,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         return charge, peak_pos
 
-    def calculate_relative_gain(self, event):
+    def calculate_relative_gain(self, event,
+                                use_existing_dl1a_pix_times=False):
         """
          calculate the flatfield statistical values
          and fill mon.tel[tel_id].flatfield container
@@ -194,6 +195,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge, arrival_time = self._extract_charge(event)
+        if use_existing_dl1a_pix_times:
+            if event.dl1.tel[self.tel_id].peak_time is None:
+                raise IOError("DL1 image not found in event!")
+            else:
+                arrival_time = event.dl1.tel[self.tel_id].peak_time
 
         missing_gain_mask = np.zeros((N_GAINS, N_PIXELS))
 
