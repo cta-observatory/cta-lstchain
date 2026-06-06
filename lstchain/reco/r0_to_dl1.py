@@ -486,8 +486,6 @@ def r0_to_dl1(
         interleaved_output_file = Path(dir, name)
         interleaved_writer = DataWriter(event_source=source, output_path=interleaved_output_file,
                                         config=interleaved_writer_config)
-        # interleaved_writer._writer.exclude("/r1/event/telescope/.*",
-        # "selected_gain_channel")
 
     with HDF5TableWriter(
             filename=output_filename,
@@ -603,8 +601,6 @@ def r0_to_dl1(
                                                            dtype='float32')
                                 r1.pixel_time_shift[0] = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')[r1.selected_gain_channel, PIXEL_INDEX]
 
-
-                    # interleaved_writer(event)
 
                     # gain select the events if not done already:
                     if r1.selected_gain_channel is None:
