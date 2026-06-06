@@ -37,6 +37,7 @@ __all__ = [
     "compute_theta2",
     "expand_tel_list",
     "extract_source_position",
+    "extract_source_position_from_coord",
     "filter_events",
     "get_effective_time",
     "get_event_pos_in_camera",
@@ -103,57 +104,93 @@ def rotate(flat_object, degree=0, origin=(0, 0)):
     ]
     return res
 
-
-def extract_source_position(
-    data, observed_source_name, equivalent_focal_length=28 * u.m
-):
+def extract_positions(
+    data: "pd.DataFrame",
+    skycoord_obj: "SkyCoord",
+    equivalent_focal_length: u.Quantity = 28 * u.m,
+) -> list:
     """
-    Extract source position from data
+    Extract the x and y camera coordinates of a celestial object for each event.
 
     Parameters
     ----------
-    pandas.DataFrame data: input data
-    str observed_source_name: Name of the observed source
-    astropy.units.m equivalent_focal_length: Equivalent focal length of a telescope
+    data : pandas.DataFrame
+        Input event data containing 'dragon_time', 'alt_tel', and 'az_tel' columns.
+    skycoord_obj : astropy.coordinates.SkyCoord
+        The celestial coordinates of the source/object.
+    equivalent_focal_length : astropy.units.Quantity, optional
+        Equivalent focal length of the telescope (default is 28 m).
 
     Returns
     -------
-    2D array of coordinates of the source in form [(x),(y)] in astropy.units.m
+    list
+        A list [x, y] where x and y are astropy.units.Quantity arrays
+        of the source's coordinates in the camera frame for each event.
     """
-    observed_source = SkyCoord.from_name(observed_source_name)
     obstime = pd.to_datetime(data["dragon_time"], unit="s")
     pointing_alt = u.Quantity(data["alt_tel"], u.rad, copy=False)
     pointing_az = u.Quantity(data["az_tel"], u.rad, copy=False)
     source_pos_camera = radec_to_camera(
-        observed_source,
-        obstime,
-        pointing_alt,
-        pointing_az,
-        focal=equivalent_focal_length,
+        skycoord_obj, obstime, pointing_alt, pointing_az, equivalent_focal_length
     )
-    source_position = [source_pos_camera.x, source_pos_camera.y]
-    return source_position
+    return [source_pos_camera.x, source_pos_camera.y]
 
 
-def compute_theta2(data, source_position, conversion_factor=2.0):
+def extract_source_position(
+    data: "pd.DataFrame",
+    observed_source_name: str,
+    equivalent_focal_length: u.Quantity = 28 * u.m,
+) -> list:
     """
-    Computes a square of theta (angle from z-axis) from camera frame coordinates
+    Extract the source camera position for the given source name for each event.
 
     Parameters
     ----------
-    pandas.DataFrame data: Input data
-    2D array (x,y) source_position: Observed source position in astropy.units.m
-    float conversion_factor: Conversion factor (default 0.1/0.05 deg/m)
+    data : pandas.DataFrame
+        Input event data.
+    observed_source_name : str
+        Resolvable name of the observed source (for SkyCoord.from_name()).
+    equivalent_focal_length : astropy.units.Quantity, optional
+        Equivalent focal length of the telescope (default is 28 m).
 
     Returns
     -------
-    Array with `theta2` values
+    list
+        A list [x, y] (astropy.units.Quantity arrays) of the source's
+        camera frame coordinates for each event.
     """
-    reco_src_x = np.array(data["reco_src_x"]) * u.m
-    reco_src_y = np.array(data["reco_src_y"]) * u.m
-    return conversion_factor ** 2 * (
-        (source_position[0] - reco_src_x) ** 2 + (source_position[1] - reco_src_y) ** 2
-    )
+    observed_source = SkyCoord.from_name(observed_source_name)
+    return extract_positions(data, observed_source, equivalent_focal_length)
+
+
+def extract_source_position_from_coord(
+    data: "pd.DataFrame",
+    ra: u.Quantity,
+    dec: u.Quantity,
+    equivalent_focal_length: u.Quantity = 28 * u.m,
+) -> list:
+    """
+    Extract the source camera position from equatorial coordinates for each event.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Input event data.
+    ra : astropy.units.Quantity
+        Right ascension (ICRS) of the source.
+    dec : astropy.units.Quantity
+        Declination (ICRS) of the source.
+    equivalent_focal_length : astropy.units.Quantity, optional
+        Equivalent focal length of the telescope (default is 28 m).
+
+    Returns
+    -------
+    list
+        A list [x, y] (astropy.units.Quantity arrays) of the source's
+        camera frame coordinates for each event.
+    """
+    source_coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
+    return extract_positions(data, source_coord, equivalent_focal_length)
 
 
 def compute_alpha(data):
