@@ -8,6 +8,7 @@ import logging
 import os
 from copy import deepcopy
 from pathlib import Path
+import sys
 
 import astropy.units as u
 import numpy as np
@@ -588,19 +589,16 @@ def r0_to_dl1(
                         source.r0_r1_calibrator.select_gain = False
                         source.r0_r1_calibrator.calibrate(event)
 
-                    r1 = event.r1.tel[tel_id]
-
                     if interleaved_writer is not None:
-                        # Include pixel time calibration in r1, if field
-                        # pixel_time_shift exists:
-                        if 'pixel_time_shift' in r1.keys():
-                            if r1.selected_gain_channel is None:
-                                r1.pixel_time_shift = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')
-                            else:
-                                r1.pixel_time_shift = np.zeros((1, N_PIXELS),
-                                                           dtype='float32')
-                                r1.pixel_time_shift[0] = event.calibration.tel[tel_id].dl1.time_shift.astype('float32')[r1.selected_gain_channel, PIXEL_INDEX]
+                        if interleaved_writer.write_dl1_images:
+                            # Get the DL1 for the interleaved event here, so 
+                            # that it is done for both gains (if present). 
+                            # Will be done later for all events (including 
+                            # interleaved) for the selected gain only
+                            r1_dl1_calibrator(event)
+                        interleaved_writer(event)
 
+                    r1 = event.r1.tel[tel_id]
 
                     # gain select the events if not done already:
                     if r1.selected_gain_channel is None:
@@ -621,11 +619,6 @@ def r0_to_dl1(
 
             # create image for all events
             r1_dl1_calibrator(event)
-
-            if interleaved_writer:
-                if ((event.trigger.event_type == EventType.FLATFIELD) or
-                    (event.trigger.event_type == EventType.SKY_PEDESTAL)):
-                    interleaved_writer(event)
 
             if is_simu:
                 # Scale all integrated charges in all pixels if requested by user:
