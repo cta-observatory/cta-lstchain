@@ -8,7 +8,6 @@ import logging
 import os
 from copy import deepcopy
 from pathlib import Path
-import sys
 
 import astropy.units as u
 import numpy as np
