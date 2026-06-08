@@ -81,6 +81,9 @@ optional.add_argument('-y', '--yes', action="store_true", help='Do not ask inter
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 
+optional.add_argument('--cat_A_calibration_file', type=Path, help='Cat A calibration file')
+optional.add_argument('--systematics_file', type=Path, help='F-factor systematics correction file')
+
 
 def main():
     args, remaining_args = parser.parse_known_args()
@@ -96,6 +99,8 @@ def main():
     yes = args.yes
     pro_symlink = not args.no_pro_symlink
     r0_dir = args.r0_dir or args.base_dir / 'R0'
+    catA_calibration_file = args.cat_A_calibration_file
+    systematics_file_input = args.systematics_file
 
     # looks for the filter values in the database if not given
     if args.filters is None:
@@ -148,14 +153,20 @@ def main():
         print(f"--> Create directory {log_dir}")
         log_dir.mkdir(parents=True, exist_ok=True)
 
-    cat_A_calib_file = find_calibration_file(pro, args.catA_calibration_run, date=date, base_dir=args.base_dir)
+    if catA_calibration_file:
+        cat_A_calib_file= catA_calibration_file
+    else:
+        cat_A_calib_file = find_calibration_file(pro, args.catA_calibration_run, date=date, base_dir=args.base_dir)
     print(f"\n--> Cat-A calibration file: {cat_A_calib_file}")
 
     # define systematic correction file
     if no_sys_correction:
         systematics_file = None
     else:
-        systematics_file = find_systematics_correction_file(pro, date, sys_date, args.base_dir)
+        if systematics_file_input:
+            systematics_file = systematics_file_input
+        else:
+            systematics_file = find_systematics_correction_file(pro, date, sys_date, args.base_dir)
 
     print(f"\n--> F-factor systematics correction file: {systematics_file}")
 
