@@ -391,6 +391,9 @@ def r0_to_dl1(
     # Write extra information to the DL1 file
     subarray.to_hdf(output_filename)
 
+    allowed_tels = config['source_config']['LSTEventSource'][
+        'allowed_tels']
+
     if is_simu:
         write_mcheader(
             source.simulation_config[source.obs_ids[0]],
@@ -430,8 +433,6 @@ def r0_to_dl1(
                                                      assume_sorted=True)
                 pre_computed_multiplicity = config['waveform_nsb_tuning'].get('pre_computed_multiplicity', 10)
 
-                allowed_tels = config['source_config']['LSTEventSource'][
-                    'allowed_tels']
                 logger.info('Tuning NSB on MC waveform by adding ')
                 logger.info(f'{nsb_tuning_rate:.3f} GHz for telescope ids:')
                 logger.info(f'{allowed_tels}')
@@ -486,6 +487,11 @@ def r0_to_dl1(
         interleaved_output_file = Path(dir, name)
         interleaved_writer = DataWriter(event_source=source, output_path=interleaved_output_file,
                                         config=interleaved_writer_config)
+        # We do not need the DL1a charges (only the times). So we save a bit 
+        # of space by not writing them out:
+        for tel_id in allowed_tels:
+            interleaved_writer._writer.exclude(f'dl1/event/telescope/images/tel_{tel_id:03d}', 
+                                               'image')
 
     with HDF5TableWriter(
             filename=output_filename,
@@ -610,7 +616,7 @@ def r0_to_dl1(
             # Option to add nsb in waveforms
             if nsb_tuning:
                 # FIXME? assumes same correction ratio for all telescopes
-                for tel_id in config['source_config']['LSTEventSource']['allowed_tels']:
+                for tel_id in allowed_tels:
                     waveform = event.r1.tel[tel_id].waveform
                     selected_gains = event.r1.tel[tel_id].selected_gain_channel
                     mask_high = selected_gains == 0
