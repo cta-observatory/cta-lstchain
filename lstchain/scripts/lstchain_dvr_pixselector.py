@@ -627,7 +627,7 @@ def get_input_files(all_dl1_files, max_number_of_processed_subruns):
     dl1_files = []
     for run in runlist:
         file_list = [f for f in all_dl1_files 
-                     if f.find(f'dl1_LST-1.Run{run:05d}')>0]
+                     if f.find(f'dl1_LST-1.Run{run:05d}')>=0]
         if len(file_list) <= max_number_of_processed_subruns:
             dl1_files.extend(file_list)
             continue
