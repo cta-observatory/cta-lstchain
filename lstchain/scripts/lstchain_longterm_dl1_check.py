@@ -887,7 +887,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     min_average_ff_charge = ff_charge * (1 - ff_charge_tolerance)
     max_average_ff_rel_time_stdev = ff_max_rel_time_stdev
 
-    max_average_ff_time_stdev = 1.2
+    max_average_ff_time_stdev = 1.3
     min_average_ff_time = 12  # ns
     max_average_ff_time = 23  # ns
     max_average_ff_charge_stdev = 11  # pe
