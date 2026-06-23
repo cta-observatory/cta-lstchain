@@ -52,11 +52,16 @@ def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=Non
     camera = camera.transform_to(EngineeringCameraFrame())
 
     # Guess whether this calibration file comes from gain-selected ped events:
-    # For gain-selected data, the low-gain average values should be NaN for 
-    # low gain pedestals, except for pixels which are disabled in the DAQ, in 
-    # which case the values are exactly 0:
-    if np.all(np.isnan(ped_data.charge_mean[1]) |
-              (ped_data.charge_mean[1]==0.0)):
+    # For gain-selected data, the low-gain average & std values should be NaN 
+    # for low gain pedestals, except for pixels which are disabled in the DAQ,
+    # in which case the values are exactly 0. There can also be rare cases, 
+    # for gain-selected data, in which some pixel recorded the low gain in an 
+    # event tagged as pedestal (either due to wrong tagging, or to some light 
+    # accidentally coinciding with the recording of the event). So we now 
+    # require that  a *majority* of the pixels have valid low-gain charge 
+    # std values in order to proceed with the low-gain plotting:
+    if (np.isnan(ped_data.charge_std[1]) | 
+        (ped_data.charge_std[1] == 0.0)).sum() > ped_data.charge_std[1].size/2:
         channels = [0]  # Just high gain
     else:
         channels = [0, 1] # Both gains
