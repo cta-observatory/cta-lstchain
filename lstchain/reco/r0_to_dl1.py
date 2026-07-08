@@ -556,6 +556,20 @@ def r0_to_dl1(
                         rel_factor_2d[1, sg == 1] = rel_factor[sg == 1]
                         tel_dl1.relative_factor = rel_factor_2d
 
+                # Skip events tagged as interleaved (flat-field / pedestal) but
+                # stored with a single gain, i.e. without a two-gain R0 waveform
+                # (mislabeled cosmics, or interleaved events gain-selected by the
+                # EVB in some pre-2023 R0V files). They are not usable as
+                # calibration events, are a negligible handful per subrun, and
+                # would otherwise crash the two-gain interleaved handling below
+                # and leak select_gain=False onto the next physics event. This
+                # restores the R0 two-gain existence check that used to gate this
+                # branch (see NOTE below).
+                if (((event.trigger.event_type == EventType.FLATFIELD) or
+                     (event.trigger.event_type == EventType.SKY_PEDESTAL))
+                        and event.r0.tel[tel_id].waveform is None):
+                    continue
+
                 # flat-field or pedestal:
                 if ((event.trigger.event_type == EventType.FLATFIELD) or
                     (event.trigger.event_type == EventType.SKY_PEDESTAL)):
