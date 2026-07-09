@@ -71,6 +71,9 @@ jobs:
             NEW_ENV_FILE="environment-sklearn-$SKLEARN_VERSION.yml"
             cp environment.yml "$NEW_ENV_FILE"
             sed -i -e "s/scikit-learn>=1.2/scikit-learn=$SKLEARN_VERSION/g" "$NEW_ENV_FILE"
+            sed -i -e "/scikit-learn=$SKLEARN_VERSION/a \  - numpy<2.0.0" "$NEW_ENV_FILE"
+            ENV_FILE="$NEW_ENV_FILE"
+            
             ENV_FILE="$NEW_ENV_FILE"
           fi
 
