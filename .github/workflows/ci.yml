@@ -79,7 +79,7 @@ jobs:
           echo "environment-file=$ENV_FILE" >> $GITHUB_ENV
 
       - name: Mamba setup
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           environment-file: ${{ env.environment-file }}
           cache-downloads: true
