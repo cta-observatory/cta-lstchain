@@ -97,13 +97,15 @@ jobs:
           echo "Installing additional pip packages"
 
           CTAPIPE_REQ="git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION"
+          LSTCHAIN_REQ="-e ."
           if [ -n "$SKLEARN_VERSION" ]; then
             pip install "numpy<2.0.0"
+            LSTCHAIN_REQ="$LSTCHAIN_REQ numpy<2.0.0"
             CTAPIPE_REQ="$CTAPIPE_REQ numpy<2.0.0"
           fi
           
-          echo "pip install -e ."
-          pip install -e .
+          echo "pip install $LSTCHAIN_REQ"
+          pip install $LSTCHAIN_REQ
 
           pip install pytest-cov 'coverage!=6.3.0' pytest-xdist
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
