@@ -91,7 +91,7 @@ jobs:
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
           CTAPIPE_VERSION: ${{ matrix.ctapipe-version }}
-
+          SKLEARN_VERSION: ${{ matrix.sklearn-version }}
         run: |
           python --version
           echo "Installing additional pip packages"
