@@ -158,7 +158,7 @@ jobs:
           git describe --tags
           python -c 'import lstchain; print(lstchain.__version__)'
       - name: Build docs
-        run: cd docs && make html SPHINXOPTS="-W --keep-going -n --color -j auto"
+        run: cd docs && make html SPHINXOPTS="-W --keep-going -n --color"
 
       - name: Deploy to gihub pages
         # only run on push to main
