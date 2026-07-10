@@ -71,6 +71,9 @@ jobs:
             NEW_ENV_FILE="environment-sklearn-$SKLEARN_VERSION.yml"
             cp environment.yml "$NEW_ENV_FILE"
             sed -i -e "s/scikit-learn>=1.2/scikit-learn=$SKLEARN_VERSION/g" "$NEW_ENV_FILE"
+            sed -i -e "/scikit-learn=$SKLEARN_VERSION/a \  - numpy<2.0.0" "$NEW_ENV_FILE"
+            ENV_FILE="$NEW_ENV_FILE"
+            
             ENV_FILE="$NEW_ENV_FILE"
           fi
 
@@ -79,7 +82,7 @@ jobs:
           echo "environment-file=$ENV_FILE" >> $GITHUB_ENV
 
       - name: Mamba setup
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           environment-file: ${{ env.environment-file }}
           cache-downloads: true
@@ -88,17 +91,25 @@ jobs:
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
           CTAPIPE_VERSION: ${{ matrix.ctapipe-version }}
-
+          SKLEARN_VERSION: ${{ matrix.sklearn-version }}
         run: |
           python --version
           echo "Installing additional pip packages"
 
-          echo "pip install -e ."
-          pip install -e .
+          CTAPIPE_REQ="git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION"
+          LSTCHAIN_REQ="-e ."
+          if [ -n "$SKLEARN_VERSION" ]; then
+            pip install "numpy<2.0.0"
+            LSTCHAIN_REQ="$LSTCHAIN_REQ numpy<2.0.0"
+            CTAPIPE_REQ="$CTAPIPE_REQ numpy<2.0.0"
+          fi
+          
+          echo "pip install $LSTCHAIN_REQ"
+          pip install $LSTCHAIN_REQ
 
           pip install pytest-cov 'coverage!=6.3.0' pytest-xdist
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
-          pip install "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION"
+          pip install $CTAPIPE_REQ
 
           which pip
           pip freeze
@@ -147,7 +158,7 @@ jobs:
           git describe --tags
           python -c 'import lstchain; print(lstchain.__version__)'
       - name: Build docs
-        run: cd docs && make html SPHINXOPTS="-W --keep-going -n --color -j auto"
+        run: cd docs && make html SPHINXOPTS="-W --keep-going -n --color"
 
       - name: Deploy to gihub pages
         # only run on push to main
