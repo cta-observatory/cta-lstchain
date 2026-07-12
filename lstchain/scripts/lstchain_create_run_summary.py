@@ -180,7 +180,7 @@ def guess_run_type(date_path, run_number, counters, n_events=500):
     run_type: str
         Type of run (DRS4, PEDCALIB, DATA, ERROR)
     """
-    pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
+    pattern = f"LST-*.1.Run{run_number:05d}.0000*.fits.fz"
     list_of_files = sorted(date_path.glob(pattern))
     if len(list_of_files) == 0:
         log.error(f"First subrun not found for {pattern}")
@@ -364,7 +364,7 @@ def read_counters_or_get_default(date_path, run_number):
     """
     Calls read_counters and returns default values in case of an error.
     """
-    pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
+    pattern = f"LST-*.1.Run{run_number:05d}.0000*.fits.fz"
     try:
         path = next(date_path.glob(pattern))
     except StopIteration:
@@ -380,7 +380,7 @@ def read_counters_or_get_default(date_path, run_number):
 
 def get_data_format(date_path, run_number):
     """Get data format (name of protobuf object) in data file"""
-    pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
+    pattern = f"LST-*.1.Run{run_number:05d}.0000*.fits.fz"
     try:
         path = next(date_path.glob(pattern))
     except StopIteration:
@@ -398,7 +398,7 @@ def get_data_format(date_path, run_number):
 
 def get_evb_preprocessing(date_path, run_number):
     """Get data format (name of protobuf object) in data file"""
-    pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
+    pattern = f"LST-*.1.Run{run_number:05d}.0000*.fits.fz"
     try:
         path = next(date_path.glob(pattern))
     except StopIteration:
