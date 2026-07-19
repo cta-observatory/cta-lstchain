@@ -1,5 +1,6 @@
 import numpy as np
 import operator
+from astropy.table import QTable
 import astropy.units as u
 
 from ctapipe.core import Component
@@ -9,6 +10,8 @@ from lstchain.reco.utils import filter_events
 
 
 from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
+
+from scipy.interpolate import interp1d
 
 
 __all__ = ["EventSelector", "DL3Cuts", "DataBinning"]
@@ -67,6 +70,11 @@ class DL3Cuts(Component):
         default_value=0.95,
     ).tag(config=True)
 
+    energy_dependent_gh_cut = Dict(
+        help="Energy dependent selection cuts for gh_score (gammaness)",
+        default_value={},
+    ).tag(config=True)
+
     min_gh_cut = Float(
         help="Minimum gh_score (gammaness) cut in an energy bin",
         default_value=0.1,
@@ -105,6 +113,11 @@ class DL3Cuts(Component):
         default_value=0.2,
     ).tag(config=True)
 
+    energy_dependent_theta_cut = Dict(
+        help="Energy dependent selection cuts (deg) for theta",
+        default_value={},
+    ).tag(config=True)
+
     min_alpha_cut = Float(
         help="Minimum alpha cut (deg) in an energy bin",
         default_value=1,
@@ -131,6 +144,11 @@ class DL3Cuts(Component):
     global_alpha_cut = Float(
         help="Global selection cut (deg) for alpha",
         default_value=20,
+    ).tag(config=True)
+
+    energy_dependent_alpha_cut = Dict(
+        help="Energy dependent selection cuts (deg) for alpha",
+        default_value={},
     ).tag(config=True)
 
     allowed_tels = List(
@@ -339,6 +357,47 @@ class DL3Cuts(Component):
             operator.le,
         )
         return data[data["selected_alpha"]]
+
+    def from_dict(self, parameter, irf_energy_bins, interpolation_kind='nearest'):
+        """
+        Convert the cut dictionary to a QTable for the requested parameter.
+        Cut values are interpolated along the IRF energy binning.
+
+        Parameters
+        ----------
+        parameter: string
+            'gh', 'theta' or 'alpha'
+        irf_energy_bins: `astropy.units.quantity.Quantity`
+            energy bins used for the IRFs
+        interpolation_kind: string
+            Interpolation strategy for `scipy.interpolate.interp1d`
+
+        Returns
+        -------
+        cut_table: `astropy.table.QTable`
+            Energy dependent cuts for the requested parameter.
+
+        """
+        cut_table = QTable()
+
+        cuts_dict = {"gh": self.energy_dependent_gh_cut,
+                     "theta": self.energy_dependent_theta_cut,
+                     "alpha":self.energy_dependent_alpha_cut}[parameter]
+
+        unit = {"gh": 1,
+                "theta": u.deg,
+                "alpha": u.deg}[parameter]
+
+        input_ebins_center = (cuts_dict["energy_bins"][:-1]* u.TeV + cuts_dict["energy_bins"][1:] * u.TeV) * 0.5
+
+        cut_table["low"] = irf_energy_bins[:-1]
+        cut_table["high"] = irf_energy_bins[1:]
+        cut_table["center"] = 0.5 * (cut_table["low"] + cut_table["high"])
+        f_cut = interp1d(input_ebins_center, cuts_dict["cut"], kind=interpolation_kind, bounds_error=False,
+                         fill_value=(cuts_dict["cut"][0], cuts_dict["cut"][-1]), assume_sorted=True)
+        cut_table["cut"] = f_cut(cut_table["center"]) * unit
+
+        return cut_table
 
     def allowed_tels_filter(self, data):
         """
