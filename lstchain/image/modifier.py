@@ -201,107 +201,93 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
                                      '/dl1/event/telescope/parameters/LST_LSTCam')
     data_dl1_image = read_table(data_dl1_filename,
                                 '/dl1/event/telescope/image/LST_LSTCam')
+    catB_calib_time = np.array(data_dl1_calibration["time_min"])
+    trigger_times = data_dl1_parameters['trigger_time']
+    all_good=[]
+    data_ped_charges=[]
+    for_data_HG=[]
+    for ii, _ in enumerate(data_dl1_image):
+       
+        calib_idx = np.searchsorted(catB_calib_time, trigger_times[ii])
+        if calib_idx > 0:
+            calib_idx -= 1
+       
+        unusable = data_dl1_calibration[calib_idx]['unusable_pixels']
+        
+        # Locate pixels with HG declared unusable either in original calibration or
+        # in interleaved events:
+        bad_pixels = unusable[0][0]  # original calibration
+        if unusable.shape[0] > 1:
+            for tf in unusable[1:][0]:  # calibrations with interleaveds
+                bad_pixels = np.logical_or(bad_pixels, tf)
+        good_pixels = ~bad_pixels
+        # First index:  1,2,... = values from interleaveds (0 is for original
+        # calibration run)
+        # Second index: 0 = high gain
+        # Third index: pixels
 
-    unusable = data_dl1_calibration['unusable_pixels']
-    # Locate pixels with HG declared unusable either in original calibration or
-    # in interleaved events:
-    bad_pixels = unusable[0][0]  # original calibration
-    if unusable.shape[0] > 1:
-        for tf in unusable[1:][0]:  # calibrations with interleaveds
-            bad_pixels = np.logical_or(bad_pixels, tf)
-    good_pixels = ~bad_pixels
+        # HG adc to pe conversion factors from interleaved calibrations:
+        
+        
+        data_HG_dc_to_pe = data_dl1_calibration[calib_idx]['dc_to_pe'][0, :]
+        # Mean HG charge in interleaved FF events, to spot possible issues:
+        data_HG_FF_mean = data_dl1_flatfield[calib_idx]['charge_mean'][0, :]
+        data_HG_FF_mean_pe = data_HG_FF_mean*data_HG_dc_to_pe
 
-    # First index:  1,2,... = values from interleaveds (0 is for original
-    # calibration run)
-    # Second index: 0 = high gain
-    # Third index: pixels
+        data_HG_ped_std_evt = data_dl1_pedestal[calib_idx]['charge_std'][ 0, :]
+        data_HG_ped_std_pe_evt = data_HG_ped_std_evt * data_HG_dc_to_pe
+        data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe_evt[good_pixels])
+        data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe_evt[good_pixels])
+        log.info('\nReal data:')
+        log.info(f'   Number of bad pixels (from calibration): {bad_pixels.sum()}')
+        log.info(f'   Median of FF pixel charge: '
+                f'{np.nanmedian(data_HG_FF_mean_pe[good_pixels]):.3f} p.e.')
+        log.info(f'   Median across camera of good pixels\' pedestal std '
 
-    # HG adc to pe conversion factors from interleaved calibrations:
-    data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][:, 0, :]
+                f'{data_median_std_ped_pe:.3f} p.e.')
+        brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
+        too_bright_pixels = (data_HG_ped_std_pe_evt > brightness_limit)
+        log.info(f'   Number of pixels beyond 3 std dev of median: '
+                f'   {too_bright_pixels.sum()}, (above {brightness_limit:.2f} '
+                f'p.e.)')
+        
 
-    if data_dl1_flatfield['charge_mean'].shape[0] < 2:
-        logging.error('\nCould not find interleaved FF calibrations in '
-                      'monitoring table!')
-        return None, None, None
+        # Exclude too bright pixels, besides those with unusable calibration:
+        good_pixels &= ~too_bright_pixels
+        # recalculate the median of the pixels' std dev, with good_pixels:
+        data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe_evt[good_pixels])
 
-    if data_dl1_pedestal['charge_std'].shape[0] < 2:
-        logging.error('\nCould not find interleaved pedestal info in '
-                      'monitoring table!')
-        return None, None, None
+        log.info(f'Good and not too bright pixels: {good_pixels.sum()}')
 
-    # Mean HG charge in interleaved FF events, to spot possible issues:
-    data_HG_FF_mean = data_dl1_flatfield['charge_mean'][1:, 0, :]
-    dummy = []
-    # indices which connect each FF calculation to a given calibration:
-    calibration_id = data_dl1_flatfield['calibration_id'][1:]
-
-    for i, x in enumerate(data_HG_FF_mean[:, ]):
-        dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
-    dummy = np.array(dummy)
-    # Average for all interleaved calibrations (in case there are more than one)
-    data_HG_FF_mean_pe = np.mean(dummy, axis=0)  # one value per pixel
-
-    # Pixel-wise pedestal standard deviation (for an unbiased extractor),
-    # in adc counts:
-    data_HG_ped_std = data_dl1_pedestal['charge_std'][1:, 0, :]
-    # indices which connect each pedestal calculation to a given calibration:
-    calibration_id = data_dl1_pedestal['calibration_id'][1:]
-    # convert pedestal st deviations to p.e.
-    dummy = []
-    for i, x in enumerate(data_HG_ped_std[:, ]):
-        dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
-    dummy = np.array(dummy)
-    # Average for all interleaved calibrations (in case there are more than one)
-    data_HG_ped_std_pe = np.mean(dummy, axis=0)  # one value per pixel
-
-    # Identify noisy pixels, likely containing stars - we want to adjust MC to
-    # the average diffuse NSB across the camera
-
-    data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe[good_pixels])
-    data_std_std_ped_pe = np.nanstd(data_HG_ped_std_pe[good_pixels])
-    log.info('\nReal data:')
-    log.info(f'   Number of bad pixels (from calibration): {bad_pixels.sum()}')
-    log.info(f'   Median of FF pixel charge: '
-             f'{np.nanmedian(data_HG_FF_mean_pe[good_pixels]):.3f} p.e.')
-    log.info(f'   Median across camera of good pixels\' pedestal std '
-
-             f'{data_median_std_ped_pe:.3f} p.e.')
-    brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
-    too_bright_pixels = (data_HG_ped_std_pe > brightness_limit)
-    log.info(f'   Number of pixels beyond 3 std dev of median: '
-             f'   {too_bright_pixels.sum()}, (above {brightness_limit:.2f} '
-             f'p.e.)')
-
+        
+        for_data_HG.append(data_HG_ped_std_pe_evt[good_pixels])
+        
+        
     ped_mask = data_dl1_parameters['event_type'] == 2
+
+        
+    data_ped_charges = data_dl1_image['image'][ped_mask]
     # The charges in the images below are obtained with the extractor for
     # showers, usually a biased one, like e.g. LocalPeakWindowSum
-    data_ped_charges = data_dl1_image['image'][ped_mask]
+    all_good = np.tile(good_pixels, data_ped_charges.shape[0]).reshape(data_ped_charges.shape)
 
-    # Exclude too bright pixels, besides those with unusable calibration:
-    good_pixels &= ~too_bright_pixels
-    # recalculate the median of the pixels' std dev, with good_pixels:
-    data_median_std_ped_pe = np.nanmedian(data_HG_ped_std_pe[good_pixels])
-
-    log.info(f'Good and not too bright pixels: {good_pixels.sum()}')
-
-    # all_good is an events*pixels boolean array of valid signals:
-    all_good = np.reshape(np.tile(good_pixels, data_ped_charges.shape[0]),
-                          data_ped_charges.shape)
-
+    
+    
+    data_median_std_ped_pe = np.nanmedian(for_data_HG)
+    data_std_std_ped_pe = np.nanstd(for_data_HG)
     # histogram of pedestal charges (biased extractor) from good and not noisy
     # pixels:
+    
     qbins = 100
     qrange = (-10, 15)
-    dataq = np.histogram(data_ped_charges[all_good].flatten(), bins=qbins,
-                         range=qrange, density=True)
-
-    # Find the peak of the pedestal biased charge distribution of real data.
-    # Use an interpolated version of the histogram, for robustness:
+    dataq = np.histogram(data_ped_charges[np.array(all_good)].flatten(), bins=qbins,
+                        range=qrange, density=True)
+    
     func = interp1d(0.5 * (dataq[1][1:] + dataq[1][:-1]), dataq[0],
                     kind='quadratic', fill_value='extrapolate')
     xx = np.linspace(qrange[0], qrange[1], 100 * qbins)
     mode_data = xx[np.argmax(func(xx))]
-
+    
     # Event reader for simtel file:
     with EventSource(input_url=simtel_filename, config=Config(config)) as mc_reader:
         # Obtain the configuration with which the pedestal calculations were
@@ -360,7 +346,6 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
             shower_calibrator(event)
             charges_biased = event.dl1.tel[tel_id].image
             mc_ped_charges_biased.append(charges_biased[true_image == 0])
-
     # All pixels behave (for now) in the same way in MC, just put them together
     mc_ped_charges = np.concatenate(mc_ped_charges)
     mc_ped_charges_biased = np.concatenate(mc_ped_charges_biased)
@@ -375,7 +360,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     mode_mc = xx[np.argmax(func(xx))]
 
     mc_unbiased_std_ped_pe = np.std(mc_ped_charges)
-
+    
     # Find the additional noise (in data w.r.t. MC) for the unbiased extractor,
     # and scale it to the width of the window for integration of shower images.
     # The idea is that when a strong signal is present, the biased extractor
@@ -395,7 +380,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     extra_bias_in_dim_pixels = max(bias, 0)
 
     # differences of values to peak charge:
-    dq = data_ped_charges[all_good].flatten() - mode_data
+    dq = np.array(data_ped_charges)[np.array(all_good)].flatten() - mode_data
     dqmc = mc_ped_charges_biased - mode_mc
     # maximum distance (in pe) from peak, to avoid strong impact of outliers:
     maxq = 10
@@ -403,7 +388,6 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     added_noise = (np.sum(dq[dq < maxq] ** 2) / len(dq[dq < maxq]) -
                    np.sum(dqmc[dqmc < maxq] ** 2) / len(dqmc[dqmc < maxq]))
     extra_noise_in_dim_pixels = max(0., added_noise)
-
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
         extra_noise_in_bright_pixels
 
