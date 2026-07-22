@@ -21,7 +21,7 @@ def main():
 
     min_intensity = get_intensity_cut(read_table(file, dl2_params_lstcam_key))
     log.info('Recommended minimum intensity cut (p.e.):')
-    log.info(f'{int(min_intensity+0.5):d}')
+    log.info(f'{min_intensity:.0f}')
 
 if __name__ == '__main__':
     main()
