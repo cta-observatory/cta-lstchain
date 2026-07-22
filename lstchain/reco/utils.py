@@ -834,7 +834,10 @@ def get_intensity_threshold(data):
     drdi = nevents.astype('float') / (binwidth*efftime.to_value(u.s))
     bincenters = (bins[1:]*bins[:-1])**0.5 # geometrical mean (log bin center)
  
-    peaks, properties = find_peaks(np.log10(drdi), 
+    log10_drdi = np.nan * np.ones_like(drdi)
+    np.log10(drdi, where=drdi>0, out=log10_drdi) # Avoid empty bins warning 
+
+    peaks, properties = find_peaks(log10_drdi, 
                                    prominence=0.04, # ~10% in log10 scale
                                    width=int(0.1/step)) # ~25% in log10 scale
 
