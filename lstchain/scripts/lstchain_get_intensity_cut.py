@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import numpy as np
 from lstchain.io.io import dl2_params_lstcam_key
 from ctapipe.io import read_table
 from lstchain.reco.utils import get_intensity_cut
