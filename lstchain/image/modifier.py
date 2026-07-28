@@ -259,10 +259,9 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
         log.info(f'Good and not too bright pixels: {good_pixels.sum()}')
 
-        
-        for_data_HG.append(data_HG_ped_std_pe_evt[good_pixels])
-        
-        
+        for_data_HG.append(np.where(good_pixels,data_HG_ped_std_pe_evt,np.nan))
+       
+    for_data_HG=np.array(for_data_HG)
     ped_mask = data_dl1_parameters['event_type'] == 2
 
         
