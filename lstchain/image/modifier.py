@@ -216,7 +216,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
         
         # Locate pixels with HG declared unusable either in original calibration or
         # in interleaved events:
-        bad_pixels = unusable[0][0]  # original calibration
+        bad_pixels = unusable[0]  # original calibration
         if unusable.shape[0] > 1:
             for tf in unusable[1:][0]:  # calibrations with interleaveds
                 bad_pixels = np.logical_or(bad_pixels, tf)
