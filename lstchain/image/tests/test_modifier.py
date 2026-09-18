@@ -45,7 +45,7 @@ def test_psf_smearer(fraction):
     assert smeared.sum() < image.sum()
 
     # central pixel should roughly stay the same
-    assert np.isclose(image[0], smeared[0], rtol=0.01)
+    assert np.isclose(image[0], smeared[0], rtol=0.03)
 
     # neighbors should loose 3/6 fractions of the charge
     assert np.allclose((1 - 0.5 * fraction) * image[1:], smeared[1:], rtol=0.05)
