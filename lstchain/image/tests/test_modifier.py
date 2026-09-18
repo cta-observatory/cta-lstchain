@@ -10,11 +10,11 @@ def test_psf_smearer(fraction):
     set_numba_seed(0)
 
     # simple toy example with a single 7 pixel hexgroup
-    image = np.zeros(7)
+    image = np.zeros(7, dtype=np.float64)
 
     # really large number so we can make tight checks on the distributed photon counts
     # 0 is the central, then clockwise
-    image[0] = 1e4
+    image[0] = 1.e4
 
     neighbor_matrix = csr_matrix(np.array([
        #0  1  2  3  4  5  6
@@ -40,7 +40,7 @@ def test_psf_smearer(fraction):
     assert np.any(smeared[1:] != smeared[1])
 
     # if we put charge in the edges, we should loose some
-    image = np.full(7, 1e4)
+    image = np.full(7, 1e4, dtype=np.float64)
     smeared = random_psf_smearer(image, fraction, neighbor_matrix.indices, neighbor_matrix.indptr)
     assert smeared.sum() < image.sum()
 
