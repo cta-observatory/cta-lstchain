@@ -3,7 +3,7 @@
 """
 This script uses DL1 files to determine tailcuts which are adequate for the
 bulk of the pixels in a given run. It does so simply based on the median (for
-the whole camera) of the median pixel charge for pedestal events.
+the whole camera) of the 95% quantile of pixel charge for pedestal events.
 
 For reasons of stability & simplicity of analysis, we cannot decide the
 cleaning levels on a subrun-by-subrun basis. We select values which are ok
