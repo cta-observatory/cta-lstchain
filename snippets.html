@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Code snippets &mdash; lstchain 0.12.4.dev15+g67c1c3290 documentation</title>
+  <title>Code snippets &mdash; lstchain 0.12.4.dev19+ge626400a0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -16,7 +16,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=4ed9a54d"></script>
+      <script src="_static/documentation_options.js?v=9753bf1c"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -104,9 +104,9 @@
 <p>The lstchain version is stored in the file metadata. You can print it with the following command:</p>
 <p>In python:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tables</span>
-<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">'dl1_file.h5'</span>
 <span class="n">file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">[</span><span class="s1">&#39;LSTCHAIN_VERSION&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">[</span><span class="s1">'LSTCHAIN_VERSION'</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>In bash:</p>
@@ -126,12 +126,12 @@ configuration file can contain more parameters than the ones used in a given ana
 file can be used for several stages.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tables</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
-<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">'dl1_file.h5'</span>
 <span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dl1</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">telescope</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">LST_LSTCam</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">])</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dl1</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">telescope</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">LST_LSTCam</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"config"</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 <span class="c1"># Or for a given parameter section e.g.:</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;tailcut_clean_with_pedestal_threshold&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">'tailcut_clean_with_pedestal_threshold'</span><span class="p">])</span>
 </pre></div>
 </div>
 </section>
@@ -141,16 +141,16 @@ file can be used for several stages.</p>
 in the metadata of the DL1 files. You can print them with the following command:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tables</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
-<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;dl1_file.h5&#39;</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">'dl1_file.h5'</span>
 <span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dl1</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">telescope</span><span class="o">.</span><span class="n">monitoring</span><span class="o">.</span><span class="n">calibration</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">])</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dl1</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">telescope</span><span class="o">.</span><span class="n">monitoring</span><span class="o">.</span><span class="n">calibration</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"config"</span><span class="p">])</span>
 <span class="c1"># Drive log with pointing information</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;source_config&#39;</span><span class="p">][</span><span class="s1">&#39;LSTEventSource&#39;</span><span class="p">][</span><span class="s1">&#39;PointingSource&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">'source_config'</span><span class="p">][</span><span class="s1">'LSTEventSource'</span><span class="p">][</span><span class="s1">'PointingSource'</span><span class="p">])</span>
 <span class="c1"># Run summary file with reference timestamps and counters for timestamp calculation</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;source_config&#39;</span><span class="p">][</span><span class="s1">&#39;LSTEventSource&#39;</span><span class="p">][</span><span class="s1">&#39;EventTimeCalculator&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">'source_config'</span><span class="p">][</span><span class="s1">'LSTEventSource'</span><span class="p">][</span><span class="s1">'EventTimeCalculator'</span><span class="p">])</span>
 <span class="c1"># Calibration files (DRS4 baseline corrections, calibration coefficients, time calibration, etc)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;source_config&#39;</span><span class="p">][</span><span class="s1">&#39;LSTEventSource&#39;</span><span class="p">][</span><span class="s1">&#39;LSTR0Corrections&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;LSTCalibrationCalculator&#39;</span><span class="p">][</span><span class="s1">&#39;systematic_correction_path&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">'source_config'</span><span class="p">][</span><span class="s1">'LSTEventSource'</span><span class="p">][</span><span class="s1">'LSTR0Corrections'</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">'LSTCalibrationCalculator'</span><span class="p">][</span><span class="s1">'systematic_correction_path'</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>All these metadata information can be accessed interactively using ViTables.</p>
@@ -168,7 +168,7 @@ in the metadata of the DL1 files. You can print them with the following command:
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 28 Jul 2026 08:38.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 21 Sep 2026 07:58.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

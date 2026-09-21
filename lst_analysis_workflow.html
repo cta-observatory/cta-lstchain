@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LST-1 data analysis workflow &mdash; lstchain 0.12.4.dev15+g67c1c3290 documentation</title>
+  <title>LST-1 data analysis workflow &mdash; lstchain 0.12.4.dev19+ge626400a0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -16,7 +16,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=4ed9a54d"></script>
+      <script src="_static/documentation_options.js?v=9753bf1c"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script>let toggleHintShow = 'Click to show';</script>
@@ -220,15 +220,15 @@ given lstchain version, this should be guaranteed by following the procedure abo
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">conda setup</span><a class="headerlink" href="#id1" title="Link to this code"></a></div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span># &gt;&gt;&gt; conda initialize &gt;&gt;&gt;
-# !! Contents within this block are managed by &#39;conda init&#39; !!
-__conda_setup=&quot;$(&#39;/fefs/aswg/software/virtual_env/anaconda3/bin/conda&#39; &#39;shell.bash&#39; &#39;hook&#39; 2&gt; /dev/null)&quot;
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/fefs/aswg/software/virtual_env/anaconda3/bin/conda' 'shell.bash' 'hook' 2&gt; /dev/null)"
 if [ $? -eq 0 ]; then
-    eval &quot;$__conda_setup&quot;
+    eval "$__conda_setup"
 else
-    if [ -f &quot;/fefs/aswg/software/virtual_env/anaconda3/etc/profile.d/conda.sh&quot; ]; then
-        . &quot;/fefs/aswg/software/virtual_env/anaconda3/etc/profile.d/conda.sh&quot;
+    if [ -f "/fefs/aswg/software/virtual_env/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/fefs/aswg/software/virtual_env/anaconda3/etc/profile.d/conda.sh"
     else
-        export PATH=&quot;/fefs/aswg/software/virtual_env/anaconda3/bin:$PATH&quot;
+        export PATH="/fefs/aswg/software/virtual_env/anaconda3/bin:$PATH"
     fi
 fi
 unset __conda_setup
@@ -256,7 +256,7 @@ unset __conda_setup
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright LST collaboration.  Last updated 28 Jul 2026 08:38.</p>
+    <p>&#169; Copyright LST collaboration.  Last updated 21 Sep 2026 07:58.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
