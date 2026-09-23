@@ -328,6 +328,45 @@ def test_build_models(simulated_dl1_file, rf_models):
     joblib.dump(cls_disp_sign, rf_models["disp_sign"], compress=3)
 
 
+def test_build_models_reproducible(simulated_dl1_file):
+    infile = simulated_dl1_file
+    custom_config = {
+        "n_training_events": {
+            "gamma_regressors": 0.99,
+            "gamma_tmp_regressors": 0.78,
+            "gamma_classifier": 0.21,
+            "proton_classifier": 0.98
+        }
+    }
+
+    models_1 = build_models(infile, infile, save_models=False, free_model_memory=False,
+                            custom_config=custom_config)
+    models_2 = build_models(infile, infile, save_models=False, free_model_memory=False,
+                            custom_config=custom_config)
+
+    dl1 = pd.read_hdf(infile, key=dl1_params_lstcam_key)
+    dl1 = filter_events(
+        dl1,
+        filters=standard_config["events_filters"],
+        finite_params=standard_config['energy_regression_features']
+    )
+    features = standard_config['energy_regression_features']
+    reg_energy_1, reg_energy_2 = models_1[0], models_2[0]
+    # predictions average the trees in parallel, so the summation order can change
+    np.testing.assert_allclose(
+        reg_energy_1.predict(dl1[features]),
+        reg_energy_2.predict(dl1[features]),
+        rtol=1e-12,
+    )
+
+    # the gamma/hadron classifier depends on the three data splits
+    cls_gh_1, cls_gh_2 = models_1[-1], models_2[-1]
+    assert cls_gh_1.n_features_in_ == cls_gh_2.n_features_in_
+    for tree_1, tree_2 in zip(cls_gh_1.estimators_, cls_gh_2.estimators_):
+        np.testing.assert_array_equal(tree_1.tree_.threshold, tree_2.tree_.threshold)
+        np.testing.assert_array_equal(tree_1.tree_.value, tree_2.tree_.value)
+
+
 @pytest.mark.xfail(raises=ValueError)
 def test_fail_build_models(simulated_dl1_file):
     custom_config = {

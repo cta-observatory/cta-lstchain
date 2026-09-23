@@ -605,10 +605,13 @@ def build_models(filegammas, fileprotons,
         df_gamma['weight'] = np.ones(len(df_gamma))
 
     # Train regressors for energy and disp_norm reconstruction, only with gammas
+    # Each data split uses the seed of the model it feeds, so that the training is reproducible
+    random_state = config['random_forest_energy_regressor_args'].get('random_state')
     n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
     if n_gamma_regressors not in [1.0, None]:
         try:
-            df_gamma_reg, _ = train_test_split(df_gamma, train_size=n_gamma_regressors)
+            df_gamma_reg, _ = train_test_split(df_gamma, train_size=n_gamma_regressors,
+                                               random_state=random_state)
         except ValueError as e:
             raise ValueError(f"The requested number of gammas {n_gamma_regressors} "
                              f"for the regressors training is not valid.") from e
@@ -646,10 +649,12 @@ def build_models(filegammas, fileprotons,
             del cls_disp_sign
 
     # Train classifier for gamma/hadron separation.
+    random_state = config['random_forest_particle_classifier_args'].get('random_state')
     test_size = config['n_training_events']['gamma_classifier']
     train_size = config['n_training_events']['gamma_tmp_regressors']
     try:
-        train, testg = train_test_split(df_gamma, test_size=test_size, train_size=train_size)
+        train, testg = train_test_split(df_gamma, test_size=test_size, train_size=train_size,
+                                        random_state=random_state)
     except ValueError as e:
         raise ValueError(
             "The requested number of gammas for the classifier training is not valid."
@@ -658,7 +663,8 @@ def build_models(filegammas, fileprotons,
     n_proton_classifier = config["n_training_events"]["proton_classifier"]
     if n_proton_classifier not in [1.0, None]:
         try:
-            df_proton, _ = train_test_split(df_proton, train_size=config['n_training_events']['proton_classifier'])
+            df_proton, _ = train_test_split(df_proton, train_size=config['n_training_events']['proton_classifier'],
+                                            random_state=random_state)
         except ValueError as e:
             raise ValueError(
                 "The requested number of protons for the classifier training is not valid."
